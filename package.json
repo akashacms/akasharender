@@ -10,7 +10,7 @@
     "fs-extra": "*",
     "globfs": "^0.1.2",
     "less": "stable",
-    "mahabhuta": "^0.4.2",
+    "mahabhuta": "akashacms/mahabhuta",
     "markdown-it": "^5.1.0",
     "yfm": "^0.2.0"
   },

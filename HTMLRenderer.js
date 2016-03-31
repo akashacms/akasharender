@@ -6,7 +6,7 @@ const fs        = require('fs-extra');
 const path      = require('path');
 const util      = require('util');
 const yfm       = require('yfm');
-const mahabhuta = require('../mahabhuta/index.js'); // require('mahabhuta');
+const mahabhuta = require('mahabhuta');
 const filez     = require('./filez');
 
 const log   = require('debug')('akasha:HTMLRenderer');
