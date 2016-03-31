@@ -1,0 +1,23 @@
+{
+  "name": "akasharender",
+  "version": "0.0.1",
+  "description": "",
+  "main": "render.js",
+  "dependencies": {
+    "async": "^1.5.2",
+    "debug": "^2.2.0",
+    "ejs": "^2.4.1",
+    "fs-extra": "*",
+    "globfs": "^0.1.2",
+    "less": "stable",
+    "mahabhuta": "^0.4.2",
+    "markdown-it": "^5.1.0",
+    "yfm": "^0.2.0"
+  },
+  "devDependencies": {},
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "author": "",
+  "license": "ISC"
+}

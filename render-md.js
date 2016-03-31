@@ -1,0 +1,43 @@
+'use strict';
+
+const HTMLRenderer = require('./HTMLRenderer');
+const render   = require('./render');
+
+// TODO can this configuration be injected?
+const mditConfig = {
+  html:         true,         // Enable html tags in source
+  xhtmlOut:     false,        // Use '/' to close single tags (<br />)
+  breaks:       false,        // Convert '\n' in paragraphs into <br>
+  // langPrefix:   'language-',  // CSS language prefix for fenced blocks
+  linkify:      true,         // Autoconvert url-like texts to links
+  typographer:  false,        // Enable smartypants and other sweet transforms
+
+  // Highlighter function. Should return escaped html,
+  // or '' if input not changed
+  highlight: function (/*str, , lang*/) { return ''; }
+};
+const mdit = require('markdown-it');
+var md;
+
+class MarkdownRenderer extends HTMLRenderer {
+    constructor() {
+        super(".html.md", /^(.*\.html)\.(md)$/);
+        md = mdit(mditConfig);
+    }
+    
+    renderSync(text, metadata) {
+        // console.log('MarkdownRenderer renderSync '+ text);
+        var ret = md.render(text);
+        // console.log(ret);
+        return ret;
+    }
+    
+    render(text, metadata) {
+        // console.log('MarkdownRenderer render');
+        return new Promise((resolve, reject) => {
+            resolve(md.render(text));
+        });
+    }
+}
+
+module.exports = new MarkdownRenderer();
