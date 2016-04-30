@@ -132,63 +132,73 @@ exports.render = function(config) {
     
     // util.log(util.inspect(config.mahafuncs));
     
-    return new Promise((resolve, reject) => {
-        
-        // run through each docdir, each file in each
-        //     render that file
-        //
-        //     If the result is HTML
-        //         use frontmatter for metadata & template
-        //         chain templates
-        //         mahabhuta
-        //
-        //     when done, output to renderTo
-        
-        globfs.operate(config.documentDirs, '**/*', (basedir, fpath, fini) => {
+    var renderDocument = function(basedir, fpath, renderTo, renderToPlus) {
+        return new Promise((resolve, reject) => {
             var docPathname = path.join(basedir, fpath);
-            var renderToFpath = path.join(config.renderTo, fpath);
+            var renderToFpath = path.join(renderTo, renderToPlus, fpath);
             fs.stat(docPathname, (err, stats) => {
-                if (err) fini(err);
+                if (err) reject(err);
                 else if (stats && stats.isFile()) {
                     var renderToDir = path.dirname(renderToFpath);
                     fs.ensureDir(renderToDir, err => {
                         if (err) {
-                            error('COULD NOT ENSURE DIR '+ renderToDir);
-                            return fini(new Error('COULD NOT ENSURE DIR '+ renderToDir));
+                            error(`COULD NOT ENSURE DIR ${renderToDir}`);
+                            return reject(new Error(`COULD NOT ENSURE DIR ${renderToDir}`));
                         }
                         var renderer = exports.findRendererPath(docPathname);
                         if (renderer) {
-                            renderToFpath = path.join(config.renderTo, renderer.filePath(fpath));
+                            // Have to re-do the renderToFpath to give the Renderer a say in the file name
+                            renderToFpath = path.join(renderTo, renderToPlus, renderer.filePath(fpath));
                             log(`${renderer.name} ${docPathname} ==> ${renderToFpath}`);
                             renderer.renderToFile(basedir, fpath, {}, config)
-                            .then(()   => { fini(undefined, `${renderer.name} ${docPathname} ==> ${renderToFpath}`); })
-                            .catch(err => { error('in renderer branch for '+ fpath +' error='+ err.stack); fini(err); });
+                            .then(()   => { resolve(`${renderer.name} ${docPathname} ==> ${renderToFpath}`); })
+                            .catch(err => { error(`in renderer branch for ${fpath} error=${err.stack}`); reject(err); });
                         } else {
                             log(`COPY ${docPathname} ==> ${renderToFpath}`);
                             fs.copy(docPathname, renderToFpath, err => {
                                 if (err) {
-                                    error('in copy branch for '+ fpath +' error='+ err.stack);
-                                    fini(new Error('in copy branch for '+ fpath +' error='+ err.stack));
+                                    error(`in copy branch for ${fpath} error=${err.stack}`);
+                                    reject(new Error(`in copy branch for ${fpath} error=${err.stack}`));
                                 }
-                                else fini(undefined, `COPY ${docPathname} ==> ${renderToFpath}`);
+                                else { resolve(`COPY ${docPathname} ==> ${renderToFpath}`); }
                             });
                         }
                     })
-                } else fini(undefined, `SKIP DIRECTORY ${docPathname}`);
+                } else { resolve(`SKIP DIRECTORY ${docPathname}`); }
             });
-        },
-        (err, results) => {
-            if (err) reject(err);
-            else {
-                /* for (let result in results) {
-                    if (result.error) {
-                        error(`RENDER ERROR ${result.fullpath} ==> ${result.error} ${result.error.stack}`);
-                    }
-                }
-                log(util.inspect(results)); */
-                resolve(results);
-            }
         });
+    };
+    
+    return Promise.all(config.documentDirs.map(docdir => {
+        var renderToPlus = "";
+        var renderFrom = docdir;
+        if (typeof docdir === 'object') {
+            renderFrom = docdir.src;
+            renderToPlus = docdir.dest;
+        }
+        return new Promise((resolve, reject) => {
+            globfs.operate(renderFrom, '**/*', (basedir, fpath, fini) => {
+                renderDocument(basedir, fpath, config.renderTo, renderToPlus)
+                .then((result) => { fini(undefined, result); })
+                .catch(err => { fini(err); });
+            },
+            (err, results) => {
+                if (err) reject(err);
+                else resolve(results);
+            });  
+        });
+    }))
+    .then(results => {
+        // The array resulting from the above has two levels, when we
+        // want to return one level.  The two levels are due to globfs.operate
+        // operating on each individual directory.
+        var res = [];
+        for (let i = 0; i < results.length; i++) {
+            for (let j = 0; j < results[i].length; j++) {
+                res.push(results[i][j]);
+            }
+        }
+        return res;
     });
 };
 
@@ -225,7 +235,7 @@ exports.partialSync = function(config, fname, metadata) {
     
     var fnamePartial = filez.findSync(config.partialDirs, fname);
     
-    log('partialSync fname=' + fname + ' fnamePartial=' + fnamePartial);
+    log(`partialSync fname=${fname} fnamePartial=${fnamePartial}`);
     if (fnamePartial === undefined) {
         throw new Error('NO FILE FOUND FOR PARTIAL ' + util.inspect(fname));
     }
