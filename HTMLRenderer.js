@@ -8,6 +8,8 @@ const util      = require('util');
 const yfm       = require('yfm');
 const mahabhuta = require('mahabhuta');
 const filez     = require('./filez');
+const cache     = require('./caching');
+const akasha    = require('./index');
 
 const log   = require('debug')('akasha:HTMLRenderer');
 const error = require('debug')('akasha:error');
@@ -46,21 +48,31 @@ module.exports = class HTMLRenderer extends Renderer {
             var layoutdata;
             var layoutrendered;
             
+            log(`renderForLayout find ${util.inspect(config.layoutDirs)} ${metadata.layout}`);
             return filez.find(config.layoutDirs, metadata.layout)
-            .then(foundDir => filez.readFile(foundDir, metadata.layout))
+            .then(foundDir => {
+                if (!foundDir) throw new Error(`No layout directory found in ${util.inspect(config.layoutDirs)} ${metadata.layout}`);
+                return filez.readFile(foundDir, metadata.layout);
+            })
             .then(layout => {
                 layouttext = layout;
                 var fm = yfm(layout);
                 layoutcontent = fm.content;
                 layoutdata    = this.copyMetadataProperties(metadata, fm.context);
                 layoutdata.content = rendered;
+                // if (!fm.context.layout) layoutdata.layout = undefined;
                 const renderer = render.findRendererPath(metadata.layout);
-                if (!renderer) throw new Error(`No renderer for ${fnLayout}`);
+                /* if (!renderer && metadata.layout.match(/\.html$/) != null) {
+                    return filez.readFile(partialDir, partial);
+                } */
+                if (!renderer) throw new Error(`No renderer for ${metadata.layout}`);
+                log(`renderForLayout rendering ${metadata.document.path} with ${metadata.layout}`);
                 return renderer.render(layoutcontent, layoutdata);
             })
             .then(_rendered => {
                 layoutrendered = _rendered;
                 // log('maharun '+ metadata.layout +' '+ util.inspect(layoutdata.config.headerScripts));
+                log(`renderForLayout maharun ${metadata.document.path} with ${metadata.layout}`);
                 return this.maharun(layoutrendered, layoutdata, config.mahafuncs);
             })
             .then(_rendered => {
@@ -69,28 +81,36 @@ module.exports = class HTMLRenderer extends Renderer {
                 // At this point, check layoutdata.layout and if set
                 //     return renderForLayout(layoutrendered, layoutdata, layoutDirs, partialDirs)
                 // otherwise this
+                
+                // This did not work, made an infinite loop
+                // if (layoutdata.layout) {
+                //     return this.renderForLayout(layoutrendered, layoutdata, config)
+                //    .then(_rendered => {
+                //        return _rendered;
+                //    });
+                // }
+                log(`renderForLayout FINI ${metadata.document.path} with ${metadata.layout}`);
                 return layoutrendered;
-            });
+            })
+            .catch(err => { error(err); throw err; });
             
         } else return Promise.resolve(rendered);
     }
     
-    renderToFile(basedir, fpath, metadata, config) {
+    renderToFile(basedir, fpath, renderTo, metadata, config) {
         
         var doctext;
         var doccontent;
         var docdata;
         var docrendered;
         
-        metadata = this.addMetadataFunctions(metadata, config);
-    
-        return filez.readFile(basedir, fpath)
-        .then(text => {
-            // TODO add in other metadata if needed
-            var fm = yfm(text);
-            doctext = text;
+        return this.frontmatter(basedir, fpath)
+        .then(fm => {
             doccontent = fm.content;
-            docdata    = this.copyMetadataProperties(metadata, fm.context);
+            return this.initMetadata(config, basedir, fpath, fm.context);
+        })
+        .then(metadata => {
+            docdata = metadata;
             log('about to render '+ fpath);
             return this.render(doccontent, docdata);
         })
@@ -104,15 +124,109 @@ module.exports = class HTMLRenderer extends Renderer {
             log('maharun to renderForLayout '+ fpath);
             return this.renderForLayout(docrendered, docdata, config);
         })
-        .then(rendered => filez.writeFile(config.renderTo, this.filePath(fpath), rendered));
+        .then(rendered => {
+            log(`renderToFile ${basedir} ${fpath} ==> ${renderTo} ${this.filePath(fpath)}`);
+            return filez.writeFile(renderTo, this.filePath(fpath), rendered);
+        });
     }
     
-    // Should partial and partialSync be hosted by this class instead of render.js?
-    addMetadataFunctions(metadata, config) {
-        metadata.config      = config;
-        metadata.partialSync = render.partialSync.bind(this, config);
-        metadata.partial     = render.partial.bind(this, config);
-        return metadata;
+    frontmatter(basedir, fpath) {
+        return new Promise((resolve, reject) => {
+            var cachekey = `fm-${basedir}-${fpath}`;
+            var cachedFrontmatter = cache.get("htmlrenderer", cachekey);
+            if (cachedFrontmatter) {
+                // TODO
+                // Add check here that stat's file, if file is newer
+                // than the cache'd version then delete the cach entry
+                // and proceed to the rest of the function, otherwise
+                // return the cached data
+                resolve(cachedFrontmatter);
+            } else {
+                filez.readFile(basedir, fpath)
+                .then(text => {
+                    var fm = yfm(text);
+                    cache.set("htmlrenderer", cachekey, fm);
+                    resolve(fm);
+                })
+                .catch(err => { reject(err); });
+            }
+        });
     }
+    
+    metadata(basedir, fpath) {
+        return this.frontmatter(basedir, fpath)
+            .then(fm => {
+                // log(`metadata for ${basedir} ${fpath} => ${util.inspect(fm)}`);
+                return fm.context;
+            });
+    }
+    
+    initMetadata(config, basedir, fpath, fmMetadata) {
+        
+        return new Promise((resolve, reject) => {
+            
+            // Start with a base object that will be passed into the template
+            var metadata = { };
+            
+            // Copy data from frontmatter
+            for (var yprop in config.metadata) {
+                metadata[yprop] = config.metadata[yprop];
+            }
+            for (var yprop in fmMetadata) {
+                metadata[yprop] = fmMetadata[yprop];
+            }
+            
+            metadata.content = "";
+            metadata.document = {};
+            metadata.document.basedir = basedir;
+            metadata.document.path = fpath;
+            metadata.document.renderTo = this.filePath(fpath);
+            
+            metadata.config      = config;
+            metadata.partialSync = akasha.partialSync.bind(this, config);
+            metadata.partial     = akasha.partial.bind(this, config);
+            
+            metadata.root_url = config.root_url;
+            
+            if (config.root_url) {
+                let pRootUrl = url.parse(config.root_url);
+                pRootUrl.pathname = metadata.document.path;
+                metadata.rendered_url = url.format(pRootUrl);
+            } else {
+                metadata.rendered_url = metadata.document.path;
+            }
+            
+            metadata.akasha = akasha;
+            metadata.plugin = config.plugin;
+            
+            // log('HTMLRenderer before path.join '+util.inspect(path));
+            fs.stat(path.join(basedir, fpath), (err, stats) => {
+                if (err || !stats) {
+                    metadata.rendered_date = new Date();
+                } else {
+                    metadata.rendered_date = stats.mtime;
+                }
+                
+                if (!metadata.publicationDate) {
+                    var dateSet = false;
+                    if (fmMetadata && fmMetadata.publDate) {
+                        var parsed = Date.parse(fmMetadata.publDate);
+                        if (! isNaN(parsed)) {
+                          metadata.publicationDate = new Date(parsed);
+                        }
+                        dateSet = true;
+                    }
+                    if (! dateSet && stats && stats.mtime) {
+                        metadata.publicationDate = stats.mtime;
+                    }
+                    if (!metadata.publicationDate) {
+                        metadata.publicationDate = new Date();
+                    }
+                }
+                
+                resolve(metadata);
+            });
+        });
+    };
     
 }

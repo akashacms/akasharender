@@ -35,9 +35,10 @@ exports.findRendererName = function(name) {
     return undefined;
 };
 
-exports.findRendererPath = function(path) {
+exports.findRendererPath = function(_path) {
+    // log(`findRendererPath ${_path}`);
     for (var r of renderers) {
-        if (r.match(path)) return r;
+        if (r.match(_path)) return r;
     }
     return undefined;
 };
@@ -49,86 +50,10 @@ exports.registerRenderer(require('./render-cssless'));
 
 //////////////////////////////////////////////////////////
 
-exports.prepareConfig = function(config) {
-    
-    // util.log('prepareConfig '+ util.inspect(config.mahafuncs));
-    
-    if (!config) {
-        config = {};
-    }
-    
-    var stat;
-    if (!config.assetsDirs) {
-        config.assetsDirs = [];
-        if (fs.existsSync('assets') && (stat = fs.statSync('assets'))) {
-            if (stat.isDirectory()) {
-                config.assetsDirs = [ 'assets' ];
-            }
-        }
-    }
-    
-    if (!config.layoutDirs) {
-        config.layoutDirs = [];
-        if (fs.existsSync('layouts') && (stat = fs.statSync('layouts'))) {
-            if (stat.isDirectory()) {
-                config.layoutDirs = [ 'layouts' ];
-            }
-        }
-    }
-    
-    if (!config.partialDirs) {
-        config.partialDirs = [];
-        if (fs.existsSync('partials') && (stat = fs.statSync('partials'))) {
-            if (stat.isDirectory()) {
-                config.partialDirs = [ 'partials' ];
-            }
-        }
-    }
-    
-    if (!config.documentDirs) {
-        config.documentDirs = [];
-        if (fs.existsSync('documents') && (stat = fs.statSync('documents'))) {
-            if (stat.isDirectory()) {
-                config.documentDirs = [ 'documents' ];
-            } else {
-                throw new Error("'documents' is not a directory");
-            }
-        } else {
-            throw new Error("No 'documents' setting, and no 'documents' directory");
-        }
-    }
-    
-    if (!config.renderTo) {
-        if (fs.existsSync('out') && (stat = fs.statSync('out'))) {
-            if (stat.isDirectory()) {
-                config.renderTo = 'out';
-            } else {
-                throw new Error("'out' is not a directory");
-            }
-        } else {
-            throw new Error('No output directory - must specify config.root_out');
-        }
-    }
-    
-    if (!config.headerScripts) {
-        config.headerScripts = { };
-    }
-    if (!config.headerScripts.stylesheets) {
-        config.headerScripts.stylesheets = [];
-    }
-    if (!config.headerScripts.javaScriptTop) {
-        config.headerScripts.javaScriptTop = [];
-    }
-    if (!config.headerScripts.javaScriptBottom) {
-        config.headerScripts.javaScriptBottom = [];
-    }
-    
-    return config;
-};
+// Needs to split into renderDocuments and renderDocument ??
 
 //exports.render = function(docdirs, layoutDirs, partialDirs, mahafuncs, renderTo) {
 exports.render = function(config) {
-    config = exports.prepareConfig(config);
     
     // util.log(util.inspect(config.mahafuncs));
     
@@ -140,6 +65,7 @@ exports.render = function(config) {
                 if (err) reject(err);
                 else if (stats && stats.isFile()) {
                     var renderToDir = path.dirname(renderToFpath);
+                    log(`renderDocument ${basedir} ${fpath} ${renderToDir} ${renderToFpath}`);
                     fs.ensureDir(renderToDir, err => {
                         if (err) {
                             error(`COULD NOT ENSURE DIR ${renderToDir}`);
@@ -150,7 +76,7 @@ exports.render = function(config) {
                             // Have to re-do the renderToFpath to give the Renderer a say in the file name
                             renderToFpath = path.join(renderTo, renderToPlus, renderer.filePath(fpath));
                             log(`${renderer.name} ${docPathname} ==> ${renderToFpath}`);
-                            renderer.renderToFile(basedir, fpath, {}, config)
+                            renderer.renderToFile(basedir, fpath, path.join(renderTo, renderToPlus), {}, config)
                             .then(()   => { resolve(`${renderer.name} ${docPathname} ==> ${renderToFpath}`); })
                             .catch(err => { error(`in renderer branch for ${fpath} error=${err.stack}`); reject(err); });
                         } else {
@@ -169,18 +95,33 @@ exports.render = function(config) {
         });
     };
     
+    // log(`render ${util.inspect(config.documentDirs)}`);
+    
     return Promise.all(config.documentDirs.map(docdir => {
         var renderToPlus = "";
         var renderFrom = docdir;
+        var renderIgnore = undefined;
         if (typeof docdir === 'object') {
             renderFrom = docdir.src;
             renderToPlus = docdir.dest;
+            renderIgnore = docdir.ignore;
         }
         return new Promise((resolve, reject) => {
+            log(`RENDER DIRECTORY ${renderFrom} ==> ${renderToPlus}`)
             globfs.operate(renderFrom, '**/*', (basedir, fpath, fini) => {
-                renderDocument(basedir, fpath, config.renderTo, renderToPlus)
-                .then((result) => { fini(undefined, result); })
-                .catch(err => { fini(err); });
+                var doIgnore = false;
+                if (renderIgnore) renderIgnore.forEach(ign => {
+                    log(`CHECK ${fpath} === ${ign}`);
+                    if (fpath === ign) {
+                        doIgnore = true;
+                    }
+                });
+                log(`RENDER? ${renderFrom} ${fpath} ${doIgnore}`)
+                if (!doIgnore)
+                    renderDocument(basedir, fpath, config.renderTo, renderToPlus)
+                    .then((result) => { fini(undefined, result); })
+                    .catch(err => { fini(err); });
+                else fini(undefined, `IGNORED ${fpath}`);
             },
             (err, results) => {
                 if (err) reject(err);
@@ -200,47 +141,4 @@ exports.render = function(config) {
         }
         return res;
     });
-};
-
-exports.partial = function(config, partial, attrs) {
-    // find the partial
-    // based on the partial format - render, using attrs
-    // if okay - resolve(rendered) - else reject(err)
-
-    var partialFname;
-    var partialText;
-    var renderer;
-    
-    return filez.find(config.partialDirs, partial)
-    .then(partialDir => {
-        partialFname = path.join(partialDir, partial);
-        
-        renderer = exports.findRendererPath(partialFname);
-        if (!renderer) throw new Error('No renderer found for '+ partialFname);
-        
-        return filez.readFile(partialDir, partial);
-    })
-    .then(text => {
-        partialText = text;
-        return renderer.render(partialText, attrs);
-    });
-};
-
-exports.partialSync = function(config, fname, metadata) {
-
-    const renderer = exports.findRendererPath(fname);
-    if (!renderer) {
-        throw new Error(`No renderer for ${fname}`);
-    }
-    
-    var fnamePartial = filez.findSync(config.partialDirs, fname);
-    
-    log(`partialSync fname=${fname} fnamePartial=${fnamePartial}`);
-    if (fnamePartial === undefined) {
-        throw new Error('NO FILE FOUND FOR PARTIAL ' + util.inspect(fname));
-    }
-    
-    var text = fs.readFileSync(fnamePartial, 'utf8');
-    
-    return renderer.renderSync(text, metadata);
 };

@@ -1,0 +1,224 @@
+/**
+ *
+ * Copyright 2014-2015 David Herron
+ * 
+ * This file is part of AkashaCMS (http://akashacms.com/).
+ *
+ *  Licensed under the Apache License, Version 2.0 (the "License");
+ *  you may not use this file except in compliance with the License.
+ *  You may obtain a copy of the License at
+ *
+ *      http://www.apache.org/licenses/LICENSE-2.0
+ *
+ *  Unless required by applicable law or agreed to in writing, software
+ *  distributed under the License is distributed on an "AS IS" BASIS,
+ *  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ *  See the License for the specific language governing permissions and
+ *  limitations under the License.
+ */
+
+'use strict';
+
+const path  = require('path');
+const util  = require('util');
+const async = require('async');
+const akasha   = require('./index');
+
+const log   = require('debug')('akasha:builtin-plugin');
+const error = require('debug')('akasha:error-builtin-plugin');
+
+module.exports = class BuiltInPlugin extends akasha.Plugin {
+	constructor() {
+		super("akashacms-builtin");
+	}
+	
+	configure(config) {
+		this._config = config;
+		config.addPartialsDir(path.join(__dirname, 'partials'));
+		config.addMahabhuta(module.exports.mahabhuta);
+            
+        if (!config.builtin) config.builtin = {};
+        if (!config.builtin.suppress) config.builtin.suppress = {};
+	}
+}
+
+module.exports.mahabhuta = [
+		function($, metadata, dirty, done) {
+            var elements = [];
+            $('ak-stylesheets').each(function(i, elem) { elements.push(elem); });
+            if (elements.length <= 0) return done();
+        	log('ak-stylesheets');
+            async.eachSeries(elements,
+            (element, next) => {
+                var scripts;
+			    if (typeof metadata.headerStylesheetsAdd !== "undefined") {
+			        scripts = metadata.config.scripts.stylesheets.concat(metadata.headerStylesheetsAdd);
+			    } else {
+			        scripts = metadata.config.scripts.stylesheets;
+			    }
+				akasha.partial(metadata.config, "ak_stylesheets.html.ejs", {
+					stylesheets: scripts
+				})
+                .then(style => {
+                    $(element).replaceWith(style);
+                    next();
+				})
+                .catch(err => { error(err); next(err); });
+            }, 
+            err => {
+				if (err) {
+					error('ak-stylesheets Errored with '+ util.inspect(err));
+					done(err);
+				} else done();
+            });
+        },
+		
+		function($, metadata, dirty, done) {
+            var elements = [];
+            $('ak-headerJavaScript').each(function(i, elem) { elements.push(elem); });
+            if (elements.length <= 0) return done();
+        	log('ak-headerJavaScript');
+            async.eachSeries(elements,
+            (element, next) => {
+                var scripts;
+			    if (typeof metadata.headerJavaScriptAddTop !== "undefined") {
+			        scripts = metadata.config.scripts.javaScriptTop.concat(metadata.headerJavaScriptAddTop);
+			    } else {
+			        scripts = metadata.config.scripts.javaScriptTop;
+			    }
+			    akasha.partial(metadata.config, "ak_javaScript.html.ejs", { javaScripts: scripts })
+				.then(html => {
+                    $(element).replaceWith(html);
+                    next();
+                })
+                .catch(err => { error(err); next(err); });
+            }, 
+            err => {
+				if (err) {
+					error('ak-headerJavaScript Errored with '+ util.inspect(err));
+					done(err);
+				} else done();
+            });
+        },
+		
+		function($, metadata, dirty, done) {
+            var elements = [];
+            $('ak-footerJavaScript').each(function(i, elem) { elements.push(elem); });
+            if (elements.length <= 0) return done();
+        	log('ak-footerJavaScript');
+            async.eachSeries(elements,
+            (element, next) => {
+                var scripts;
+			    if (typeof metadata.headerJavaScriptAddBottom !== "undefined") {
+			        scripts = metadata.config.scripts.javaScriptBottom.concat(metadata.headerJavaScriptAddBottom);
+			    } else {
+			        scripts = metadata.config.scripts.javaScriptBottom;
+			    }
+			    akasha.partial(metadata.config, "ak_javaScript.html.ejs", { javaScripts: scripts })
+				.then(html => {
+                    $(element).replaceWith(html);
+                    next();
+                })
+                .catch(err => { error(err); next(err); });
+            }, 
+            err => {
+				if (err) {
+					error('ak-footerJavaScript Errored with '+ util.inspect(err));
+					done(err);
+				} else done();
+            });
+        },
+		
+		function($, metadata, dirty, done) {
+            var elements = [];
+            $('ak-insert-body-content').each(function(i, elem) { elements.push(elem); });
+            if (elements.length <= 0) return done();
+        	log('ak-insert-body-content');
+            async.eachSeries(elements,
+            function(element, next) {
+			
+				if (typeof metadata.content !== "undefined")
+					$(element).replaceWith(metadata.content);
+				else
+					$(element).remove();
+            
+				next();
+            }, 
+            function(err) {
+				if (err) {
+					error('ak-insert-body-content Errored with '+ util.inspect(err));
+					done(err);
+				} else done();
+            });
+        },
+		
+		function($, metadata, dirty, done) {
+            var elements = [];
+            $('ak-teaser').each(function(i, elem) { elements.push(elem); });
+            if (elements.length <= 0) return done();
+        	log('ak-teaser');
+            async.eachSeries(elements,
+            function(element, next) {
+				if (typeof metadata.teaser !== "undefined" || typeof metadata["ak-teaser"] !== "undefined") {
+                    akasha.partial(metadata.config, "ak_teaser.html.ejs", {
+                        teaser: typeof metadata["ak-teaser"] !== "undefined"
+                            ? metadata["ak-teaser"] : metadata.teaser
+                    })
+                    .then(html => {
+                        $(element).replaceWith(html);
+                        next();
+                    })
+                    .catch(err => { error(err); next(err); });
+				} else {
+					$(element).remove();
+					next();
+				}
+            }, 
+            function(err) {
+				if (err) {
+					error('ak-teaser Errored with '+ util.inspect(err));
+					done(err);
+				} else done();
+            });
+        },
+		
+		function($, metadata, dirty, done) {
+            // <partial file-name="file-name.html.whatever" data-attr-1=val data-attr-2=val/>
+            var partials = [];
+            $('partial').each(function(i, elem) { partials.push(elem); });
+            if (partials.length <= 0) return done();
+        	// log('partial');
+            async.eachSeries(partials,
+            function(partial, next) {
+				// We default to making partial set the dirty flag.  But a user
+				// of the partial tag can choose to tell us it isn't dirty.
+				// For example, if the partial only substitutes values into normal tags
+				// there's no need to do the dirty thing.
+				var dothedirtything = $(partial).attr('dirty');
+				if (!dothedirtything || dothedirtything.match(/true/i)) {
+				    dirty();
+				}
+                var fname = $(partial).attr("file-name");
+                var txt   = $(partial).text();
+                var d = {};
+                for (var mprop in metadata) { d[mprop] = metadata[mprop]; }
+                var data = $(partial).data();
+                for (var dprop in data) { d[dprop] = data[dprop]; }
+                d["partialBody"] = txt;
+                log('partial tag fname='+ fname +' attrs '+ util.inspect(data));
+                akasha.partial(metadata.config, fname, d)
+                .then(html => {
+                    $(partial).replaceWith(html);
+                    next(); 
+                })
+                .catch(err => { error(err); next(err); });
+            },
+            function(err) {
+              if (err) {
+                error('partial Errored with '+ util.inspect(err));
+                done(err);
+              } else done();
+            });
+        },
+		
+];

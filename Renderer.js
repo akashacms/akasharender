@@ -1,5 +1,8 @@
 'use strict';
 
+const log   = require('debug')('akasha:Renderer');
+const error = require('debug')('akasha:error-Renderer');
+
 module.exports = class Renderer {
     constructor(name, regex) {
         this._name  = name;
@@ -31,6 +34,7 @@ module.exports = class Renderer {
     }; */
 
     filePath(fname) {
+        // log(`${this._name} filePath ${fname}`);
         var matches;
         for (var regex of this._regex) {
             if ((matches = fname.match(regex)) !== null) {
@@ -58,7 +62,7 @@ module.exports = class Renderer {
         throw new Error('implement renderSync method');
     }
     
-    renderToFile(dir, fpath, metadata, config) {
+    renderToFile(dir, fpath, renderTo, metadata, config) {
         throw new Error('implement renderToFile method');
     }
     

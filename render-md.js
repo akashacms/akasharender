@@ -1,7 +1,11 @@
 'use strict';
 
+const path      = require('path');
 const HTMLRenderer = require('./HTMLRenderer');
 const render   = require('./render');
+
+const log   = require('debug')('akasha:markdownRenderer');
+const error = require('debug')('akasha:error-markdownRenderer');
 
 // TODO can this configuration be injected?
 const mditConfig = {
@@ -35,7 +39,11 @@ class MarkdownRenderer extends HTMLRenderer {
     render(text, metadata) {
         // console.log('MarkdownRenderer render');
         return new Promise((resolve, reject) => {
-            resolve(md.render(text));
+            try { 
+                resolve(md.render(text)); 
+            } catch(e) {
+                reject(e);
+            }
         });
     }
 }

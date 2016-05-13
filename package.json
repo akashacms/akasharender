@@ -2,7 +2,7 @@
   "name": "akasharender",
   "version": "0.0.2",
   "description": "",
-  "main": "render.js",
+  "main": "index.js",
   "dependencies": {
     "async": "^1.5.2",
     "debug": "^2.2.0",
@@ -12,6 +12,9 @@
     "less": "stable",
     "mahabhuta": "akashacms/mahabhuta",
     "markdown-it": "^5.1.0",
+    "node-cache": "^3.2.1",
+    "oembed": "^0.1.0",
+    "rss": "^1.2.1",
     "yfm": "^0.2.0"
   },
   "devDependencies": {},
