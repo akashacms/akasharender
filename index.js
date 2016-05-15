@@ -10,6 +10,7 @@ const fs     = require('fs');
 const path   = require('path');
 const oembed = require('oembed');
 const RSS    = require('rss');
+const globfs = require('globfs');
 
 exports.cache = require('./caching');
 
@@ -149,12 +150,13 @@ exports.documentSearch = function(config, options) {
             fs.stat(path.join(basedir, fpath), (err, stat) => {
                 if (err) return fini(err);
                 var renderer = exports.findRendererPath(fpath);
-                let path = renderer.filePath(fpath);
+                let filepath = renderer ? renderer.filePath(fpath) : undefined;
                 fini(undefined, {
                     renderer, basedir, stat,
                     fpath, fname: path.basename(fpath),
-                    path, name: path.basename(path),
-                    metadata: renderer.metadata(basedir, fpath)
+                    path,
+                    name: filepath ? path.basename(filepath) : path.basename(fpath),
+                    metadata: renderer ? renderer.metadata(basedir, fpath) : undefined
                 }); 
             });
         },
