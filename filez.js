@@ -22,14 +22,14 @@ exports.copyAssets = function(assetdirs, renderTo) {
 };
 
 exports.findSync = function(dirs, fileName) {
-    for (var i = 0; i < dirs; i++) {
+    for (var i = 0; i < dirs.length; i++) {
         var dir = dirs[i];
-        stat = fs.existsSync(path.join(dir, fileName))
-            ? fs.statSync(path.join(dir, fileName))
-            : undefined;
+        var fileToFind = path.join(dir, fileName);
+        // log(fileToFind);
+        var stat = fs.existsSync(fileToFind) ? fs.statSync(fileToFind) : undefined;
         if (stat) {
             log(`filez.findSync ${util.inspect(dirs)} found ${dir}/${fileName}`);
-            return path.join(dir, fileName);
+            return fileToFind;
         }
     }
     log(`filez.findSync FAIL ${util.inspect(dirs)} ${fileName}`);

@@ -98,7 +98,7 @@ exports.indexChain = function(config, fname) {
     var ret = [];
     
     var findParents = function(config, fileName) {
-        var newFileName;
+        // var newFileName;
         var parentDir;
         // log(`findParents ${fileName}`);
         if (path.dirname(fileName) === '.') {
@@ -140,6 +140,9 @@ exports.indexChain = function(config, fname) {
 
 exports.documentSearch = function(config, options) {
     
+    
+    // log(`documentSearch ${util.inspect(options)}`);
+    
     // Find all the documents, under rootPath if specified
     // Build up a useful object for each
     return new Promise((resolve, reject) => {
@@ -151,18 +154,47 @@ exports.documentSearch = function(config, options) {
                 if (err) return fini(err);
                 var renderer = exports.findRendererPath(fpath);
                 let filepath = renderer ? renderer.filePath(fpath) : undefined;
-                fini(undefined, {
-                    renderer, basedir, stat,
-                    fpath, fname: path.basename(fpath),
-                    path,
-                    name: filepath ? path.basename(filepath) : path.basename(fpath),
-                    metadata: renderer ? renderer.metadata(basedir, fpath) : undefined
-                }); 
+                if (renderer) {
+                    renderer.metadata(basedir, fpath)
+                    .then(metadata => {
+                        // log(util.inspect(metadata));
+                        fini(undefined, {
+                            renderer, basedir, stat,
+                            fpath, fname: path.basename(fpath),
+                            name: filepath ? path.basename(filepath) : path.basename(fpath),
+                            filepath,
+                            metadata
+                        }); 
+                    });
+                } else {
+                    fini(undefined, {
+                        renderer, basedir, stat,
+                        fpath, fname: path.basename(fpath),
+                        name: filepath ? path.basename(filepath) : path.basename(fpath),
+                        filepath,
+                        metadata: undefined
+                    }); 
+                }
             });
         },
         (err, results) => {
             if (err) reject(err);
-            else resolve(results)
+            else resolve(results);
+        });
+    })
+    .then(documents => {
+        // the object array we receive is suboptimally organized.
+        // We first flatten it so it's more useful
+        // log(`documentSearch before filtering ${util.inspect(documents)}`);
+        return documents.map(doc => {
+            return {
+                basedir: doc.basedir, path: doc.path, fullpath: doc.fullpath,
+                renderer: doc.result.renderer,
+                stat: doc.result.stat,
+                filepath: doc.result.filepath,
+                filename: doc.result.name,
+                metadata: doc.result.metadata
+            };
         });
     })
     // Then filter the list, potentially removing some items if they
@@ -171,17 +203,24 @@ exports.documentSearch = function(config, options) {
     // This is for ease of implementation so each phase can be eliminated
     // or new phases added easily.
     .then(documents => {
+        
+        // log(`documentSearch documents #1 ${util.inspect(documents)}`);
+    
         if (options.pathmatch) {
             return documents.filter(doc => {
-                return doc.fpath.match(options.pathmatch) != null;
+                return doc.fpath.match(options.pathmatch) !== null;
             });
         } else return documents;
     })
     .then(documents => {
+        // log(`documentSearch documents #2 ${util.inspect(documents)}`);
+    
         if (options.renderers) {
             return documents.filter(doc => {
                 var match = false;
+                if (!options.renderers) return true;
                 for (let renderer of options.renderers) {
+                    // log(` .... doc.renderer ${typeof doc.renderer} renderer ${typeof renderer}`);
                     if (doc.renderer instanceof renderer) {
                         match = true;
                     }
@@ -191,10 +230,14 @@ exports.documentSearch = function(config, options) {
         } else return documents;
     })
     .then(documents => {
+        // log(`documentSearch documents #3 ${util.inspect(documents)}`);
+    
         if (options.layouts) {
             return documents.filter(doc => {
                 var match = false;
+                if (!options.layout) return true;
                 for (let layout of options.layouts) {
+                    // log(`  .... doc.metadata.layout ${doc.metadata.layout} === ${layout}`);
                     if (doc.metadata.layout === layout) {
                         match = true;
                     }
@@ -204,11 +247,25 @@ exports.documentSearch = function(config, options) {
         } else return documents;
     })
     .then(documents => {
-        if (options.func) {
+        // log(`documentSearch documents #4 ${util.inspect(documents)}`);
+    
+        if (options.filterfunc) {
             return documents.filter(doc => {
-                return func(config, options, doc);
+                return options.filterfunc(config, options, doc);
             });
         } else return documents;
+    })
+    .then(documents => {
+        documents.sort((a, b) => {
+            if (a.path < b.path) return -1;
+            else if (a.path === b.path) return 0;
+            else return 1;
+        });
+        return documents;
+    })
+    .then(documents => {
+        // log(`documentSearch final ${util.inspect(documents)}`);
+        return documents;
     });
     
 };

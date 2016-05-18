@@ -131,25 +131,21 @@ module.exports = class HTMLRenderer extends Renderer {
     }
     
     frontmatter(basedir, fpath) {
-        return new Promise((resolve, reject) => {
-            var cachekey = `fm-${basedir}-${fpath}`;
-            var cachedFrontmatter = cache.get("htmlrenderer", cachekey);
-            if (cachedFrontmatter) {
-                // TODO
-                // Add check here that stat's file, if file is newer
-                // than the cache'd version then delete the cach entry
-                // and proceed to the rest of the function, otherwise
-                // return the cached data
-                resolve(cachedFrontmatter);
-            } else {
-                filez.readFile(basedir, fpath)
-                .then(text => {
-                    var fm = yfm(text);
-                    cache.set("htmlrenderer", cachekey, fm);
-                    resolve(fm);
-                })
-                .catch(err => { reject(err); });
-            }
+        var cachekey = `fm-${basedir}-${fpath}`;
+        var cachedFrontmatter = cache.get("htmlrenderer", cachekey);
+        if (cachedFrontmatter) {
+            // TODO
+            // Add check here that stat's file, if file is newer
+            // than the cache'd version then delete the cach entry
+            // and proceed to the rest of the function, otherwise
+            // return the cached data
+            return Promise.resolve(cachedFrontmatter);
+        }
+        return filez.readFile(basedir, fpath)
+        .then(text => {
+            var fm = yfm(text);
+            cache.set("htmlrenderer", cachekey, fm);
+            return fm;
         });
     }
     
