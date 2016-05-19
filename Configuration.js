@@ -230,6 +230,7 @@ module.exports = class Configuration {
         if (! this._plugins || typeof this._plugins[name] === 'undefined') {
             return undefined;
         } else {
+            // console.log(util.inspect(this._plugins[name]));
             return this._plugins[name];
         }
     }

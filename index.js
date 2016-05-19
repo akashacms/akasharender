@@ -188,11 +188,14 @@ exports.documentSearch = function(config, options) {
         // log(`documentSearch before filtering ${util.inspect(documents)}`);
         return documents.map(doc => {
             return {
-                basedir: doc.basedir, path: doc.path, fullpath: doc.fullpath,
+                basedir: doc.basedir,
+                docpath: doc.path,
+                docname: doc.result.fname,
+                fullpath: doc.fullpath,
                 renderer: doc.result.renderer,
                 stat: doc.result.stat,
-                filepath: doc.result.filepath,
-                filename: doc.result.name,
+                renderpath: doc.result.filepath,
+                rendername: doc.result.name,
                 metadata: doc.result.metadata
             };
         });
@@ -208,7 +211,7 @@ exports.documentSearch = function(config, options) {
     
         if (options.pathmatch) {
             return documents.filter(doc => {
-                return doc.fpath.match(options.pathmatch) !== null;
+                return doc.docpath.match(options.pathmatch) !== null;
             });
         } else return documents;
     })
@@ -257,8 +260,8 @@ exports.documentSearch = function(config, options) {
     })
     .then(documents => {
         documents.sort((a, b) => {
-            if (a.path < b.path) return -1;
-            else if (a.path === b.path) return 0;
+            if (a.renderpath < b.renderpath) return -1;
+            else if (a.renderpath === b.renderpath) return 0;
             else return 1;
         });
         return documents;

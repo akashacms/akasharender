@@ -57,6 +57,8 @@ exports.render = function(config) {
     
     // util.log(util.inspect(config.mahafuncs));
     
+    // log('render');
+    
     var renderDocument = function(basedir, fpath, renderTo, renderToPlus) {
         return new Promise((resolve, reject) => {
             var docPathname = path.join(basedir, fpath);
