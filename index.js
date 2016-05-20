@@ -6,11 +6,12 @@ const error = require('debug')('akasha:error-index');
 const filez  = require('./filez');
 const render = require('./render');
 const util   = require('util');
-const fs     = require('fs');
+const fs     = require('fs-extra');
 const path   = require('path');
 const oembed = require('oembed');
 const RSS    = require('rss');
 const globfs = require('globfs');
+const documents = require('./documents');
 
 exports.cache = require('./caching');
 
@@ -27,6 +28,9 @@ exports.findRendererName = function(name) { return render.findRendererName(name)
 exports.findRendererPath = function(_path) { return render.findRendererPath(_path); };
 
 exports.findRendersTo = filez.findRendersTo;
+
+exports.Document = documents.Document;
+exports.HTMLDocument = documents.HTMLDocument;
 
 exports.partial = function(config, partial, attrs) {
     // find the partial
@@ -152,6 +156,8 @@ exports.documentSearch = function(config, options) {
         (basedir, fpath, fini) => {
             fs.stat(path.join(basedir, fpath), (err, stat) => {
                 if (err) return fini(err);
+                // Skip recording directories
+                if (stat.isDirectory()) return fini();
                 var renderer = exports.findRendererPath(fpath);
                 let filepath = renderer ? renderer.filePath(fpath) : undefined;
                 if (renderer) {
@@ -187,9 +193,9 @@ exports.documentSearch = function(config, options) {
         // We first flatten it so it's more useful
         // log(`documentSearch before filtering ${util.inspect(documents)}`);
         return documents.map(doc => {
-            return {
+            return new exports.Document({
                 basedir: doc.basedir,
-                docpath: doc.path,
+                docpath: doc.result.fpath,
                 docname: doc.result.fname,
                 fullpath: doc.fullpath,
                 renderer: doc.result.renderer,
@@ -197,7 +203,7 @@ exports.documentSearch = function(config, options) {
                 renderpath: doc.result.filepath,
                 rendername: doc.result.name,
                 metadata: doc.result.metadata
-            };
+            });
         });
     })
     // Then filter the list, potentially removing some items if they
@@ -211,41 +217,33 @@ exports.documentSearch = function(config, options) {
     
         if (options.pathmatch) {
             return documents.filter(doc => {
-                return doc.docpath.match(options.pathmatch) !== null;
+                var ret = doc.docpath.match(options.pathmatch) !== null;
+                return ret;
             });
         } else return documents;
     })
     .then(documents => {
-        // log(`documentSearch documents #2 ${util.inspect(documents)}`);
-    
         if (options.renderers) {
             return documents.filter(doc => {
-                var match = false;
                 if (!options.renderers) return true;
                 for (let renderer of options.renderers) {
-                    // log(` .... doc.renderer ${typeof doc.renderer} renderer ${typeof renderer}`);
                     if (doc.renderer instanceof renderer) {
-                        match = true;
+                        return true;
                     }
                 }
-                return match;
+                return false;
             });
         } else return documents;
     })
     .then(documents => {
-        // log(`documentSearch documents #3 ${util.inspect(documents)}`);
-    
         if (options.layouts) {
             return documents.filter(doc => {
-                var match = false;
-                if (!options.layout) return true;
                 for (let layout of options.layouts) {
-                    // log(`  .... doc.metadata.layout ${doc.metadata.layout} === ${layout}`);
                     if (doc.metadata.layout === layout) {
-                        match = true;
+                        return true;
                     }
                 }
-                return match;
+                return false;
             });
         } else return documents;
     })
@@ -269,7 +267,8 @@ exports.documentSearch = function(config, options) {
     .then(documents => {
         // log(`documentSearch final ${util.inspect(documents)}`);
         return documents;
-    });
+    })
+    .catch(err => { error(err); throw err; });
     
 };
 
@@ -282,14 +281,14 @@ exports.generateRSS = function(config, configrss, feedData, items, renderTo) {
         
         // Construct initial rss object
         var rss = {};
-        for (var key in configrss) {
+        for (let key in configrss.rss) {
             if (configrss.hasOwnProperty(key)) {
                 rss[key] = configrss[key];
             }
         }
         
         // Then fill in from feedData
-        for (var key in feedData) {
+        for (let key in feedData) {
             if (feedData.hasOwnProperty(key)) {
                 rss[key] = feedData[key];
             }
@@ -300,8 +299,9 @@ exports.generateRSS = function(config, configrss, feedData, items, renderTo) {
         items.forEach(function(item) { rssfeed.item(item); });
         
         var xml = rssfeed.xml();
-        var renderOut = path.join(config.root_out, renderTo);
-        // logger.trace(renderOut +' ===> '+ xml);
+        log(`generateRSS ${config.renderDestination} ${renderTo} ${util.inspect(configrss)}`);
+        var renderOut = path.join(config.renderDestination, renderTo);
+        log(renderOut +' ===> '+ xml);
         
         fs.mkdirs(path.dirname(renderOut), err => {
             if (err) { error(err); return reject(err); }
@@ -328,6 +328,6 @@ module.exports.oEmbedData = function(url) {
             else resolve(result);
         }
         );  
-    })
+    });
 };
 
