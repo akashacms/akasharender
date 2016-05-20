@@ -59,7 +59,17 @@ module.exports = class Configuration {
         }
         
         if (!this.mahafuncs) { this.mahafuncs = []; }
-        if (!this.renderTo)  { this.renderTo = 'out'; }
+        if (!this.renderTo)  {
+            if (fs.existsSync('out') && (stat = fs.statSync('out'))) {
+                if (stat.isDirectory()) {
+                    this.renderTo = 'out';
+                } else {
+                    throw new Error("'out' is not a directory");
+                }
+            } else {
+                throw new Error("No 'renderTo' setting, and no 'out' directory");
+            }
+        }
         
         if (!this.headerScripts)                  { this.headerScripts = { }; }
         if (!this.headerScripts.stylesheets)      { this.headerScripts.stylesheets = []; }
@@ -124,6 +134,8 @@ module.exports = class Configuration {
         this.renderTo = dir;
         return this;
     }
+    
+    get renderDestination() { return this.renderTo; }
     
     /* TODO:
     
