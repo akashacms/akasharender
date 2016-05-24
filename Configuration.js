@@ -1,7 +1,7 @@
 
 'use strict';
 
-const fs = require('fs');
+const fs = require('fs-extra');
 const globfs = require('globfs');
 const util = require('util');
 const path = require('path');
@@ -67,7 +67,8 @@ module.exports = class Configuration {
                     throw new Error("'out' is not a directory");
                 }
             } else {
-                throw new Error("No 'renderTo' setting, and no 'out' directory");
+                fs.mkdirsSync('out');
+                this.renderTo = 'out';
             }
         }
         
