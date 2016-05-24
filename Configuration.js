@@ -180,7 +180,7 @@ module.exports = class Configuration {
             this.scripts = {};
         }
         if (!this.scripts.stylesheets) this.scripts.stylesheets = [];
-        this.scripts.stylesheets.unshift(css);
+        this.scripts.stylesheets.push(css);
         return this;
     }
     
