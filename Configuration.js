@@ -70,6 +70,8 @@ module.exports = class Configuration {
                 fs.mkdirsSync('out');
                 this.renderTo = 'out';
             }
+        } else if (this.renderTo && !fs.existsSync(this.renderTo)) {
+            fs.mkdirsSync(this.renderTo);
         }
         
         if (!this.headerScripts)                  { this.headerScripts = { }; }
