@@ -9,13 +9,13 @@
     "ejs": "^2.4.1",
     "fs-extra": "*",
     "globfs": "^0.1.2",
-    "less": "stable",
+    "less": "^2.x",
     "mahabhuta": "akashacms/mahabhuta",
     "markdown-it": "^5.1.0",
     "node-cache": "^3.2.1",
     "oembed": "^0.1.0",
     "rss": "^1.2.1",
-    "yfm": "^0.2.0"
+    "gray-matter": "^2.x"
   },
   "devDependencies": {},
   "scripts": {

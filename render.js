@@ -4,7 +4,6 @@ const globfs    = require('globfs');
 const path      = require('path');
 const fs        = require('fs-extra');
 const util      = require('util');
-const yfm       = require('yfm');
 const async     = require('async');
 const mahabhuta = require('mahabhuta');
 const filez     = require('./filez');

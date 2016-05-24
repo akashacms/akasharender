@@ -5,7 +5,6 @@ const globfs     = require('globfs');
 const util       = require('util');
 const path       = require('path');
 const async      = require('async');
-const yfm        = require('yfm');
 const render     = require('./render');
 const cache      = require('./caching');
 

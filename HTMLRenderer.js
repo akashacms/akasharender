@@ -6,7 +6,7 @@ const fs        = require('fs-extra');
 const url       = require('url');
 const path      = require('path');
 const util      = require('util');
-const yfm       = require('yfm');
+const matter    = require('gray-matter');
 const mahabhuta = require('mahabhuta');
 const filez     = require('./filez');
 const cache     = require('./caching');
@@ -43,7 +43,7 @@ module.exports = class HTMLRenderer extends Renderer {
             // renderer.render 
             // mahabhuta
             
-            var fnLayout
+            var fnLayout;
             var layouttext;
             var layoutcontent;
             var layoutdata;
@@ -57,11 +57,11 @@ module.exports = class HTMLRenderer extends Renderer {
             })
             .then(layout => {
                 layouttext = layout;
-                var fm = yfm(layout);
+                var fm = matter(layout);
                 layoutcontent = fm.content;
-                layoutdata    = this.copyMetadataProperties(metadata, fm.context);
+                layoutdata    = this.copyMetadataProperties(metadata, fm.data);
                 layoutdata.content = rendered;
-                // if (!fm.context.layout) layoutdata.layout = undefined;
+                // if (!fm.data.layout) layoutdata.layout = undefined;
                 const renderer = render.findRendererPath(metadata.layout);
                 /* if (!renderer && metadata.layout.match(/\.html$/) != null) {
                     return filez.readFile(partialDir, partial);
@@ -100,7 +100,7 @@ module.exports = class HTMLRenderer extends Renderer {
     
     renderToFile(basedir, fpath, renderTo, metadata, config) {
         
-        var doctext;
+        // var doctext;
         var doccontent;
         var docdata;
         var docrendered;
@@ -108,7 +108,7 @@ module.exports = class HTMLRenderer extends Renderer {
         return this.frontmatter(basedir, fpath)
         .then(fm => {
             doccontent = fm.content;
-            return this.initMetadata(config, basedir, fpath, fm.context);
+            return this.initMetadata(config, basedir, fpath, fm.data);
         })
         .then(metadata => {
             docdata = metadata;
@@ -144,7 +144,7 @@ module.exports = class HTMLRenderer extends Renderer {
         }
         return filez.readFile(basedir, fpath)
         .then(text => {
-            var fm = yfm(text);
+            var fm = matter(text);
             cache.set("htmlrenderer", cachekey, fm);
             return fm;
         });
@@ -154,7 +154,7 @@ module.exports = class HTMLRenderer extends Renderer {
         return this.frontmatter(basedir, fpath)
             .then(fm => {
                 // log(`metadata for ${basedir} ${fpath} => ${util.inspect(fm)}`);
-                return fm.context;
+                return fm.data;
             });
     }
     
