@@ -141,7 +141,7 @@ exports.indexChain = function(config, fname) {
         ret.push({ foundDir: found.foundDir, foundPath: found.foundPath, filename: fname });
         return findParents(config, fname);
     })
-    .then(() => { return ret; })
+    .then(() => { return ret.reverse(); })
     .catch(err => { error(err.stack); throw err; });
 };
 
