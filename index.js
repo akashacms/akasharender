@@ -31,6 +31,8 @@ exports.findRendersTo = filez.findRendersTo;
 
 exports.Document = documents.Document;
 exports.HTMLDocument = documents.HTMLDocument;
+exports.documentTree = documents.documentTree;
+exports.documentSearch = documents.documentSearch;
 
 exports.partial = function(config, partial, attrs) {
     // find the partial
@@ -53,7 +55,7 @@ exports.partial = function(config, partial, attrs) {
         
         // For .html partials, we won't find a Renderer and can
         // short-circuit the process by just reading the file.
-        if (!renderer && partialFname.match(/\.html$/) != null) {
+        if (!renderer && partialFname.match(/\.html$/) !== null) {
             return filez.readFile(partialDir, partial);
         }
         
@@ -72,9 +74,10 @@ exports.partial = function(config, partial, attrs) {
 
 exports.partialSync = function(config, fname, metadata) {
 
+    var fnamePartial;
     const renderer = render.findRendererPath(fname);
-    if (!renderer && partialFname.match(/\.html$/) != null) {
-        var fnamePartial = filez.findSync(config.partialDirs, fname);
+    if (!renderer && fname.match(/\.html$/) !== null) {
+        fnamePartial = filez.findSync(config.partialDirs, fname);
         return fs.readFileSync(fnamePartial, 'utf8');
     }
     
@@ -82,10 +85,10 @@ exports.partialSync = function(config, fname, metadata) {
         throw new Error(`No renderer for ${fname}`);
     }
     if (!(renderer instanceof exports.HTMLRenderer)) {
-        throw new Error(`Renderer for ${partial} must be HTMLRenderer`);
+        throw new Error(`Renderer for ${fname} must be HTMLRenderer`);
     }
     
-    var fnamePartial = filez.findSync(config.partialDirs, fname);
+    fnamePartial = filez.findSync(config.partialDirs, fname);
     
     // log(`partialSync fname=${fname} fnamePartial=${fnamePartial}`);
     if (fnamePartial === undefined) {
@@ -142,137 +145,6 @@ exports.indexChain = function(config, fname) {
     .catch(err => { error(err.stack); throw err; });
 };
 
-exports.documentSearch = function(config, options) {
-    
-    
-    // log(`documentSearch ${util.inspect(options)}`);
-    
-    // Find all the documents, under rootPath if specified
-    // Build up a useful object for each
-    return new Promise((resolve, reject) => {
-        globfs.operate(
-        config.documentDirs,
-        options.rootPath ? options.rootPath+"/**/*" : "**/*",
-        (basedir, fpath, fini) => {
-            fs.stat(path.join(basedir, fpath), (err, stat) => {
-                if (err) return fini(err);
-                // Skip recording directories
-                if (stat.isDirectory()) return fini();
-                var renderer = exports.findRendererPath(fpath);
-                let filepath = renderer ? renderer.filePath(fpath) : undefined;
-                if (renderer) {
-                    renderer.metadata(basedir, fpath)
-                    .then(metadata => {
-                        // log(util.inspect(metadata));
-                        fini(undefined, {
-                            renderer, basedir, stat,
-                            fpath, fname: path.basename(fpath),
-                            name: filepath ? path.basename(filepath) : path.basename(fpath),
-                            filepath,
-                            metadata
-                        }); 
-                    });
-                } else {
-                    fini(undefined, {
-                        renderer, basedir, stat,
-                        fpath, fname: path.basename(fpath),
-                        name: filepath ? path.basename(filepath) : path.basename(fpath),
-                        filepath,
-                        metadata: undefined
-                    }); 
-                }
-            });
-        },
-        (err, results) => {
-            if (err) reject(err);
-            else resolve(results);
-        });
-    })
-    .then(documents => {
-        // the object array we receive is suboptimally organized.
-        // We first flatten it so it's more useful
-        // log(`documentSearch before filtering ${util.inspect(documents)}`);
-        return documents.map(doc => {
-            return new exports.Document({
-                basedir: doc.basedir,
-                docpath: doc.result.fpath,
-                docname: doc.result.fname,
-                fullpath: doc.fullpath,
-                renderer: doc.result.renderer,
-                stat: doc.result.stat,
-                renderpath: doc.result.filepath,
-                rendername: doc.result.name,
-                metadata: doc.result.metadata
-            });
-        });
-    })
-    // Then filter the list, potentially removing some items if they
-    // do not validate against the filters specified in the options object.
-    // These are separate .then calls even though it's not truly necessary.
-    // This is for ease of implementation so each phase can be eliminated
-    // or new phases added easily.
-    .then(documents => {
-        
-        // log(`documentSearch documents #1 ${util.inspect(documents)}`);
-    
-        if (options.pathmatch) {
-            return documents.filter(doc => {
-                var ret = doc.docpath.match(options.pathmatch) !== null;
-                return ret;
-            });
-        } else return documents;
-    })
-    .then(documents => {
-        if (options.renderers) {
-            return documents.filter(doc => {
-                if (!options.renderers) return true;
-                for (let renderer of options.renderers) {
-                    if (doc.renderer instanceof renderer) {
-                        return true;
-                    }
-                }
-                return false;
-            });
-        } else return documents;
-    })
-    .then(documents => {
-        if (options.layouts) {
-            return documents.filter(doc => {
-                for (let layout of options.layouts) {
-                    if (doc.metadata.layout === layout) {
-                        return true;
-                    }
-                }
-                return false;
-            });
-        } else return documents;
-    })
-    .then(documents => {
-        // log(`documentSearch documents #4 ${util.inspect(documents)}`);
-    
-        if (options.filterfunc) {
-            return documents.filter(doc => {
-                return options.filterfunc(config, options, doc);
-            });
-        } else return documents;
-    })
-    .then(documents => {
-        documents.sort((a, b) => {
-            if (a.renderpath < b.renderpath) return -1;
-            else if (a.renderpath === b.renderpath) return 0;
-            else return 1;
-        });
-        return documents;
-    })
-    .then(documents => {
-        // log(`documentSearch final ${util.inspect(documents)}`);
-        return documents;
-    })
-    .catch(err => { error(err); throw err; });
-    
-};
-
-
 ///////////////// RSS Feed Generation
 
 exports.generateRSS = function(config, configrss, feedData, items, renderTo) {
@@ -299,9 +171,7 @@ exports.generateRSS = function(config, configrss, feedData, items, renderTo) {
         items.forEach(function(item) { rssfeed.item(item); });
         
         var xml = rssfeed.xml();
-        log(`generateRSS ${config.renderDestination} ${renderTo} ${util.inspect(configrss)}`);
         var renderOut = path.join(config.renderDestination, renderTo);
-        log(renderOut +' ===> '+ xml);
         
         fs.mkdirs(path.dirname(renderOut), err => {
             if (err) { error(err); return reject(err); }
