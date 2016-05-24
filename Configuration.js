@@ -184,6 +184,10 @@ module.exports = class Configuration {
         return this;
     }
     
+    setMahabhutaConfig(cheerio) {
+        this.cheerio = cheerio;
+    }
+    
     copyAssets(config) {
         log('copyAssets START');
     
