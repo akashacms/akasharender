@@ -6,6 +6,7 @@ const util  = require('util');
 const async = require('async');
 const fs    = require('fs');
 const globfs = require('globfs');
+const akasha = require('./index');
 
 const log   = require('debug')('akasha:documents');
 const error = require('debug')('akasha:error-documents');
@@ -307,7 +308,7 @@ module.exports.documentSearch = function(config, options) {
                 if (err) return fini(err);
                 // Skip recording directories
                 if (stat.isDirectory()) return fini();
-                var renderer = exports.findRendererPath(fpath);
+                var renderer = akasha.findRendererPath(fpath);
                 let filepath = renderer ? renderer.filePath(fpath) : undefined;
                 if (renderer) {
                     renderer.metadata(basedir, fpath)
