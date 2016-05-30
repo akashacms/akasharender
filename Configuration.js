@@ -1,14 +1,15 @@
 
 'use strict';
 
-const fs = require('fs-extra');
+const fs     = require('fs-extra');
 const globfs = require('globfs');
-const util = require('util');
-const path = require('path');
+const util   = require('util');
+const path   = require('path');
+const async  = require('async');
 const Plugin = require('./Plugin');
 
-const log   = require('debug')('akasha:configuration');
-const error = require('debug')('akasha:error-configuration');
+const log    = require('debug')('akasha:configuration');
+const error  = require('debug')('akasha:error-configuration');
 
 module.exports = class Configuration {
     constructor() {
@@ -162,7 +163,7 @@ module.exports = class Configuration {
             this.scripts = {};
         }
         if (!this.scripts.javaScriptTop) this.scripts.javaScriptTop = [];
-        this.scripts.javaScriptTop.unshift(script);
+        this.scripts.javaScriptTop.push(script);
         return this;
     }
     
@@ -171,7 +172,7 @@ module.exports = class Configuration {
             this.scripts = {};
         }
         if (!this.scripts.javaScriptBottom) this.scripts.javaScriptBottom = [];
-        this.scripts.javaScriptBottom.unshift(script);
+        this.scripts.javaScriptBottom.push(script);
         return this;
     }
     
@@ -188,7 +189,7 @@ module.exports = class Configuration {
         this.cheerio = cheerio;
     }
     
-    copyAssets(config) {
+    copyAssets() {
         log('copyAssets START');
     
         return Promise.all(this.assetDirs.map(assetsdir => {
@@ -209,24 +210,26 @@ module.exports = class Configuration {
                         });
             });
         }));
-    };
+    }
 
     /**
      * use - go through plugins array, adding each to the plugins array in
      * the config file, then calling the config function of each plugin.
      */
-    use(plugin) {
+    use(PluginObj) {
+        // console.log("Configuration #1 use PluginObj "+ typeof PluginObj +" "+ util.inspect(PluginObj));
         if (typeof this._plugins === 'undefined' || !this.hasOwnProperty("_plugins") || ! this._plugins) {
             this._plugins = [];
         }
     
-        if (typeof plugin === 'string') {
-            plugin = require(plugin);
+        if (typeof PluginObj === 'string') {
+            PluginObj = require(PluginObj);
         }
-        if (!plugin || plugin instanceof Plugin) {
+        if (!PluginObj || PluginObj instanceof Plugin) {
             throw new Error("No plugin supplied");
         }
-        plugin = new plugin();
+        // console.log("Configuration #2 use PluginObj "+ typeof PluginObj +" "+ util.inspect(PluginObj));
+        var plugin = new PluginObj();
         if (typeof this._plugins[plugin.name] === 'undefined') {
             this._plugins[plugin.name] = plugin;
             plugin.configure(this);
