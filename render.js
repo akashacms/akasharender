@@ -101,14 +101,14 @@ exports.render = function(config) {
     return Promise.all(config.documentDirs.map(docdir => {
         var renderToPlus = "";
         var renderFrom = docdir;
-        var renderIgnore = undefined;
+        var renderIgnore;
         if (typeof docdir === 'object') {
             renderFrom = docdir.src;
             renderToPlus = docdir.dest;
             renderIgnore = docdir.ignore;
         }
         return new Promise((resolve, reject) => {
-            log(`RENDER DIRECTORY ${renderFrom} ==> ${renderToPlus}`)
+            log(`RENDER DIRECTORY ${renderFrom} ==> ${renderToPlus}`);
             globfs.operate(renderFrom, '**/*', (basedir, fpath, fini) => {
                 var doIgnore = false;
                 if (renderIgnore) renderIgnore.forEach(ign => {
@@ -117,7 +117,7 @@ exports.render = function(config) {
                         doIgnore = true;
                     }
                 });
-                log(`RENDER? ${renderFrom} ${fpath} ${doIgnore}`)
+                log(`RENDER? ${renderFrom} ${fpath} ${doIgnore}`);
                 if (!doIgnore)
                     renderDocument(basedir, fpath, config.renderTo, renderToPlus)
                     .then((result) => { fini(undefined, result); })

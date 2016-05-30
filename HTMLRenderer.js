@@ -33,7 +33,7 @@ module.exports = class HTMLRenderer extends Renderer {
         }
         return data;
     }
-    
+
     renderForLayout(rendered, metadata, config) {
         if (metadata.layout) {
             // find layout
@@ -42,7 +42,7 @@ module.exports = class HTMLRenderer extends Renderer {
             // find renderer
             // renderer.render 
             // mahabhuta
-            
+
             var fnLayout;
             var layouttext;
             var layoutcontent;
