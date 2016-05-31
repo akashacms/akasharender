@@ -211,6 +211,31 @@ module.exports = class Configuration {
             });
         }));
     }
+    
+    hookSiteRendered() {
+        // console.log('Called hookSiteRendered '+ util.inspect(this._plugins.values()));
+        // console.log('Called hookSiteRendered '+ util.inspect(this._plugins));
+        return new Promise((resolve, reject) => {
+            async.eachSeries(this._plugins,
+            (plugin, next) => {
+                // console.log(util.inspect(pluginKey));
+                // var plugin = this._plugins[pluginKey];
+                // console.log(util.inspect(plugin));
+                // try {
+                // console.log('hookSiteRendered '+ plugin.name +' '+ typeof plugin.onSiteRendered);
+                if (typeof plugin.onSiteRendered !== 'undefined') {
+                    plugin.onSiteRendered(this)
+                    .then(() => { next(); })
+                    .catch(err => { next(err); });
+                } else next();
+                // } catch(e) { error(e); next(e); }
+            },
+            err => {
+                if (err) reject(err);
+                else resolve();
+            });
+        });
+    }
 
     /**
      * use - go through plugins array, adding each to the plugins array in
@@ -230,10 +255,14 @@ module.exports = class Configuration {
         }
         // console.log("Configuration #2 use PluginObj "+ typeof PluginObj +" "+ util.inspect(PluginObj));
         var plugin = new PluginObj();
+        this._plugins.push(plugin);
+        plugin.configure(this);
+        /*
         if (typeof this._plugins[plugin.name] === 'undefined') {
             this._plugins[plugin.name] = plugin;
             plugin.configure(this);
         }
+        */
         return this;
     }
     
@@ -249,12 +278,24 @@ module.exports = class Configuration {
      * plugin - Look for a plugin, returning its module reference.
      */
     plugin(name) {
+        if (! this._plugins) {
+            return undefined;
+        }
+        // log(util.inspect(this._plugins));
+        for (var pluginKey in this._plugins) {
+            var plugin = this._plugins[pluginKey];
+            // log(util.inspect(plugin));
+            if (plugin.name === name) return plugin;
+        }
+        return undefined;
+    /*
         if (! this._plugins || typeof this._plugins[name] === 'undefined') {
             return undefined;
         } else {
             // console.log(util.inspect(this._plugins[name]));
             return this._plugins[name];
         }
+        */
     }
 
 }
