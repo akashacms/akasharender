@@ -51,51 +51,50 @@ exports.registerRenderer(require('./render-cssless'));
 
 // Needs to split into renderDocuments and renderDocument ??
 
+
+exports.renderDocument = function(config, basedir, fpath, renderTo, renderToPlus) {
+    return new Promise((resolve, reject) => {
+        var docPathname = path.join(basedir, fpath);
+        var renderToFpath = path.join(renderTo, renderToPlus, fpath);
+        fs.stat(docPathname, (err, stats) => {
+            if (err) reject(err);
+            else if (stats && stats.isFile()) {
+                var renderToDir = path.dirname(renderToFpath);
+                log(`renderDocument ${basedir} ${fpath} ${renderToDir} ${renderToFpath}`);
+                fs.ensureDir(renderToDir, err => {
+                    if (err) {
+                        error(`COULD NOT ENSURE DIR ${renderToDir}`);
+                        return reject(new Error(`COULD NOT ENSURE DIR ${renderToDir}`));
+                    }
+                    var renderer = exports.findRendererPath(docPathname);
+                    if (renderer) {
+                        // Have to re-do the renderToFpath to give the Renderer a say in the file name
+                        renderToFpath = path.join(renderTo, renderToPlus, renderer.filePath(fpath));
+                        log(`${renderer.name} ${docPathname} ==> ${renderToFpath}`);
+                        renderer.renderToFile(basedir, fpath, path.join(renderTo, renderToPlus), {}, config)
+                        .then(()   => { resolve(`${renderer.name} ${docPathname} ==> ${renderToFpath}`); })
+                        .catch(err => { error(`in renderer branch for ${fpath} error=${err.stack}`); reject(err); });
+                    } else {
+                        log(`COPY ${docPathname} ==> ${renderToFpath}`);
+                        fs.copy(docPathname, renderToFpath, err => {
+                            if (err) {
+                                error(`in copy branch for ${fpath} error=${err.stack}`);
+                                reject(new Error(`in copy branch for ${fpath} error=${err.stack}`));
+                            }
+                            else { resolve(`COPY ${docPathname} ==> ${renderToFpath}`); }
+                        });
+                    }
+                });
+            } else { resolve(`SKIP DIRECTORY ${docPathname}`); }
+        });
+    });
+};
+
 //exports.render = function(docdirs, layoutDirs, partialDirs, mahafuncs, renderTo) {
 exports.render = function(config) {
     
     // util.log(util.inspect(config.mahafuncs));
-    
     // log('render');
-    
-    var renderDocument = function(basedir, fpath, renderTo, renderToPlus) {
-        return new Promise((resolve, reject) => {
-            var docPathname = path.join(basedir, fpath);
-            var renderToFpath = path.join(renderTo, renderToPlus, fpath);
-            fs.stat(docPathname, (err, stats) => {
-                if (err) reject(err);
-                else if (stats && stats.isFile()) {
-                    var renderToDir = path.dirname(renderToFpath);
-                    log(`renderDocument ${basedir} ${fpath} ${renderToDir} ${renderToFpath}`);
-                    fs.ensureDir(renderToDir, err => {
-                        if (err) {
-                            error(`COULD NOT ENSURE DIR ${renderToDir}`);
-                            return reject(new Error(`COULD NOT ENSURE DIR ${renderToDir}`));
-                        }
-                        var renderer = exports.findRendererPath(docPathname);
-                        if (renderer) {
-                            // Have to re-do the renderToFpath to give the Renderer a say in the file name
-                            renderToFpath = path.join(renderTo, renderToPlus, renderer.filePath(fpath));
-                            log(`${renderer.name} ${docPathname} ==> ${renderToFpath}`);
-                            renderer.renderToFile(basedir, fpath, path.join(renderTo, renderToPlus), {}, config)
-                            .then(()   => { resolve(`${renderer.name} ${docPathname} ==> ${renderToFpath}`); })
-                            .catch(err => { error(`in renderer branch for ${fpath} error=${err.stack}`); reject(err); });
-                        } else {
-                            log(`COPY ${docPathname} ==> ${renderToFpath}`);
-                            fs.copy(docPathname, renderToFpath, err => {
-                                if (err) {
-                                    error(`in copy branch for ${fpath} error=${err.stack}`);
-                                    reject(new Error(`in copy branch for ${fpath} error=${err.stack}`));
-                                }
-                                else { resolve(`COPY ${docPathname} ==> ${renderToFpath}`); }
-                            });
-                        }
-                    })
-                } else { resolve(`SKIP DIRECTORY ${docPathname}`); }
-            });
-        });
-    };
-    
     // log(`render ${util.inspect(config.documentDirs)}`);
     
     return Promise.all(config.documentDirs.map(docdir => {
@@ -119,7 +118,7 @@ exports.render = function(config) {
                 });
                 log(`RENDER? ${renderFrom} ${fpath} ${doIgnore}`);
                 if (!doIgnore)
-                    renderDocument(basedir, fpath, config.renderTo, renderToPlus)
+                    exports.renderDocument(config, basedir, fpath, config.renderTo, renderToPlus)
                     .then((result) => { fini(undefined, result); })
                     .catch(err => { fini(err); });
                 else fini(undefined, `IGNORED ${fpath}`);
@@ -130,6 +129,12 @@ exports.render = function(config) {
             });  
         });
     }))
+    .then(results => {
+        log('calling hookSiteRendered');
+        return config.hookSiteRendered()
+        .then(() => { return results; })
+        .catch(err => { error(err); return results; });
+    })
     .then(results => {
         // The array resulting from the above has two levels, when we
         // want to return one level.  The two levels are due to globfs.operate
