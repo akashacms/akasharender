@@ -24,6 +24,7 @@ exports.Renderer = require('./Renderer');
 exports.HTMLRenderer = require('./HTMLRenderer');
 
 exports.render = function(config) { return render.render(config); };
+exports.renderDocument = render.renderDocument;
 exports.findRendererName = function(name) { return render.findRendererName(name); };
 exports.findRendererPath = function(_path) { return render.findRendererPath(_path); };
 
@@ -33,6 +34,7 @@ exports.Document = documents.Document;
 exports.HTMLDocument = documents.HTMLDocument;
 exports.documentTree = documents.documentTree;
 exports.documentSearch = documents.documentSearch;
+exports.readDocument   = documents.readDocument;
 
 exports.partial = function(config, partial, attrs) {
     // find the partial

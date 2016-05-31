@@ -193,6 +193,8 @@ module.exports = class HTMLRenderer extends Renderer {
                 metadata.rendered_url = metadata.document.path;
             }
             
+            // console.log('initMetadata '+ basedir +' '+ fpath +' '+ util.inspect(metadata));
+            
             metadata.akasha = akasha;
             metadata.plugin = config.plugin;
             

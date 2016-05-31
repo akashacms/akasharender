@@ -4,6 +4,7 @@
 const path  = require('path');
 const util  = require('util');
 const async = require('async');
+const filez = require('./filez');
 const fs    = require('fs');
 const globfs = require('globfs');
 const akasha = require('./index');
@@ -420,4 +421,48 @@ module.exports.documentSearch = function(config, options) {
     })
     .catch(err => { error(err); throw err; });
     
+};
+
+module.exports.readDocument = function(config, documentPath) {
+    return filez.findRendersTo(config.documentDirs, documentPath)
+    .then(found => {
+        log('readDocument '+ documentPath +' '+ util.inspect(found));
+        found.renderer = akasha.findRendererPath(found.foundFullPath);
+        return found;
+    })
+    .then(found => {
+        log('readDocument #2 '+ documentPath +' '+ util.inspect(found));
+        return new Promise((resolve, reject) => {
+            fs.stat(path.join(found.foundDir, found.foundFullPath), (err, stat) => {
+                if (err) reject(err);
+                else {
+                    found.stat = stat;
+                    resolve(found);
+                }
+            });
+        });
+    })
+    .then(found => {
+        return found.renderer.metadata(found.foundDir, found.foundFullPath)
+        .then(metadata => {
+            found.metadata = metadata;
+            return found;
+        });
+    })
+    .then(found => {
+        let filepath = found.renderer ? found.renderer.filePath(found.foundPath) : undefined;
+        var doc = new exports.Document({
+            basedir: found.foundDir,
+            docpath: found.foundPath,
+            docname: path.basename(found.foundPath),
+            fullpath: found.foundFullPath,
+            renderer: found.renderer,
+            stat: found.stat,
+            renderpath: filepath,
+            rendername: path.basename(filepath),
+            metadata: found.metadata
+        });
+        log('readDocument #3 '+ util.inspect(doc));
+        return doc;
+    });
 };
