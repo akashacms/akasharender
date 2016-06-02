@@ -6,7 +6,7 @@ const error = require('debug')('akasha:error-index');
 const filez  = require('./filez');
 const render = require('./render');
 const util   = require('util');
-const fs     = require('fs-extra');
+const fs     = require('fs-extra-promise');
 const path   = require('path');
 const oembed = require('oembed');
 const RSS    = require('rss');
@@ -44,28 +44,28 @@ exports.partial = function(config, partial, attrs) {
     var partialFname;
     var partialText;
     var renderer;
-    
+
     if (!partial) return Promise.reject(new Error("No partial file name supplied"));
-    
+
     return filez.find(config.partialDirs, partial)
     .then(partialDir => {
         if (!partialDir) throw new Error(`No partial directory found for ${partial}`);
-        
+
         partialFname = path.join(partialDir, partial);
-        
+
         renderer = render.findRendererPath(partialFname);
-        
+
         // For .html partials, we won't find a Renderer and can
         // short-circuit the process by just reading the file.
         if (!renderer && partialFname.match(/\.html$/) !== null) {
             return filez.readFile(partialDir, partial);
         }
-        
+
         if (!renderer) throw new Error(`No renderer found for ${partialFname}`);
         if (!(renderer instanceof exports.HTMLRenderer)) {
             throw new Error(`Renderer for ${partial} must be HTMLRenderer`);
         }
-        
+
         return filez.readFile(partialDir, partial);
     })
     .then(text => {
@@ -82,30 +82,30 @@ exports.partialSync = function(config, fname, metadata) {
         fnamePartial = filez.findSync(config.partialDirs, fname);
         return fs.readFileSync(fnamePartial, 'utf8');
     }
-    
+
     if (!renderer) {
         throw new Error(`No renderer for ${fname}`);
     }
     if (!(renderer instanceof exports.HTMLRenderer)) {
         throw new Error(`Renderer for ${fname} must be HTMLRenderer`);
     }
-    
+
     fnamePartial = filez.findSync(config.partialDirs, fname);
-    
+
     // log(`partialSync fname=${fname} fnamePartial=${fnamePartial}`);
     if (fnamePartial === undefined) {
         throw new Error('NO FILE FOUND FOR PARTIAL ' + util.inspect(fname));
     }
-    
+
     var text = fs.readFileSync(fnamePartial, 'utf8');
-    
+
     return renderer.renderSync(text, metadata);
 };
 
 exports.indexChain = function(config, fname) {
-    
+
     var ret = [];
-    
+
     var findParents = function(config, fileName) {
         // var newFileName;
         var parentDir;
@@ -152,7 +152,7 @@ exports.indexChain = function(config, fname) {
 exports.generateRSS = function(config, configrss, feedData, items, renderTo) {
 
     return new Promise((resolve, reject) => {
-        
+
         // Construct initial rss object
         var rss = {};
         for (let key in configrss.rss) {
@@ -160,31 +160,31 @@ exports.generateRSS = function(config, configrss, feedData, items, renderTo) {
                 rss[key] = configrss[key];
             }
         }
-        
+
         // Then fill in from feedData
         for (let key in feedData) {
             if (feedData.hasOwnProperty(key)) {
                 rss[key] = feedData[key];
             }
         }
-        
+
         var rssfeed = new RSS(rss);
-        
+
         items.forEach(function(item) { rssfeed.item(item); });
-        
+
         var xml = rssfeed.xml();
         var renderOut = path.join(config.renderDestination, renderTo);
-        
-        fs.mkdirs(path.dirname(renderOut), err => {
-            if (err) { error(err); return reject(err); }
-            fs.writeFile(renderOut, xml, { encoding: 'utf8' },
-                err2 => {
-                    if (err2) { error(err2); reject(err2); }
-                    else resolve();
-                });
+
+        fs.mkdirsAsync(path.dirname(renderOut))
+        .then(() => {
+            return fs.writeFileAsync(renderOut, xml, { encoding: 'utf8' });
+        })
+        .catch(err => {
+            error(err);
+            throw err;
         });
     });
-	
+
 }
 
 // Consider making an external plugin
@@ -193,13 +193,12 @@ exports.generateRSS = function(config, configrss, feedData, items, renderTo) {
 // https://www.npmjs.com/package/media-parser
 // https://www.npmjs.com/package/oembetter
 module.exports.oEmbedData = function(url) {
-    return new Promise((resolve, reject) => {    
+    return new Promise((resolve, reject) => {
         oembed.fetch(url, { maxwidth: 6000 },
         (err, result) => {
             if (err) return reject(err);
             else resolve(result);
         }
-        );  
+        );
     });
 };
-
