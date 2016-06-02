@@ -1,4 +1,9 @@
 
+/**
+ * Dealing with HTMLRenderer document files.
+ * @module documents
+ */
+
 'use strict';
 
 const path  = require('path');
@@ -12,41 +17,10 @@ const akasha = require('./index');
 const log   = require('debug')('akasha:documents');
 const error = require('debug')('akasha:error-documents');
 
-/*
- *
-This is meant to replace the Entry thingy in AkashaCMS
-
-That object incorporated known data about each Document
-
-
-Use documents.js to
-
-* DONE host a Document class
-* DONE that class has a metadata getter, among others
-* cached lookup by docpath or renderpath
-* sorting arrays of Document
-* converting an Document array to a tree structure (for booknav)
-* documentSearch lives there and produces Document array
-* Document subclasses HTMLDocument ImageDocument etc
-
-{
-                basedir: doc.basedir,
-                docpath: doc.path,
-                docname: doc.result.fname,
-                fullpath: doc.fullpath,
-                renderer: doc.result.renderer,
-                stat: doc.result.stat,
-                renderpath: doc.result.filepath,
-                rendername: doc.result.name,
-                metadata: doc.result.metadata
-            }
-
- */
-
 /**
- * This might be a base class with several other classes depending on file extension.
+ * Standardized object to describe document files which render using an HTMLRenderer.
  */
-module.exports.Document = class Document {
+exports.Document = class Document {
     constructor(params) {
         this._basedir = params.basedir;
         this._docpath = params.docpath;
@@ -59,9 +33,17 @@ module.exports.Document = class Document {
         this._metadata = params.metadata;
     }
 
+    /**
+     * The directory structure within which this document was found.
+     * @member {string} basedir
+     */
     get basedir() { return this._basedir; }
     set basedir(dir) { this._basedir = dir; }
 
+    /**
+     * The path for this document within basedir.
+     * @member {string} docpath
+     */
     get docpath() { return this._docpath; }
     set docpath(docpath) { this._docpath = docpath; }
 
@@ -87,15 +69,15 @@ module.exports.Document = class Document {
     set metadata(metadata) { this._metadata = metadata; }
 };
 
-module.exports.HTMLDocument = class HTMLDocument extends module.exports.Document {
+exports.HTMLDocument = class HTMLDocument extends module.exports.Document {
     constructor(params) { super(params); }
 };
 
-module.exports.ImageDocument = class ImageDocument extends module.exports.Document {
+exports.ImageDocument = class ImageDocument extends module.exports.Document {
     constructor(params) { super(params); }
 };
 
-module.exports.DocumentTreeEntry = class DocumentTreeEntry extends module.exports.Document {
+exports.DocumentTreeEntry = class DocumentTreeEntry extends module.exports.Document {
 
     constructor(params) {
         super(params);
@@ -179,7 +161,7 @@ var componentizeFileName = module.exports.componentizeFileName = function(filena
     }
  *
  */
-module.exports.documentTree = function(config, documents) {
+exports.documentTree = function(config, documents) {
 
     var documentTreeRoot = new module.exports.DocumentTreeEntry({
         type: "root",
@@ -294,7 +276,7 @@ module.exports.documentTree = function(config, documents) {
 };
 
 
-module.exports.documentSearch = function(config, options) {
+exports.documentSearch = function(config, options) {
 
     // log(`documentSearch ${util.inspect(options)}`);
 
@@ -423,7 +405,7 @@ module.exports.documentSearch = function(config, options) {
 
 };
 
-module.exports.readDocument = function(config, documentPath) {
+exports.readDocument = function(config, documentPath) {
     return filez.findRendersTo(config.documentDirs, documentPath)
     .then(found => {
         log('readDocument '+ documentPath +' '+ util.inspect(found));

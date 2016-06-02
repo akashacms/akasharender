@@ -1,4 +1,9 @@
 
+/**
+ * AkashaRender project configuration object.
+ * @module Configuration
+ */
+
 'use strict';
 
 const fs     = require('fs-extra');
