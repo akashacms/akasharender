@@ -2,7 +2,7 @@
 
 const Renderer  = require('./Renderer');
 const render    = require('./render');
-const fs        = require('fs-extra');
+const fs        = require('fs-extra-promise');
 const url       = require('url');
 const path      = require('path');
 const util      = require('util');
@@ -16,7 +16,7 @@ const log   = require('debug')('akasha:HTMLRenderer');
 const error = require('debug')('akasha:error');
 
 module.exports = class HTMLRenderer extends Renderer {
-    
+
     maharun(rendered, metadata, mahafuncs) {
         return new Promise((resolve, reject) => {
             if (metadata.config.cheerio) mahabhuta.config(metadata.config.cheerio);
@@ -26,7 +26,7 @@ module.exports = class HTMLRenderer extends Renderer {
             });
         });
     }
-    
+
     copyMetadataProperties(data, frontmatter) {
         for (var prop in frontmatter) {
             if (!(prop in data)) data[prop] = frontmatter[prop];
@@ -40,7 +40,7 @@ module.exports = class HTMLRenderer extends Renderer {
             // read layout
             // split out frontmatter & content
             // find renderer
-            // renderer.render 
+            // renderer.render
             // mahabhuta
 
             var fnLayout;
@@ -48,7 +48,7 @@ module.exports = class HTMLRenderer extends Renderer {
             var layoutcontent;
             var layoutdata;
             var layoutrendered;
-            
+
             log(`renderForLayout find ${util.inspect(config.layoutDirs)} ${metadata.layout}`);
             return filez.find(config.layoutDirs, metadata.layout)
             .then(foundDir => {
@@ -82,7 +82,7 @@ module.exports = class HTMLRenderer extends Renderer {
                 // At this point, check layoutdata.layout and if set
                 //     return renderForLayout(layoutrendered, layoutdata, layoutDirs, partialDirs)
                 // otherwise this
-                
+
                 // This did not work, made an infinite loop
                 // if (layoutdata.layout) {
                 //     return this.renderForLayout(layoutrendered, layoutdata, config)
@@ -94,17 +94,17 @@ module.exports = class HTMLRenderer extends Renderer {
                 return layoutrendered;
             })
             .catch(err => { error(err); throw err; });
-            
+
         } else return Promise.resolve(rendered);
     }
-    
+
     renderToFile(basedir, fpath, renderTo, metadata, config) {
-        
+
         // var doctext;
         var doccontent;
         var docdata;
         var docrendered;
-        
+
         return this.frontmatter(basedir, fpath)
         .then(fm => {
             doccontent = fm.content;
@@ -130,7 +130,7 @@ module.exports = class HTMLRenderer extends Renderer {
             return filez.writeFile(renderTo, this.filePath(fpath), rendered);
         });
     }
-    
+
     frontmatter(basedir, fpath) {
         var cachekey = `fm-${basedir}-${fpath}`;
         var cachedFrontmatter = cache.get("htmlrenderer", cachekey);
@@ -149,7 +149,7 @@ module.exports = class HTMLRenderer extends Renderer {
             return fm;
         });
     }
-    
+
     metadata(basedir, fpath) {
         return this.frontmatter(basedir, fpath)
             .then(fm => {
@@ -157,14 +157,14 @@ module.exports = class HTMLRenderer extends Renderer {
                 return fm.data;
             });
     }
-    
+
     initMetadata(config, basedir, fpath, fmMetadata) {
-        
+
         return new Promise((resolve, reject) => {
-            
+
             // Start with a base object that will be passed into the template
             var metadata = { };
-            
+
             // Copy data from frontmatter
             for (var yprop in config.metadata) {
                 metadata[yprop] = config.metadata[yprop];
@@ -172,19 +172,19 @@ module.exports = class HTMLRenderer extends Renderer {
             for (var yprop in fmMetadata) {
                 metadata[yprop] = fmMetadata[yprop];
             }
-            
+
             metadata.content = "";
             metadata.document = {};
             metadata.document.basedir = basedir;
             metadata.document.path = fpath;
             metadata.document.renderTo = this.filePath(fpath);
-            
+
             metadata.config      = config;
             metadata.partialSync = akasha.partialSync.bind(this, config);
             metadata.partial     = akasha.partial.bind(this, config);
-            
+
             metadata.root_url = config.root_url;
-            
+
             if (config.root_url) {
                 let pRootUrl = url.parse(config.root_url);
                 pRootUrl.pathname = metadata.document.path;
@@ -192,12 +192,12 @@ module.exports = class HTMLRenderer extends Renderer {
             } else {
                 metadata.rendered_url = metadata.document.path;
             }
-            
+
             // console.log('initMetadata '+ basedir +' '+ fpath +' '+ util.inspect(metadata));
-            
+
             metadata.akasha = akasha;
             metadata.plugin = config.plugin;
-            
+
             // log('HTMLRenderer before path.join '+util.inspect(path));
             fs.stat(path.join(basedir, fpath), (err, stats) => {
                 if (err || !stats) {
@@ -205,7 +205,7 @@ module.exports = class HTMLRenderer extends Renderer {
                 } else {
                     metadata.rendered_date = stats.mtime;
                 }
-                
+
                 if (!metadata.publicationDate) {
                     var dateSet = false;
                     if (fmMetadata && fmMetadata.publDate) {
@@ -222,10 +222,10 @@ module.exports = class HTMLRenderer extends Renderer {
                         metadata.publicationDate = new Date();
                     }
                 }
-                
+
                 resolve(metadata);
             });
         });
     };
-    
+
 }
