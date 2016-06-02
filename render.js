@@ -53,6 +53,42 @@ exports.registerRenderer(require('./render-cssless'));
 
 
 exports.renderDocument = function(config, basedir, fpath, renderTo, renderToPlus) {
+
+    var docPathname = path.join(basedir, fpath);
+    var renderToFpath = path.join(renderTo, renderToPlus, fpath);
+
+    return fs.statAsync(docPathname)
+    .then(stats => {
+        if (stats && stats.isFile()) {
+            var renderToDir = path.dirname(renderToFpath);
+            log(`renderDocument ${basedir} ${fpath} ${renderToDir} ${renderToFpath}`);
+            return fs.ensureDirAsync(renderToDir);
+        } else { return `SKIP DIRECTORY ${docPathname}`; }
+    })
+    .then((result) => {
+        if (typeof result === 'string' && result.match(/^SKIP DIRECTORY/) != null) {
+            return result;
+        }
+        var renderer = exports.findRendererPath(docPathname);
+        if (renderer) {
+            // Have to re-do the renderToFpath to give the Renderer a say in the file name
+            renderToFpath = path.join(renderTo, renderToPlus, renderer.filePath(fpath));
+            log(`${renderer.name} ${docPathname} ==> ${renderToFpath}`);
+            return renderer.renderToFile(basedir, fpath, path.join(renderTo, renderToPlus), {}, config)
+            .then(()   => { return `${renderer.name} ${docPathname} ==> ${renderToFpath}`; })
+            .catch(err => { error(`in renderer branch for ${fpath} error=${err.stack}`); throw err; });
+        } else {
+            log(`COPY ${docPathname} ==> ${renderToFpath}`);
+            return fs.copyAsync(docPathname, renderToFpath)
+            .then(() => { return `COPY ${docPathname} ==> ${renderToFpath}`; })
+            .catch(err => {
+                error(`in copy branch for ${fpath} error=${err.stack}`);
+                throw new Error(`in copy branch for ${fpath} error=${err.stack}`);
+            });
+        }
+    })
+
+    /*
     return new Promise((resolve, reject) => {
         var docPathname = path.join(basedir, fpath);
         var renderToFpath = path.join(renderTo, renderToPlus, fpath);
@@ -88,15 +124,16 @@ exports.renderDocument = function(config, basedir, fpath, renderTo, renderToPlus
             } else { resolve(`SKIP DIRECTORY ${docPathname}`); }
         });
     });
+    */
 };
 
 //exports.render = function(docdirs, layoutDirs, partialDirs, mahafuncs, renderTo) {
 exports.render = function(config) {
-    
+
     // util.log(util.inspect(config.mahafuncs));
     // log('render');
     // log(`render ${util.inspect(config.documentDirs)}`);
-    
+
     return Promise.all(config.documentDirs.map(docdir => {
         var renderToPlus = "";
         var renderFrom = docdir;
@@ -126,7 +163,7 @@ exports.render = function(config) {
             (err, results) => {
                 if (err) reject(err);
                 else resolve(results);
-            });  
+            });
         });
     }))
     .then(results => {

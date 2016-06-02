@@ -1,6 +1,6 @@
 'use strict';
 
-const fs         = require('fs-extra');
+const fs         = require('fs-extra-promise');
 const globfs     = require('globfs');
 const util       = require('util');
 const path       = require('path');
@@ -41,31 +41,32 @@ exports.find = function(dirs, fileName) {
     return new Promise((resolve, reject) => {
         // for each dir .. check path.join(dir, layoutName)
         // first match resolve's
-        
+
         if (!dirs) return reject(new Error("Must supply directories to search"));
         if (!fileName) return reject(new Error("Must supply a fileName"));
-        
+
         // log(`filez.find ${util.inspect(dirs)} ${fileName}`);
-        
+
         var found = false;
         var foundDir;
-        
+
         async.eachSeries(dirs,
         (dir, next) => {
-            if (!found) 
-                fs.stat(path.join(dir, fileName), (err, stats) => {
-                    if (err) {
-                        if (err.code === 'ENOENT') return next();
-                        else return next(err);
-                    }
+            if (!found) {
+                fs.statAsync(path.join(dir, fileName))
+                .then(stats => {
                     if (stats && stats.isFile()) {
                         found = true;
                         foundDir = dir;
                         // log(`filez.find ${util.inspect(dirs)} ${fileName} found ${foundDir}`);
                     }
                     next();
+                })
+                .catch(err => {
+                    if (err.code === 'ENOENT') next();
+                    else next(err);
                 });
-            else next();
+            } else next();
         },
         err => {
             if (err) { error(err); reject(err); }
@@ -79,25 +80,27 @@ exports.find = function(dirs, fileName) {
 };
 
 exports.findRendersTo = function(dirs, rendersTo) {
+
+    var cached = cache.get("filez-findRendersTo", rendersTo);
+    if (cached) {
+        return Promise.resolve(cached);
+    }
+
     return new Promise((resolve, reject) => {
         // for each dir .. check path.join(dir, layoutName)
         // first match resolve's
-        
+
         // log(`filez.findRendersTo ${util.inspect(dirs)} ${rendersTo}`);
-        
-        
-        var cached = cache.get("filez-findRendersTo", rendersTo);
-        if (cached) {
-            return resolve(cached);
-        }
-        
+
+
+
         var found = false;
         var foundDir;
         var foundPath;
         var foundFullPath;
-        
+
         var renderToDir = path.dirname(rendersTo);
-        
+
         async.eachSeries(dirs,
         (dir, next) => {
             // log(`${dir} ${rendersTo} ${found}`);
@@ -167,31 +170,19 @@ exports.findRendersTo = function(dirs, rendersTo) {
 };
 
 exports.readFile = function(dir, fpath) {
-    return new Promise((resolve, reject) => {
-        var readFpath = path.join(dir, fpath);
-        // log(`filez.readFile ${readFpath}`);
-        fs.readFile(readFpath, 'utf8', (err, text) => {
-            if (err) reject(err);
-            else resolve(text);
-        });
-    });
+    var readFpath = path.join(dir, fpath);
+    return fs.readFileAsync(readFpath, 'utf8');
 };
 
 exports.writeFile = function(dir, fpath, text) {
-    return new Promise((resolve, reject) => {
-        fs.ensureDir(dir, err => {
-            if (err) reject(err);
-            else resolve();
-        });
-    })
+    fs.ensureDirAsync(dir)
     .then(() => {
-        return new Promise((resolve, reject) => {
-            var renderToFile = path.join(dir, fpath);
-            log(`filez.writeFile ${dir} ${fpath} ==> ${renderToFile}`);
-            fs.writeFile(renderToFile, text, 'utf8', err => {
-                 if (err) { error(`filez.writeFile ${renderToFile} ${err.stack}`); reject(err); }
-                else resolve();
-            });
+        var renderToFile = path.join(dir, fpath);
+        log(`filez.writeFile ${dir} ${fpath} ==> ${renderToFile}`);
+        return fs.writeFileAsync(renderToFile, text, 'utf8')
+        .catch(err => {
+            error(`filez.writeFile ${renderToFile} ${err.stack}`);
+            throw err;
         });
     });
 };
