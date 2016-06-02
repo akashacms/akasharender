@@ -5,7 +5,7 @@ const path  = require('path');
 const util  = require('util');
 const async = require('async');
 const filez = require('./filez');
-const fs    = require('fs');
+const fs    = require('fs-extra-promise');
 const globfs = require('globfs');
 const akasha = require('./index');
 
@@ -13,7 +13,7 @@ const log   = require('debug')('akasha:documents');
 const error = require('debug')('akasha:error-documents');
 
 /*
- * 
+ *
 This is meant to replace the Entry thingy in AkashaCMS
 
 That object incorporated known data about each Document
@@ -58,31 +58,31 @@ module.exports.Document = class Document {
         this._rendername = params.rendername;
         this._metadata = params.metadata;
     }
-    
+
     get basedir() { return this._basedir; }
     set basedir(dir) { this._basedir = dir; }
-    
+
     get docpath() { return this._docpath; }
     set docpath(docpath) { this._docpath = docpath; }
-    
+
     get docname() { return this._docname; }
     set docname(docname) { this._docname = docname; }
-    
+
     get fullpath() { return this._fullpath; }
     set fullpath(fullpath) { this._fullpath = fullpath; }
-    
+
     get renderer() { return this._renderer; }
     set renderer(renderer) { this._renderer = renderer; }
-    
+
     get stat() { return this._stat; }
     set stat(stat) { this._stat = stat; }
-    
+
     get renderpath() { return this._renderpath; }
     set renderpath(renderpath) { this._renderpath = renderpath; }
-    
+
     get rendername() { return this._rendername; }
     set rendername(rendername) { this._rendername = rendername; }
-    
+
     get metadata() { return this._metadata; }
     set metadata(metadata) { this._metadata = metadata; }
 };
@@ -96,7 +96,7 @@ module.exports.ImageDocument = class ImageDocument extends module.exports.Docume
 };
 
 module.exports.DocumentTreeEntry = class DocumentTreeEntry extends module.exports.Document {
-    
+
     constructor(params) {
         super(params);
         this._type = params.type;
@@ -108,21 +108,21 @@ module.exports.DocumentTreeEntry = class DocumentTreeEntry extends module.export
     }
 
     get type() { return this._type; }
-    
+
     get entryname() { return this._entryname; }
     set entryname(entryname) { this._entryname = entryname; }
-    
+
     get dirpath() { return this._dirpath; }
     set dirpath(dirpath) { this._dirpath = dirpath; }
-    
+
     get children() { return this._children; }
-    
+
     get teaser() { return this._teaser; }
     set teaser(teaser) { this._teaser = teaser; }
-    
+
     get title() { return this._title; }
     set title(title) { this._title = title; }
-    
+
     addChild(child) {
         if (!(this._type === "dir" || this._type === "root")) throw new Error("Not a directory in adding "+ util.inspect(child));
         if (this._children) this._children.push(child);
@@ -172,7 +172,7 @@ var componentizeFileName = module.exports.componentizeFileName = function(filena
                 teaser: "copied from metadata of index.html",
                 name: "directory name",
                 entries: [
-                    // repeat 
+                    // repeat
                 ]
             }
         ]
@@ -180,12 +180,12 @@ var componentizeFileName = module.exports.componentizeFileName = function(filena
  *
  */
 module.exports.documentTree = function(config, documents) {
-    
+
     var documentTreeRoot = new module.exports.DocumentTreeEntry({
         type: "root",
         children: []
     });
-	
+
 	var findComponentEntry = function(treeEntry, component) {
 		for (var i = 0; i < treeEntry.children.length; i++) {
 			var entry = treeEntry.children[i];
@@ -202,14 +202,14 @@ module.exports.documentTree = function(config, documents) {
 	};
 
     for (let docidx in documents) {
-        
+
         let doc = documents[docidx];
         // log(`makeBookTree ${util.inspect(doc)}`);
-    
+
         let curDirInTree = documentTreeRoot;
         let components = componentizeFileName(doc.renderpath);
         // log(`makeBookTree components ${doc.path} ${util.inspect(components)}`);
-        
+
         /*
          *
          * [ { type: 'dir', component: 'foo', entries: [] },
@@ -286,10 +286,10 @@ module.exports.documentTree = function(config, documents) {
             }
         }
     };
-    
+
     // Sort the entries in the whole tree by their file name
     fixTreeSegment(documentTreeRoot);
-    
+
     return documentTreeRoot;
 };
 
@@ -297,7 +297,7 @@ module.exports.documentTree = function(config, documents) {
 module.exports.documentSearch = function(config, options) {
 
     // log(`documentSearch ${util.inspect(options)}`);
-    
+
     // Find all the documents, under rootPath if specified
     // Build up a useful object for each
     return new Promise((resolve, reject) => {
@@ -321,7 +321,7 @@ module.exports.documentSearch = function(config, options) {
                             name: filepath ? path.basename(filepath) : path.basename(fpath),
                             filepath,
                             metadata
-                        }); 
+                        });
                     });
                 } else {
                     fini(undefined, {
@@ -330,7 +330,7 @@ module.exports.documentSearch = function(config, options) {
                         name: filepath ? path.basename(filepath) : path.basename(fpath),
                         filepath,
                         metadata: undefined
-                    }); 
+                    });
                 }
             });
         },
@@ -363,9 +363,9 @@ module.exports.documentSearch = function(config, options) {
     // This is for ease of implementation so each phase can be eliminated
     // or new phases added easily.
     .then(documents => {
-        
+
         // log(`documentSearch documents #1 ${util.inspect(documents)}`);
-    
+
         if (options.pathmatch) {
             return documents.filter(doc => {
                 var ret = doc.docpath.match(options.pathmatch) !== null;
@@ -400,7 +400,7 @@ module.exports.documentSearch = function(config, options) {
     })
     .then(documents => {
         // log(`documentSearch documents #4 ${util.inspect(documents)}`);
-    
+
         if (options.filterfunc) {
             return documents.filter(doc => {
                 return options.filterfunc(config, options, doc);
@@ -420,7 +420,7 @@ module.exports.documentSearch = function(config, options) {
         return documents;
     })
     .catch(err => { error(err); throw err; });
-    
+
 };
 
 module.exports.readDocument = function(config, documentPath) {
