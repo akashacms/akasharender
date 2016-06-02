@@ -13,11 +13,11 @@ const error  = require('debug')('akasha:error-configuration');
 
 module.exports = class Configuration {
     constructor() {
-        
+
     }
-    
+
     prepare() {
-        
+
         var stat;
         if (!this.assetDirs) {
             this.assetDirs = [];
@@ -27,7 +27,7 @@ module.exports = class Configuration {
                 }
             }
         }
-        
+
         if (!this.layoutDirs) {
             this.layoutDirs = [];
             if (fs.existsSync('layouts') && (stat = fs.statSync('layouts'))) {
@@ -36,7 +36,7 @@ module.exports = class Configuration {
                 }
             }
         }
-        
+
         if (!this.partialDirs) {
             this.partialDirs = [];
             if (fs.existsSync('partials') && (stat = fs.statSync('partials'))) {
@@ -45,7 +45,7 @@ module.exports = class Configuration {
                 }
             }
         }
-        
+
         if (!this.documentDirs) {
             this.documentDirs = [];
             if (fs.existsSync('documents') && (stat = fs.statSync('documents'))) {
@@ -58,7 +58,7 @@ module.exports = class Configuration {
                 throw new Error("No 'documentDirs' setting, and no 'documents' directory");
             }
         }
-        
+
         if (!this.mahafuncs) { this.mahafuncs = []; }
         if (!this.renderTo)  {
             if (fs.existsSync('out') && (stat = fs.statSync('out'))) {
@@ -74,7 +74,7 @@ module.exports = class Configuration {
         } else if (this.renderTo && !fs.existsSync(this.renderTo)) {
             fs.mkdirsSync(this.renderTo);
         }
-        
+
         if (!this.headerScripts)                  { this.headerScripts = { }; }
         if (!this.headerScripts.stylesheets)      { this.headerScripts.stylesheets = []; }
         if (!this.headerScripts.javaScriptTop)    { this.headerScripts.javaScriptTop = []; }
@@ -88,7 +88,7 @@ module.exports = class Configuration {
 
     }
 
-    
+
     /**
      * Add a directory to the documentDirs configuration array
      */
@@ -97,7 +97,7 @@ module.exports = class Configuration {
         this.documentDirs.push(dir);
         return this;
     }
-    
+
     /**
      * Add a directory to the layoutDirs configurtion array
      */
@@ -106,7 +106,7 @@ module.exports = class Configuration {
         this.layoutDirs.push(dir);
         return this;
     }
-    
+
     /**
      * Add a directory to the partialDirs configurtion array
      */
@@ -115,7 +115,7 @@ module.exports = class Configuration {
         this.partialDirs.push(dir);
         return this;
     }
-    
+
     /**
      * Add a directory to the assetDirs configurtion array
      */
@@ -124,7 +124,7 @@ module.exports = class Configuration {
         this.assetDirs.push(dir);
         return this;
     }
-    
+
     /**
      * Add an array of Mahabhuta functions
      */
@@ -133,18 +133,18 @@ module.exports = class Configuration {
         this.mahafuncs.push(mahafuncs);
         return this;
     }
-    
+
     setRenderDestination(dir) {
         this.renderTo = dir;
         return this;
     }
-    
+
     get renderDestination() { return this.renderTo; }
-    
+
     /* TODO:
-    
+
     addMetadataObject - object */
-    
+
     addMetadata(index, value) {
         if (typeof this.metadata === 'undefined' || !this.hasOwnProperty("metadata") || !this.metadata) {
             this.metadata = {};
@@ -152,12 +152,12 @@ module.exports = class Configuration {
         this.metadata[index] = value;
         return this;
     }
-    
+
     rootURL(root_url) {
         this.root_url = root_url;
         return this;
     }
-    
+
     addHeaderJavaScript(script) {
         if (typeof this.scripts === 'undefined' || !this.hasOwnProperty("scripts") || !this.scripts) {
             this.scripts = {};
@@ -166,7 +166,7 @@ module.exports = class Configuration {
         this.scripts.javaScriptTop.push(script);
         return this;
     }
-    
+
     addFooterJavaScript(script) {
         if (typeof this.scripts === 'undefined' || !this.hasOwnProperty("scripts") || !this.scripts) {
             this.scripts = {};
@@ -175,7 +175,7 @@ module.exports = class Configuration {
         this.scripts.javaScriptBottom.push(script);
         return this;
     }
-    
+
     addStylesheet(css) {
         if (typeof this.scripts === 'undefined' || !this.hasOwnProperty("scripts") || !this.scripts) {
             this.scripts = {};
@@ -184,14 +184,14 @@ module.exports = class Configuration {
         this.scripts.stylesheets.push(css);
         return this;
     }
-    
+
     setMahabhutaConfig(cheerio) {
         this.cheerio = cheerio;
     }
-    
+
     copyAssets() {
         log('copyAssets START');
-    
+
         return Promise.all(this.assetDirs.map(assetsdir => {
             var copyTo;
             var copyFrom;
@@ -211,24 +211,16 @@ module.exports = class Configuration {
             });
         }));
     }
-    
+
     hookSiteRendered() {
-        // console.log('Called hookSiteRendered '+ util.inspect(this._plugins.values()));
-        // console.log('Called hookSiteRendered '+ util.inspect(this._plugins));
         return new Promise((resolve, reject) => {
             async.eachSeries(this._plugins,
             (plugin, next) => {
-                // console.log(util.inspect(pluginKey));
-                // var plugin = this._plugins[pluginKey];
-                // console.log(util.inspect(plugin));
-                // try {
-                // console.log('hookSiteRendered '+ plugin.name +' '+ typeof plugin.onSiteRendered);
                 if (typeof plugin.onSiteRendered !== 'undefined') {
                     plugin.onSiteRendered(this)
                     .then(() => { next(); })
                     .catch(err => { next(err); });
                 } else next();
-                // } catch(e) { error(e); next(e); }
             },
             err => {
                 if (err) reject(err);
@@ -246,7 +238,7 @@ module.exports = class Configuration {
         if (typeof this._plugins === 'undefined' || !this.hasOwnProperty("_plugins") || ! this._plugins) {
             this._plugins = [];
         }
-    
+
         if (typeof PluginObj === 'string') {
             PluginObj = require(PluginObj);
         }
@@ -257,15 +249,9 @@ module.exports = class Configuration {
         var plugin = new PluginObj();
         this._plugins.push(plugin);
         plugin.configure(this);
-        /*
-        if (typeof this._plugins[plugin.name] === 'undefined') {
-            this._plugins[plugin.name] = plugin;
-            plugin.configure(this);
-        }
-        */
         return this;
     }
-    
+
     eachPlugin(iterator, final) {
         async.eachSeries(this._plugins,
         function(plugin, next) {
@@ -273,7 +259,7 @@ module.exports = class Configuration {
         },
         final);
     }
-    
+
     /**
      * plugin - Look for a plugin, returning its module reference.
      */
@@ -288,14 +274,6 @@ module.exports = class Configuration {
             if (plugin.name === name) return plugin;
         }
         return undefined;
-    /*
-        if (! this._plugins || typeof this._plugins[name] === 'undefined') {
-            return undefined;
-        } else {
-            // console.log(util.inspect(this._plugins[name]));
-            return this._plugins[name];
-        }
-        */
     }
 
 }
