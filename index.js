@@ -1,3 +1,9 @@
+
+/**
+ * AkashaRender
+ * @module akasharender
+ */
+
 'use strict';
 
 const log   = require('debug')('akasha:index');
@@ -15,6 +21,11 @@ const documents = require('./documents');
 
 exports.cache = require('./caching');
 
+/**
+ * The AkashaRender project configuration object.  One instantiates a Configuration
+ * object, then fills it with settings and plugins.
+ * @see module:Configuration
+ */
 exports.Configuration = require('./Configuration');
 
 exports.Plugin = require('./Plugin');

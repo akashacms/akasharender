@@ -2,7 +2,7 @@
 
 const globfs    = require('globfs');
 const path      = require('path');
-const fs        = require('fs-extra');
+const fs        = require('fs-extra-promise');
 const util      = require('util');
 const async     = require('async');
 const mahabhuta = require('mahabhuta');
