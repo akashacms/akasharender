@@ -76,7 +76,10 @@ exports.renderDocument = function(config, basedir, fpath, renderTo, renderToPlus
             log(`${renderer.name} ${docPathname} ==> ${renderToFpath}`);
             return renderer.renderToFile(basedir, fpath, path.join(renderTo, renderToPlus), {}, config)
             .then(()   => { return `${renderer.name} ${docPathname} ==> ${renderToFpath}`; })
-            .catch(err => { error(`in renderer branch for ${fpath} error=${err.stack}`); throw err; });
+            .catch(err => {
+                error(`in renderer branch for ${fpath} error=${err.stack}`);
+                throw new Error(`in renderer branch for ${fpath} error=${err.stack}`);
+            });
         } else {
             log(`COPY ${docPathname} ==> ${renderToFpath}`);
             return fs.copyAsync(docPathname, renderToFpath)

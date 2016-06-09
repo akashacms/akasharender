@@ -14,20 +14,20 @@ class EJSRenderer extends HTMLRenderer {
     constructor() {
         super(".html.ejs", /^(.*\.html|.*\.php)\.(ejs)$/);
     }
-    
+
     renderSync(text, metadata) {
         return ejs.render(text, metadata);
     }
-    
+
     render(text, metadata) {
-        return Promise.resolve(ejs.render(text, metadata));
-        /* return new Promise((resolve, reject) => {
+        /* return Promise.resolve(ejs.render(text, metadata)); */
+        return new Promise((resolve, reject) => {
             try {
                 resolve(ejs.render(text, metadata));
             } catch(e) {
                 reject(e);
             }
-        }); */
+        });
     }
 }
 
