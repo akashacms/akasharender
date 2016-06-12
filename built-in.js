@@ -1,7 +1,7 @@
 /**
  *
  * Copyright 2014-2015 David Herron
- * 
+ *
  * This file is part of AkashaCMS (http://akashacms.com/).
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
@@ -31,12 +31,12 @@ module.exports = class BuiltInPlugin extends akasha.Plugin {
 	constructor() {
 		super("akashacms-builtin");
 	}
-	
+
 	configure(config) {
 		this._config = config;
 		config.addPartialsDir(path.join(__dirname, 'partials'));
 		config.addMahabhuta(module.exports.mahabhuta);
-            
+
         if (!config.builtin) config.builtin = {};
         if (!config.builtin.suppress) config.builtin.suppress = {};
 	}
@@ -64,7 +64,7 @@ module.exports.mahabhuta = [
                     next();
 				})
                 .catch(err => { error(err); next(err); });
-            }, 
+            },
             err => {
 				if (err) {
 					error('ak-stylesheets Errored with '+ util.inspect(err));
@@ -72,7 +72,7 @@ module.exports.mahabhuta = [
 				} else done();
             });
         },
-		
+
 		function($, metadata, dirty, done) {
             var elements = [];
             $('ak-headerJavaScript').each(function(i, elem) { elements.push(elem); });
@@ -92,7 +92,7 @@ module.exports.mahabhuta = [
                     next();
                 })
                 .catch(err => { error(err); next(err); });
-            }, 
+            },
             err => {
 				if (err) {
 					error('ak-headerJavaScript Errored with '+ util.inspect(err));
@@ -100,7 +100,7 @@ module.exports.mahabhuta = [
 				} else done();
             });
         },
-		
+
 		function($, metadata, dirty, done) {
             var elements = [];
             $('ak-footerJavaScript').each(function(i, elem) { elements.push(elem); });
@@ -120,7 +120,7 @@ module.exports.mahabhuta = [
                     next();
                 })
                 .catch(err => { error(err); next(err); });
-            }, 
+            },
             err => {
 				if (err) {
 					error('ak-footerJavaScript Errored with '+ util.inspect(err));
@@ -128,7 +128,7 @@ module.exports.mahabhuta = [
 				} else done();
             });
         },
-		
+
 		function($, metadata, dirty, done) {
             var elements = [];
             $('ak-insert-body-content').each(function(i, elem) { elements.push(elem); });
@@ -136,14 +136,14 @@ module.exports.mahabhuta = [
         	log('ak-insert-body-content');
             async.eachSeries(elements,
             function(element, next) {
-			
+
 				if (typeof metadata.content !== "undefined")
 					$(element).replaceWith(metadata.content);
 				else
 					$(element).remove();
-            
+
 				next();
-            }, 
+            },
             function(err) {
 				if (err) {
 					error('ak-insert-body-content Errored with '+ util.inspect(err));
@@ -151,7 +151,7 @@ module.exports.mahabhuta = [
 				} else done();
             });
         },
-		
+
 		function($, metadata, dirty, done) {
             var elements = [];
             $('ak-teaser').each(function(i, elem) { elements.push(elem); });
@@ -173,7 +173,7 @@ module.exports.mahabhuta = [
 					$(element).remove();
 					next();
 				}
-            }, 
+            },
             function(err) {
 				if (err) {
 					error('ak-teaser Errored with '+ util.inspect(err));
@@ -181,7 +181,7 @@ module.exports.mahabhuta = [
 				} else done();
             });
         },
-		
+
 		function($, metadata, dirty, done) {
             // <partial file-name="file-name.html.whatever" data-attr-1=val data-attr-2=val/>
             var partials = [];
@@ -209,9 +209,12 @@ module.exports.mahabhuta = [
                 akasha.partial(metadata.config, fname, d)
                 .then(html => {
                     $(partial).replaceWith(html);
-                    next(); 
+                    next();
                 })
-                .catch(err => { error(err); next(err); });
+                .catch(err => {
+					error(new Error("FAIL partial file-name="+ fname +" because "+ err));
+					next(new Error("FAIL partial file-name="+ fname +" because "+ err));
+				});
             },
             function(err) {
               if (err) {
@@ -220,5 +223,5 @@ module.exports.mahabhuta = [
               } else done();
             });
         },
-		
+
 ];
