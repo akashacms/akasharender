@@ -49,10 +49,19 @@ exports.registerRenderer(require('./render-cssless'));
 
 //////////////////////////////////////////////////////////
 
-// Needs to split into renderDocuments and renderDocument ??
 
 
-exports.renderDocument = function(config, basedir, fpath, renderTo, renderToPlus) {
+/**
+ * Render a single document
+ *
+ * @param config Configuration
+ * @param basedir String The directory within which to find the document
+ * @param fpath String The pathname within basedir for the document
+ * @param renderTo String the directory into which this is to be rendered
+ * @param renderToPlus String further pathname addition for the rendering.  The final pathname is renderTo/renderToPlus/flath
+ * @param renderBaseMetadata Object The metadata object to start with.  Typically this is an empty object, but sometimes we'll have some metadata to start with.
+ */
+exports.renderDocument = function(config, basedir, fpath, renderTo, renderToPlus, renderBaseMetadata) {
 
     var docPathname = path.join(basedir, fpath);
     var renderToFpath = path.join(renderTo, renderToPlus, fpath);
@@ -74,7 +83,7 @@ exports.renderDocument = function(config, basedir, fpath, renderTo, renderToPlus
             // Have to re-do the renderToFpath to give the Renderer a say in the file name
             renderToFpath = path.join(renderTo, renderToPlus, renderer.filePath(fpath));
             log(`${renderer.name} ${docPathname} ==> ${renderToFpath}`);
-            return renderer.renderToFile(basedir, fpath, path.join(renderTo, renderToPlus), {}, config)
+            return renderer.renderToFile(basedir, fpath, path.join(renderTo, renderToPlus), renderBaseMetadata, config)
             .then(()   => { return `${renderer.name} ${docPathname} ==> ${renderToFpath}`; })
             .catch(err => {
                 error(`in renderer branch for ${fpath} error=${err.stack}`);
@@ -90,44 +99,6 @@ exports.renderDocument = function(config, basedir, fpath, renderTo, renderToPlus
             });
         }
     })
-
-    /*
-    return new Promise((resolve, reject) => {
-        var docPathname = path.join(basedir, fpath);
-        var renderToFpath = path.join(renderTo, renderToPlus, fpath);
-        fs.stat(docPathname, (err, stats) => {
-            if (err) reject(err);
-            else if (stats && stats.isFile()) {
-                var renderToDir = path.dirname(renderToFpath);
-                log(`renderDocument ${basedir} ${fpath} ${renderToDir} ${renderToFpath}`);
-                fs.ensureDir(renderToDir, err => {
-                    if (err) {
-                        error(`COULD NOT ENSURE DIR ${renderToDir}`);
-                        return reject(new Error(`COULD NOT ENSURE DIR ${renderToDir}`));
-                    }
-                    var renderer = exports.findRendererPath(docPathname);
-                    if (renderer) {
-                        // Have to re-do the renderToFpath to give the Renderer a say in the file name
-                        renderToFpath = path.join(renderTo, renderToPlus, renderer.filePath(fpath));
-                        log(`${renderer.name} ${docPathname} ==> ${renderToFpath}`);
-                        renderer.renderToFile(basedir, fpath, path.join(renderTo, renderToPlus), {}, config)
-                        .then(()   => { resolve(`${renderer.name} ${docPathname} ==> ${renderToFpath}`); })
-                        .catch(err => { error(`in renderer branch for ${fpath} error=${err.stack}`); reject(err); });
-                    } else {
-                        log(`COPY ${docPathname} ==> ${renderToFpath}`);
-                        fs.copy(docPathname, renderToFpath, err => {
-                            if (err) {
-                                error(`in copy branch for ${fpath} error=${err.stack}`);
-                                reject(new Error(`in copy branch for ${fpath} error=${err.stack}`));
-                            }
-                            else { resolve(`COPY ${docPathname} ==> ${renderToFpath}`); }
-                        });
-                    }
-                });
-            } else { resolve(`SKIP DIRECTORY ${docPathname}`); }
-        });
-    });
-    */
 };
 
 //exports.render = function(docdirs, layoutDirs, partialDirs, mahafuncs, renderTo) {
@@ -141,10 +112,12 @@ exports.render = function(config) {
         var renderToPlus = "";
         var renderFrom = docdir;
         var renderIgnore;
+        var renderBaseMetadata = {};
         if (typeof docdir === 'object') {
             renderFrom = docdir.src;
             renderToPlus = docdir.dest;
             renderIgnore = docdir.ignore;
+            if (docdir.baseMetadata) renderBaseMetadata = docdir.baseMetadata;
         }
         // log(`******* render.render ${renderFrom} ${config.renderTo} ${renderToPlus} ${renderIgnore}`);
         return new Promise((resolve, reject) => {
@@ -159,7 +132,7 @@ exports.render = function(config) {
                 });
                 log(`RENDER? ${renderFrom} ${fpath} ${doIgnore}`);
                 if (!doIgnore)
-                    exports.renderDocument(config, basedir, fpath, config.renderTo, renderToPlus)
+                    exports.renderDocument(config, basedir, fpath, config.renderTo, renderToPlus, renderBaseMetadata)
                     .then((result) => { fini(undefined, result); })
                     .catch(err => { fini(err); });
                 else fini(undefined, `IGNORED ${fpath}`);

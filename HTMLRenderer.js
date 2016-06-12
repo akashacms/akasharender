@@ -70,11 +70,17 @@ module.exports = class HTMLRenderer extends Renderer {
                 log(`renderForLayout rendering ${metadata.document.path} with ${metadata.layout}`);
                 return renderer.render(layoutcontent, layoutdata);
             })
+            .catch(err => {
+                throw new Error("Error rendering "+ metadata.document.path +" with "+ metadata.layout +" "+ err.stack);
+            })
             .then(_rendered => {
                 layoutrendered = _rendered;
                 // log('maharun '+ metadata.layout +' '+ util.inspect(layoutdata.config.headerScripts));
                 log(`renderForLayout maharun ${metadata.document.path} with ${metadata.layout}`);
                 return this.maharun(layoutrendered, layoutdata, config.mahafuncs);
+            })
+            .catch(err => {
+                throw new Error("Error with Mahabhuta "+ metadata.document.path +" with "+ metadata.layout +" "+ err.stack);
             })
             .then(_rendered => {
                 layoutrendered = _rendered;
@@ -108,17 +114,23 @@ module.exports = class HTMLRenderer extends Renderer {
         return this.frontmatter(basedir, fpath)
         .then(fm => {
             doccontent = fm.content;
-            return this.initMetadata(config, basedir, fpath, fm.data);
+            return this.initMetadata(config, basedir, fpath, metadata, fm.data);
         })
         .then(metadata => {
             docdata = metadata;
             log('about to render '+ fpath);
             return this.render(doccontent, docdata);
         })
+        .catch(err => {
+            throw new Error("Error rendering "+ fpath +" "+ (err.stack ? err.stack : err));
+        })
         .then(rendered => {
             docrendered = rendered;
             log('rendered to maharun '+ fpath);
             return this.maharun(rendered, docdata, config.mahafuncs);
+        })
+        .catch(err => {
+            throw new Error("Error in Mahabhuta for "+ fpath +" "+ (err.stack ? err.stack : err));
         })
         .then(rendered => {
             docrendered = rendered;
@@ -158,7 +170,7 @@ module.exports = class HTMLRenderer extends Renderer {
             });
     }
 
-    initMetadata(config, basedir, fpath, fmMetadata) {
+    initMetadata(config, basedir, fpath, baseMetadata, fmMetadata) {
 
         return new Promise((resolve, reject) => {
 
@@ -166,6 +178,9 @@ module.exports = class HTMLRenderer extends Renderer {
             var metadata = { };
 
             // Copy data from frontmatter
+            for (var yprop in baseMetadata) {
+                metadata[yprop] = baseMetadata[yprop];
+            }
             for (var yprop in config.metadata) {
                 metadata[yprop] = config.metadata[yprop];
             }
