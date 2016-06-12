@@ -146,6 +146,7 @@ exports.render = function(config) {
             renderToPlus = docdir.dest;
             renderIgnore = docdir.ignore;
         }
+        // log(`******* render.render ${renderFrom} ${config.renderTo} ${renderToPlus} ${renderIgnore}`);
         return new Promise((resolve, reject) => {
             log(`RENDER DIRECTORY ${renderFrom} ==> ${renderToPlus}`);
             globfs.operate(renderFrom, '**/*', (basedir, fpath, fini) => {

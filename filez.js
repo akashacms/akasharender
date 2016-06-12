@@ -105,7 +105,11 @@ exports.findRendersTo = function(dirs, rendersTo) {
         (dir, next) => {
             // log(`${dir} ${rendersTo} ${found}`);
             if (!found) {
-                var dirToRead = path.join(dir, renderToDir);
+                // For cases of complex directory descriptions
+                let renderBaseDir = "";
+                if (typeof dir === 'string') renderBaseDir = dir;
+                else renderBaseDir = dir.src;
+                var dirToRead = path.join(renderBaseDir, renderToDir);
                 // log(`dirToStat ${dirToRead}`);
                 fs.stat(dirToRead, (err, stats) => {
                     if (err) {

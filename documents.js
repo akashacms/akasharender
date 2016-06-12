@@ -282,9 +282,13 @@ exports.documentSearch = function(config, options) {
 
     // Find all the documents, under rootPath if specified
     // Build up a useful object for each
+
     return new Promise((resolve, reject) => {
         globfs.operate(
-        config.documentDirs,
+        config.documentDirs.map(docdir => {
+            // This handles complex documentDirs entries 
+            return typeof docdir === 'string' ? docdir : docdir.src;
+        }),
         options.rootPath ? options.rootPath+"/**/*" : "**/*",
         (basedir, fpath, fini) => {
             fs.stat(path.join(basedir, fpath), (err, stat) => {
