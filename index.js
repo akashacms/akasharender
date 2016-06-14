@@ -39,7 +39,21 @@ exports.renderDocument = render.renderDocument;
 exports.findRendererName = function(name) { return render.findRendererName(name); };
 exports.findRendererPath = function(_path) { return render.findRendererPath(_path); };
 
+/**
+ *
+ *
+ * @params dirs
+ * @params rendersTo
+ */
 exports.findRendersTo = filez.findRendersTo;
+
+/**
+ *
+ *
+ * @param dir
+ * @param fpath
+ */
+exports.readFile = filez.readFile;
 
 exports.Document = documents.Document;
 exports.HTMLDocument = documents.HTMLDocument;

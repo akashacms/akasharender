@@ -71,7 +71,7 @@ module.exports = class HTMLRenderer extends Renderer {
                 return renderer.render(layoutcontent, layoutdata);
             })
             .catch(err => {
-                throw new Error("Error rendering "+ metadata.document.path +" with "+ metadata.layout +" "+ err.stack);
+                throw new Error("Error rendering "+ metadata.document.path +" with "+ metadata.layout +" "+ (err.stack ? err.stack : err));
             })
             .then(_rendered => {
                 layoutrendered = _rendered;
@@ -80,7 +80,7 @@ module.exports = class HTMLRenderer extends Renderer {
                 return this.maharun(layoutrendered, layoutdata, config.mahafuncs);
             })
             .catch(err => {
-                throw new Error("Error with Mahabhuta "+ metadata.document.path +" with "+ metadata.layout +" "+ err.stack);
+                throw new Error("Error with Mahabhuta "+ metadata.document.path +" with "+ metadata.layout +" "+ (err.stack ? err.stack : err));
             })
             .then(_rendered => {
                 layoutrendered = _rendered;
