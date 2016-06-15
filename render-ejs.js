@@ -25,7 +25,9 @@ class EJSRenderer extends HTMLRenderer {
             try {
                 resolve(ejs.render(text, metadata));
             } catch(e) {
-                reject("Error with EJS in file "+ metadata.document.path +" "+ e.stack);
+                var docpath = metadata.document ? metadata.document.path : "unknown";
+                var errstack = e.stack ? e.stack : e;
+                reject("Error with EJS in file "+ docpath +" "+ errstack);
             }
         });
     }

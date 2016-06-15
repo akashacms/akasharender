@@ -48,6 +48,7 @@ module.exports = class HTMLRenderer extends Renderer {
             var layoutcontent;
             var layoutdata;
             var layoutrendered;
+            var metadocpath = metadata.document ? metadata.document.path : "unknown";
 
             log(`renderForLayout find ${util.inspect(config.layoutDirs)} ${metadata.layout}`);
             return filez.find(config.layoutDirs, metadata.layout)
@@ -67,20 +68,22 @@ module.exports = class HTMLRenderer extends Renderer {
                     return filez.readFile(partialDir, partial);
                 } */
                 if (!renderer) throw new Error(`No renderer for ${metadata.layout}`);
-                log(`renderForLayout rendering ${metadata.document.path} with ${metadata.layout}`);
+                log(`renderForLayout rendering ${metadocpath} with ${metadata.layout}`);
                 return renderer.render(layoutcontent, layoutdata);
             })
             .catch(err => {
-                throw new Error("Error rendering "+ metadata.document.path +" with "+ metadata.layout +" "+ (err.stack ? err.stack : err));
+                console.error(`Error rendering ${metadocpath} with ${metadata.layout} ${err.stack ? err.stack : err}`);
+                throw new Error(`Error rendering ${metadocpath} with ${metadata.layout} ${err.stack ? err.stack : err}`);
             })
             .then(_rendered => {
                 layoutrendered = _rendered;
                 // log('maharun '+ metadata.layout +' '+ util.inspect(layoutdata.config.headerScripts));
-                log(`renderForLayout maharun ${metadata.document.path} with ${metadata.layout}`);
+                log(`renderForLayout maharun ${metadocpath} with ${metadata.layout}`);
                 return this.maharun(layoutrendered, layoutdata, config.mahafuncs);
             })
             .catch(err => {
-                throw new Error("Error with Mahabhuta "+ metadata.document.path +" with "+ metadata.layout +" "+ (err.stack ? err.stack : err));
+                console.error(`Error with Mahabhuta ${metadocpath} with ${metadata.layout} ${err.stack ? err.stack : err}`);
+                throw new Error(`Error with Mahabhuta ${metadocpath} with ${metadata.layout} ${err.stack ? err.stack : err}`);
             })
             .then(_rendered => {
                 layoutrendered = _rendered;
@@ -96,7 +99,7 @@ module.exports = class HTMLRenderer extends Renderer {
                 //        return _rendered;
                 //    });
                 // }
-                log(`renderForLayout FINI ${metadata.document.path} with ${metadata.layout}`);
+                log(`renderForLayout FINI ${metadocpath} with ${metadata.layout}`);
                 return layoutrendered;
             })
             .catch(err => { error(err); throw err; });
@@ -122,6 +125,7 @@ module.exports = class HTMLRenderer extends Renderer {
             return this.render(doccontent, docdata);
         })
         .catch(err => {
+            console.error("Error rendering "+ fpath +" "+ (err.stack ? err.stack : err));
             throw new Error("Error rendering "+ fpath +" "+ (err.stack ? err.stack : err));
         })
         .then(rendered => {
@@ -130,6 +134,7 @@ module.exports = class HTMLRenderer extends Renderer {
             return this.maharun(rendered, docdata, config.mahafuncs);
         })
         .catch(err => {
+            console.error("Error in Mahabhuta for "+ fpath +" "+ (err.stack ? err.stack : err));
             throw new Error("Error in Mahabhuta for "+ fpath +" "+ (err.stack ? err.stack : err));
         })
         .then(rendered => {
