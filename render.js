@@ -133,8 +133,8 @@ exports.render = function(config) {
                 log(`RENDER? ${renderFrom} ${fpath} ${doIgnore}`);
                 if (!doIgnore)
                     exports.renderDocument(config, basedir, fpath, config.renderTo, renderToPlus, renderBaseMetadata)
-                    .then((result) => { fini(undefined, result); })
-                    .catch(err => { fini(err); });
+                    .then((result) => { /* log(`render renderDocument ${result}`); */ fini(undefined, result); })
+                    .catch(err => { error(`render renderDocument ${err}`); fini(err); });
                 else fini(undefined, `IGNORED ${fpath}`);
             },
             (err, results) => {

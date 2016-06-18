@@ -60,12 +60,14 @@ module.exports.mahabhuta = [
 					stylesheets: scripts
 				})
                 .then(style => {
+					// log(`ak-stylesheets ${metadata.document.path} ${style}`);
                     $(element).replaceWith(style);
                     next();
 				})
                 .catch(err => { error(err); next(err); });
             },
             err => {
+				// log(`after ak-stylesheets ${metadata.document.path} ${$.html()}`);
 				if (err) {
 					error('ak-stylesheets Errored with '+ util.inspect(err));
 					done(err);

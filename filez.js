@@ -179,7 +179,7 @@ exports.readFile = function(dir, fpath) {
 };
 
 exports.writeFile = function(dir, fpath, text) {
-    fs.ensureDirAsync(dir)
+    return fs.ensureDirAsync(dir)
     .then(() => {
         var renderToFile = path.join(dir, fpath);
         log(`filez.writeFile ${dir} ${fpath} ==> ${renderToFile}`);
