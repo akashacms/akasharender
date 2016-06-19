@@ -83,7 +83,7 @@ exports.renderDocument = function(config, basedir, fpath, renderTo, renderToPlus
             // Have to re-do the renderToFpath to give the Renderer a say in the file name
             renderToFpath = path.join(renderTo, renderToPlus, renderer.filePath(fpath));
             log(`${renderer.name} ${docPathname} ==> ${renderToFpath}`);
-            return renderer.renderToFile(basedir, fpath, path.join(renderTo, renderToPlus), renderBaseMetadata, config)
+            return renderer.renderToFile(basedir, fpath, path.join(renderTo, renderToPlus), renderToPlus, renderBaseMetadata, config)
             .then(()   => { return `${renderer.name} ${docPathname} ==> ${renderToFpath}`; })
             .catch(err => {
                 error(`in renderer branch for ${fpath} error=${err.stack}`);

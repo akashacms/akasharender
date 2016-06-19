@@ -107,7 +107,7 @@ module.exports = class HTMLRenderer extends Renderer {
         } else return Promise.resolve(rendered);
     }
 
-    renderToFile(basedir, fpath, renderTo, metadata, config) {
+    renderToFile(basedir, fpath, renderTo, renderToPlus, metadata, config) {
 
         // var doctext;
         var doccontent;
@@ -117,7 +117,7 @@ module.exports = class HTMLRenderer extends Renderer {
         return this.frontmatter(basedir, fpath)
         .then(fm => {
             doccontent = fm.content;
-            return this.initMetadata(config, basedir, fpath, metadata, fm.data);
+            return this.initMetadata(config, basedir, fpath, renderToPlus, metadata, fm.data);
         })
         .then(metadata => {
             docdata = metadata;
@@ -175,7 +175,7 @@ module.exports = class HTMLRenderer extends Renderer {
             });
     }
 
-    initMetadata(config, basedir, fpath, baseMetadata, fmMetadata) {
+    initMetadata(config, basedir, fpath, renderToPlus, baseMetadata, fmMetadata) {
 
         return new Promise((resolve, reject) => {
 
@@ -196,8 +196,8 @@ module.exports = class HTMLRenderer extends Renderer {
             metadata.content = "";
             metadata.document = {};
             metadata.document.basedir = basedir;
-            metadata.document.path = fpath;
-            metadata.document.renderTo = this.filePath(fpath);
+            metadata.document.path = path.join(renderToPlus, fpath);
+            metadata.document.renderTo = path.join(renderToPlus, this.filePath(fpath));
 
             metadata.config      = config;
             metadata.partialSync = akasha.partialSync.bind(this, config);
@@ -207,10 +207,10 @@ module.exports = class HTMLRenderer extends Renderer {
 
             if (config.root_url) {
                 let pRootUrl = url.parse(config.root_url);
-                pRootUrl.pathname = metadata.document.path;
+                pRootUrl.pathname = metadata.document.renderTo;
                 metadata.rendered_url = url.format(pRootUrl);
             } else {
-                metadata.rendered_url = metadata.document.path;
+                metadata.rendered_url = metadata.document.renderTo;
             }
 
             // console.log('initMetadata '+ basedir +' '+ fpath +' '+ util.inspect(metadata));

@@ -14,19 +14,19 @@ module.exports = class Renderer {
             throw new Error('regex must be RegExp or Array of RegExp');
         }
     }
-    
+
     get name() { return this._name; }
-    
+
     match(fname) {
         var matches;
         for (var regex of this._regex) {
             if ((matches = fname.match(regex)) !== null) {
-                return true; 
+                return true;
             }
         }
         return false;
     }
-    
+
     /* {
     	path: matches[0],
     	renderedFileName: matches[1],
@@ -57,13 +57,13 @@ module.exports = class Renderer {
     render(text, metadata) {
         throw new Error('implement render method');
     }
-    
+
     renderSync(text, metadata) {
         throw new Error('implement renderSync method');
     }
-    
-    renderToFile(dir, fpath, renderTo, metadata, config) {
+
+    renderToFile(dir, fpath, renderTo, renderToPlus, metadata, config) {
         throw new Error('implement renderToFile method');
     }
-    
+
 };
