@@ -195,7 +195,7 @@ exports.findRendersTo = function(dirs, rendersTo) {
             else if (found) {
                 // console.log(`filez.findRendersTo FOUND ${foundDir} ${rendersTo}`);
                 var ret = {
-                    foundDir, foundPath, foundFullPath, foundFullPath,
+                    foundDir, foundPath, foundFullPath,
                     foundMountedOn, foundPathWithinDir,
                     foundBaseMetadata: (foundBaseMetadata ? foundBaseMetadata : {} )
                 };

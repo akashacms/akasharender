@@ -54,7 +54,7 @@ module.exports.mahabhuta = [
 			    if (typeof metadata.headerStylesheetsAdd !== "undefined") {
 			        scripts = metadata.config.scripts.stylesheets.concat(metadata.headerStylesheetsAdd);
 			    } else {
-			        scripts = metadata.config.scripts.stylesheets;
+			        scripts = metadata.config.scripts ? metadata.config.scripts.stylesheets : undefined;
 			    }
 				akasha.partial(metadata.config, "ak_stylesheets.html.ejs", {
 					stylesheets: scripts
@@ -86,7 +86,7 @@ module.exports.mahabhuta = [
 			    if (typeof metadata.headerJavaScriptAddTop !== "undefined") {
 			        scripts = metadata.config.scripts.javaScriptTop.concat(metadata.headerJavaScriptAddTop);
 			    } else {
-			        scripts = metadata.config.scripts.javaScriptTop;
+			        scripts = metadata.config.scripts ? metadata.config.scripts.javaScriptTop : undefined;
 			    }
 			    akasha.partial(metadata.config, "ak_javaScript.html.ejs", { javaScripts: scripts })
 				.then(html => {
@@ -114,7 +114,7 @@ module.exports.mahabhuta = [
 			    if (typeof metadata.headerJavaScriptAddBottom !== "undefined") {
 			        scripts = metadata.config.scripts.javaScriptBottom.concat(metadata.headerJavaScriptAddBottom);
 			    } else {
-			        scripts = metadata.config.scripts.javaScriptBottom;
+			        scripts = metadata.config.scripts ? metadata.config.scripts.javaScriptBottom : undefined;
 			    }
 			    akasha.partial(metadata.config, "ak_javaScript.html.ejs", { javaScripts: scripts })
 				.then(html => {

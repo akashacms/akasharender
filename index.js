@@ -40,10 +40,22 @@ exports.findRendererName = function(name) { return render.findRendererName(name)
 exports.findRendererPath = function(_path) { return render.findRendererPath(_path); };
 
 /**
+ * Finds the source document matching the filename for a rendered file.  That is, for
+ * a rendered file path like {movies/wallachia/vlad-tepes/son-of-dracul.html} it will search
+ * for the {.html.md} file generating that rendered file.
  *
+ * The returned object has at least these fields:
  *
- * @params dirs
- * @params rendersTo
+ * * {foundDir} - The basedir within which the file was found
+ * * {foundPath} - The path under basedir to that file
+ * * {foundFullPath} - The path, including the full file extension, to that file
+ * * {foundMountedOn} - For complex directories, the path  this directory is mounted on .. e.g. dir.dest
+ * * {foundPathWithinDir} - For complex directories, the path within that directory.
+ * * {foundBaseMetadata} - For complex directories, the metadata associated with that directory
+ *
+ * @params {Array} dirs The documentDirs directory
+ * @params {string} rendersTo The full path of the rendered file
+ * @return {Object} Description of the source file
  */
 exports.findRendersTo = filez.findRendersTo;
 
