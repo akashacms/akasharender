@@ -25,7 +25,8 @@
     "dox": "^0.8.1"
   },
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+      "gendocs": "cd docs && npm run build",
+      "gendocssetup": "cd docs && npm install"
   },
   "author": "",
   "license": "ISC"

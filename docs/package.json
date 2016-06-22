@@ -5,7 +5,7 @@
   "scripts": {
       "gen": "sh gendocs.sh",
       "prebuild": "rm -rf out",
-      "build": "mkdir out && node ../bin/cli.js render config.js"
+      "build": "mkdir -p documents out && sh gendocs.sh && akasharender render config.js"
   },
   "dependencies": {
     "akashacms-base": "akashacms/akashacms-base#akasharender",
