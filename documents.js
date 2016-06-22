@@ -286,7 +286,7 @@ exports.documentSearch = function(config, options) {
     return new Promise((resolve, reject) => {
         globfs.operate(
         config.documentDirs.map(docdir => {
-            // This handles complex documentDirs entries 
+            // This handles complex documentDirs entries
             return typeof docdir === 'string' ? docdir : docdir.src;
         }),
         options.rootPath ? options.rootPath+"/**/*" : "**/*",
@@ -412,14 +412,14 @@ exports.documentSearch = function(config, options) {
 exports.readDocument = function(config, documentPath) {
     return filez.findRendersTo(config.documentDirs, documentPath)
     .then(found => {
-        log('readDocument '+ documentPath +' '+ util.inspect(found));
+        // console.log('readDocument '+ documentPath +' '+ util.inspect(found));
         found.renderer = akasha.findRendererPath(found.foundFullPath);
         return found;
     })
     .then(found => {
-        log('readDocument #2 '+ documentPath +' '+ util.inspect(found));
+        // console.log('readDocument #2 '+ documentPath +' '+ util.inspect(found));
         return new Promise((resolve, reject) => {
-            fs.stat(path.join(found.foundDir, found.foundFullPath), (err, stat) => {
+            fs.stat(path.join(found.foundDir, found.foundPathWithinDir), (err, stat) => {
                 if (err) reject(err);
                 else {
                     found.stat = stat;
@@ -429,11 +429,11 @@ exports.readDocument = function(config, documentPath) {
         });
     })
     .then(found => {
-        return found.renderer.metadata(found.foundDir, found.foundFullPath)
+        return found.renderer.metadata(found.foundDir, found.foundPathWithinDir)
         .then(metadata => {
-            found.metadata = metadata;
-            return found;
-        });
+            return found.renderer.initMetadata(config, found.foundDir, found.foundFullPath, found.foundMountedOn, found.foundBaseMetadata, metadata);
+        })
+        .then(metadata => { found.metadata = metadata; return found; });
     })
     .then(found => {
         let filepath = found.renderer ? found.renderer.filePath(found.foundPath) : undefined;
@@ -448,7 +448,7 @@ exports.readDocument = function(config, documentPath) {
             rendername: path.basename(filepath),
             metadata: found.metadata
         });
-        log('readDocument #3 '+ util.inspect(doc));
+        // console.log('readDocument #3 '+ util.inspect(doc));
         return doc;
     });
 };

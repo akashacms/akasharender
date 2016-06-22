@@ -86,6 +86,8 @@ exports.findRendersTo = function(dirs, rendersTo) {
         return Promise.resolve(cached);
     }
 
+    // console.log(`findRendersTo ${util.inspect(dirs)} ${rendersTo}`);
+
     return new Promise((resolve, reject) => {
         // for each dir .. check path.join(dir, layoutName)
         // first match resolve's
@@ -98,7 +100,11 @@ exports.findRendersTo = function(dirs, rendersTo) {
         var foundDir;
         var foundPath;
         var foundFullPath;
+        var foundMountedOn;
+        var foundPathWithinDir;
+        var foundBaseMetadata;
 
+        var rendersToNoSlash = rendersTo.startsWith("/") ? rendersTo.substring(1) : rendersTo;
         var renderToDir = path.dirname(rendersTo);
 
         async.eachSeries(dirs,
@@ -106,50 +112,76 @@ exports.findRendersTo = function(dirs, rendersTo) {
             // log(`${dir} ${rendersTo} ${found}`);
             if (!found) {
                 // For cases of complex directory descriptions
+                let pathMountedOn = "/";
                 let renderBaseDir = "";
-                if (typeof dir === 'string') renderBaseDir = dir;
-                else renderBaseDir = dir.src;
-                var dirToRead = path.join(renderBaseDir, renderToDir);
-                // log(`dirToStat ${dirToRead}`);
+                var dirToRead;
+                var rendersToWithinDir = rendersTo;
+                if (typeof dir === 'string') {
+                    renderBaseDir = dir;
+                    dirToRead = path.join(renderBaseDir, renderToDir);;
+                } else {
+                    renderBaseDir = dir.src;
+                    // console.log(`Checking ${util.inspect(dir)} for ${rendersToNoSlash}`);
+                    if (rendersToNoSlash.substring(0, dir.dest.length) === dir.dest
+                     && rendersToNoSlash.substring(dir.dest.length).startsWith('/')) {
+                        // These two are true if the path prefix of rendersTo is dir.dest
+                        rendersToWithinDir = rendersToNoSlash.substring(dir.dest.length).substring(1);
+                        dirToRead = path.join(dir.src, path.dirname(rendersToWithinDir));
+                        // console.log(`dirToRead ${dirToRead} rendersToWithinDir ${rendersToWithinDir}`);
+                    } else {
+                        // Such a condition won't match the file name .. hence .. skip
+                        / console.log(`SKIPPING src ${dir.src} dest ${dir.dest} because ${rendersTo} will not match`);
+                        return next();
+                    }
+                    pathMountedOn = dir.dest;
+                }
+                // var dirToRead = renderBaseDir; // path.join(renderBaseDir, renderToDir);
+                // console.log(`dirToStat ${dirToRead} mounted on ${pathMountedOn} looking for ${rendersTo}`);
                 fs.stat(dirToRead, (err, stats) => {
                     if (err) {
-                        if (err.code === 'ENOENT') return next();
-                        else return next(err);
+                        if (err.code === 'ENOENT') { console.log(`fs.stat ${dirToRead} says ENOENT`); return next(); }
+                        else { console.error(`fs.stat ${dirToRead} errored ${err.stack}`); return next(err); }
                     }
                     if (!stats.isDirectory()) return next();
-                    // log(`dirToRead ${dirToRead}`);
+                    // console.log(`dirToRead ${dirToRead}`);
                     fs.readdir(dirToRead, (err, files) => {
                         if (err) {
                             error(util.inspect(err));
                             return next(err);
                         }
-                        // log(util.inspect(files));
+                        // console.log(util.inspect(files));
                         for (var i = 0; i < files.length; i++) {
                             var fname = files[i];
-                            // log(`${dir} ${fname} === ${path.basename(rendersTo)}`);
+                            // console.log(`${dirToRead} ${pathMountedOn} ${fname} === ${path.basename(rendersTo)}`);
                             if (path.basename(rendersTo) === fname) {
                                 found = true;
-                                foundDir = dir;
+                                foundDir = typeof dir === 'string' ? dir : dir.src;
                                 foundPath = rendersTo;
                                 foundFullPath = foundPath;
+                                foundMountedOn = pathMountedOn;
+                                foundPathWithinDir = rendersToWithinDir;
+                                foundBaseMetadata = typeof dir === 'string' ? {} : dir.baseMetadata;
                                 let renderer = render.findRendererPath(foundPath);
                                 if (renderer) {
                                     foundPath = renderer.filePath(foundPath);
                                 }
-                                // log(`filez.findRendersTo ${util.inspect(dirs)} ${rendersTo} found #1 ${foundDir} ${foundPath}`);
+                                // console.log(`filez.findRendersTo ${util.inspect(dirs)} ${rendersTo} found #1 ${foundDir} ${foundPath} ${foundMountedOn} ${foundPathWithinDir}`);
                             }
                             var fname2find = path.join(renderToDir, fname);
-                            // log(`${dir} ${fname} ${fname2find}`);
+                            // console.log(`${renderToDir} ${fname} ${fname2find}`);
                             let renderer = render.findRendererPath(fname2find);
                             if (renderer) {
                                 var renderToFname = path.basename(renderer.filePath(fname2find));
-                                // log(`${renderer.name} ${dir} ${fname} === ${renderToFname}`);
+                                // console.log(`${renderer.name} ${util.inspect(dir)} ${fname} === ${renderToFname}`);
                                 if (renderToFname === path.basename(rendersTo)) {
                                     found = true;
-                                    foundDir = dir;
+                                    foundDir = typeof dir === 'string' ? dir : dir.src;
                                     foundPath = renderer.filePath(fname2find);
                                     foundFullPath = fname2find;
-                                    // log(`filez.findRendersTo ${util.inspect(dirs)} ${rendersTo} found #2 ${foundDir} ${foundPath} ${fname2find}`);
+                                    foundMountedOn = pathMountedOn;
+                                    foundPathWithinDir = path.join(path.dirname(rendersToWithinDir), fname);
+                                    foundBaseMetadata = typeof dir === 'string' ? {} : dir.baseMetadata;
+                                    console.log(`filez.findRendersTo ${util.inspect(dirs)} ${rendersTo} found #2 ${foundDir} ${foundPath} ${fname2find} ${foundMountedOn} ${foundPathWithinDir} rendersToWithinDir ${rendersToWithinDir}`);
                                 }
                             }
                         }
@@ -159,14 +191,18 @@ exports.findRendersTo = function(dirs, rendersTo) {
             } else next();
         },
         err => {
-            if (err) { error(err); reject(err); }
+            if (err) { console.error(err); reject(err); }
             else if (found) {
-                /* log(`filez.findRendersTo FOUND ${foundDir} ${rendersTo}`); */
-                var ret = { foundDir, foundPath, foundFullPath };
-                cache.get("filez-findRendersTo", foundPath, ret);
+                // console.log(`filez.findRendersTo FOUND ${foundDir} ${rendersTo}`);
+                var ret = {
+                    foundDir, foundPath, foundFullPath, foundFullPath,
+                    foundMountedOn, foundPathWithinDir,
+                    foundBaseMetadata: (foundBaseMetadata ? foundBaseMetadata : {} )
+                };
+                cache.set("filez-findRendersTo", foundPath, ret);
                 resolve(ret);
             } else {
-                // log(`filez.findRendersTo FAIL ${util.inspect(dirs)} ${rendersTo}`);
+                console.log(`filez.findRendersTo FAIL ${util.inspect(dirs)} ${rendersTo}`);
                 resolve(undefined);
             }
         });
