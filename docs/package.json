@@ -1,0 +1,18 @@
+{
+  "name": "akasharender-docs",
+  "version": "0.1.0",
+  "description": "Documentation for akasharender",
+  "scripts": {
+      "gen": "sh gendocs.sh",
+      "prebuild": "rm -rf out",
+      "build": "mkdir out && node ../bin/cli.js render config.js"
+  },
+  "dependencies": {
+    "akashacms-base": "akashacms/akashacms-base#akasharender",
+    "akashacms-breadcrumbs": "akashacms/akashacms-breadcrumbs#akasharender",
+    "akashacms-theme-bootstrap": "akashacms/akashacms-theme-bootstrap#akasharender",
+    "akasharender": "akashacms/akasharender"
+  },
+  "author": "",
+  "license": "ISC"
+}
