@@ -130,7 +130,7 @@ exports.findRendersTo = function(dirs, rendersTo) {
                         // console.log(`dirToRead ${dirToRead} rendersToWithinDir ${rendersToWithinDir}`);
                     } else {
                         // Such a condition won't match the file name .. hence .. skip
-                        / console.log(`SKIPPING src ${dir.src} dest ${dir.dest} because ${rendersTo} will not match`);
+                        // console.log(`SKIPPING src ${dir.src} dest ${dir.dest} because ${rendersTo} will not match`);
                         return next();
                     }
                     pathMountedOn = dir.dest;
@@ -139,7 +139,7 @@ exports.findRendersTo = function(dirs, rendersTo) {
                 // console.log(`dirToStat ${dirToRead} mounted on ${pathMountedOn} looking for ${rendersTo}`);
                 fs.stat(dirToRead, (err, stats) => {
                     if (err) {
-                        if (err.code === 'ENOENT') { console.log(`fs.stat ${dirToRead} says ENOENT`); return next(); }
+                        if (err.code === 'ENOENT') { /* console.log(`fs.stat ${dirToRead} says ENOENT`); */ return next(); }
                         else { console.error(`fs.stat ${dirToRead} errored ${err.stack}`); return next(err); }
                     }
                     if (!stats.isDirectory()) return next();
@@ -181,7 +181,7 @@ exports.findRendersTo = function(dirs, rendersTo) {
                                     foundMountedOn = pathMountedOn;
                                     foundPathWithinDir = path.join(path.dirname(rendersToWithinDir), fname);
                                     foundBaseMetadata = typeof dir === 'string' ? {} : dir.baseMetadata;
-                                    console.log(`filez.findRendersTo ${util.inspect(dirs)} ${rendersTo} found #2 ${foundDir} ${foundPath} ${fname2find} ${foundMountedOn} ${foundPathWithinDir} rendersToWithinDir ${rendersToWithinDir}`);
+                                    // console.log(`filez.findRendersTo ${util.inspect(dirs)} ${rendersTo} found #2 ${foundDir} ${foundPath} ${fname2find} ${foundMountedOn} ${foundPathWithinDir} rendersToWithinDir ${rendersToWithinDir}`);
                                 }
                             }
                         }
@@ -202,7 +202,7 @@ exports.findRendersTo = function(dirs, rendersTo) {
                 cache.set("filez-findRendersTo", foundPath, ret);
                 resolve(ret);
             } else {
-                console.log(`filez.findRendersTo FAIL ${util.inspect(dirs)} ${rendersTo}`);
+                // console.log(`filez.findRendersTo FAIL ${util.inspect(dirs)} ${rendersTo}`);
                 resolve(undefined);
             }
         });
