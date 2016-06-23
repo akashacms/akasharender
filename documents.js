@@ -252,7 +252,7 @@ exports.documentTree = function(config, documents) {
             for (let entryidx in segment.children) {
                 let entry = segment.children[entryidx];
                 if (entry.rendername === "index.html") {
-                    segment.dirpath = path.join(segment.dirpath, 'index.html');
+                    segment.dirpath = path.join((segment.dirpath ? segment.dirpath : ""), 'index.html');
                     segment.title = entry.metadata.title;
                     if (entry.metadata.teaser) {
                         segment.teaser = entry.metadata.teaser;

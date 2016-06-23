@@ -10,6 +10,7 @@
   "dependencies": {
     "akashacms-base": "akashacms/akashacms-base#akasharender",
     "akashacms-breadcrumbs": "akashacms/akashacms-breadcrumbs#akasharender",
+    "akashacms-booknav": "akashacms/akashacms-booknav#akasharender",
     "akashacms-theme-bootstrap": "akashacms/akashacms-theme-bootstrap#akasharender",
     "akasharender": "akashacms/akasharender"
   },

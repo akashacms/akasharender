@@ -20,7 +20,8 @@ config
 config
     .use(require('akashacms-theme-bootstrap'))
     .use(require('akashacms-base'))
-    .use(require('akashacms-breadcrumbs'));
+    .use(require('akashacms-breadcrumbs'))
+    .use(require('akashacms-booknav'));
 
 config.setMahabhutaConfig({
     recognizeSelfClosing: true,
