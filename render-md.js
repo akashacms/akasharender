@@ -10,7 +10,7 @@ const error = require('debug')('akasha:error-markdownRenderer');
 // TODO can this configuration be injected?
 const mditConfig = {
   html:         true,         // Enable html tags in source
-  xhtmlOut:     false,        // Use '/' to close single tags (<br />)
+  xhtmlOut:     true,         // Use '/' to close single tags (<br />)
   breaks:       false,        // Convert '\n' in paragraphs into <br>
   // langPrefix:   'language-',  // CSS language prefix for fenced blocks
   linkify:      true,         // Autoconvert url-like texts to links
@@ -28,19 +28,19 @@ class MarkdownRenderer extends HTMLRenderer {
         super(".html.md", /^(.*\.html)\.(md)$/);
         md = mdit(mditConfig);
     }
-    
+
     renderSync(text, metadata) {
         // console.log('MarkdownRenderer renderSync '+ text);
         var ret = md.render(text);
         // console.log(ret);
         return ret;
     }
-    
+
     render(text, metadata) {
         // console.log('MarkdownRenderer render');
         return new Promise((resolve, reject) => {
-            try { 
-                resolve(md.render(text)); 
+            try {
+                resolve(md.render(text));
             } catch(e) {
                 reject(e);
             }
