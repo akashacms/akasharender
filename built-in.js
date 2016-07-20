@@ -19,6 +19,7 @@
 
 'use strict';
 
+const url   = require('url');
 const path  = require('path');
 const util  = require('util');
 const async = require('async');
@@ -56,11 +57,12 @@ module.exports.mahabhuta = [
 			    } else {
 			        scripts = metadata.config.scripts ? metadata.config.scripts.stylesheets : undefined;
 			    }
+				// console.log(`ak-stylesheets ${metadata.document.path} ${util.inspect(metadata.headerStylesheetsAdd)} ${util.inspect(metadata.config.scripts)} ${util.inspect(scripts)}`);
 				akasha.partial(metadata.config, "ak_stylesheets.html.ejs", {
 					stylesheets: scripts
 				})
                 .then(style => {
-					// log(`ak-stylesheets ${metadata.document.path} ${style}`);
+					// console.log(`ak-stylesheets ${metadata.document.path} ${style}`);
                     $(element).replaceWith(style);
                     next();
 				})
@@ -201,7 +203,7 @@ module.exports.mahabhuta = [
 				    dirty();
 				}
                 var fname = $(partial).attr("file-name");
-                var txt   = $(partial).text();
+                var txt   = $(partial).html();
                 var d = {};
                 for (var mprop in metadata) { d[mprop] = metadata[mprop]; }
                 var data = $(partial).data();
@@ -226,4 +228,82 @@ module.exports.mahabhuta = [
             });
         },
 
+		function($, metadata, dirty, done) {
+
+			var links = [];
+			$('html body a').each((i, elem) => { links.push(elem); });
+			if (links.length <= 0) return done();
+			log('substitute page title for links to local documents');
+			async.eachSeries(links, (link, next) => {
+
+				var href     = $(link).attr('href');
+				var linktext = $(link).text();
+				if (href && href !== '#'
+				 && (!linktext || linktext.length <= 0 || linktext === href)
+				 && $(link).children() <= 0) {
+					var uHref = url.parse(href, true, true);
+					if (uHref.protocol || uHref.slashes) return next();
+
+					if (! href.match(/^\//)) {
+						var hreforig = href;
+						// var pRenderedUrl = url.parse(metadata.rendered_url);
+						// var docpath = pRenderedUrl.pathname;
+						var docdir = path.dirname(metadata.document.path);
+						href = path.normalize(path.join(docdir, href));
+						// util.log('***** FIXED href '+ hreforig +' to '+ href);
+					}
+
+					akasha.findRendersTo(metadata.config.documentDirs, href)
+					.then(found => {
+						var renderer = akasha.findRendererPath(found.foundFullPath);
+						if (renderer && renderer.metadata) {
+							return renderer.metadata(found.foundDir, found.foundFullPath)
+							.then(docmeta => {
+								// log(`${entry.foundDir} ${entry.foundPath} ${util.inspect(metadata)}`)
+								// Automatically add a title= attribute
+								if (!$(link).attr('title') && docmeta.title) {
+									$(link).attr('title', docmeta.title);
+								}
+								if (docmeta.title) {
+									$(link).text(docmeta.title);
+								}
+								next();
+							});
+						}
+						next();
+					})
+					.catch(err => { next(err); });
+
+					/*
+					if (! href.match(/^\//)) {
+						var hreforig = href;
+						var pRenderedUrl = url.parse(metadata.rendered_url);
+						var docpath = pRenderedUrl.pathname;
+						var docdir = path.dirname(docpath);
+						href = path.join(docdir, href);
+						// util.log('***** FIXED href '+ hreforig +' to '+ href);
+					}
+					/* TODO
+					var docEntry = akasha.findDocumentForUrlpath(href);
+					if (docEntry) {
+						// Automatically add a title= attribute
+						if (!$(link).attr('title') && docEntry.frontmatter.yaml.title) {
+							$(link).attr('title', docEntry.frontmatter.yaml.title);
+						}
+						// For local links that don't have text or interior nodes,
+						// supply text from the title of the target of the link.
+						var linktext = $(link).text();
+						if ((!linktext || linktext.length <= 0 || linktext === href)
+						 && $(link).children() <= 0
+						 && docEntry.frontmatter.yaml.title) {
+							$(link).text(docEntry.frontmatter.yaml.title);
+						}
+					} */
+				} else next();
+			},
+            err => {
+				if (err) done(err);
+				else done();
+        	});
+        }
 ];
