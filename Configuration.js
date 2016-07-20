@@ -19,6 +19,11 @@ const error  = require('debug')('akasha:error-configuration');
 /**
  * Configuration of an AkashaRender project, including the input directories,
  * output directory, plugins, and various settings.
+ *
+ * USAGE:
+ *
+ * const akasha = require('akasharender');
+ * const config = new akasha.Configuration();
  */
 module.exports = class Configuration {
     constructor() {
@@ -30,6 +35,13 @@ module.exports = class Configuration {
      * already been configured.  Some built-in defaults have been decided
      * ahead of time.  For each configuration setting, if nothing has been
      * declared, then the default is substituted.
+     *
+     * It is expected this function will be called last in the config file.
+     *
+     * This function installs the `built-in` plugin.  It needs to be last on
+     * the plugin chain so that its stylesheets and partials and whatnot
+     * can be overridden by other plugins.
+     *
      * @returns {Configuration}
      */
     prepare() {
@@ -318,6 +330,13 @@ module.exports = class Configuration {
         return this;
     }
 
+    /**
+     * Iterate over the installed plugins, calling the function passed in `iterator`
+     * for each plugin, then calling the function passed in `final`.
+     *
+     * @param iterator The function to call for each plugin.  Signature: `function(plugin, next)`  The `next` parameter is a function used to indicate error -- `next(err)` -- or success -- next()
+     * @param final The function to call after all iterator calls have been made.  Signature: `function(err)`
+     */
     eachPlugin(iterator, final) {
         async.eachSeries(this._plugins,
         function(plugin, next) {

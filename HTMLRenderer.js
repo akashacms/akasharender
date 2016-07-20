@@ -15,8 +15,15 @@ const akasha    = require('./index');
 const log   = require('debug')('akasha:HTMLRenderer');
 const error = require('debug')('akasha:error');
 
+/**
+ * Rendering support for any file that produces HTML when rendered.
+ */
 module.exports = class HTMLRenderer extends Renderer {
 
+    /**
+     * Support for Mahabhuta -- jQuery-like processing of HTML DOM before Rendering
+     * down to HTML text.
+     */
     maharun(rendered, metadata, mahafuncs) {
         return new Promise((resolve, reject) => {
             if (metadata.config.cheerio) mahabhuta.config(metadata.config.cheerio);
@@ -34,6 +41,9 @@ module.exports = class HTMLRenderer extends Renderer {
         return data;
     }
 
+    /**
+     * If the document metadata says to render into a template, do so.
+     */
     renderForLayout(rendered, metadata, config) {
         if (metadata.layout) {
             // find layout
@@ -107,6 +117,10 @@ module.exports = class HTMLRenderer extends Renderer {
         } else return Promise.resolve(rendered);
     }
 
+    /**
+     * Render the document file, through a template if necessary, producing
+     * an output file.
+     */
     renderToFile(basedir, fpath, renderTo, renderToPlus, metadata, config) {
 
         // var doctext;
@@ -148,6 +162,9 @@ module.exports = class HTMLRenderer extends Renderer {
         });
     }
 
+    /**
+     * Extract the frontmatter for the given file.
+     */
     frontmatter(basedir, fpath) {
         var cachekey = `fm-${basedir}-${fpath}`;
         var cachedFrontmatter = cache.get("htmlrenderer", cachekey);
@@ -167,6 +184,13 @@ module.exports = class HTMLRenderer extends Renderer {
         });
     }
 
+    /**
+     * Extract the metadata from the given file.  Where the `frontmatter` function
+     * returns an object that contains the metadata, this function returns only
+     * the metadata object.
+     *
+     * This metadata is solely the data stored in the file.
+     */
     metadata(basedir, fpath) {
         return this.frontmatter(basedir, fpath)
             .then(fm => {
@@ -175,6 +199,12 @@ module.exports = class HTMLRenderer extends Renderer {
             });
     }
 
+    /**
+     * Initialize the metadata object which is passed around with the Document object.
+     * This metadata is formed by adding together the document metadata, potential metadata
+     * associated with the document directory, some data about the source file and where it's
+     * supposed to be rendered, as well as some useful functions.
+     */
     initMetadata(config, basedir, fpath, renderToPlus, baseMetadata, fmMetadata) {
 
         return new Promise((resolve, reject) => {
