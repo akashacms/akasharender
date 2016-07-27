@@ -45,6 +45,7 @@ module.exports = class HTMLRenderer extends Renderer {
      * If the document metadata says to render into a template, do so.
      */
     renderForLayout(rendered, metadata, config) {
+        // console.log('renderForLayout '+ util.inspect(metadata));
         if (metadata.layout) {
             // find layout
             // read layout
@@ -136,6 +137,7 @@ module.exports = class HTMLRenderer extends Renderer {
         .then(metadata => {
             docdata = metadata;
             log('about to render '+ fpath);
+            // log(`metadata before render ${util.inspect(docdata)}`);
             return this.render(doccontent, docdata);
         })
         .catch(err => {
@@ -180,6 +182,7 @@ module.exports = class HTMLRenderer extends Renderer {
         .then(text => {
             var fm = matter(text);
             cache.set("htmlrenderer", cachekey, fm);
+            // log(`frontmatter ${cachekey} ${util.inspect(fm)}`);
             return fm;
         });
     }
@@ -219,9 +222,12 @@ module.exports = class HTMLRenderer extends Renderer {
             for (var yprop in config.metadata) {
                 metadata[yprop] = config.metadata[yprop];
             }
+            var fmmcount = 0;
             for (var yprop in fmMetadata) {
                 metadata[yprop] = fmMetadata[yprop];
+                fmmcount++;
             }
+            if (fmmcount <= 0) console.error('WARNING: No metadata discovered in '+ basedir +' '+ fpath);
 
             metadata.content = "";
             metadata.document = {};
