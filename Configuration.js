@@ -351,15 +351,16 @@ module.exports = class Configuration {
      * @returns {Plugin}
      */
     plugin(name) {
+        // console.log('config.plugin: '+ util.inspect(this._plugins));
         if (! this._plugins) {
             return undefined;
         }
-        // log(util.inspect(this._plugins));
         for (var pluginKey in this._plugins) {
             var plugin = this._plugins[pluginKey];
-            // log(util.inspect(plugin));
+            // console.log(`FOUND ${util.inspect(plugin)}`);
             if (plugin.name === name) return plugin;
         }
+        console.log(`WARNING: Did not find plugin ${name}`);
         return undefined;
     }
 
