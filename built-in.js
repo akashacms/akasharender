@@ -255,6 +255,9 @@ module.exports.mahabhuta = [
 
 					akasha.findRendersTo(metadata.config.documentDirs, href)
 					.then(found => {
+						if (!found) {
+							throw new Error(`Did not find ${href} in ${util.inspect(metadata.config.documentDirs)}`);
+						}
 						var renderer = akasha.findRendererPath(found.foundFullPath);
 						if (renderer && renderer.metadata) {
 							return renderer.metadata(found.foundDir, found.foundFullPath)
