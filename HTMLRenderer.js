@@ -80,6 +80,7 @@ module.exports = class HTMLRenderer extends Renderer {
                 } */
                 if (!renderer) throw new Error(`No renderer for ${metadata.layout}`);
                 log(`renderForLayout rendering ${metadocpath} with ${metadata.layout}`);
+                // console.log(`HTMLRenderer before render plugin=${util.inspect(metadata.plugin)}`);
                 return renderer.render(layoutcontent, layoutdata);
             })
             .catch(err => {
@@ -90,7 +91,12 @@ module.exports = class HTMLRenderer extends Renderer {
                 layoutrendered = _rendered;
                 // log('maharun '+ metadata.layout +' '+ util.inspect(layoutdata.config.headerScripts));
                 log(`renderForLayout maharun ${metadocpath} with ${metadata.layout}`);
-                return this.maharun(layoutrendered, layoutdata, config.mahafuncs);
+                if (this.doMahabhuta(metadocpath)) {
+                    return this.maharun(layoutrendered, layoutdata, config.mahafuncs);
+                } else {
+                    // console.log(`renderForLayout mahabhuta not allowed ${layoutrendered}`);
+                    return layoutrendered;
+                }
             })
             .catch(err => {
                 console.error(`Error with Mahabhuta ${metadocpath} with ${metadata.layout} ${err.stack ? err.stack : err}`);
@@ -147,7 +153,12 @@ module.exports = class HTMLRenderer extends Renderer {
         .then(rendered => {
             docrendered = rendered;
             log('rendered to maharun '+ fpath);
-            return this.maharun(rendered, docdata, config.mahafuncs);
+            if (this.doMahabhuta(fpath)) {
+                return this.maharun(rendered, docdata, config.mahafuncs);
+            } else {
+                // console.log(`renderToFile mahabhuta not allowed ${rendered}`);
+                return rendered;
+            }
         })
         .catch(err => {
             console.error("Error in Mahabhuta for "+ fpath +" "+ (err.stack ? err.stack : err));
@@ -162,6 +173,15 @@ module.exports = class HTMLRenderer extends Renderer {
             log(`renderToFile ${basedir} ${fpath} ==> ${renderTo} ${this.filePath(fpath)}`);
             return filez.writeFile(renderTo, this.filePath(fpath), rendered);
         });
+    }
+
+    /**
+     * Determine whether it's allowed to run Mahabhuta.  Some rendering types
+     * cannot allow Mahabhuta to run.  Renderers should override this
+     * function if necessary.
+     */
+    doMahabhuta(fpath) {
+        return true;
     }
 
     /**

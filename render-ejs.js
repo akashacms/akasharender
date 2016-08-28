@@ -31,6 +31,16 @@ class EJSRenderer extends HTMLRenderer {
             }
         });
     }
+
+    /**
+     * We cannot allow PHP code to run through Mahabhuta.
+     */
+    doMahabhuta(fpath) {
+        if (/\.php\.ejs$/.test(fpath))
+            return false;
+        else
+            return true;
+    }
 }
 
 module.exports = new EJSRenderer();
