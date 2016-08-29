@@ -41,6 +41,51 @@ module.exports = class BuiltInPlugin extends akasha.Plugin {
         if (!config.builtin) config.builtin = {};
         if (!config.builtin.suppress) config.builtin.suppress = {};
 	}
+
+	doStylesheets(metadata) {
+		return _doStylesheets(metadata, this._config);
+	}
+
+	doHeaderJavaScript(metadata) {
+		return _doHeaderJavaScript(metadata);
+	}
+
+	doFooterJavaScript(metadata) {
+		return _doFooterJavaScript(metadata);
+	}
+}
+
+function _doStylesheets(metadata) {
+	var scripts;
+	if (typeof metadata.headerStylesheetsAdd !== "undefined") {
+		scripts = metadata.config.scripts.stylesheets.concat(metadata.headerStylesheetsAdd);
+	} else {
+		scripts = metadata.config.scripts ? metadata.config.scripts.stylesheets : undefined;
+	}
+	// console.log(`ak-stylesheets ${metadata.document.path} ${util.inspect(metadata.headerStylesheetsAdd)} ${util.inspect(metadata.config.scripts)} ${util.inspect(scripts)}`);
+	return akasha.partialSync(metadata.config, "ak_stylesheets.html.ejs", {
+		stylesheets: scripts
+	});
+}
+
+function _doHeaderJavaScript(metadata) {
+	var scripts;
+	if (typeof metadata.headerJavaScriptAddTop !== "undefined") {
+		scripts = metadata.config.scripts.javaScriptTop.concat(metadata.headerJavaScriptAddTop);
+	} else {
+		scripts = metadata.config.scripts ? metadata.config.scripts.javaScriptTop : undefined;
+	}
+	return akasha.partialSync(metadata.config, "ak_javaScript.html.ejs", { javaScripts: scripts });
+}
+
+function _doFooterJavaScript(metadata) {
+	var scripts;
+	if (typeof metadata.headerJavaScriptAddBottom !== "undefined") {
+		scripts = metadata.config.scripts.javaScriptBottom.concat(metadata.headerJavaScriptAddBottom);
+	} else {
+		scripts = metadata.config.scripts ? metadata.config.scripts.javaScriptBottom : undefined;
+	}
+	return akasha.partialSync(metadata.config, "ak_javaScript.html.ejs", { javaScripts: scripts });
 }
 
 module.exports.mahabhuta = [
@@ -51,22 +96,8 @@ module.exports.mahabhuta = [
         	log('ak-stylesheets');
             async.eachSeries(elements,
             (element, next) => {
-                var scripts;
-			    if (typeof metadata.headerStylesheetsAdd !== "undefined") {
-			        scripts = metadata.config.scripts.stylesheets.concat(metadata.headerStylesheetsAdd);
-			    } else {
-			        scripts = metadata.config.scripts ? metadata.config.scripts.stylesheets : undefined;
-			    }
-				// console.log(`ak-stylesheets ${metadata.document.path} ${util.inspect(metadata.headerStylesheetsAdd)} ${util.inspect(metadata.config.scripts)} ${util.inspect(scripts)}`);
-				akasha.partial(metadata.config, "ak_stylesheets.html.ejs", {
-					stylesheets: scripts
-				})
-                .then(style => {
-					// console.log(`ak-stylesheets ${metadata.document.path} ${style}`);
-                    $(element).replaceWith(style);
-                    next();
-				})
-                .catch(err => { error(err); next(err); });
+				$(element).replaceWith(_doStylesheets(metadata));
+				next();
             },
             err => {
 				// log(`after ak-stylesheets ${metadata.document.path} ${$.html()}`);
@@ -84,18 +115,8 @@ module.exports.mahabhuta = [
         	log('ak-headerJavaScript');
             async.eachSeries(elements,
             (element, next) => {
-                var scripts;
-			    if (typeof metadata.headerJavaScriptAddTop !== "undefined") {
-			        scripts = metadata.config.scripts.javaScriptTop.concat(metadata.headerJavaScriptAddTop);
-			    } else {
-			        scripts = metadata.config.scripts ? metadata.config.scripts.javaScriptTop : undefined;
-			    }
-			    akasha.partial(metadata.config, "ak_javaScript.html.ejs", { javaScripts: scripts })
-				.then(html => {
-                    $(element).replaceWith(html);
-                    next();
-                })
-                .catch(err => { error(err); next(err); });
+				$(element).replaceWith(_doHeaderJavaScript(metadata));
+				next();
             },
             err => {
 				if (err) {
@@ -112,18 +133,8 @@ module.exports.mahabhuta = [
         	log('ak-footerJavaScript');
             async.eachSeries(elements,
             (element, next) => {
-                var scripts;
-			    if (typeof metadata.headerJavaScriptAddBottom !== "undefined") {
-			        scripts = metadata.config.scripts.javaScriptBottom.concat(metadata.headerJavaScriptAddBottom);
-			    } else {
-			        scripts = metadata.config.scripts ? metadata.config.scripts.javaScriptBottom : undefined;
-			    }
-			    akasha.partial(metadata.config, "ak_javaScript.html.ejs", { javaScripts: scripts })
-				.then(html => {
-                    $(element).replaceWith(html);
-                    next();
-                })
-                .catch(err => { error(err); next(err); });
+				$(element).replaceWith(_doFooterJavaScript(metadata));
+				next();
             },
             err => {
 				if (err) {
@@ -140,12 +151,10 @@ module.exports.mahabhuta = [
         	log('ak-insert-body-content');
             async.eachSeries(elements,
             function(element, next) {
-
 				if (typeof metadata.content !== "undefined")
 					$(element).replaceWith(metadata.content);
 				else
 					$(element).remove();
-
 				next();
             },
             function(err) {
