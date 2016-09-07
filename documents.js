@@ -376,6 +376,7 @@ exports.documentSearch = function(config, options) {
         if (options.layouts) {
             return documents.filter(doc => {
                 for (let layout of options.layouts) {
+                    // console.log(`options.layouts ${doc.metadata.layout} === ${layout}?`);
                     if (doc.metadata.layout === layout) {
                         return true;
                     }

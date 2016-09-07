@@ -91,48 +91,47 @@ function _doFooterJavaScript(metadata) {
 
 class StylesheetsElement extends mahabhuta.CustomElement {
 	get elementName() { return "ak-stylesheets"; }
-	process($element, metadata, dirty, done) {
-		done(undefined, _doStylesheets(metadata));
+	process($element, metadata, dirty) {
+		return Promise.resolve(_doStylesheets(metadata));
 	}
 }
 
 class HeaderJavaScript extends mahabhuta.CustomElement {
 	get elementName() { return "ak-headerJavaScript"; }
-	process($element, metadata, dirty, done) {
-		done(undefined, _doHeaderJavaScript(metadata));
+	process($element, metadata, dirty) {
+		return Promise.resolve(_doHeaderJavaScript(metadata));
 	}
 }
 
 class FooterJavaScript extends mahabhuta.CustomElement {
 	get elementName() { return "ak-footerJavaScript"; }
-	process($element, metadata, dirty, done) {
-		done(undefined, _doFooterJavaScript(metadata));
+	process($element, metadata, dirty) {
+		return Promise.resolve(_doFooterJavaScript(metadata));
 	}
 }
 
 class InsertBodyContent extends mahabhuta.CustomElement {
 	get elementName() { return "ak-insert-body-content"; }
-	process($element, metadata, dirty, done) {
+	process($element, metadata, dirty) {
 		dirty();
-		done(undefined, typeof metadata.content !== "undefined" ? metadata.content : "");
+		return Promise.resolve(typeof metadata.content !== "undefined" ? metadata.content : "");
 	}
 }
 
 class InsertTeaser extends mahabhuta.CustomElement {
 	get elementName() { return "ak-teaser"; }
-	process($element, metadata, dirty, done) {
-		akasha.partial(metadata.config, "ak_teaser.html.ejs", {
+	process($element, metadata, dirty) {
+		return akasha.partial(metadata.config, "ak_teaser.html.ejs", {
 			teaser: typeof metadata["ak-teaser"] !== "undefined"
 				? metadata["ak-teaser"] : metadata.teaser
 		})
-		.then(html => { dirty(); done(undefined, html); })
-		.catch(err => { error(err); done(err); });
+		.then(html => { dirty(); return html; });
 	}
 }
 
 class Partial extends mahabhuta.CustomElement {
 	get elementName() { return "partial"; }
-	process($element, metadata, dirty, done) {
+	process($element, metadata, dirty) {
 		// We default to making partial set the dirty flag.  But a user
 		// of the partial tag can choose to tell us it isn't dirty.
 		// For example, if the partial only substitutes normal tags
@@ -149,11 +148,11 @@ class Partial extends mahabhuta.CustomElement {
 		for (var dprop in data) { d[dprop] = data[dprop]; }
 		d["partialBody"] = txt;
 		log('partial tag fname='+ fname +' attrs '+ util.inspect(data));
-		akasha.partial(metadata.config, fname, d)
-		.then(html => { done(undefined, html); })
+		return akasha.partial(metadata.config, fname, d)
+		.then(html => { return html; })
 		.catch(err => {
 			error(new Error("FAIL partial file-name="+ fname +" because "+ err));
-			done(new Error("FAIL partial file-name="+ fname +" because "+ err));
+			throw new Error("FAIL partial file-name="+ fname +" because "+ err);
 		});
 	}
 }
@@ -171,7 +170,7 @@ class AnchorCleanup extends mahabhuta.Munger {
 		 && (!linktext || linktext.length <= 0 || linktext === href)
 		 && $link.children() <= 0) {
 			var uHref = url.parse(href, true, true);
-			if (uHref.protocol || uHref.slashes) return done();
+			if (uHref.protocol || uHref.slashes) return Promise.resolve("");
 
 			if (! href.match(/^\//)) {
 				var hreforig = href;
@@ -182,7 +181,7 @@ class AnchorCleanup extends mahabhuta.Munger {
 				// util.log('***** FIXED href '+ hreforig +' to '+ href);
 			}
 
-			akasha.findRendersTo(metadata.config.documentDirs, href)
+			return akasha.findRendersTo(metadata.config.documentDirs, href)
 			.then(found => {
 				if (!found) {
 					throw new Error(`Did not find ${href} in ${util.inspect(metadata.config.documentDirs)}`);
@@ -199,15 +198,11 @@ class AnchorCleanup extends mahabhuta.Munger {
 						if (docmeta.title) {
 							$link.text(docmeta.title);
 						}
-						// done();
 						return "ok";
 					});
-				} // else done();
-				return "ok";
-			})
-			.then(() => { done(); })
-			.catch(err => { done(err); });
-		} else done();
+				} else return "ok";
+			});
+		} else return Promise.resolve("");
 	}
 }
 
