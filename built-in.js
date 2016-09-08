@@ -38,7 +38,7 @@ module.exports = class BuiltInPlugin extends akasha.Plugin {
 		this._config = config;
 		config.addPartialsDir(path.join(__dirname, 'partials'));
 		config.addMahabhuta(module.exports.mahabhuta);
-		config.addMahabhuta(mahabhuta.builtin);
+		config.addMahabhuta(mahabhuta.builtin.mahabhuta);
 
         if (!config.builtin) config.builtin = {};
         if (!config.builtin.suppress) config.builtin.suppress = {};
@@ -56,6 +56,8 @@ module.exports = class BuiltInPlugin extends akasha.Plugin {
 		return _doFooterJavaScript(metadata);
 	}
 }
+
+module.exports.mahabhuta = new mahabhuta.MahafuncArray("akasharender built-in", {});
 
 function _doStylesheets(metadata) {
 	var scripts;
@@ -127,6 +129,7 @@ class StylesheetsElement extends mahabhuta.CustomElement {
 		return Promise.resolve(_doStylesheets(metadata));
 	}
 }
+module.exports.mahabhuta.addMahafunc(new StylesheetsElement());
 
 class HeaderJavaScript extends mahabhuta.CustomElement {
 	get elementName() { return "ak-headerJavaScript"; }
@@ -134,6 +137,7 @@ class HeaderJavaScript extends mahabhuta.CustomElement {
 		return Promise.resolve(_doHeaderJavaScript(metadata));
 	}
 }
+module.exports.mahabhuta.addMahafunc(new HeaderJavaScript());
 
 class FooterJavaScript extends mahabhuta.CustomElement {
 	get elementName() { return "ak-footerJavaScript"; }
@@ -141,6 +145,7 @@ class FooterJavaScript extends mahabhuta.CustomElement {
 		return Promise.resolve(_doFooterJavaScript(metadata));
 	}
 }
+module.exports.mahabhuta.addMahafunc(new FooterJavaScript());
 
 class InsertBodyContent extends mahabhuta.CustomElement {
 	get elementName() { return "ak-insert-body-content"; }
@@ -149,6 +154,7 @@ class InsertBodyContent extends mahabhuta.CustomElement {
 		return Promise.resolve(typeof metadata.content !== "undefined" ? metadata.content : "");
 	}
 }
+module.exports.mahabhuta.addMahafunc(new InsertBodyContent());
 
 class InsertTeaser extends mahabhuta.CustomElement {
 	get elementName() { return "ak-teaser"; }
@@ -160,6 +166,7 @@ class InsertTeaser extends mahabhuta.CustomElement {
 		.then(html => { dirty(); return html; });
 	}
 }
+module.exports.mahabhuta.addMahafunc(new InsertTeaser());
 
 class Partial extends mahabhuta.CustomElement {
 	get elementName() { return "partial"; }
@@ -188,6 +195,7 @@ class Partial extends mahabhuta.CustomElement {
 		});
 	}
 }
+module.exports.mahabhuta.addMahafunc(new Partial());
 
 class AnchorCleanup extends mahabhuta.Munger {
 	get selector() { return "html body a"; }
@@ -237,13 +245,4 @@ class AnchorCleanup extends mahabhuta.Munger {
 		} else return Promise.resolve("");
 	}
 }
-
-module.exports.mahabhuta = [
-	new StylesheetsElement(),
-	new HeaderJavaScript(),
-	new FooterJavaScript(),
-	new InsertBodyContent(),
-	new InsertTeaser(),
-	new Partial(),
-	new AnchorCleanup()
-];
+module.exports.mahabhuta.addMahafunc(new AnchorCleanup());
