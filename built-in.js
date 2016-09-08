@@ -38,6 +38,7 @@ module.exports = class BuiltInPlugin extends akasha.Plugin {
 		this._config = config;
 		config.addPartialsDir(path.join(__dirname, 'partials'));
 		config.addMahabhuta(module.exports.mahabhuta);
+		config.addMahabhuta(mahabhuta.builtin);
 
         if (!config.builtin) config.builtin = {};
         if (!config.builtin.suppress) config.builtin.suppress = {};
@@ -64,9 +65,35 @@ function _doStylesheets(metadata) {
 		scripts = metadata.config.scripts ? metadata.config.scripts.stylesheets : undefined;
 	}
 	// console.log(`ak-stylesheets ${metadata.document.path} ${util.inspect(metadata.headerStylesheetsAdd)} ${util.inspect(metadata.config.scripts)} ${util.inspect(scripts)}`);
-	return akasha.partialSync(metadata.config, "ak_stylesheets.html.ejs", {
-		stylesheets: scripts
-	});
+
+	var ret = '';
+	var keys = Object.keys(scripts);
+	for (var i = 0; i < keys.length; i++) {
+	    var style = scripts[keys[i]];
+		if (style.media) {
+			ret += `<external-stylesheet href="${style.href}" media="${style.media}"/>`;
+		} else {
+			ret += `<external-stylesheet href="${style.href}"/>`;
+		}
+	}
+	// console.log(`_doStylesheets ${ret}`);
+	return ret;
+}
+
+function _doJavaScripts(scripts) {
+	var ret = '';
+	if (!scripts) return ret;
+
+	var keys = Object.keys(scripts);
+	for (var i = 0; i < keys.length; i++) {
+	    var script = scripts[keys[i]];
+	    if (script.lang) { var lang = `type="${script.lang}"`; }
+		if (script.href) { var href = `src="${script.href}"`; }
+		if (!script.script) script.script = '';
+		ret += `<script ${lang} ${href}>${script.script}</script>`;
+	}
+	// console.log('_doJavaScripts '+ ret);
+	return ret;
 }
 
 function _doHeaderJavaScript(metadata) {
@@ -76,7 +103,10 @@ function _doHeaderJavaScript(metadata) {
 	} else {
 		scripts = metadata.config.scripts ? metadata.config.scripts.javaScriptTop : undefined;
 	}
-	return akasha.partialSync(metadata.config, "ak_javaScript.html.ejs", { javaScripts: scripts });
+	// console.log(`_doHeaderJavaScript ${util.inspect(scripts)}`);
+	// console.log(`_doHeaderJavaScript ${util.inspect(metadata.config.scripts)}`);
+	return _doJavaScripts(scripts);
+	// return akasha.partialSync(metadata.config, "ak_javaScript.html.ejs", { javaScripts: scripts });
 }
 
 function _doFooterJavaScript(metadata) {
@@ -86,12 +116,14 @@ function _doFooterJavaScript(metadata) {
 	} else {
 		scripts = metadata.config.scripts ? metadata.config.scripts.javaScriptBottom : undefined;
 	}
-	return akasha.partialSync(metadata.config, "ak_javaScript.html.ejs", { javaScripts: scripts });
+	return _doJavaScripts(scripts);
+	// return akasha.partialSync(metadata.config, "ak_javaScript.html.ejs", { javaScripts: scripts });
 }
 
 class StylesheetsElement extends mahabhuta.CustomElement {
 	get elementName() { return "ak-stylesheets"; }
 	process($element, metadata, dirty) {
+		dirty();
 		return Promise.resolve(_doStylesheets(metadata));
 	}
 }
