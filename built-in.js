@@ -40,6 +40,15 @@ module.exports = class BuiltInPlugin extends akasha.Plugin {
 		config.addMahabhuta(module.exports.mahabhuta);
 		config.addMahabhuta(mahabhuta.builtin.mahabhuta);
 
+		mahabhuta.builtin.configuration.renderPartial = function(fname, body, data) {
+			return akasha.partial(data.config, fname, data)
+			.then(html => { return html; })
+			.catch(err => {
+				error(new Error("FAIL partial file-name="+ fname +" because "+ err));
+				throw new Error("FAIL partial file-name="+ fname +" because "+ err);
+			});
+		}
+
         if (!config.builtin) config.builtin = {};
         if (!config.builtin.suppress) config.builtin.suppress = {};
 	}
