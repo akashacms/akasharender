@@ -177,7 +177,7 @@ class InsertTeaser extends mahabhuta.CustomElement {
 }
 module.exports.mahabhuta.addMahafunc(new InsertTeaser());
 
-class Partial extends mahabhuta.CustomElement {
+/* class Partial extends mahabhuta.CustomElement {
 	get elementName() { return "partial"; }
 	process($element, metadata, dirty) {
 		// We default to making partial set the dirty flag.  But a user
@@ -204,7 +204,7 @@ class Partial extends mahabhuta.CustomElement {
 		});
 	}
 }
-module.exports.mahabhuta.addMahafunc(new Partial());
+module.exports.mahabhuta.addMahafunc(new Partial()); */
 
 class AnchorCleanup extends mahabhuta.Munger {
 	get selector() { return "html body a"; }
