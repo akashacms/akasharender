@@ -98,8 +98,15 @@ function _doJavaScripts(scripts) {
 	var keys = Object.keys(scripts);
 	for (var i = 0; i < keys.length; i++) {
 	    var script = scripts[keys[i]];
-	    if (script.lang) { var lang = `type="${script.lang}"`; }
+	    if (script.lang) {
+			var lang = `type="${script.lang}"`;
+		} else {
+			var lang = "";
+		}
 		if (script.href) { var href = `src="${script.href}"`; }
+		if (!script.href && !script.script) {
+			throw new Error("Must specify either href or script in ${util.inspect(script)}");
+		}
 		if (!script.script) script.script = '';
 		ret += `<script ${lang} ${href}>${script.script}</script>`;
 	}
