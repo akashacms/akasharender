@@ -184,7 +184,27 @@ class InsertTeaser extends mahabhuta.CustomElement {
 }
 module.exports.mahabhuta.addMahafunc(new InsertTeaser());
 
-/* class Partial extends mahabhuta.CustomElement {
+class AkBodyClassAdd extends mahabhuta.PageProcessor {
+	process($, metadata, dirty) {
+		if (typeof metadata.akBodyClassAdd !== 'undefined'
+		 && metadata.akBodyClassAdd != ''
+		 && $('html body').get(0)) {
+            return new Promise((resolve, reject) => {
+				if (!$('html body').hasClass(metadata.akBodyClassAdd)) {
+					$('html body').addClass(metadata.akBodyClassAdd);
+				}
+				resolve();
+			});
+		} else return Promise.resolve();
+	}
+}
+module.exports.mahabhuta.addMahafunc(new AkBodyClassAdd());
+
+/*
+
+This was moved into Mahabhuta
+
+ class Partial extends mahabhuta.CustomElement {
 	get elementName() { return "partial"; }
 	process($element, metadata, dirty) {
 		// We default to making partial set the dirty flag.  But a user
