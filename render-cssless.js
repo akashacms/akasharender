@@ -25,7 +25,7 @@ class CSSLESSRenderer extends Renderer {
     renderToFile(basedir, fpath, renderTo, renderToPlus, metadata, config) {
         return this.readFile(basedir, fpath)
         .then(lesstxt => this.render(lesstxt, {}))
-        .then(css => this.writeFile(renderTo, fpath, css));
+        .then(css => this.writeFile(renderTo, this.filePath(fpath), css.css));
     }
 }
 

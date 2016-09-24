@@ -297,7 +297,7 @@ exports.documentSearch = function(config, options) {
                 if (stat.isDirectory()) return fini();
                 var renderer = akasha.findRendererPath(fpath);
                 let filepath = renderer ? renderer.filePath(fpath) : undefined;
-                if (renderer) {
+                if (renderer && renderer.metadata) {
                     renderer.metadata(basedir, fpath)
                     .then(metadata => {
                         // log(util.inspect(metadata));

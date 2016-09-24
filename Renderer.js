@@ -1,5 +1,7 @@
 'use strict';
 
+const filez = require('./filez');
+
 const log   = require('debug')('akasha:Renderer');
 const error = require('debug')('akasha:error-Renderer');
 
@@ -52,6 +54,14 @@ module.exports = class Renderer {
             }
         }
         return null;
+    }
+
+    readFile(basedir, fpath) {
+        return filez.readFile(basedir, fpath);
+    }
+
+    writeFile(renderTo, fpath, text) {
+        return filez.writeFile(renderTo, fpath, text);
     }
 
     render(text, metadata) {

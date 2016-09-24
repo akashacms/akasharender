@@ -14,7 +14,7 @@
     "fs-extra-promise": "*",
     "globfs": "^0.1.2",
     "gray-matter": "^2.x",
-    "less": "^2.x",
+    "less": ">=2.7",
     "markdown-it": "^5.1.0",
     "node-cache": "^3.2.1",
     "oembed": "^0.1.0",
