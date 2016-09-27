@@ -446,7 +446,7 @@ exports.readDocument = function(config, documentPath) {
             renderer: found.renderer,
             stat: found.stat,
             renderpath: filepath,
-            rendername: path.basename(filepath),
+            rendername: filepath ? path.basename(filepath) : undefined,
             metadata: found.metadata
         });
         // console.log('readDocument #3 '+ util.inspect(doc));
