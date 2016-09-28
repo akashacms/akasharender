@@ -39,6 +39,7 @@ exports.findRendererPath = function(_path) {
     for (var r of renderers) {
         if (r.match(_path)) return r;
     }
+    // console.log(`findRendererPath NO RENDERER for ${_path}`);
     return undefined;
 };
 
@@ -78,7 +79,8 @@ exports.renderDocument = function(config, basedir, fpath, renderTo, renderToPlus
         if (typeof result === 'string' && result.match(/^SKIP DIRECTORY/) != null) {
             return result;
         }
-        var renderer = exports.findRendererPath(docPathname);
+        var renderer = exports.findRendererPath(fpath);
+        // if (!renderer) console.log(`renderDocument ${fpath} ${util.inspect(renderer)} ${util.inspect(renderers)}`);
         if (renderer) {
             // Have to re-do the renderToFpath to give the Renderer a say in the file name
             renderToFpath = path.join(renderTo, renderToPlus, renderer.filePath(fpath));

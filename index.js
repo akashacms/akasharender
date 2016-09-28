@@ -34,10 +34,11 @@ exports.Renderer = require('./Renderer');
 
 exports.HTMLRenderer = require('./HTMLRenderer');
 
-exports.render = function(config) { return render.render(config); };
+exports.render = render.render;
 exports.renderDocument = render.renderDocument;
-exports.findRendererName = function(name) { return render.findRendererName(name); };
-exports.findRendererPath = function(_path) { return render.findRendererPath(_path); };
+exports.findRendererName = render.findRendererName;
+exports.findRendererPath = render.findRendererPath;
+exports.registerRenderer = render.registerRenderer;
 
 /**
  * Finds the source document matching the filename for a rendered file.  That is, for

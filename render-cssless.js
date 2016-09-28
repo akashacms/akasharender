@@ -10,7 +10,7 @@ class CSSLESSRenderer extends Renderer {
     }
 
     renderSync(text, metadata) {
-        return text;
+        throw new Error("Cannot render .css.less in synchronous environment");
     }
 
     render(lesstxt, metadata) {
