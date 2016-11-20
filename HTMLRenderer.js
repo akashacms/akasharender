@@ -3,6 +3,7 @@
 const Renderer  = require('./Renderer');
 const render    = require('./render');
 const fs        = require('fs-extra-promise');
+const co        = require('co');
 const url       = require('url');
 const path      = require('path');
 const util      = require('util');
@@ -25,13 +26,8 @@ module.exports = class HTMLRenderer extends Renderer {
      * down to HTML text.
      */
     maharun(rendered, metadata, mahafuncs) {
-        return new Promise((resolve, reject) => {
-            if (metadata.config.cheerio) mahabhuta.config(metadata.config.cheerio);
-            mahabhuta.process(rendered, metadata, mahafuncs, (err, rendered) => {
-                if (err) reject(err);
-                else resolve(rendered);
-            });
-        });
+        if (metadata.config.cheerio) mahabhuta.config(metadata.config.cheerio);
+        return mahabhuta.processAsync(rendered, metadata, mahafuncs);
     }
 
     copyMetadataProperties(data, frontmatter) {
@@ -61,17 +57,17 @@ module.exports = class HTMLRenderer extends Renderer {
             var layoutrendered;
             var metadocpath = metadata.document ? metadata.document.path : "unknown";
 
+            var that = this;
+
             log(`renderForLayout find ${util.inspect(config.layoutDirs)} ${metadata.layout}`);
-            return filez.find(config.layoutDirs, metadata.layout)
-            .then(foundDir => {
+            return co(function* () {
+                var foundDir = yield filez.find(config.layoutDirs, metadata.layout);
                 if (!foundDir) throw new Error(`No layout directory found in ${util.inspect(config.layoutDirs)} ${metadata.layout}`);
-                return filez.readFile(foundDir, metadata.layout);
-            })
-            .then(layout => {
+                var layout = yield filez.readFile(foundDir, metadata.layout);
                 layouttext = layout;
                 var fm = matter(layout);
                 layoutcontent = fm.content;
-                layoutdata    = this.copyMetadataProperties(metadata, fm.data);
+                layoutdata    = that.copyMetadataProperties(metadata, fm.data);
                 layoutdata.content = rendered;
                 // if (!fm.data.layout) layoutdata.layout = undefined;
                 const renderer = render.findRendererPath(metadata.layout);
@@ -81,46 +77,28 @@ module.exports = class HTMLRenderer extends Renderer {
                 if (!renderer) throw new Error(`No renderer for ${metadata.layout}`);
                 log(`renderForLayout rendering ${metadocpath} with ${metadata.layout}`);
                 // console.log(`HTMLRenderer before render plugin=${util.inspect(metadata.plugin)}`);
-                return renderer.render(layoutcontent, layoutdata);
-            })
-            .catch(err => {
-                console.error(`Error rendering ${metadocpath} with ${metadata.layout} ${err.stack ? err.stack : err}`);
-                throw new Error(`Error rendering ${metadocpath} with ${metadata.layout} ${err.stack ? err.stack : err}`);
-            })
-            .then(_rendered => {
-                layoutrendered = _rendered;
+                try {
+                    layoutrendered = yield renderer.render(layoutcontent, layoutdata);
+                } catch (e) {
+                    let ee = new Error(`Error rendering ${metadocpath} with ${metadata.layout} ${e.stack ? e.stack : e}`);
+                    console.error(ee);
+                    throw ee;
+                }
                 // log('maharun '+ metadata.layout +' '+ util.inspect(layoutdata.config.headerScripts));
                 log(`renderForLayout maharun ${metadocpath} with ${metadata.layout}`);
-                if (this.doMahabhuta(metadocpath)) {
-                    return this.maharun(layoutrendered, layoutdata, config.mahafuncs);
+                if (that.doMahabhuta(metadocpath)) {
+                    try {
+                        layoutrendered = yield that.maharun(layoutrendered, layoutdata, config.mahafuncs);
+                    } catch (e2) {
+                        let eee = new Error(`Error with Mahabhuta ${metadocpath} with ${metadata.layout} ${err.stack ? err.stack : err}`);
+                        console.error(eee);
+                        throw eee;
+                    }
                 } else {
                     // console.log(`renderForLayout mahabhuta not allowed ${layoutrendered}`);
-                    return layoutrendered;
                 }
-            })
-            .catch(err => {
-                console.error(`Error with Mahabhuta ${metadocpath} with ${metadata.layout} ${err.stack ? err.stack : err}`);
-                throw new Error(`Error with Mahabhuta ${metadocpath} with ${metadata.layout} ${err.stack ? err.stack : err}`);
-            })
-            .then(_rendered => {
-                layoutrendered = _rendered;
-                // POTENTIAL IDEA - to support a chain of layouts
-                // At this point, check layoutdata.layout and if set
-                //     return renderForLayout(layoutrendered, layoutdata, layoutDirs, partialDirs)
-                // otherwise this
-
-                // This did not work, made an infinite loop
-                // if (layoutdata.layout) {
-                //     return this.renderForLayout(layoutrendered, layoutdata, config)
-                //    .then(_rendered => {
-                //        return _rendered;
-                //    });
-                // }
                 log(`renderForLayout FINI ${metadocpath} with ${metadata.layout}`);
-                return layoutrendered;
-            })
-            .catch(err => { error(err); throw err; });
-
+            });
         } else return Promise.resolve(rendered);
     }
 
@@ -135,43 +113,34 @@ module.exports = class HTMLRenderer extends Renderer {
         var docdata;
         var docrendered;
 
-        return this.frontmatter(basedir, fpath)
-        .then(fm => {
+        var that = this;
+
+        return co(function* () {
+            var fm = yield that.frontmatter(basedir, fpath);
             doccontent = fm.content;
-            return this.initMetadata(config, basedir, fpath, renderToPlus, metadata, fm.data);
-        })
-        .then(metadata => {
+            var metadata = yield that.initMetadata(config, basedir, fpath, renderToPlus, metadata, fm.data);
             docdata = metadata;
             log('about to render '+ fpath);
             // log(`metadata before render ${util.inspect(docdata)}`);
-            return this.render(doccontent, docdata);
-        })
-        .catch(err => {
-            console.error("Error rendering "+ fpath +" "+ (err.stack ? err.stack : err));
-            throw new Error("Error rendering "+ fpath +" "+ (err.stack ? err.stack : err));
-        })
-        .then(rendered => {
-            docrendered = rendered;
-            log('rendered to maharun '+ fpath);
-            if (this.doMahabhuta(fpath)) {
-                return this.maharun(rendered, docdata, config.mahafuncs);
-            } else {
-                // console.log(`renderToFile mahabhuta not allowed ${rendered}`);
-                return rendered;
+            try {
+                docrendered = yield that.render(doccontent, docdata);
+            } catch (err) {
+                console.error("Error rendering "+ fpath +" "+ (err.stack ? err.stack : err));
+                throw new Error("Error rendering "+ fpath +" "+ (err.stack ? err.stack : err));
             }
-        })
-        .catch(err => {
-            console.error("Error in Mahabhuta for "+ fpath +" "+ (err.stack ? err.stack : err));
-            throw new Error("Error in Mahabhuta for "+ fpath +" "+ (err.stack ? err.stack : err));
-        })
-        .then(rendered => {
-            docrendered = rendered;
+            log('rendered to maharun '+ fpath);
+            if (that.doMahabhuta(fpath)) {
+                try {
+                    docrendered = yield that.maharun(docrendered, docdata, config.mahafuncs);
+                } catch (err2) {
+                    console.error("Error in Mahabhuta for "+ fpath +" "+ (err2.stack ? err2.stack : err2));
+                    throw new Error("Error in Mahabhuta for "+ fpath +" "+ (err2.stack ? err2.stack : err2));
+                }
+            }
             log('maharun to renderForLayout '+ fpath);
-            return this.renderForLayout(docrendered, docdata, config);
-        })
-        .then(rendered => {
-            log(`renderToFile ${basedir} ${fpath} ==> ${renderTo} ${this.filePath(fpath)}`);
-            return filez.writeFile(renderTo, this.filePath(fpath), rendered);
+            docrendered = yield that.renderForLayout(docrendered, docdata, config);
+            log(`renderToFile ${basedir} ${fpath} ==> ${renderTo} ${that.filePath(fpath)}`);
+            return yield filez.writeFile(renderTo, that.filePath(fpath), docrendered);
         });
     }
 
