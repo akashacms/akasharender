@@ -57,7 +57,7 @@ module.exports = class HTMLRenderer extends Renderer {
             var layoutrendered;
             var metadocpath = metadata.document ? metadata.document.path : "unknown";
 
-            var that = this;
+            var thisRenderer = this;
 
             log(`renderForLayout find ${util.inspect(config.layoutDirs)} ${metadata.layout}`);
             return co(function* () {
@@ -67,7 +67,7 @@ module.exports = class HTMLRenderer extends Renderer {
                 layouttext = layout;
                 var fm = matter(layout);
                 layoutcontent = fm.content;
-                layoutdata    = that.copyMetadataProperties(metadata, fm.data);
+                layoutdata    = thisRenderer.copyMetadataProperties(metadata, fm.data);
                 layoutdata.content = rendered;
                 // if (!fm.data.layout) layoutdata.layout = undefined;
                 const renderer = render.findRendererPath(metadata.layout);
@@ -86,9 +86,9 @@ module.exports = class HTMLRenderer extends Renderer {
                 }
                 // log('maharun '+ metadata.layout +' '+ util.inspect(layoutdata.config.headerScripts));
                 log(`renderForLayout maharun ${metadocpath} with ${metadata.layout}`);
-                if (that.doMahabhuta(metadocpath)) {
+                if (thisRenderer.doMahabhuta(metadocpath)) {
                     try {
-                        layoutrendered = yield that.maharun(layoutrendered, layoutdata, config.mahafuncs);
+                        layoutrendered = yield thisRenderer.maharun(layoutrendered, layoutdata, config.mahafuncs);
                     } catch (e2) {
                         let eee = new Error(`Error with Mahabhuta ${metadocpath} with ${metadata.layout} ${err.stack ? err.stack : err}`);
                         console.error(eee);
@@ -98,6 +98,7 @@ module.exports = class HTMLRenderer extends Renderer {
                     // console.log(`renderForLayout mahabhuta not allowed ${layoutrendered}`);
                 }
                 log(`renderForLayout FINI ${metadocpath} with ${metadata.layout}`);
+                return layoutrendered;
             });
         } else return Promise.resolve(rendered);
     }
@@ -113,34 +114,34 @@ module.exports = class HTMLRenderer extends Renderer {
         var docdata;
         var docrendered;
 
-        var that = this;
+        var thisRenderer = this;
 
         return co(function* () {
-            var fm = yield that.frontmatter(basedir, fpath);
+            var fm = yield thisRenderer.frontmatter(basedir, fpath);
             doccontent = fm.content;
-            var metadata = yield that.initMetadata(config, basedir, fpath, renderToPlus, metadata, fm.data);
+            var metadata = yield thisRenderer.initMetadata(config, basedir, fpath, renderToPlus, metadata, fm.data);
             docdata = metadata;
             log('about to render '+ fpath);
             // log(`metadata before render ${util.inspect(docdata)}`);
             try {
-                docrendered = yield that.render(doccontent, docdata);
+                docrendered = yield thisRenderer.render(doccontent, docdata);
             } catch (err) {
                 console.error("Error rendering "+ fpath +" "+ (err.stack ? err.stack : err));
                 throw new Error("Error rendering "+ fpath +" "+ (err.stack ? err.stack : err));
             }
             log('rendered to maharun '+ fpath);
-            if (that.doMahabhuta(fpath)) {
+            if (thisRenderer.doMahabhuta(fpath)) {
                 try {
-                    docrendered = yield that.maharun(docrendered, docdata, config.mahafuncs);
+                    docrendered = yield thisRenderer.maharun(docrendered, docdata, config.mahafuncs);
                 } catch (err2) {
                     console.error("Error in Mahabhuta for "+ fpath +" "+ (err2.stack ? err2.stack : err2));
                     throw new Error("Error in Mahabhuta for "+ fpath +" "+ (err2.stack ? err2.stack : err2));
                 }
             }
             log('maharun to renderForLayout '+ fpath);
-            docrendered = yield that.renderForLayout(docrendered, docdata, config);
-            log(`renderToFile ${basedir} ${fpath} ==> ${renderTo} ${that.filePath(fpath)}`);
-            return yield filez.writeFile(renderTo, that.filePath(fpath), docrendered);
+            docrendered = yield thisRenderer.renderForLayout(docrendered, docdata, config);
+            log(`renderToFile ${basedir} ${fpath} ==> ${renderTo} ${thisRenderer.filePath(fpath)}`);
+            return yield filez.writeFile(renderTo, thisRenderer.filePath(fpath), docrendered);
         });
     }
 
