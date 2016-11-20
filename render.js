@@ -5,6 +5,7 @@ const path      = require('path');
 const fs        = require('fs-extra-promise');
 const util      = require('util');
 const async     = require('async');
+const co        = require('co');
 const mahabhuta = require('mahabhuta');
 const filez     = require('./filez');
 
@@ -62,69 +63,65 @@ exports.registerRenderer(require('./render-cssless'));
  * @param renderToPlus String further pathname addition for the rendering.  The final pathname is renderTo/renderToPlus/flath
  * @param renderBaseMetadata Object The metadata object to start with.  Typically this is an empty object, but sometimes we'll have some metadata to start with.
  */
-exports.renderDocument = function(config, basedir, fpath, renderTo, renderToPlus, renderBaseMetadata) {
+exports.renderDocument = co.wrap(function* (config, basedir, fpath, renderTo, renderToPlus, renderBaseMetadata) {
 
     var docPathname = path.join(basedir, fpath);
     var renderToFpath = path.join(renderTo, renderToPlus, fpath);
 
-    return fs.statAsync(docPathname)
-    .then(stats => {
-        if (stats && stats.isFile()) {
-            var renderToDir = path.dirname(renderToFpath);
-            log(`renderDocument ${basedir} ${fpath} ${renderToDir} ${renderToFpath}`);
-            return fs.ensureDirAsync(renderToDir);
-        } else { return `SKIP DIRECTORY ${docPathname}`; }
-    })
-    .then((result) => {
-        if (typeof result === 'string' && result.match(/^SKIP DIRECTORY/) != null) {
-            return result;
+    var stats = yield fs.statAsync(docPathname);
+
+    if (stats && stats.isFile()) {
+        var renderToDir = path.dirname(renderToFpath);
+        log(`renderDocument ${basedir} ${fpath} ${renderToDir} ${renderToFpath}`);
+        yield fs.ensureDirAsync(renderToDir);
+    } else { return `SKIP DIRECTORY ${docPathname}`; }
+
+    var renderer = exports.findRendererPath(fpath);
+    if (renderer) {
+        // Have to re-do the renderToFpath to give the Renderer a say in the file name
+        renderToFpath = path.join(renderTo, renderToPlus, renderer.filePath(fpath));
+        log(`${renderer.name} ${docPathname} ==> ${renderToFpath}`);
+        try {
+            yield renderer.renderToFile(basedir, fpath, path.join(renderTo, renderToPlus), renderToPlus, renderBaseMetadata, config)
+            return `${renderer.name} ${docPathname} ==> ${renderToFpath}`;
+        } catch (err) {
+            error(`in renderer branch for ${fpath} error=${err.stack}`);
+            throw new Error(`in renderer branch for ${fpath} error=${err.stack}`);
         }
-        var renderer = exports.findRendererPath(fpath);
-        // if (!renderer) console.log(`renderDocument ${fpath} ${util.inspect(renderer)} ${util.inspect(renderers)}`);
-        if (renderer) {
-            // Have to re-do the renderToFpath to give the Renderer a say in the file name
-            renderToFpath = path.join(renderTo, renderToPlus, renderer.filePath(fpath));
-            log(`${renderer.name} ${docPathname} ==> ${renderToFpath}`);
-            return renderer.renderToFile(basedir, fpath, path.join(renderTo, renderToPlus), renderToPlus, renderBaseMetadata, config)
-            .then(()   => { return `${renderer.name} ${docPathname} ==> ${renderToFpath}`; })
-            .catch(err => {
-                error(`in renderer branch for ${fpath} error=${err.stack}`);
-                throw new Error(`in renderer branch for ${fpath} error=${err.stack}`);
-            });
-        } else {
-            log(`COPY ${docPathname} ==> ${renderToFpath}`);
-            return fs.copyAsync(docPathname, renderToFpath)
-            .then(() => { return `COPY ${docPathname} ==> ${renderToFpath}`; })
-            .catch(err => {
-                error(`in copy branch for ${fpath} error=${err.stack}`);
-                throw new Error(`in copy branch for ${fpath} error=${err.stack}`);
-            });
+    } else {
+        log(`COPY ${docPathname} ==> ${renderToFpath}`);
+        try {
+            yield fs.copyAsync(docPathname, renderToFpath)
+            return `COPY ${docPathname} ==> ${renderToFpath}`;
+        } catch(err) {
+            error(`in copy branch for ${fpath} error=${err.stack}`);
+            throw new Error(`in copy branch for ${fpath} error=${err.stack}`);
         }
-    })
-};
+    }
+});
 
 //exports.render = function(docdirs, layoutDirs, partialDirs, mahafuncs, renderTo) {
-exports.render = function(config) {
+exports.render = co.wrap(function* (config) {
 
     // util.log(util.inspect(config.mahafuncs));
     // log('render');
     // log(`render ${util.inspect(config.documentDirs)}`);
 
-    return Promise.all(config.documentDirs.map(docdir => {
-        var renderToPlus = "";
-        var renderFrom = docdir;
-        var renderIgnore;
-        var renderBaseMetadata = {};
-        if (typeof docdir === 'object') {
-            renderFrom = docdir.src;
-            renderToPlus = docdir.dest;
-            renderIgnore = docdir.ignore;
-            if (docdir.baseMetadata) renderBaseMetadata = docdir.baseMetadata;
-        }
-        // log(`******* render.render ${renderFrom} ${config.renderTo} ${renderToPlus} ${renderIgnore}`);
-        return new Promise((resolve, reject) => {
+    try {
+        var renderResults = yield Promise.all(config.documentDirs.map(docdir => {
+            var renderToPlus = "";
+            var renderFrom = docdir;
+            var renderIgnore;
+            var renderBaseMetadata = {};
+            if (typeof docdir === 'object') {
+                renderFrom = docdir.src;
+                renderToPlus = docdir.dest;
+                renderIgnore = docdir.ignore;
+                if (docdir.baseMetadata) renderBaseMetadata = docdir.baseMetadata;
+            }
+            // log(`******* render.render ${renderFrom} ${config.renderTo} ${renderToPlus} ${renderIgnore}`);
             log(`RENDER DIRECTORY ${renderFrom} ==> ${renderToPlus}`);
-            globfs.operate(renderFrom, '**/*', (basedir, fpath, fini) => {
+            return globfs.operateAsync(renderFrom, '**/*', (basedir, fpath, fini) => {
                 var doIgnore = false;
                 if (renderIgnore) renderIgnore.forEach(ign => {
                     log(`CHECK ${fpath} === ${ign}`);
@@ -135,32 +132,26 @@ exports.render = function(config) {
                 log(`RENDER? ${renderFrom} ${fpath} ${doIgnore}`);
                 if (!doIgnore)
                     exports.renderDocument(config, basedir, fpath, config.renderTo, renderToPlus, renderBaseMetadata)
-                    .then((result) => { /* log(`render renderDocument ${result}`); */ fini(undefined, result); })
+                    .then((result) => { log(`render renderDocument ${result}`); fini(undefined, result); })
                     .catch(err => { error(`render renderDocument ${err}`); fini(err); });
                 else fini(undefined, `IGNORED ${fpath}`);
-            },
-            (err, results) => {
-                if (err) reject(err);
-                else resolve(results);
             });
-        });
-    }))
-    .then(results => {
-        log('calling hookSiteRendered');
-        return config.hookSiteRendered()
-        .then(() => { return results; })
-        .catch(err => { error(err); return results; });
-    })
-    .then(results => {
+        }));
+
+        var hookResults = yield config.hookSiteRendered();
+
         // The array resulting from the above has two levels, when we
         // want to return one level.  The two levels are due to globfs.operate
         // operating on each individual directory.
         var res = [];
-        for (let i = 0; i < results.length; i++) {
-            for (let j = 0; j < results[i].length; j++) {
-                res.push(results[i][j]);
+        for (let i = 0; i < renderResults.length; i++) {
+            for (let j = 0; j < renderResults[i].length; j++) {
+                res.push(renderResults[i][j]);
             }
         }
         return res;
-    });
-};
+    } catch (e) {
+        console.error(`render FAIL because of ${e}`);
+        throw e;
+    }
+});

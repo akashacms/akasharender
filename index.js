@@ -13,6 +13,7 @@ const filez  = require('./filez');
 const render = require('./render');
 const util   = require('util');
 const fs     = require('fs-extra-promise');
+const co     = require('co');
 const path   = require('path');
 const oembed = require('oembed');
 const RSS    = require('rss');
@@ -74,7 +75,7 @@ exports.documentTree = documents.documentTree;
 exports.documentSearch = documents.documentSearch;
 exports.readDocument   = documents.readDocument;
 
-exports.partial = function(config, partial, attrs) {
+exports.partial = co.wrap(function* (config, partial, attrs) {
     // find the partial
     // based on the partial format - render, using attrs
     // if okay - resolve(rendered) - else reject(err)
@@ -83,34 +84,30 @@ exports.partial = function(config, partial, attrs) {
     var partialText;
     var renderer;
 
-    if (!partial) return Promise.reject(new Error("No partial file name supplied"));
+    if (!partial) throw new Error("No partial file name supplied");
 
-    return filez.find(config.partialDirs, partial)
-    .then(partialDir => {
-        if (!partialDir) throw new Error(`No partial directory found for ${partial}`);
+    var partialDir = yield filez.find(config.partialDirs, partial);
+    if (!partialDir) throw new Error(`No partial directory found for ${partial}`);
 
-        partialFname = path.join(partialDir, partial);
+    partialFname = path.join(partialDir, partial);
 
-        renderer = render.findRendererPath(partialFname);
+    renderer = render.findRendererPath(partialFname);
 
-        // For .html partials, we won't find a Renderer and can
-        // short-circuit the process by just reading the file.
-        if (!renderer && partialFname.match(/\.html$/) !== null) {
-            return filez.readFile(partialDir, partial);
-        }
+    // For .html partials, we won't find a Renderer and can
+    // short-circuit the process by just reading the file.
+    if (!renderer && partialFname.match(/\.html$/) !== null) {
+        return yield filez.readFile(partialDir, partial);
+    }
 
-        if (!renderer) throw new Error(`No renderer found for ${partialFname}`);
-        if (!(renderer instanceof exports.HTMLRenderer)) {
-            throw new Error(`Renderer for ${partial} must be HTMLRenderer`);
-        }
+    if (!renderer) {
+        throw new Error(`No renderer found for ${partialFname}`);
+    } else if (!(renderer instanceof exports.HTMLRenderer)) {
+        throw new Error(`Renderer for ${partial} must be HTMLRenderer`);
+    }
 
-        return filez.readFile(partialDir, partial);
-    })
-    .then(text => {
-        partialText = text;
-        return renderer ? renderer.render(partialText, attrs) : partialText;
-    });
-};
+    partialText = yield filez.readFile(partialDir, partial);
+    return renderer ? yield renderer.render(partialText, attrs) : partialText;
+});
 
 exports.partialSync = function(config, fname, metadata) {
 
