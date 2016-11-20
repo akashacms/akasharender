@@ -5,20 +5,16 @@ const globfs     = require('globfs');
 const util       = require('util');
 const path       = require('path');
 const async      = require('async');
+const co         = require('co');
 const render     = require('./render');
 const cache      = require('./caching');
 
 const log   = require('debug')('akasha:filez');
 const error = require('debug')('akasha:error-filez');
 
-exports.copyAssets = function(assetdirs, renderTo) {
-    return new Promise((resolve, reject) => {
-        globfs.copy(assetdirs, '**/*', renderTo, err => {
-            if (err) reject(err);
-            else resolve();
-        });
-    });
-};
+exports.copyAssets = co.wrap(function* (assetdirs, renderTo) {
+    return yield globfs.copyAsync(assetdirs, '**/*', renderTo);
+});
 
 exports.findSync = function(dirs, fileName) {
     for (var i = 0; i < dirs.length; i++) {
@@ -35,49 +31,63 @@ exports.findSync = function(dirs, fileName) {
     return undefined;
 };
 
-exports.find = function(dirs, fileName) {
+exports.find = co.wrap(function* (dirs, fileName) {
     if (!dirs) throw new Error("Must supply directories to search");
     if (!fileName) throw new Error("Must supply a fileName");
-    return new Promise((resolve, reject) => {
-        // for each dir .. check path.join(dir, layoutName)
-        // first match resolve's
-
-        if (!dirs) return reject(new Error("Must supply directories to search"));
-        if (!fileName) return reject(new Error("Must supply a fileName"));
-
         // log(`filez.find ${util.inspect(dirs)} ${fileName}`);
 
-        var found = false;
-        var foundDir;
+    var found = false;
+    var foundDir;
 
-        async.eachSeries(dirs,
-        (dir, next) => {
-            if (!found) {
-                fs.statAsync(path.join(dir, fileName))
-                .then(stats => {
-                    if (stats && stats.isFile()) {
-                        found = true;
-                        foundDir = dir;
-                        // log(`filez.find ${util.inspect(dirs)} ${fileName} found ${foundDir}`);
-                    }
-                    next();
-                })
-                .catch(err => {
-                    if (err.code === 'ENOENT') next();
-                    else next(err);
-                });
-            } else next();
-        },
-        err => {
-            if (err) { error(err); reject(err); }
-            else if (found) resolve(foundDir);
-            else {
-                log(`filez.find FAIL ${util.inspect(dirs)} ${fileName}`);
-                resolve(undefined);
-            }
-        });
-    });
-};
+    for (var dir of dirs) {
+        var stats = undefined;
+        try {
+            stats = yield fs.statAsync(path.join(dir, fileName));
+        } catch (e) {
+            if (e.code !== 'ENOENT') throw e;
+            stats = undefined;
+        }
+
+        if (stats && stats.isFile()) {
+            found = true;
+            foundDir = dir;
+            // log(`filez.find ${util.inspect(dirs)} ${fileName} found ${foundDir}`);
+            break;
+        }
+    }
+    if (found) return foundDir;
+    else {
+        log(`filez.find FAIL ${util.inspect(dirs)} ${fileName}`);
+        return undefined;
+    }
+/*
+    async.eachSeries(dirs,
+    (dir, next) => {
+        if (!found) {
+            fs.statAsync(path.join(dir, fileName))
+            .then(stats => {
+                if (stats && stats.isFile()) {
+                    found = true;
+                    foundDir = dir;
+                    // log(`filez.find ${util.inspect(dirs)} ${fileName} found ${foundDir}`);
+                }
+                next();
+            })
+            .catch(err => {
+                if (err.code === 'ENOENT') next();
+                else next(err);
+            });
+        } else next();
+    },
+    err => {
+        if (err) { error(err); reject(err); }
+        else if (found) resolve(foundDir);
+        else {
+            log(`filez.find FAIL ${util.inspect(dirs)} ${fileName}`);
+            resolve(undefined);
+        }
+    }); */
+});
 
 exports.findRendersTo = function(dirs, rendersTo) {
 
@@ -214,15 +224,9 @@ exports.readFile = function(dir, fpath) {
     return fs.readFileAsync(readFpath, 'utf8');
 };
 
-exports.writeFile = function(dir, fpath, text) {
-    return fs.ensureDirAsync(dir)
-    .then(() => {
-        var renderToFile = path.join(dir, fpath);
-        log(`filez.writeFile ${dir} ${fpath} ==> ${renderToFile}`);
-        return fs.writeFileAsync(renderToFile, text, 'utf8')
-        .catch(err => {
-            error(`filez.writeFile ${renderToFile} ${err.stack}`);
-            throw err;
-        });
-    });
-};
+exports.writeFile = co.wrap(function* (dir, fpath, text) {
+    yield fs.ensureDirAsync(dir);
+    var renderToFile = path.join(dir, fpath);
+    log(`filez.writeFile ${dir} ${fpath} ==> ${renderToFile}`);
+    yield fs.writeFileAsync(renderToFile, text, 'utf8');
+});
