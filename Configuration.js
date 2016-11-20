@@ -275,13 +275,11 @@ module.exports = class Configuration {
                 copyFrom = assetsdir.src;
                 copyTo = path.join(this.renderTo, assetsdir.dest);
             }
-            return new Promise((resolve, reject) => {
-                globfs.copy(copyFrom, [ "**/*", '**/.*/*', '**/.*' ], copyTo,
-                        err => {
-                            if (err) reject(err);
-                            else resolve();
-                        });
-            });
+            return globfs.copyAsync(copyFrom, [ "**/*", '**/.*/*', '**/.*' ], copyTo,
+                    err => {
+                        if (err) reject(err);
+                        else resolve();
+                    });
         }));
     }
 
