@@ -60,33 +60,6 @@ exports.find = co.wrap(function* (dirs, fileName) {
         log(`filez.find FAIL ${util.inspect(dirs)} ${fileName}`);
         return undefined;
     }
-/*
-    async.eachSeries(dirs,
-    (dir, next) => {
-        if (!found) {
-            fs.statAsync(path.join(dir, fileName))
-            .then(stats => {
-                if (stats && stats.isFile()) {
-                    found = true;
-                    foundDir = dir;
-                    // log(`filez.find ${util.inspect(dirs)} ${fileName} found ${foundDir}`);
-                }
-                next();
-            })
-            .catch(err => {
-                if (err.code === 'ENOENT') next();
-                else next(err);
-            });
-        } else next();
-    },
-    err => {
-        if (err) { error(err); reject(err); }
-        else if (found) resolve(foundDir);
-        else {
-            log(`filez.find FAIL ${util.inspect(dirs)} ${fileName}`);
-            resolve(undefined);
-        }
-    }); */
 });
 
 exports.findRendersTo = function(dirs, rendersTo) {

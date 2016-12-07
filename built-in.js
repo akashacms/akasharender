@@ -69,28 +69,28 @@ module.exports = class BuiltInPlugin extends akasha.Plugin {
 module.exports.mahabhuta = new mahabhuta.MahafuncArray("akasharender built-in", {});
 
 function _doStylesheets(metadata) {
-	var scripts;
-	if (typeof metadata.headerStylesheetsAdd !== "undefined") {
-		scripts = metadata.config.scripts.stylesheets.concat(metadata.headerStylesheetsAdd);
-	} else {
-		scripts = metadata.config.scripts ? metadata.config.scripts.stylesheets : undefined;
-	}
-	// console.log(`ak-stylesheets ${metadata.document.path} ${util.inspect(metadata.headerStylesheetsAdd)} ${util.inspect(metadata.config.scripts)} ${util.inspect(scripts)}`);
+    var scripts;
+    if (typeof metadata.headerStylesheetsAdd !== "undefined") {
+        scripts = metadata.config.scripts.stylesheets.concat(metadata.headerStylesheetsAdd);
+    } else {
+        scripts = metadata.config.scripts ? metadata.config.scripts.stylesheets : undefined;
+    }
+    // console.log(`ak-stylesheets ${metadata.document.path} ${util.inspect(metadata.headerStylesheetsAdd)} ${util.inspect(metadata.config.scripts)} ${util.inspect(scripts)}`);
 
-	var ret = '';
-	if (typeof scripts !== 'undefined') {
-		var keys = Object.keys(scripts);
-		for (var i = 0; i < keys.length; i++) {
-		    var style = scripts[keys[i]];
-			if (style.media) {
-				ret += `<external-stylesheet href="${style.href}" media="${style.media}"/>`;
-			} else {
-				ret += `<external-stylesheet href="${style.href}"/>`;
-			}
-		}
-		// console.log(`_doStylesheets ${ret}`);
-	}
-	return ret;
+    var ret = '';
+    if (typeof scripts !== 'undefined') {
+        var keys = Object.keys(scripts);
+        for (var i = 0; i < keys.length; i++) {
+        var style = scripts[keys[i]];
+            if (style.media) {
+                return `<link rel="stylesheet" type="text/css" href="${style.href}" media="${style.media}"/>`;
+            } else {
+                return `<link rel="stylesheet" type="text/css" href="${style.href}"/>`;
+            }
+        }
+        // console.log(`_doStylesheets ${ret}`);
+    }
+    return ret;
 }
 
 function _doJavaScripts(scripts) {
