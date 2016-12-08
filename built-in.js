@@ -83,9 +83,9 @@ function _doStylesheets(metadata) {
         for (var i = 0; i < keys.length; i++) {
         var style = scripts[keys[i]];
             if (style.media) {
-                return `<link rel="stylesheet" type="text/css" href="${style.href}" media="${style.media}"/>`;
+                ret += `<link rel="stylesheet" type="text/css" href="${style.href}" media="${style.media}"/>`;
             } else {
-                return `<link rel="stylesheet" type="text/css" href="${style.href}"/>`;
+                ret += `<link rel="stylesheet" type="text/css" href="${style.href}"/>`;
             }
         }
         // console.log(`_doStylesheets ${ret}`);
