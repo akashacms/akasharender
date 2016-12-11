@@ -17,6 +17,7 @@ exports.copyAssets = co.wrap(function* (assetdirs, renderTo) {
 });
 
 exports.findSync = function(dirs, fileName) {
+    throw new Error('findSync deprecated - use globfs.findSync');
     for (var i = 0; i < dirs.length; i++) {
         var dir = dirs[i];
         var fileToFind = path.join(dir, fileName);
@@ -32,6 +33,7 @@ exports.findSync = function(dirs, fileName) {
 };
 
 exports.find = co.wrap(function* (dirs, fileName) {
+    throw new Error('find deprecated - use globfs.findAsync');
     if (!dirs) throw new Error("Must supply directories to search");
     if (!fileName) throw new Error("Must supply a fileName");
         // log(`filez.find ${util.inspect(dirs)} ${fileName}`);
@@ -193,6 +195,7 @@ exports.findRendersTo = function(dirs, rendersTo) {
 };
 
 exports.readFile = function(dir, fpath) {
+    return Promise.reject(new Error("readFile deprecated - use fs.readFileAsync instead"));
     var readFpath = path.join(dir, fpath);
     return fs.readFileAsync(readFpath, 'utf8');
 };

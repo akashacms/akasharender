@@ -89,7 +89,7 @@ exports.partialSync = function(config, fname, metadata) {
     return mahaPartial.doPartialSync(fname, metadata);
 };
 
-exports.indexChain = function(config, fname) {
+exports.indexChain = co.wrap(function* (config, fname) {
 
     var ret = [];
 
@@ -122,57 +122,46 @@ exports.indexChain = function(config, fname) {
         fname = renderer.filePath(fname);
     }
 
-    return filez.findRendersTo(config.documentDirs, fname)
-    .then(found => {
-        if (typeof found === 'undefined') {
-            throw new Error(`Did not find directory for ${fname}`);
-        }
-        ret.push({ foundDir: found.foundDir, foundPath: found.foundPath, filename: fname });
-        return findParents(config, fname);
-    })
-    .then(() => { return ret.reverse(); })
-    .catch(err => { error(err.stack); throw err; });
-};
+    var found = yield filez.findRendersTo(config.documentDirs, fname);
+    if (typeof found === 'undefined') {
+        throw new Error(`Did not find directory for ${fname}`);
+    }
+    ret.push({ foundDir: found.foundDir, foundPath: found.foundPath, filename: fname });
+    yield findParents(config, fname);
+
+    return ret.reverse();
+});
 
 ///////////////// RSS Feed Generation
 
-exports.generateRSS = function(config, configrss, feedData, items, renderTo) {
+exports.generateRSS = co.wrap(function* (config, configrss, feedData, items, renderTo) {
 
-    return new Promise((resolve, reject) => {
-
-        // Construct initial rss object
-        var rss = {};
-        for (let key in configrss.rss) {
-            if (configrss.hasOwnProperty(key)) {
-                rss[key] = configrss[key];
-            }
+    // Construct initial rss object
+    var rss = {};
+    for (let key in configrss.rss) {
+        if (configrss.hasOwnProperty(key)) {
+            rss[key] = configrss[key];
         }
+    }
 
-        // Then fill in from feedData
-        for (let key in feedData) {
-            if (feedData.hasOwnProperty(key)) {
-                rss[key] = feedData[key];
-            }
+    // Then fill in from feedData
+    for (let key in feedData) {
+        if (feedData.hasOwnProperty(key)) {
+            rss[key] = feedData[key];
         }
+    }
 
-        var rssfeed = new RSS(rss);
+    var rssfeed = new RSS(rss);
 
-        items.forEach(function(item) { rssfeed.item(item); });
+    items.forEach(function(item) { rssfeed.item(item); });
 
-        var xml = rssfeed.xml();
-        var renderOut = path.join(config.renderDestination, renderTo);
+    var xml = rssfeed.xml();
+    var renderOut = path.join(config.renderDestination, renderTo);
 
-        fs.mkdirsAsync(path.dirname(renderOut))
-        .then(() => {
-            return fs.writeFileAsync(renderOut, xml, { encoding: 'utf8' });
-        })
-        .catch(err => {
-            error(err);
-            throw err;
-        });
-    });
+    yield fs.mkdirsAsync(path.dirname(renderOut))
+    yield fs.writeFileAsync(renderOut, xml, { encoding: 'utf8' });
 
-}
+});
 
 // Consider making an external plugin
 // https://www.npmjs.com/package/oembed-all

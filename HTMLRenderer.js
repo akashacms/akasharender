@@ -12,6 +12,7 @@ const mahabhuta = require('mahabhuta');
 const filez     = require('./filez');
 const cache     = require('./caching');
 const akasha    = require('./index');
+const globfs    = require('globfs');
 
 const log   = require('debug')('akasha:HTMLRenderer');
 const error = require('debug')('akasha:error');
@@ -61,9 +62,11 @@ module.exports = class HTMLRenderer extends Renderer {
 
             log(`renderForLayout find ${util.inspect(config.layoutDirs)} ${metadata.layout}`);
             return co(function* () {
-                var foundDir = yield filez.find(config.layoutDirs, metadata.layout);
+                var foundDir = yield globfs.findAsync(config.layoutDirs, metadata.layout);
                 if (!foundDir) throw new Error(`No layout directory found in ${util.inspect(config.layoutDirs)} ${metadata.layout}`);
-                var layout = yield filez.readFile(foundDir, metadata.layout);
+                foundDir = foundDir[0];
+                var layoutFname = path.join(foundDir.basedir, foundDir.path);
+                var layout = yield fs.readFileAsync(layoutFname, 'utf8');
                 layouttext = layout;
                 var fm = matter(layout);
                 layoutcontent = fm.content;
@@ -168,7 +171,7 @@ module.exports = class HTMLRenderer extends Renderer {
             // return the cached data
             return Promise.resolve(cachedFrontmatter);
         }
-        return filez.readFile(basedir, fpath)
+        return fs.readFileAsync(path.join(basedir, fpath), 'utf8')
         .then(text => {
             var fm = matter(text);
             cache.set("htmlrenderer", cachekey, fm);
