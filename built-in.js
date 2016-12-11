@@ -25,6 +25,8 @@ const util  = require('util');
 const async = require('async');
 const akasha   = require('./index');
 const mahabhuta = require('mahabhuta');
+const mahaMetadata = require('mahabhuta/maha/metadata');
+const mahaPartial = require('mahabhuta/maha/partial');
 
 const log   = require('debug')('akasha:builtin-plugin');
 const error = require('debug')('akasha:error-builtin-plugin');
@@ -35,35 +37,27 @@ module.exports = class BuiltInPlugin extends akasha.Plugin {
 	}
 
 	configure(config) {
-		this._config = config;
-		config.addPartialsDir(path.join(__dirname, 'partials'));
-		config.addMahabhuta(module.exports.mahabhuta);
-		config.addMahabhuta(mahabhuta.builtin.mahabhuta);
-
-		mahabhuta.builtin.configuration.renderPartial = function(fname, body, data) {
-			return akasha.partial(data.config, fname, data)
-			.then(html => { return html; })
-			.catch(err => {
-				error(new Error("FAIL partial file-name="+ fname +" because "+ err));
-				throw new Error("FAIL partial file-name="+ fname +" because "+ err);
-			});
-		}
+        this._config = config;
+        config.addPartialsDir(path.join(__dirname, 'partials'));
+        config.addMahabhuta(module.exports.mahabhuta);
+        config.addMahabhuta(mahaMetadata.mahabhuta);
+        config.addMahabhuta(mahaPartial.mahabhuta);
 
         if (!config.builtin) config.builtin = {};
         if (!config.builtin.suppress) config.builtin.suppress = {};
-	}
+    }
 
-	doStylesheets(metadata) {
-		return _doStylesheets(metadata, this._config);
-	}
+    doStylesheets(metadata) {
+    	return _doStylesheets(metadata, this._config);
+    }
 
-	doHeaderJavaScript(metadata) {
-		return _doHeaderJavaScript(metadata);
-	}
+    doHeaderJavaScript(metadata) {
+    	return _doHeaderJavaScript(metadata);
+    }
 
-	doFooterJavaScript(metadata) {
-		return _doFooterJavaScript(metadata);
-	}
+    doFooterJavaScript(metadata) {
+    	return _doFooterJavaScript(metadata);
+    }
 }
 
 module.exports.mahabhuta = new mahabhuta.MahafuncArray("akasharender built-in", {});
@@ -79,9 +73,10 @@ function _doStylesheets(metadata) {
 
     var ret = '';
     if (typeof scripts !== 'undefined') {
-        var keys = Object.keys(scripts);
-        for (var i = 0; i < keys.length; i++) {
-        var style = scripts[keys[i]];
+        for (var style of scripts) {
+            /* var keys = Object.keys(scripts);
+            for (var i = 0; i < keys.length; i++) {
+            var style = scripts[keys[i]]; */
             if (style.media) {
                 ret += `<link rel="stylesheet" type="text/css" href="${style.href}" media="${style.media}"/>`;
             } else {
@@ -97,9 +92,10 @@ function _doJavaScripts(scripts) {
 	var ret = '';
 	if (!scripts) return ret;
 
-	var keys = Object.keys(scripts);
-	for (var i = 0; i < keys.length; i++) {
-	    var script = scripts[keys[i]];
+    for (var script of scripts) {
+    	/* var keys = Object.keys(scripts);
+    	for (var i = 0; i < keys.length; i++) {
+    	    var script = scripts[keys[i]]; */
 	    if (script.lang) {
 			var lang = `type="${script.lang}"`;
 		} else {

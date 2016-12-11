@@ -18,6 +18,8 @@ const path   = require('path');
 const oembed = require('oembed');
 const RSS    = require('rss');
 const globfs = require('globfs');
+const mahabhuta = require('mahabhuta');
+const mahaPartial = require('mahabhuta/maha/partial');
 const documents = require('./documents');
 
 exports.cache = require('./caching');
@@ -76,65 +78,15 @@ exports.documentSearch = documents.documentSearch;
 exports.readDocument   = documents.readDocument;
 
 exports.partial = co.wrap(function* (config, partial, attrs) {
-    // find the partial
-    // based on the partial format - render, using attrs
-    // if okay - resolve(rendered) - else reject(err)
 
-    var partialFname;
-    var partialText;
-    var renderer;
-
-    if (!partial) throw new Error("No partial file name supplied");
-
-    var partialDir = yield filez.find(config.partialDirs, partial);
-    if (!partialDir) throw new Error(`No partial directory found for ${partial}`);
-
-    partialFname = path.join(partialDir, partial);
-
-    renderer = render.findRendererPath(partialFname);
-
-    // For .html partials, we won't find a Renderer and can
-    // short-circuit the process by just reading the file.
-    if (!renderer && partialFname.match(/\.html$/) !== null) {
-        return yield filez.readFile(partialDir, partial);
-    }
-
-    if (!renderer) {
-        throw new Error(`No renderer found for ${partialFname}`);
-    } else if (!(renderer instanceof exports.HTMLRenderer)) {
-        throw new Error(`Renderer for ${partial} must be HTMLRenderer`);
-    }
-
-    partialText = yield filez.readFile(partialDir, partial);
-    return renderer ? yield renderer.render(partialText, attrs) : partialText;
+    // This has been moved into Mahabhuta
+    return mahaPartial.doPartialAsync(partial, attrs);
 });
 
 exports.partialSync = function(config, fname, metadata) {
 
-    var fnamePartial;
-    const renderer = render.findRendererPath(fname);
-    if (!renderer && fname.match(/\.html$/) !== null) {
-        fnamePartial = filez.findSync(config.partialDirs, fname);
-        return fs.readFileSync(fnamePartial, 'utf8');
-    }
-
-    if (!renderer) {
-        throw new Error(`No renderer for ${fname}`);
-    }
-    if (!(renderer instanceof exports.HTMLRenderer)) {
-        throw new Error(`Renderer for ${fname} must be HTMLRenderer`);
-    }
-
-    fnamePartial = filez.findSync(config.partialDirs, fname);
-
-    // log(`partialSync fname=${fname} fnamePartial=${fnamePartial}`);
-    if (fnamePartial === undefined) {
-        throw new Error('NO FILE FOUND FOR PARTIAL ' + util.inspect(fname));
-    }
-
-    var text = fs.readFileSync(fnamePartial, 'utf8');
-
-    return renderer.renderSync(text, metadata);
+    // This has been moved into Mahabhuta
+    return mahaPartial.doPartialSync(fname, metadata);
 };
 
 exports.indexChain = function(config, fname) {
