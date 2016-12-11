@@ -90,7 +90,7 @@ module.exports = class HTMLRenderer extends Renderer {
                     try {
                         layoutrendered = yield thisRenderer.maharun(layoutrendered, layoutdata, config.mahafuncs);
                     } catch (e2) {
-                        let eee = new Error(`Error with Mahabhuta ${metadocpath} with ${metadata.layout} ${err.stack ? err.stack : err}`);
+                        let eee = new Error(`Error with Mahabhuta ${metadocpath} with ${metadata.layout} ${e2.stack ? e2.stack : e2}`);
                         console.error(eee);
                         throw eee;
                     }
