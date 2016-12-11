@@ -12,6 +12,8 @@ const util   = require('util');
 const path   = require('path');
 const async  = require('async');
 const Plugin = require('./Plugin');
+const mahabhuta = require('mahabhuta');
+const mahaPartial = require('mahabhuta/maha/partial');
 
 const log    = require('debug')('akasha:configuration');
 const error  = require('debug')('akasha:error-configuration');
@@ -65,11 +67,11 @@ module.exports = class Configuration {
             }
         }
 
-        if (!this.partialDirs) {
-            this.partialDirs = [];
+        if (!mahaPartial.configuration.partialDirs) {
+            mahaPartial.configuration.partialDirs = [];
             if (fs.existsSync('partials') && (stat = fs.statSync('partials'))) {
                 if (stat.isDirectory()) {
-                    this.partialDirs = [ 'partials' ];
+                    mahaPartial.configuration.partialDirs = [ 'partials' ];
                 }
             }
         }
@@ -144,10 +146,18 @@ module.exports = class Configuration {
      * @returns {Configuration}
      */
     addPartialsDir(dir) {
-        if (!this.partialDirs) { this.partialDirs = []; }
-        this.partialDirs.push(dir);
+        // We'll store this data in Mahabhuta instead of in this object
+        if (!mahaPartial.configuration.partialDirs) {
+            mahaPartial.configuration.partialDirs = [];
+        }
+        mahaPartial.configuration.partialDirs.push(dir);
         return this;
+        /* if (!this.partialDirs) { this.partialDirs = []; }
+        this.partialDirs.push(dir);
+        return this; */
     }
+
+    get partialsDirs() { return mahaPartial.configuration.partialDirs; }
 
     /**
      * Add a directory to the assetDirs configurtion array
