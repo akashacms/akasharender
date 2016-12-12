@@ -9,6 +9,7 @@
 const path  = require('path');
 const util  = require('util');
 const async = require('async');
+const co    = require('co');
 const filez = require('./filez');
 const fs    = require('fs-extra-promise');
 const globfs = require('globfs');
@@ -276,139 +277,123 @@ exports.documentTree = function(config, documents) {
 };
 
 
-exports.documentSearch = function(config, options) {
+exports.documentSearch = co.wrap(function* (config, options) {
 
-    // log(`documentSearch ${util.inspect(options)}`);
+    // console.log(`documentSearch ${util.inspect(config.documentDirs)} ${util.inspect(options)}`);
 
     // Find all the documents, under rootPath if specified
     // Build up a useful object for each
 
-    return new Promise((resolve, reject) => {
-        globfs.operate(
-        config.documentDirs.map(docdir => {
-            // This handles complex documentDirs entries
-            return typeof docdir === 'string' ? docdir : docdir.src;
-        }),
-        options.rootPath ? options.rootPath+"/**/*" : "**/*",
-        (basedir, fpath, fini) => {
-            fs.stat(path.join(basedir, fpath), (err, stat) => {
-                if (err) return fini(err);
-                // Skip recording directories
-                if (stat.isDirectory()) return fini();
-                var renderer = akasha.findRendererPath(fpath);
-                let filepath = renderer ? renderer.filePath(fpath) : undefined;
-                if (renderer && renderer.metadata) {
-                    renderer.metadata(basedir, fpath)
-                    .then(metadata => {
-                        // log(util.inspect(metadata));
-                        fini(undefined, {
-                            renderer, basedir, stat,
-                            fpath, fname: path.basename(fpath),
-                            name: filepath ? path.basename(filepath) : path.basename(fpath),
-                            filepath,
-                            metadata
-                        });
-                    });
-                } else {
+    var documents = yield globfs.operateAsync(
+    config.documentDirs.map(docdir => {
+        // This handles complex documentDirs entries
+        return typeof docdir === 'string' ? docdir : docdir.src;
+    }),
+    options.rootPath ? options.rootPath+"/**/*" : "**/*",
+    (basedir, fpath, fini) => {
+        fs.stat(path.join(basedir, fpath), (err, stat) => {
+            if (err) return fini(err);
+            // Skip recording directories
+            if (stat.isDirectory()) return fini();
+            var renderer = akasha.findRendererPath(fpath);
+            let filepath = renderer ? renderer.filePath(fpath) : undefined;
+            if (renderer && renderer.metadata) {
+                renderer.metadata(basedir, fpath)
+                .then(metadata => {
+                    // log(util.inspect(metadata));
                     fini(undefined, {
                         renderer, basedir, stat,
                         fpath, fname: path.basename(fpath),
                         name: filepath ? path.basename(filepath) : path.basename(fpath),
                         filepath,
-                        metadata: undefined
+                        metadata
                     });
-                }
-            });
-        },
-        (err, results) => {
-            if (err) reject(err);
-            else resolve(results);
+                });
+            } else {
+                fini(undefined, {
+                    renderer, basedir, stat,
+                    fpath, fname: path.basename(fpath),
+                    name: filepath ? path.basename(filepath) : path.basename(fpath),
+                    filepath,
+                    metadata: undefined
+                });
+            }
         });
-    })
-    .then(documents => {
-        // the object array we receive is suboptimally organized.
-        // We first flatten it so it's more useful
-        // log(`documentSearch before filtering ${util.inspect(documents)}`);
-        return documents.map(doc => {
-            return new exports.Document({
-                basedir: doc.basedir,
-                docpath: doc.result.fpath,
-                docname: doc.result.fname,
-                fullpath: doc.fullpath,
-                renderer: doc.result.renderer,
-                stat: doc.result.stat,
-                renderpath: doc.result.filepath,
-                rendername: doc.result.name,
-                metadata: doc.result.metadata
-            });
+    });
+
+    // the object array we receive is suboptimally organized.
+    // We first flatten it so it's more useful
+    // console.log(`documentSearch before filtering ${util.inspect(documents)}`);
+    documents = documents.map(doc => {
+        return new exports.Document({
+            basedir: doc.basedir,
+            docpath: doc.result.fpath,
+            docname: doc.result.fname,
+            fullpath: doc.fullpath,
+            renderer: doc.result.renderer,
+            stat: doc.result.stat,
+            renderpath: doc.result.filepath,
+            rendername: doc.result.name,
+            metadata: doc.result.metadata
         });
-    })
+    });
+
     // Then filter the list, potentially removing some items if they
     // do not validate against the filters specified in the options object.
     // These are separate .then calls even though it's not truly necessary.
     // This is for ease of implementation so each phase can be eliminated
     // or new phases added easily.
-    .then(documents => {
+    // console.log(`documentSearch documents #1 ${util.inspect(documents)}`);
 
-        // log(`documentSearch documents #1 ${util.inspect(documents)}`);
-
-        if (options.pathmatch) {
-            return documents.filter(doc => {
-                var ret = doc.docpath.match(options.pathmatch) !== null;
-                return ret;
-            });
-        } else return documents;
-    })
-    .then(documents => {
-        if (options.renderers) {
-            return documents.filter(doc => {
-                if (!options.renderers) return true;
-                for (let renderer of options.renderers) {
-                    if (doc.renderer instanceof renderer) {
-                        return true;
-                    }
-                }
-                return false;
-            });
-        } else return documents;
-    })
-    .then(documents => {
-        if (options.layouts) {
-            return documents.filter(doc => {
-                for (let layout of options.layouts) {
-                    // console.log(`options.layouts ${doc.metadata.layout} === ${layout}?`);
-                    if (doc.metadata.layout === layout) {
-                        return true;
-                    }
-                }
-                return false;
-            });
-        } else return documents;
-    })
-    .then(documents => {
-        // log(`documentSearch documents #4 ${util.inspect(documents)}`);
-
-        if (options.filterfunc) {
-            return documents.filter(doc => {
-                return options.filterfunc(config, options, doc);
-            });
-        } else return documents;
-    })
-    .then(documents => {
-        documents.sort((a, b) => {
-            if (a.renderpath < b.renderpath) return -1;
-            else if (a.renderpath === b.renderpath) return 0;
-            else return 1;
+    if (options.pathmatch) {
+        documents = documents.filter(doc => {
+            var ret = doc.docpath.match(options.pathmatch) !== null;
+            return ret;
         });
-        return documents;
-    })
-    .then(documents => {
-        // log(`documentSearch final ${util.inspect(documents)}`);
-        return documents;
-    })
-    .catch(err => { error(err); throw err; });
+    }
 
-};
+    if (options.renderers) {
+        documents = documents.filter(doc => {
+            if (!options.renderers) return true;
+            for (let renderer of options.renderers) {
+                if (doc.renderer instanceof renderer) {
+                    return true;
+                }
+            }
+            return false;
+        });
+    }
+
+    if (options.layouts) {
+        documents = documents.filter(doc => {
+            for (let layout of options.layouts) {
+                // console.log(`options.layouts ${doc.metadata.layout} === ${layout}?`);
+                if (doc.metadata.layout === layout) {
+                    return true;
+                }
+            }
+            return false;
+        });
+    }
+
+    // console.log(`documentSearch documents #4 ${util.inspect(documents)}`);
+
+    if (options.filterfunc) {
+        documents = documents.filter(doc => {
+            return options.filterfunc(config, options, doc);
+        });
+    }
+
+    documents = documents.sort((a, b) => {
+        if (a.renderpath < b.renderpath) return -1;
+        else if (a.renderpath === b.renderpath) return 0;
+        else return 1;
+    });
+
+    // console.log(`documentSearch final ${util.inspect(documents)}`);
+    return documents;
+
+});
 
 exports.readDocument = function(config, documentPath) {
     return filez.findRendersTo(config.documentDirs, documentPath)

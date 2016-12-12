@@ -12,9 +12,9 @@ const cache      = require('./caching');
 const log   = require('debug')('akasha:filez');
 const error = require('debug')('akasha:error-filez');
 
-exports.copyAssets = co.wrap(function* (assetdirs, renderTo) {
-    return yield globfs.copyAsync(assetdirs, '**/*', renderTo);
-});
+exports.copyAssets = function(assetdirs, renderTo) {
+    return globfs.copyAsync(assetdirs, '**/*', renderTo);
+};
 
 exports.findSync = function(dirs, fileName) {
     throw new Error('findSync deprecated - use globfs.findSync');

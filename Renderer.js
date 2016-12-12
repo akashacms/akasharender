@@ -2,6 +2,7 @@
 
 const filez = require('./filez');
 const fs    = require('fs-extra-promise');
+const path  = require('path');
 
 const log   = require('debug')('akasha:Renderer');
 const error = require('debug')('akasha:error-Renderer');
