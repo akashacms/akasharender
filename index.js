@@ -136,20 +136,33 @@ exports.indexChain = co.wrap(function* (config, fname) {
 
 exports.generateRSS = co.wrap(function* (config, configrss, feedData, items, renderTo) {
 
+    // Supposedly it's required to use hasOwnProperty
+    // http://stackoverflow.com/questions/728360/how-do-i-correctly-clone-a-javascript-object#728694
+    //
+    // But, in our case that resulted in an empty object 
+
+    // console.log('configrss '+ util.inspect(configrss));
+
     // Construct initial rss object
     var rss = {};
     for (let key in configrss.rss) {
-        if (configrss.hasOwnProperty(key)) {
-            rss[key] = configrss[key];
-        }
+        //if (configrss.hasOwnProperty(key)) {
+            rss[key] = configrss.rss[key];
+        //}
     }
+
+    // console.log('rss '+ util.inspect(rss));
+
+    // console.log('feedData '+ util.inspect(feedData));
 
     // Then fill in from feedData
     for (let key in feedData) {
-        if (feedData.hasOwnProperty(key)) {
+        //if (feedData.hasOwnProperty(key)) {
             rss[key] = feedData[key];
-        }
+        //}
     }
+
+    // console.log('rss '+ util.inspect(rss));
 
     var rssfeed = new RSS(rss);
 
