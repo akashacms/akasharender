@@ -1,0 +1,35 @@
+{
+  "name": "akasharender-docs",
+  "version": "0.1.0",
+  "description": "Documentation for akasharender",
+  "scripts": {
+    "gen": "sh gendocs.sh",
+    "prebuild": "rm -rf ../docs/* && akasharender copy-assets config.js",
+    "build": "sh gendocs.sh && akasharender render config.js",
+    "deploy": "echo commit and push the git repository",
+    "preview": "cd ../docs && ../documentation/node_modules/.bin/hostr"
+  },
+  "dependencies": {
+    "akashacms-base": "akashacms/akashacms-base#akasharender",
+    "akashacms-blog-podcast": "akashacms/akashacms-blog-podcast#akasharender",
+    "akashacms-booknav": "akashacms/akashacms-booknav#akasharender",
+    "akashacms-breadcrumbs": "akashacms/akashacms-breadcrumbs#akasharender",
+    "akashacms-embeddables": "akashacms/akashacms-embeddables#akasharender",
+    "akashacms-social-buttons": "akashacms/akashacms-social-buttons#akasharender",
+    "akashacms-tagged-content": "akashacms/akashacms-tagged-content#akasharender",
+    "akashacms-theme-bootstrap": "akashacms/akashacms-theme-bootstrap#akasharender",
+    "mahabhuta": ">=0.6.2",
+    "akasharender": ">=0.5.9",
+    "async": "^2.0.0-rc.4",
+    "bootstrap": "^3.3.7",
+    "bower": "^1.7.9",
+    "cheerio": "*",
+    "debug": "^2.2.0",
+    "globfs": "*",
+    "hostr": "^2.x",
+    "jquery": "^3.1.1",
+    "oembed": "^0.1.0"
+  },
+  "author": "",
+  "license": "ISC"
+}

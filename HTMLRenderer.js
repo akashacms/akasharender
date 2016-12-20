@@ -163,16 +163,16 @@ module.exports = class HTMLRenderer extends Renderer {
     frontmatter(basedir, fpath) {
         var cachekey = `fm-${basedir}-${fpath}`;
         var cachedFrontmatter = cache.get("htmlrenderer", cachekey);
-        if (cachedFrontmatter) {
-            // TODO
-            // Add check here that stat's file, if file is newer
-            // than the cache'd version then delete the cach entry
-            // and proceed to the rest of the function, otherwise
-            // return the cached data
-            return Promise.resolve(cachedFrontmatter);
-        }
-        return fs.readFileAsync(path.join(basedir, fpath), 'utf8')
-        .then(text => {
+        return co(function* () {
+            if (cachedFrontmatter) {
+                // TODO
+                // Add check here that stat's file, if file is newer
+                // than the cache'd version then delete the cach entry
+                // and proceed to the rest of the function, otherwise
+                // return the cached data
+                return cachedFrontmatter;
+            }
+            var text = yield fs.readFileAsync(path.join(basedir, fpath), 'utf8')
             var fm = matter(text);
             cache.set("htmlrenderer", cachekey, fm);
             // log(`frontmatter ${cachekey} ${util.inspect(fm)}`);
@@ -188,11 +188,11 @@ module.exports = class HTMLRenderer extends Renderer {
      * This metadata is solely the data stored in the file.
      */
     metadata(basedir, fpath) {
-        return this.frontmatter(basedir, fpath)
-            .then(fm => {
-                // log(`metadata for ${basedir} ${fpath} => ${util.inspect(fm)}`);
-                return fm.data;
-            });
+        var thisRenderer = this;
+        return co(function* () {
+            var fm = yield thisRenderer.frontmatter(basedir, fpath);
+            return fm.data;
+        });
     }
 
     /**
