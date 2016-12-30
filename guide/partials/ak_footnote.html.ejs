@@ -1,0 +1,13 @@
+<div class="ak-footnote">
+<%= count %>. <a name="<%= name %>">[<%= name %>]</a>: <a href="<%= url %>" <%
+    if (rel) {
+        %>rel="<%= rel %>" <%
+    } %>><%
+   if (title) {
+      %><span class="ak-footnote-title"><%= title %></span><%
+   } else {
+      %><span class="ak-footnote-url"><%= url %></span><%
+   }
+%></a>
+<span class="ak-footnote-description"><%= description %></span>
+</div>

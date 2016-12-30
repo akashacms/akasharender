@@ -7,7 +7,7 @@
     "prebuild": "rm -rf ../docs/* && akasharender copy-assets config.js",
     "build": "sh gendocs.sh && akasharender render config.js",
     "deploy": "echo commit and push the git repository",
-    "preview": "cd ../docs && ../documentation/node_modules/.bin/hostr"
+    "preview": "cd ../docs && ../guide/node_modules/.bin/hostr"
   },
   "dependencies": {
     "akashacms-base": "akashacms/akashacms-base#akasharender",

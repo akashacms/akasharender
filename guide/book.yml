@@ -1,0 +1,38 @@
+
+opf: akasharender-guide.opf
+epub: akasharender-guide.epub
+
+title: "AkashaRender User Guide"
+languages: [ en ]
+identifiers:
+    - unique: true
+      uuid: "5C91007D-A2E3-4D26-8A9B-91F5C24DFF2C"
+published:
+    date: "April 29, 2016 07:21:38 UTC"
+creators:
+    - id: author
+      name: David Herron
+      nameReversed: Herron, David
+publisher: LongTailPipe.COM
+subjects: [ "eBooks", "Electronic Books", "EPUB" ]
+rights: "Copyright 2016, David Herron"
+
+cover:
+    # coverHtml: { id: "cover", href: "cover.html" }
+    # idImage: "cover-image"
+    # src:  "images/Human-Skeleton.jpg"
+    # alt:  "Electric Vehicle Charging Guide"
+    # type: "image/jpeg"
+
+toc: { id: "toc", href: "toc.html" }
+ncx: { id: "ncx", href: "toc.ncx"  }
+
+
+#stylesheets:
+#    - { id: "stylesheet", href: "/css/style.css" }
+#
+# javaScriptTop:
+#     - { id: 'foojs', href: 'foo/foo.js' }
+#
+# javaScriptBottom:
+#     - { id: 'oofoojs', href: 'oofoo/oofoo.js' }

@@ -25,8 +25,8 @@
     "dox": "^0.8.1"
   },
   "scripts": {
-      "gendocs": "cd docs && npm run build",
-      "gendocssetup": "cd docs && npm install"
+      "gendocs": "cd guide && npm run build",
+      "gendocssetup": "cd guide && npm install"
   },
   "author": "",
   "license": "ISC"
