@@ -4,7 +4,7 @@
   "description": "Documentation for akasharender",
   "scripts": {
     "gen": "sh gendocs.sh",
-    "prebuild": "rm -rf ../docs/* && akasharender copy-assets config.js",
+    "prebuild": "rm -rf ../docs/* && mkdir -p ../docs && akasharender copy-assets config.js",
     "build": "sh gendocs.sh && akasharender render config.js",
     "deploy": "echo commit and push the git repository",
     "preview": "cd ../docs && ../guide/node_modules/.bin/hostr"
