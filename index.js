@@ -15,7 +15,7 @@ const util   = require('util');
 const fs     = require('fs-extra-promise');
 const co     = require('co');
 const path   = require('path');
-const oembed = require('oembed');
+const oembetter = require('oembetter');
 const RSS    = require('rss');
 const globfs = require('globfs');
 const mahabhuta = require('mahabhuta');
@@ -139,7 +139,7 @@ exports.generateRSS = co.wrap(function* (config, configrss, feedData, items, ren
     // Supposedly it's required to use hasOwnProperty
     // http://stackoverflow.com/questions/728360/how-do-i-correctly-clone-a-javascript-object#728694
     //
-    // But, in our case that resulted in an empty object 
+    // But, in our case that resulted in an empty object
 
     // console.log('configrss '+ util.inspect(configrss));
 
@@ -183,7 +183,7 @@ exports.generateRSS = co.wrap(function* (config, configrss, feedData, items, ren
 // https://www.npmjs.com/package/oembetter
 module.exports.oEmbedData = function(url) {
     return new Promise((resolve, reject) => {
-        oembed.fetch(url, { maxwidth: 6000 },
+        oembetter.fetch(url,
         (err, result) => {
             if (err) return reject(err);
             else resolve(result);

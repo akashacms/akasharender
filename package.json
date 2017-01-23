@@ -1,7 +1,30 @@
 {
   "name": "akasharender",
   "version": "0.5.11",
-  "description": "",
+  "description": "Rendering support for generating static HTML websites or EPUB eBooks",
+  "keywords": [
+    "content management system",
+    "cms",
+    "static site generator",
+    "static file server",
+    "web development",
+    "build and deployment",
+    "renderer",
+    "templating",
+    "templates",
+    "website",
+    "website builder",
+    "blog",
+    "akashacms"
+  ],
+  "homepage": "https://akasharender.akashacms.com",
+  "repository": {
+    "type": "git",
+    "url": "git://github.com/akashacms/akasharender.git"
+  },
+  "engines": {
+    "node": ">=6.1"
+  },
   "main": "index.js",
   "bin": {
     "akasharender": "bin/cli.js"
@@ -18,7 +41,7 @@
     "less": ">=2.7",
     "markdown-it": "^5.1.0",
     "node-cache": "^3.2.1",
-    "oembed": "^0.1.0",
+    "oembetter": "*",
     "rss": "^1.2.1"
   },
   "devDependencies": {
@@ -28,6 +51,10 @@
       "gendocs": "cd guide && npm run build",
       "gendocssetup": "cd guide && npm install"
   },
-  "author": "",
+  "author": {
+    "name": "David Herron",
+    "email": "david@davidherron.com",
+    "url": "http://davidherron.com"
+  },
   "license": "ISC"
 }
