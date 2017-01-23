@@ -1,5 +1,5 @@
 ---
-layout: page.html.ejs
+layout: docpage.html.ejs
 title: Creating content with AkashaRender
 ---
 

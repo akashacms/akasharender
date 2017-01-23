@@ -7,7 +7,6 @@ const render   = require('./render');
 const log   = require('debug')('akasha:markdownRenderer');
 const error = require('debug')('akasha:error-markdownRenderer');
 
-// TODO can this configuration be injected?
 const mditConfig = {
   html:         true,         // Enable html tags in source
   xhtmlOut:     true,         // Use '/' to close single tags (<br />)
@@ -23,10 +22,21 @@ const mditConfig = {
 const mdit = require('markdown-it');
 var md;
 
+
 class MarkdownRenderer extends HTMLRenderer {
     constructor() {
         super(".html.md", /^(.*\.html)\.(md)$/);
         md = mdit(mditConfig);
+    }
+
+    configuration(newConfig) {
+        md = mdit(newConfig);
+        return this;
+    }
+
+    use(mditPlugin) {
+        md.use(mditPlugin);
+        return this;
     }
 
     renderSync(text, metadata) {

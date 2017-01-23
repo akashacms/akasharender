@@ -1,0 +1,240 @@
+<!doctype html>
+<!-- paulirish.com/2008/conditional-stylesheets-vs-css-hacks-answer-neither/ -->
+<!--[if lt IE 7]> <html class="no-js lt-ie9 lt-ie8 lt-ie7" lang="en"> <![endif]-->
+<!--[if IE 7]>    <html class="no-js lt-ie9 lt-ie8" lang="en"> <![endif]-->
+<!--[if IE 8]>    <html class="no-js lt-ie9" lang="en"> <![endif]-->
+<!-- Consider adding a manifest.appcache: h5bp.com/d/Offline -->
+<!--[if gt IE 8]><!--> <html class="no-js" lang="en"> <!--<![endif]-->
+<head>
+<meta charset="utf-8"/>
+<meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1"/>
+<meta name="viewport" content="width=device-width"/>
+
+<title>AkashaRender Configuration object</title>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<meta name="pagename" content="AkashaRender Configuration object"/>
+
+
+
+
+
+
+
+
+
+<meta name="date" content="Mon Jan 23 2017 14:07:29 GMT-0800 (PST)"/>
+
+<meta name="DC.title" content="AkashaRender Configuration object"/>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<!-- OpenGraph Meta Tags -->
+	
+<meta name="og:title" content="AkashaRender Configuration object">
+
+<meta name="og:url" content="https://akasharender.akashacms.com/api/Configuration.js.html">
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+    <link rel="canonical" href="https://akasharender.akashacms.com/api/Configuration.js.html"/>
+</meta></meta>
+<link rel="sitemap" type="application/xml" title="Sitemap" href="/sitemap.xml"/>
+
+
+<link rel="stylesheet" type="text/css" href="/vendor/bootstrap/css/bootstrap.min.css"/><link rel="stylesheet" type="text/css" href="/vendor/bootstrap/css/bootstrap-theme.min.css"/><link rel="stylesheet" type="text/css" href="/style.css"/>
+
+
+</head>
+<body>
+
+
+<div class="navbar navbar-default navbar-inverse navbar-fixed-top" role="navigation">
+
+  <button class="navbar-toggle" data-toggle="collapse" data-target=".navHeaderCollapse">
+    <span class="icon-bar"/><span class="icon-bar"/><span class="icon-bar"/>
+  </button>
+
+  <div class="navbar-collapse collapse navHeaderCollapse">
+    <ul class="nav navbar-nav navbar-rights">
+        <li class="dropdown">
+            <a href="/toc.html">HOME</a>
+        </li>
+        <li class="dropdown">
+            <a href="/1-introduction.html">Introduction</a>
+        </li>
+        <li class="dropdown">
+            <a href="/2-setup.html">Setup</a>
+        </li>
+        <li class="dropdown">
+            <a href="/3-create-content.html">Create Content</a>
+        </li>
+    </ul>
+  </div>
+</div>
+
+
+<div class="container" role="main">
+<div class="row">
+<div class="col-sm-12"><div>
+    <a href="/">
+        <img src="/logo.jpg" align="left"/>
+        <h1>AkashaRender Documentation</h1>
+    </a>
+</div>
+<div>
+</div>
+</div>
+</div>
+
+<div class="row">
+  <article class="col-sm-10">
+    <ul>
+<li><a href="#undefinedprepare">undefined.prepare()</a></li>
+<li><a href="#undefinedadddocumentsdirdirstring">undefined.addDocumentsDir()</a></li>
+<li><a href="#undefinedaddlayoutsdirdirstring">undefined.addLayoutsDir()</a></li>
+<li><a href="#undefinedaddpartialsdirdirstring">undefined.addPartialsDir()</a></li>
+<li><a href="#undefinedaddassetsdirdirstring">undefined.addAssetsDir()</a></li>
+<li><a href="#undefinedaddmahabhutamahafuncsarray">undefined.addMahabhuta()</a></li>
+<li><a href="#undefinedsetrenderdestinationdirstring">undefined.setRenderDestination()</a></li>
+<li><a href="#renderdestination">renderDestination</a></li>
+<li><a href="#undefinedaddmetadataindexstringvalue">undefined.addMetadata()</a></li>
+<li><a href="#undefinedrooturlroot_urlstring">undefined.rootURL()</a></li>
+<li><a href="#undefinedaddheaderjavascriptscript">undefined.addHeaderJavaScript()</a></li>
+<li><a href="#undefinedaddfooterjavascriptscript">undefined.addFooterJavaScript()</a></li>
+<li><a href="#undefinedaddstylesheetscript">undefined.addStylesheet()</a></li>
+<li><a href="#undefinedcopyassets">undefined.copyAssets()</a></li>
+<li><a href="#undefinedhooksiterendered">undefined.hookSiteRendered()</a></li>
+<li><a href="#undefinedusepluginobj">undefined.use()</a></li>
+<li><a href="#undefinedeachpluginiteratorfinal">undefined.eachPlugin()</a></li>
+<li><a href="#undefinedpluginnamestring">undefined.plugin()</a></li>
+<li><a href="#undefinedaddrenderer">undefined.addRenderer()</a></li>
+<li><a href="#undefinedfindrenderer">undefined.findRenderer()</a></li>
+</ul>
+<h2>undefined.prepare()</h2>
+<p>Initialize default configuration values for anything which has not
+already been configured.  Some built-in defaults have been decided
+ahead of time.  For each configuration setting, if nothing has been
+declared, then the default is substituted.</p>
+<p>It is expected this function will be called last in the config file.</p>
+<p>This function installs the <code>built-in</code> plugin.  It needs to be last on
+the plugin chain so that its stylesheets and partials and whatnot
+can be overridden by other plugins.</p>
+<h2>undefined.addDocumentsDir(dir:string)</h2>
+<p>Add a directory to the documentDirs configuration array</p>
+<h2>undefined.addLayoutsDir(dir:string)</h2>
+<p>Add a directory to the layoutDirs configurtion array</p>
+<h2>undefined.addPartialsDir(dir:string)</h2>
+<p>Add a directory to the partialDirs configurtion array</p>
+<h2>undefined.addAssetsDir(dir:string)</h2>
+<p>Add a directory to the assetDirs configurtion array</p>
+<h2>undefined.addMahabhuta(mahafuncs:Array)</h2>
+<p>Add an array of Mahabhuta functions</p>
+<h2>undefined.setRenderDestination(dir:string)</h2>
+<p>Define the directory into which the project is rendered.</p>
+<h2>renderDestination</h2>
+<p>Fetch the declared destination for rendering the project.</p>
+<h2>undefined.addMetadata(index:string, value:)</h2>
+<p>Add a value to the project metadata.  The metadata is combined with
+the document metadata and used during rendering.</p>
+<h2>undefined.rootURL(root_url:string)</h2>
+<p>Document the URL for a website project.</p>
+<h2>undefined.addHeaderJavaScript(script:)</h2>
+<p>Declare JavaScript to add within the head tag of rendered pages.</p>
+<h2>undefined.addFooterJavaScript(script:)</h2>
+<p>Declare JavaScript to add at the bottom of rendered pages.</p>
+<h2>undefined.addStylesheet(script:)</h2>
+<p>Declare a CSS Stylesheet to add within the head tag of rendered pages.</p>
+<h2>undefined.copyAssets()</h2>
+<p>Copy the contents of all directories in assetDirs to the render destination.</p>
+<h2>undefined.hookSiteRendered()</h2>
+<p>Call the onSiteRendered function of any plugin which has that function.</p>
+<h2>undefined.use(PluginObj:)</h2>
+<p>use - go through plugins array, adding each to the plugins array in
+the config file, then calling the config function of each plugin.</p>
+<h2>undefined.eachPlugin(iterator:, final:)</h2>
+<p>Iterate over the installed plugins, calling the function passed in <code>iterator</code>
+for each plugin, then calling the function passed in <code>final</code>.</p>
+<h2>undefined.plugin(name:string)</h2>
+<p>Look for a plugin, returning its module reference.</p>
+<h2>undefined.addRenderer()</h2>
+<p>Add a new Renderer to the AkashaRender configuration</p>
+<h2>undefined.findRenderer()</h2>
+<p>Find a Renderer by its extension.</p>
+
+  </article>
+  <div class="col-md-2">
+  <!-- partial file-name="sidebar.html.ejs"></partial -->
+  </div>
+
+</div>
+
+<footer class="row" style="text-align: center; height: 100px;">
+<div class="col-sm-12"><!-- partial file-name="footer.html.ejs"></partial --></div>
+</footer>
+</div>
+
+<script src="/vendor/jquery/jquery.min.js"/><script src="/vendor/bootstrap/js/bootstrap.min.js"/>
+<!-- partial file-name="google-analytics.html"></partial -->
+
+
+</body>
+</html>

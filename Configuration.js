@@ -11,6 +11,7 @@ const globfs = require('globfs');
 const util   = require('util');
 const path   = require('path');
 const async  = require('async');
+const render = require('./render');
 const Plugin = require('./Plugin');
 const mahabhuta = require('mahabhuta');
 const mahaPartial = require('mahabhuta/maha/partial');
@@ -372,4 +373,17 @@ module.exports = class Configuration {
         return undefined;
     }
 
+    /**
+     * Add a new Renderer to the AkashaRender configuration
+     */
+    addRenderer(renderer) {
+        throw new Error("Implement this");
+    }
+
+    /**
+     * Find a Renderer by its extension.
+     */
+    findRenderer(name) {
+        return render.findRendererName(name);
+    }
 }

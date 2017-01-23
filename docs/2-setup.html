@@ -1,0 +1,285 @@
+<!doctype html>
+<!-- paulirish.com/2008/conditional-stylesheets-vs-css-hacks-answer-neither/ -->
+<!--[if lt IE 7]> <html class="no-js lt-ie9 lt-ie8 lt-ie7" lang="en"> <![endif]-->
+<!--[if IE 7]>    <html class="no-js lt-ie9 lt-ie8" lang="en"> <![endif]-->
+<!--[if IE 8]>    <html class="no-js lt-ie9" lang="en"> <![endif]-->
+<!-- Consider adding a manifest.appcache: h5bp.com/d/Offline -->
+<!--[if gt IE 8]><!--> <html class="no-js" lang="en"> <!--<![endif]-->
+<head>
+<meta charset="utf-8"/>
+<meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1"/>
+<meta name="viewport" content="width=device-width"/>
+
+<title>Project Setup</title>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<meta name="pagename" content="Project Setup"/>
+
+
+
+
+
+
+
+
+
+<meta name="date" content="Mon Jan 23 2017 13:56:47 GMT-0800 (PST)"/>
+
+<meta name="DC.title" content="Project Setup"/>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<!-- OpenGraph Meta Tags -->
+	
+<meta name="og:title" content="Project Setup">
+
+<meta name="og:url" content="https://akasharender.akashacms.com/2-setup.html">
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+    <link rel="canonical" href="https://akasharender.akashacms.com/2-setup.html"/>
+</meta></meta>
+<link rel="sitemap" type="application/xml" title="Sitemap" href="/sitemap.xml"/>
+
+
+<link rel="stylesheet" type="text/css" href="/vendor/bootstrap/css/bootstrap.min.css"/><link rel="stylesheet" type="text/css" href="/vendor/bootstrap/css/bootstrap-theme.min.css"/><link rel="stylesheet" type="text/css" href="/style.css"/>
+
+
+</head>
+<body>
+
+
+<div class="navbar navbar-default navbar-inverse navbar-fixed-top" role="navigation">
+
+  <button class="navbar-toggle" data-toggle="collapse" data-target=".navHeaderCollapse">
+    <span class="icon-bar"/><span class="icon-bar"/><span class="icon-bar"/>
+  </button>
+
+  <div class="navbar-collapse collapse navHeaderCollapse">
+    <ul class="nav navbar-nav navbar-rights">
+        <li class="dropdown">
+            <a href="/toc.html">HOME</a>
+        </li>
+        <li class="dropdown">
+            <a href="/1-introduction.html">Introduction</a>
+        </li>
+        <li class="dropdown">
+            <a href="/2-setup.html">Setup</a>
+        </li>
+        <li class="dropdown">
+            <a href="/3-create-content.html">Create Content</a>
+        </li>
+    </ul>
+  </div>
+</div>
+
+
+<div class="container" role="main">
+<div class="row">
+<div class="col-sm-12"><div>
+    <a href="/">
+        <img src="/logo.jpg" align="left"/>
+        <h1>AkashaRender Documentation</h1>
+    </a>
+</div>
+<div>
+</div>
+</div>
+</div>
+
+<div class="row">
+  <article class="col-sm-10">
+    <p>An AkashaRender project directory has these attributes:</p>
+<ul>
+<li><em>package.json</em> This file lists dependencies on Node.js packages used to build the project, and the <em>scripts</em> section can contain commands to drive the process.</li>
+<li>Several input directories to hold project assets, content files, layout templates, and partials (smaller templates).</li>
+<li>One or more AkashaRender configuration files, <em>e.g.</em> <code>config.js</code>, describing the rendering process.  Typically there will be one configuration file.  You&apos;ll need more than one if you&apos;ll reuse the same content for multiple destinations.</li>
+<li>(Optionally) Another Node.js script containing DOM processing functions for use with the Mahabhuta engine.</li>
+</ul>
+<h2>Simple project initialization</h2>
+<p>Start by making a project directory:</p>
+<pre><code>$ mkdir myproject
+$ cd myproject
+$ npm init
+... answer all the questions asked by npm init
+
+Is this ok? (yes) yes
+</code></pre>
+<p>Then install AkashaRender and globfs.</p>
+<pre><code>$ npm install globfs@stable akasharender@stable --save
+</code></pre>
+<p>NOTE: At the moment AkashaRender is not in npm, so instead you&apos;ll have to add this to the dependencies section in <code>package.json</code></p>
+<pre><code>&quot;dependencies&quot;: {
+  &quot;akasharender&quot;: &quot;akashacms/akasharender&quot;,
+  &quot;globfs&quot;: &quot;^0.1.2&quot;
+}
+</code></pre>
+<p>If this project is to generate an EPUB3, then you must also install epubtools:</p>
+<pre><code>$ npm install epubtools@stable --save
+</code></pre>
+<p>Next, make some directories:</p>
+<pre><code>$ mkdir assets documents layouts partials
+</code></pre>
+<p>Make an empty CSS file (or fill it with CSS of your desire)</p>
+<pre><code>$ mkdir assets/style
+$ touch assets/style/main.css
+</code></pre>
+<h2>A simple template file</h2>
+<p>Create a simple layout template as <code>layouts/page.html.ejs</code> containing</p>
+<pre><code>&lt;!doctype html&gt;
+&lt;html&gt;
+&lt;head&gt;
+&lt;meta charset=&quot;utf-8&quot; /&gt;
+&lt;meta http-equiv=&quot;X-UA-Compatible&quot; content=&quot;IE=edge,chrome=1&quot; /&gt;
+&lt;meta name=&quot;viewport&quot; content=&quot;width=device-width, initial-scale=1.0&quot;/&gt;
+&lt;title&gt;&lt;%= title %&gt;&lt;/title&gt;
+&lt;link rel=&quot;stylesheet&quot; href=&quot;/style/main.css&quot;
+      type=&quot;text/css&quot; media=&quot;screen&quot;/&gt;
+&lt;/head&gt;
+&lt;body&gt;
+&lt;%- content %&gt;
+&lt;/body&gt;
+&lt;/html&gt;
+</code></pre>
+<p>This demonstrates two types of content inclusion, using EJS.  Because the template file name ends with <code>.html.ejs</code>, it&apos;ll produce an HTML file after rendering with EJS.  With <code>&lt;%= title %&gt;</code> we are inserting a metadata value with interpolation such that any HTML tags get encoded.  However with <code>&lt;%- content %&gt;</code> the metadata value is not encoded, so that any HTML tags are copied verbatim.</p>
+<p>The <code>content</code> variable is special in that it&apos;s the result of the previous rendering.  All other values we might include come from the frontmatter.</p>
+<h2>A simple content file</h2>
+<p>Now let&apos;s create a simple content document, as <code>documents/index.html.md</code>.</p>
+<pre><code>---
+layout: page.html.ejs
+title: Four Score and Seven Years Ago
+---
+
+Four score and seven years ago our fathers brought forth on this continent a new nation conceived in liberty and dedicated to the proposition that all men are created equal.
+</code></pre>
+<p>The frontmatter appears between the --- lines.  It is formatted with YAML, a fairly simple markup system to represent data objects as simple text.  The best documentation I know of for YAML is on the Wikipedia: <a href="https://en.wikipedia.org/wiki/YAML">https://en.wikipedia.org/wiki/YAML</a></p>
+<p>The way to interpret the file name is to think of multiple extensions that describe the conversion process and the final output format.  In this case the file is written in Markdown, and produces HTML.</p>
+<h2>A simple configuration file</h2>
+<p>An AkashaRender configuration file is actually a Node.js script.  It contains Configuration commands describing how to render this content for a specific destination.</p>
+<p>A typical name for this file is <code>config.js</code>.</p>
+<pre><code>&apos;use strict&apos;;
+
+const akasha  = require(&apos;akasharender&apos;);
+
+const config = new akasha.Configuration();
+
+config.rootURL(&quot;http://example.com&quot;);
+
+config
+    .addAssetsDir(&apos;assets&apos;)
+    .addLayoutsDir(&apos;layouts&apos;)
+    .addDocumentsDir(&apos;documents&apos;)
+    .addPartialsDir(&apos;partials&apos;);
+
+config
+    .use(require(&apos;akashacms-theme-bootstrap&apos;))
+    .use(require(&apos;akashacms-base&apos;))
+    .use(require(&apos;akashacms-breadcrumbs&apos;))
+    .use(require(&apos;akashacms-booknav&apos;))
+    .use(require(&apos;akashacms-embeddables&apos;));
+
+config.setMahabhutaConfig({
+    recognizeSelfClosing: true,
+    recognizeCDATA: true
+});
+
+config.prepare();
+
+module.exports = config;
+</code></pre>
+<p>The <code>akasha.Configuration</code> object contains all the data describing the rendering of input files to produce an output - such as an eBook or website.</p>
+<p>The first section we show tells AkashaRender the input directories to use, and their purpose.  These commands aren&apos;t entirely necessary, because of the baked-in default directory names.  But, if you need to change the names you can use these functions.</p>
+<p>The <code>.use</code> method declares a plugin to use in the rendering.  Plugins extend AkashaRender&apos;s capabilities adding useful functionality, such as breadcrumb trail generation, or supporting embedding content from 3rd party services like Youtube.</p>
+<p>The <code>.setMahabhutaConfig</code> method is necessary for the Mahabhuta DOM processing engine.  Mahabhuta supports a jQuery-like API for processing HTML during the rendering process.  Because it uses Cheerio under-the-covers, the values specified in this object actually from the Cheerio project.</p>
+<p>The <code>.prepare</code> method adds the baked-in default configuration values so that AkashaRender will be able to function even if you forgot to declare something.</p>
+<p>The last line is required for AkashaRender to access the configuration data.</p>
+<h2>A build simple process</h2>
+<p>The last thing is to set up the scripts section of the <code>package.json</code> with tasks used in building the project:</p>
+<pre><code>&quot;scripts&quot;: {
+  &quot;clean&quot;: &quot;rm -rf out&quot;,
+  &quot;prebuild&quot;: &quot;akasharender copy-assets config.js&quot;,
+  &quot;build&quot;: &quot;akasharender render config.js&quot;
+},
+</code></pre>
+<p>The <code>akasharender</code> command reads the named configuration file, using that file to know what to do.  This defines two commands, which you can run as so:</p>
+<pre><code>$ npm run clean
+$ npm run build
+</code></pre>
+<p>And the project is built for you.</p>
+
+  </article>
+  <div class="col-md-2">
+  <!-- partial file-name="sidebar.html.ejs"></partial -->
+  </div>
+
+</div>
+
+<footer class="row" style="text-align: center; height: 100px;">
+<div class="col-sm-12"><!-- partial file-name="footer.html.ejs"></partial --></div>
+</footer>
+</div>
+
+<script src="/vendor/jquery/jquery.min.js"/><script src="/vendor/bootstrap/js/bootstrap.min.js"/>
+<!-- partial file-name="google-analytics.html"></partial -->
+
+
+</body>
+</html>

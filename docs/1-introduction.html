@@ -1,0 +1,173 @@
+<!doctype html>
+<!-- paulirish.com/2008/conditional-stylesheets-vs-css-hacks-answer-neither/ -->
+<!--[if lt IE 7]> <html class="no-js lt-ie9 lt-ie8 lt-ie7" lang="en"> <![endif]-->
+<!--[if IE 7]>    <html class="no-js lt-ie9 lt-ie8" lang="en"> <![endif]-->
+<!--[if IE 8]>    <html class="no-js lt-ie9" lang="en"> <![endif]-->
+<!-- Consider adding a manifest.appcache: h5bp.com/d/Offline -->
+<!--[if gt IE 8]><!--> <html class="no-js" lang="en"> <!--<![endif]-->
+<head>
+<meta charset="utf-8"/>
+<meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1"/>
+<meta name="viewport" content="width=device-width"/>
+
+<title>AkashaRender</title>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<meta name="pagename" content="AkashaRender"/>
+
+
+
+
+
+
+
+
+
+<meta name="date" content="Mon Jan 23 2017 13:56:37 GMT-0800 (PST)"/>
+
+<meta name="DC.title" content="AkashaRender"/>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<!-- OpenGraph Meta Tags -->
+	
+<meta name="og:title" content="AkashaRender">
+
+<meta name="og:url" content="https://akasharender.akashacms.com/1-introduction.html">
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+    <link rel="canonical" href="https://akasharender.akashacms.com/1-introduction.html"/>
+</meta></meta>
+<link rel="sitemap" type="application/xml" title="Sitemap" href="/sitemap.xml"/>
+
+
+<link rel="stylesheet" type="text/css" href="/vendor/bootstrap/css/bootstrap.min.css"/><link rel="stylesheet" type="text/css" href="/vendor/bootstrap/css/bootstrap-theme.min.css"/><link rel="stylesheet" type="text/css" href="/style.css"/>
+
+
+</head>
+<body>
+
+
+<div class="navbar navbar-default navbar-inverse navbar-fixed-top" role="navigation">
+
+  <button class="navbar-toggle" data-toggle="collapse" data-target=".navHeaderCollapse">
+    <span class="icon-bar"/><span class="icon-bar"/><span class="icon-bar"/>
+  </button>
+
+  <div class="navbar-collapse collapse navHeaderCollapse">
+    <ul class="nav navbar-nav navbar-rights">
+        <li class="dropdown">
+            <a href="/toc.html">HOME</a>
+        </li>
+        <li class="dropdown">
+            <a href="/1-introduction.html">Introduction</a>
+        </li>
+        <li class="dropdown">
+            <a href="/2-setup.html">Setup</a>
+        </li>
+        <li class="dropdown">
+            <a href="/3-create-content.html">Create Content</a>
+        </li>
+    </ul>
+  </div>
+</div>
+
+
+<div class="container" role="main">
+<div class="row">
+<div class="col-sm-12"><div>
+    <a href="/">
+        <img src="/logo.jpg" align="left"/>
+        <h1>AkashaRender Documentation</h1>
+    </a>
+</div>
+<div>
+</div>
+</div>
+</div>
+
+<div class="row">
+  <article class="col-sm-10">
+    <p><em>Akasha means the basis and essence of all things in the material world; the first material element created from the astral world. AkashaCMS (<a href="https://github.com/akashacms">github organization</a>) is a Node.js based tool with which you can convert ideas into websites while maintaining separation between content, layout and design.</em></p>
+<p>AkashaRender is a rendering engine primarily meant for creating HTML files for use on websites or in electronic books (EPUB3).  It can be configured to take input from any text file format, and produce rendered output.  The system is extremely flexible and is being built from the experience gathered while developing AkashaCMS.  Loosely speaking, AkashaRender is the first step in reinventing AkashaCMS.</p>
+<p>The primary intended usage model is to write content using Markdown with YAML frontmatter holding metadata.  This serves as the principle content of the page that will be generated.  AkashaRender will process the content file, using a template named in in the frontmatter to frame the content for presentation on a website or in an eBook.  Along the way we use modern CSS3 and JavaScript techniques so the result works well on the modern mobile-first web.</p>
+<p>Content files don&apos;t have to be written with Markdown, it&apos;s simply a nice format for writing text.  The output doesn&apos;t have to be HTML, either.  We can configure AkashaRender to have any number of renderable input formats, and rendering plugins can produce any desired output format.</p>
+<p>One key feature is that AkashaRender integrates Mahabhuta, an engine for performing DOM manipulation of HTML files using a jQuery-like API.  It means you can reuse your jQuery knowledge for server-side DOM manipulation and generate custom output from custom tags.  One very powerful example is to use a very simple tag referencing a YouTube video, which then generates a nice video player framed with title and a video description fetched from the YouTube website.</p>
+
+  </article>
+  <div class="col-md-2">
+  <!-- partial file-name="sidebar.html.ejs"></partial -->
+  </div>
+
+</div>
+
+<footer class="row" style="text-align: center; height: 100px;">
+<div class="col-sm-12"><!-- partial file-name="footer.html.ejs"></partial --></div>
+</footer>
+</div>
+
+<script src="/vendor/jquery/jquery.min.js"/><script src="/vendor/bootstrap/js/bootstrap.min.js"/>
+<!-- partial file-name="google-analytics.html"></partial -->
+
+
+</body>
+</html>

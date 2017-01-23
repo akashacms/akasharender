@@ -20,6 +20,8 @@ title: AkashaRender Configuration object
   - [undefined.use()](#undefinedusepluginobj)
   - [undefined.eachPlugin()](#undefinedeachpluginiteratorfinal)
   - [undefined.plugin()](#undefinedpluginnamestring)
+  - [undefined.addRenderer()](#undefinedaddrenderer)
+  - [undefined.findRenderer()](#undefinedfindrenderer)
 
 ## undefined.prepare()
 
@@ -104,3 +106,11 @@ title: AkashaRender Configuration object
 ## undefined.plugin(name:string)
 
   Look for a plugin, returning its module reference.
+
+## undefined.addRenderer()
+
+  Add a new Renderer to the AkashaRender configuration
+
+## undefined.findRenderer()
+
+  Find a Renderer by its extension.

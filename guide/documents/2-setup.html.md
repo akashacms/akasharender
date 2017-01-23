@@ -1,6 +1,6 @@
 ---
 title: Project Setup
-layout: page.html.ejs
+layout: docpage.html.ejs
 ---
 
 An AkashaRender project directory has these attributes:
