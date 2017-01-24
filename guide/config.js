@@ -26,7 +26,9 @@ config
     .addLayoutsDir('layouts')
     .addDocumentsDir('documents')
     .addPartialsDir('partials')
-    .setRenderDestination('../docs')
+    .setRenderDestination('../docs');
+
+config
     .addMetadata('siteLogoImage', 'http://akashacms.com/logo.gif')
     .addMetadata('siteLogoWidth', '100px');
 
