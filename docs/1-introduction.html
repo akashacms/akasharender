@@ -1,10 +1,5 @@
 <!doctype html>
-<!-- paulirish.com/2008/conditional-stylesheets-vs-css-hacks-answer-neither/ -->
-<!--[if lt IE 7]> <html class="no-js lt-ie9 lt-ie8 lt-ie7" lang="en"> <![endif]-->
-<!--[if IE 7]>    <html class="no-js lt-ie9 lt-ie8" lang="en"> <![endif]-->
-<!--[if IE 8]>    <html class="no-js lt-ie9" lang="en"> <![endif]-->
-<!-- Consider adding a manifest.appcache: h5bp.com/d/Offline -->
-<!--[if gt IE 8]><!--> <html class="no-js" lang="en"> <!--<![endif]-->
+<html class="ebook-page ebook-page-flex" lang="en">
 <head>
 <meta charset="utf-8"/>
 <meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1"/>
@@ -39,7 +34,7 @@
 
 
 
-<meta name="date" content="Mon Jan 23 2017 13:56:37 GMT-0800 (PST)"/>
+<meta name="date" content="Mon Jan 23 2017 21:14:32 GMT-0800 (PST)"/>
 
 <meta name="DC.title" content="AkashaRender"/>
 
@@ -100,13 +95,15 @@
 <link rel="sitemap" type="application/xml" title="Sitemap" href="/sitemap.xml"/>
 
 
-<link rel="stylesheet" type="text/css" href="/vendor/bootstrap/css/bootstrap.min.css"/><link rel="stylesheet" type="text/css" href="/vendor/bootstrap/css/bootstrap-theme.min.css"/><link rel="stylesheet" type="text/css" href="/style.css"/>
+<link rel="stylesheet" type="text/css" href="/akasha/epub-website/style.css"/><link rel="stylesheet" type="text/css" href="/vendor/bootstrap/css/bootstrap.min.css"/><link rel="stylesheet" type="text/css" href="/vendor/bootstrap/css/bootstrap-theme.min.css"/><link rel="stylesheet" type="text/css" href="/style.css"/>
 
 
 </head>
-<body>
 
+<body class="ebook-page ebook-page-flex">
 
+<div id="page-container"> <!--  class="panel panel-default" -->
+    <div id="site-navbar">
 <div class="navbar navbar-default navbar-inverse navbar-fixed-top" role="navigation">
 
   <button class="navbar-toggle" data-toggle="collapse" data-target=".navHeaderCollapse">
@@ -130,43 +127,75 @@
     </ul>
   </div>
 </div>
+</div>
+    <header class="epub-website-ebook-masthead" id="ebook-masthead">
+  <table border="0"><tr>
+      <td class="epub-website-ebook-masthead-logo"><a href="/toc.html"><img src="http://akashacms.com/logo.gif"/></a></td>
+      <td class="epub-website-ebook-masthead-title">
+          <a href="/toc.html"><h2 align="center">AkashaRender User Guide</h2></a><em>By David Herron</em>
+      </td>
+  </tr></table>
+  <!-- <div class="epub-website-ebook-masthead-logo" < %- logostylestr % >>
+      <a href="< %= bookHomeURL "><img src="http://akashacms.com/logo.gif" < %- logostylestr % >/></a>
+  </div>
+  <div class="epub-website-ebook-masthead-title">
+      < % if (typeof bookTitle !== "undefined") {
+         % ><a href="< %= bookHomeURL % >"><h2 align="center">< %= bookTitle % ></a></h2>< %
+      } else if (typeof title !== "undefined") {
+         % ><a href="< %= bookHomeURL % >"><h2 align="center">< %= title % ></a></h2>< %
+      }
+      if (typeof bookSubTitle !== 'undefined' && bookSubTitle) {
+          % ><h4>< %= bookSubTitle % ></h4>< %
+      }
+      if (typeof bookAuthor !== 'undefined' && bookAuthor) {
+          % ><em>By < %= bookAuthor % ></em>< %
+      } % >
+  </div> -->
+</header>
 
+    <div class="panel-heading epub-website-ebook-navigation-header" id="ebook-navigation">
 
-<div class="container" role="main">
-<div class="row">
-<div class="col-sm-12"><div>
-    <a href="/">
-        <img src="/logo.jpg" align="left"/>
-        <h1>AkashaRender Documentation</h1>
-    </a>
-</div>
-<div>
-</div>
+<div class="epub-website-ebook-logo-area">
+<div class="btn-group">
+  <button type="button" class="btn btn-default dropdown-toggle" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+    <span class="glyphicon glyphicon-list" aria-hidden="true"/>
+    Table of Contents
+    <span class="caret"/>
+  </button>
+  <ol type="1" start="1" class="dropdown-menu">
+    <li><a href="1-introduction.html" id="introduction">Introduction</a></li>
+    <li><a href="2-setup.html" id="setup">Setup</a></li>
+    <li><a href="3-create-content.html" id="create-content">Creating Content</a></li>
+</ol>
 </div>
 </div>
 
-<div class="row">
-  <article class="col-sm-10">
-    <p><em>Akasha means the basis and essence of all things in the material world; the first material element created from the astral world. AkashaCMS (<a href="https://github.com/akashacms">github organization</a>) is a Node.js based tool with which you can convert ideas into websites while maintaining separation between content, layout and design.</em></p>
+<div class="epub-website-ebook-chapter-area">
+<a href="3-create-content.html">
+    <span class="epub-website-ebook-chevron-left glyphicon glyphicon-chevron-left" aria-hidden="true" style=""/>
+</a>
+
+<h1 class="panel-title" align="center" style="">AkashaRender</h1>
+
+<a href="2-setup.html">
+    <span class="glyphicon glyphicon-chevron-right" aria-hidden="true" style="display: inline"/>
+</a>
+</div>
+
+</div>
+
+    <div id="book-page-content" class="panel-body"><p><em>Akasha means the basis and essence of all things in the material world; the first material element created from the astral world. AkashaCMS (<a href="https://github.com/akashacms">github organization</a>) is a Node.js based tool with which you can convert ideas into websites while maintaining separation between content, layout and design.</em></p>
 <p>AkashaRender is a rendering engine primarily meant for creating HTML files for use on websites or in electronic books (EPUB3).  It can be configured to take input from any text file format, and produce rendered output.  The system is extremely flexible and is being built from the experience gathered while developing AkashaCMS.  Loosely speaking, AkashaRender is the first step in reinventing AkashaCMS.</p>
 <p>The primary intended usage model is to write content using Markdown with YAML frontmatter holding metadata.  This serves as the principle content of the page that will be generated.  AkashaRender will process the content file, using a template named in in the frontmatter to frame the content for presentation on a website or in an eBook.  Along the way we use modern CSS3 and JavaScript techniques so the result works well on the modern mobile-first web.</p>
 <p>Content files don&apos;t have to be written with Markdown, it&apos;s simply a nice format for writing text.  The output doesn&apos;t have to be HTML, either.  We can configure AkashaRender to have any number of renderable input formats, and rendering plugins can produce any desired output format.</p>
 <p>One key feature is that AkashaRender integrates Mahabhuta, an engine for performing DOM manipulation of HTML files using a jQuery-like API.  It means you can reuse your jQuery knowledge for server-side DOM manipulation and generate custom output from custom tags.  One very powerful example is to use a very simple tag referencing a YouTube video, which then generates a nice video player framed with title and a video description fetched from the YouTube website.</p>
-
-  </article>
-  <div class="col-md-2">
-  <!-- partial file-name="sidebar.html.ejs"></partial -->
-  </div>
-
 </div>
-
-<footer class="row" style="text-align: center; height: 100px;">
-<div class="col-sm-12"><!-- partial file-name="footer.html.ejs"></partial --></div>
-</footer>
+    <footer id="footer-row" class="container">
+    
+    </footer>
 </div>
 
 <script src="/vendor/jquery/jquery.min.js"/><script src="/vendor/bootstrap/js/bootstrap.min.js"/>
-<!-- partial file-name="google-analytics.html"></partial -->
 
 
 </body>

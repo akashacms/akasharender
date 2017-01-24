@@ -40,7 +40,7 @@ config
     .use(require('akashacms-embeddables'))
     .use(require('akashacms-blog-podcast'))
     .use(require('akashacms-social-buttons'))
-    .use(require('akashacms-tagged-content'))
+    // .use(require('akashacms-tagged-content'))
     .use(require('epub-website'));
 
 config
@@ -58,10 +58,10 @@ config.setMahabhutaConfig({
 
 // config.addMahabhuta(require('../../ebooks/book-range-confidence/mahafuncs'));
 
-config.plugin("akashacms-tagged-content")
+/* config.plugin("akashacms-tagged-content")
     .sortBy('title')
     .headerTemplate("---\ntitle: @title@\nlayout: tagpage.html.ejs\n---\n<p>Pages with tag @tagName@</p>")
-    .tagsDirectory('/tags/');
+    .tagsDirectory('/tags/'); */
 
 config.prepare();
 

@@ -15,7 +15,7 @@ bookHomeURL: '/toc.html'
 authors: "David Herron"
 published: "2017 David Herron"
 language: "English"
-# coverImage: "/books/hahnemann/organon/assets/cover-image.jpg"
+coverImage: "/Human-Skeleton.jpg"
 # EPUB download, PDF download
 ---
 

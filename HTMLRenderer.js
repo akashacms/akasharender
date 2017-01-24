@@ -63,8 +63,9 @@ module.exports = class HTMLRenderer extends Renderer {
             log(`renderForLayout find ${util.inspect(config.layoutDirs)} ${metadata.layout}`);
             return co(function* () {
                 var foundDir = yield globfs.findAsync(config.layoutDirs, metadata.layout);
-                if (!foundDir) throw new Error(`No layout directory found in ${util.inspect(config.layoutDirs)} ${metadata.layout}`);
+                if (!foundDir) throw new Error(`No layout directory found in ${util.inspect(config.layoutDirs)} ${metadata.layout} in file ${metadata.document.path}`);
                 foundDir = foundDir[0];
+                if (!foundDir) throw new Error(`No layout directory found in ${util.inspect(config.layoutDirs)} ${metadata.layout} in file ${metadata.document.path}`);
                 var layoutFname = path.join(foundDir.basedir, foundDir.path);
                 var layout = yield fs.readFileAsync(layoutFname, 'utf8');
                 layouttext = layout;
