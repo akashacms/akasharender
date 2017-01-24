@@ -1,6 +1,7 @@
 ---
 layout: ebook-page.html.ejs
 title: Creating content with AkashaRender
+bookHomeURL: '/toc.html'
 ---
 
 AkashaRender's purpose is easy generation of HTML and related files for use on websites or EPUB3 documents.  It's meant that the files you'll edit will be in an easy-to-use-or-edit format, like Markdown, which AkashaRender converts to correctly formatted HTML (or whatever) files for your website or eBook.

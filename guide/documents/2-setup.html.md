@@ -1,6 +1,7 @@
 ---
 title: Project Setup
 layout: ebook-page.html.ejs
+bookHomeURL: '/toc.html'
 ---
 
 An AkashaRender project directory has these attributes:
