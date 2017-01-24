@@ -18,6 +18,7 @@
     "akashacms-social-buttons": "akashacms/akashacms-social-buttons#akasharender",
     "akashacms-tagged-content": "akashacms/akashacms-tagged-content#akasharender",
     "akashacms-theme-bootstrap": "akashacms/akashacms-theme-bootstrap#akasharender",
+    "epub-website": "akashacms/epub-website",
     "mahabhuta": ">=0.6.2",
     "akasharender": "file:..",
     "async": "^2.0.0-rc.4",

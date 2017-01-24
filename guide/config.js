@@ -36,7 +36,8 @@ config
     .use(require('akashacms-embeddables'))
     .use(require('akashacms-blog-podcast'))
     .use(require('akashacms-social-buttons'))
-    .use(require('akashacms-tagged-content'));
+    .use(require('akashacms-tagged-content'))
+    .use(require('epub-website'));
 
 config
     .addFooterJavaScript({ href: "/vendor/jquery/jquery.min.js" })

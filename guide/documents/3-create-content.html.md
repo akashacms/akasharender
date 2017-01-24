@@ -1,5 +1,5 @@
 ---
-layout: docpage.html.ejs
+layout: ebook-page.html.ejs
 title: Creating content with AkashaRender
 ---
 
