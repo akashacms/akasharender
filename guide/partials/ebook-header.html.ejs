@@ -1,0 +1,67 @@
+<%
+
+// This is meant to be used at the top of the page.  It shows a normal website masthead
+// that's attuned to displaying a Book "Masthead".  There is room for a logo image,
+// the title, subtitle and author of the book.
+
+  if (typeof logoImage === 'undefined' || !logoImage) {
+      logoImage = siteLogoImage;
+      logoWidth = siteLogoWidth;
+  }
+  if (typeof bookHomeURL === 'undefined' || !bookHomeURL) {
+      bookHomeURL = '/';
+  }
+  if (typeof divclass === 'undefined') {
+      divclass = "epub-website-ebook-masthead";
+  } else {
+      divclass += " epub-website-ebook-masthead";
+  }
+  var logostylestr = '';
+  if (typeof logoWidth !== 'undefined') {
+      logostylestr += "width: "+ logoWidth +";";
+  }
+  if (typeof logoHeight !== 'undefined') {
+      logostylestr += "height: "+ logoHeight +";";
+  }
+  if (logostylestr !== '') logostylestr = "style='"+ logostylestr +"'";
+  var headerStyleStr = '';
+  if (typeof headerHeight !== 'undefined') {
+      headerStyleStr = "height: "+ headerHeight +";";
+  }
+  headerStyleStr = "style='"+ headerStyleStr +"'";
+  // < %- headerStyleStr % > < %- logostylestr % >
+%><header <%
+        if (typeof divclass !== 'undefined') { %> class="<%= divclass %>" <% }
+        if (typeof divid !== 'undefined') {    %> id="<%= divid %>" <% } %>  >
+  <table border="0"><tr>
+      <td class="epub-website-ebook-masthead-title">
+          <% if (typeof bookTitle !== "undefined") {
+             %><a href="<%= bookHomeURL %>"><h2 align="center"><%= bookTitle %></a></h2><%
+          } else if (typeof title !== "undefined") {
+             %><a href="<%= bookHomeURL %>"><h2 align="center"><%= title %></a></h2><%
+          }
+          if (typeof bookSubTitle !== 'undefined' && bookSubTitle) {
+              %><h4><%= bookSubTitle %></h4><%
+          }
+          if (typeof bookAuthor !== 'undefined' && bookAuthor) {
+              %><em>By <%= bookAuthor %></em><%
+          } %>
+      </td>
+  </tr></table>
+  <!-- <div class="epub-website-ebook-masthead-logo" < %- logostylestr % >>
+      <a href="< %= bookHomeURL %>"><img src="<%= logoImage %>" < %- logostylestr % >/></a>
+  </div>
+  <div class="epub-website-ebook-masthead-title">
+      < % if (typeof bookTitle !== "undefined") {
+         % ><a href="< %= bookHomeURL % >"><h2 align="center">< %= bookTitle % ></a></h2>< %
+      } else if (typeof title !== "undefined") {
+         % ><a href="< %= bookHomeURL % >"><h2 align="center">< %= title % ></a></h2>< %
+      }
+      if (typeof bookSubTitle !== 'undefined' && bookSubTitle) {
+          % ><h4>< %= bookSubTitle % ></h4>< %
+      }
+      if (typeof bookAuthor !== 'undefined' && bookAuthor) {
+          % ><em>By < %= bookAuthor % ></em>< %
+      } % >
+  </div> -->
+</header>

@@ -53,7 +53,7 @@ config
 config.setMahabhutaConfig({
     recognizeSelfClosing: true,
     recognizeCDATA: true,
-    xmlMode: true
+    xmlMode: false
 });
 
 // config.addMahabhuta(require('../../ebooks/book-range-confidence/mahafuncs'));

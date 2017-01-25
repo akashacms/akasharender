@@ -6,9 +6,9 @@ bookHomeURL: '/toc.html'
 
 An AkashaRender project directory has these attributes:
 
-* _package.json_ This file lists dependencies on Node.js packages used to build the project, and the _scripts_ section can contain commands to drive the process.
+* _package.json_ This file lists dependencies on Node.js packages used to build the project, and a _scripts_ section containing commands to drive the rendering and deployment process.
 * Several input directories to hold project assets, content files, layout templates, and partials (smaller templates).
-* One or more AkashaRender configuration files, _e.g._ `config.js`, describing the rendering process.  Typically there will be one configuration file.  You'll need more than one if you'll reuse the same content for multiple destinations.
+* One or more AkashaRender configuration files, _e.g._ `config.js`, describing the rendering process.  Typically there will be one configuration file, but sometimes you'll need more than one to reuse the same content for multiple destinations.
 * (Optionally) Another Node.js script containing DOM processing functions for use with the Mahabhuta engine.
 
 ## Simple project initialization
@@ -27,22 +27,13 @@ Is this ok? (yes) yes
 Then install AkashaRender and globfs.
 
 ```
-$ npm install globfs@stable akasharender@stable --save
-```
-
-NOTE: At the moment AkashaRender is not in npm, so instead you'll have to add this to the dependencies section in `package.json`
-
-```
-"dependencies": {
-  "akasharender": "akashacms/akasharender",
-  "globfs": "^0.1.2"
-}
+$ npm install globfs akasharender --save
 ```
 
 If this project is to generate an EPUB3, then you must also install epubtools:
 
 ```
-$ npm install epubtools@stable --save
+$ npm install epubtools --save
 ```
 
 Next, make some directories:
@@ -57,6 +48,16 @@ Make an empty CSS file (or fill it with CSS of your desire)
 $ mkdir assets/style
 $ touch assets/style/main.css
 ```
+
+It's also easy to use LESS that is autocompiled to CSS.  Do this instead:
+
+
+```
+$ mkdir documents/style
+$ touch documents/style/main.css.less
+```
+
+We'll go over this later, but AkashaRender automatically compiles LESS code to CSS when the file is named with this double extension.
 
 ## A simple template file
 
@@ -79,7 +80,13 @@ Create a simple layout template as `layouts/page.html.ejs` containing
 </html>
 ```
 
-This demonstrates two types of content inclusion, using EJS.  Because the template file name ends with `.html.ejs`, it'll produce an HTML file after rendering with EJS.  With `<%= title %>` we are inserting a metadata value with interpolation such that any HTML tags get encoded.  However with `<%- content %>` the metadata value is not encoded, so that any HTML tags are copied verbatim.
+The double file extension is a convention in AkashaRender meant to indicate
+
+* _filename.css.less_: The file is first compiled from LESS, and is output as CSS to: _filename.css_
+* _filename.html.ejs_: The file is rendered with EJS, and is output as HTML to: _filename.html_
+* _filename.html.md_: The file is rendered with Markdown, and is output as HTML to: _filename.html_
+
+The template file demonstrates two types of content inclusion, using EJS.  With `<%= title %>` we are inserting a metadata value with interpolation such that any HTML tags get encoded.  However with `<%- content %>` the metadata value is not encoded, so that any HTML tags are copied verbatim.
 
 The `content` variable is special in that it's the result of the previous rendering.  All other values we might include come from the frontmatter.
 
@@ -162,7 +169,7 @@ The last thing is to set up the scripts section of the `package.json` with tasks
 },
 ```
 
-The `akasharender` command reads the named configuration file, using that file to know what to do.  This defines two commands, which you can run as so:
+This defines two commands, which you can run as so:
 
 ```
 $ npm run clean
@@ -170,3 +177,7 @@ $ npm run build
 ```
 
 And the project is built for you.
+
+The `akasharender` command takes several commands, two of which we see here.  With `copy-assets` it copies files from the _assets_ directory to the _renderDestination_ directory.  The assets files are ones which AkashaRender does not manipulate, instead they're copied verbatim.  The second command, `render`, is where AkashaRender does manipulate files.  These files are located in the _documents_ directory, and are rendered into the _renderDestination_ directory.
+
+The configuration file is named on the command line so that you can use different configuration files for different purposes.  For example it's possible to take the content of an eBook and render it into an EPUB file or as a website, simply with different configuration files.
