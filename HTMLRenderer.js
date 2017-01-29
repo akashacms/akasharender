@@ -226,6 +226,8 @@ module.exports = class HTMLRenderer extends Renderer {
             metadata.content = "";
             metadata.document = {};
             metadata.document.basedir = basedir;
+            metadata.document.relpath = fpath;
+            metadata.document.relrender = this.filePath(fpath);
             metadata.document.path = path.join(renderToPlus, fpath);
             metadata.document.renderTo = path.join(renderToPlus, this.filePath(fpath));
 
