@@ -246,19 +246,19 @@ class AnchorCleanup extends mahabhuta.Munger {
 			var uHref = url.parse(href, true, true);
 			if (uHref.protocol || uHref.slashes) return Promise.resolve("");
 
-			if (! href.match(/^\//)) {
-				var hreforig = href;
-				// var pRenderedUrl = url.parse(metadata.rendered_url);
-				// var docpath = pRenderedUrl.pathname;
-				var docdir = path.dirname(metadata.document.path);
-				href = path.normalize(path.join(docdir, href));
-				// util.log('***** FIXED href '+ hreforig +' to '+ href);
-			}
+            if (! href.match(/^\//)) {
+                // console.log(`AnchorCleanup ${href} ${linktext}`);
+                // var pRenderedUrl = url.parse(metadata.rendered_url);
+                // var docpath = pRenderedUrl.pathname;
+                // console.log(`AnchorCleanup #2 document.path ${metadata.document.path} href ${href} normalized ${path.join(path.dirname(metadata.document.path), href)}`)
+                href = path.join(path.dirname(metadata.document.path), href);
+                // console.log(`***** AnchorCleanup FIXED href to ${href}`);
+            }
 
 			return akasha.findRendersTo(metadata.config.documentDirs, href)
 			.then(found => {
 				if (!found) {
-					throw new Error(`Did not find ${href} in ${util.inspect(metadata.config.documentDirs)}`);
+					throw new Error(`Did not find ${href} in ${util.inspect(metadata.config.documentDirs)} in ${metadata.document.path}`);
 				}
 				var renderer = akasha.findRendererPath(found.foundFullPath);
 				if (renderer && renderer.metadata) {
