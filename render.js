@@ -151,6 +151,7 @@ exports.render = co.wrap(function* (config) {
             });
         }));
 
+        // console.log('CALLING config.hookSiteRendered');
         var hookResults = yield config.hookSiteRendered();
 
         // The array resulting from the above has two levels, when we

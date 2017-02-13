@@ -298,11 +298,15 @@ module.exports = class Configuration {
      * Call the onSiteRendered function of any plugin which has that function.
      */
     hookSiteRendered() {
+        // console.log('hookSiteRendered');
+        var config = this;
         return new Promise((resolve, reject) => {
-            async.eachSeries(this._plugins,
+            async.eachSeries(config._plugins,
             (plugin, next) => {
+                // console.log(`PLUGIN ${util.inspect(plugin)}`);
                 if (typeof plugin.onSiteRendered !== 'undefined') {
-                    plugin.onSiteRendered(this)
+                    // console.log(`CALLING plugin ${plugin.name} onSiteRendered`);
+                    plugin.onSiteRendered(config)
                     .then(() => { next(); })
                     .catch(err => { next(err); });
                 } else next();
