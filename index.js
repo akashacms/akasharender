@@ -77,11 +77,11 @@ exports.documentTree = documents.documentTree;
 exports.documentSearch = documents.documentSearch;
 exports.readDocument   = documents.readDocument;
 
-exports.partial = co.wrap(function* (config, partial, attrs) {
+exports.partial = function(config, partial, attrs) {
 
     // This has been moved into Mahabhuta
     return mahaPartial.doPartialAsync(partial, attrs);
-});
+};
 
 exports.partialSync = function(config, fname, metadata) {
 
