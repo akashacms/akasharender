@@ -43,6 +43,8 @@ config
     // .use(require('akashacms-tagged-content'))
     .use(require('epub-website'));
 
+config.plugin("akashacms-base").generateSitemap(true);
+
 config
     .addFooterJavaScript({ href: "/vendor/jquery/jquery.min.js" })
     .addFooterJavaScript({ href: "/vendor/bootstrap/js/bootstrap.min.js"  })
