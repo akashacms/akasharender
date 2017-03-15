@@ -44,6 +44,7 @@ config
     .use(require('epub-website'));
 
 config.plugin("akashacms-base").generateSitemap(true);
+config.plugin("akashacms-base").googleSiteVerification("dLnKRZoqR62ZVfknDwiPvZP1NhODZRjolbGRNCaHsSQ");
 
 config
     .addFooterJavaScript({ href: "/vendor/jquery/jquery.min.js" })
