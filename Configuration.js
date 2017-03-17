@@ -19,6 +19,8 @@ const mahaPartial = require('mahabhuta/maha/partial');
 const log    = require('debug')('akasha:configuration');
 const error  = require('debug')('akasha:error-configuration');
 
+const _config_pluginData = Symbol['pluginData'];
+
 /**
  * Configuration of an AkashaRender project, including the input directories,
  * output directory, plugins, and various settings.
@@ -375,6 +377,22 @@ module.exports = class Configuration {
         }
         console.log(`WARNING: Did not find plugin ${name}`);
         return undefined;
+    }
+
+    /**
+     * Retrieve the pluginData object for the named plugin.
+     * @param {string} name
+     * @returns {Object}
+     */
+    pluginData(name) {
+        if (!this[_config_pluginData]) {
+            this[_config_pluginData] = [];
+        }
+        var pluginDataArray = this[_config_pluginData];
+        if (!(name in pluginDataArray)) {
+            pluginDataArray[name] = {};
+        }
+        return pluginDataArray[name];
     }
 
     /**
