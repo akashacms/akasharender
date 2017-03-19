@@ -19,7 +19,7 @@ const mahaPartial = require('mahabhuta/maha/partial');
 const log    = require('debug')('akasha:configuration');
 const error  = require('debug')('akasha:error-configuration');
 
-const _config_pluginData = Symbol['pluginData'];
+const _config_pluginData = Symbol('pluginData');
 
 /**
  * Configuration of an AkashaRender project, including the input directories,
