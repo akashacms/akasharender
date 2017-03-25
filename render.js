@@ -48,6 +48,7 @@ exports.findRendererPath = function(_path) {
 exports.registerRenderer(require('./render-md'));
 exports.registerRenderer(require('./render-ejs'));
 exports.registerRenderer(require('./render-cssless'));
+exports.registerRenderer(require('./render-json'));
 
 //////////////////////////////////////////////////////////
 
