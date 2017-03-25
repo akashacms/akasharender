@@ -108,10 +108,10 @@ module.exports = class Configuration {
             fs.mkdirsSync(this.renderTo);
         }
 
-        if (!this.headerScripts)                  { this.headerScripts = { }; }
-        if (!this.headerScripts.stylesheets)      { this.headerScripts.stylesheets = []; }
-        if (!this.headerScripts.javaScriptTop)    { this.headerScripts.javaScriptTop = []; }
-        if (!this.headerScripts.javaScriptBottom) { this.headerScripts.javaScriptBottom = []; }
+        if (!this.scripts)                  { this.scripts = { }; }
+        if (!this.scripts.stylesheets)      { this.scripts.stylesheets = []; }
+        if (!this.scripts.javaScriptTop)    { this.scripts.javaScriptTop = []; }
+        if (!this.scripts.javaScriptBottom) { this.scripts.javaScriptBottom = []; }
 
         // The akashacms-builtin plugin needs to be last on the chain so that
         // its partials etc can be easily overridden.  This is the most convenient
