@@ -7,23 +7,28 @@ const path  = require('path');
 const log   = require('debug')('akasha:Renderer');
 const error = require('debug')('akasha:error-Renderer');
 
+const _renderer_name = Symbol('name');
+const _renderer_regex = Symbol('regex');
+
+
 module.exports = class Renderer {
     constructor(name, regex) {
-        this._name  = name;
+        this[_renderer_name]  = name;
         if (regex instanceof RegExp) {
-            this._regex = [ regex ];
+            this[_renderer_regex] = [ regex ];
         } else if (regex instanceof Array) {
-            this._regex = regex;
+            this[_renderer_regex] = regex;
         } else {
             throw new Error('regex must be RegExp or Array of RegExp');
         }
     }
 
-    get name() { return this._name; }
+    get name() { return this[_renderer_name]; }
+    get regex() { return this[_renderer_regex]; }
 
     match(fname) {
         var matches;
-        for (var regex of this._regex) {
+        for (var regex of this.regex) {
             if ((matches = fname.match(regex)) !== null) {
                 return true;
             }
@@ -40,7 +45,7 @@ module.exports = class Renderer {
     filePath(fname) {
         // log(`${this._name} filePath ${fname}`);
         var matches;
-        for (var regex of this._regex) {
+        for (var regex of this.regex) {
             if ((matches = fname.match(regex)) !== null) {
                 return matches[1];
             }
@@ -50,7 +55,7 @@ module.exports = class Renderer {
 
     fileExtension(fname) {
         var matches;
-        for (var regex of this._regex) {
+        for (var regex of this.regex) {
             if ((matches = fname.match(regex)) !== null) {
                 return matches[2];
             }
