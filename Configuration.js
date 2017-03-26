@@ -20,6 +20,15 @@ const log    = require('debug')('akasha:configuration');
 const error  = require('debug')('akasha:error-configuration');
 
 const _config_pluginData = Symbol('pluginData');
+const _config_assetsDirs = Symbol('assetsDirs');
+const _config_documentDirs = Symbol('documentDirs');
+const _config_layoutDirs = Symbol('layoutDirs');
+const _config_mahafuncs = Symbol('mahafuncs');
+const _config_renderTo = Symbol('renderTo');
+const _config_metadata = Symbol('metadata');
+const _config_root_url = Symbol('root_url');
+const _config_scripts = Symbol('scripts');
+const _config_plugins = Symbol('plugins');
 
 /**
  * Configuration of an AkashaRender project, including the input directories,
@@ -52,11 +61,11 @@ module.exports = class Configuration {
     prepare() {
 
         var stat;
-        if (!this.assetDirs) {
-            this.assetDirs = [];
+        if (!this[_config_assetsDirs]) {
+            this[_config_assetsDirs] = [];
             if (fs.existsSync('assets') && (stat = fs.statSync('assets'))) {
                 if (stat.isDirectory()) {
-                    this.assetDirs = [ 'assets' ];
+                    this[_config_assetsDirs] = [ 'assets' ];
                 }
             }
         }
@@ -79,11 +88,11 @@ module.exports = class Configuration {
             }
         }
 
-        if (!this.documentDirs) {
-            this.documentDirs = [];
+        if (!this[_config_documentDirs]) {
+            this[_config_documentDirs] = [];
             if (fs.existsSync('documents') && (stat = fs.statSync('documents'))) {
                 if (stat.isDirectory()) {
-                    this.documentDirs = [ 'documents' ];
+                    this[_config_documentDirs] = [ 'documents' ];
                 } else {
                     throw new Error("'documents' is not a directory");
                 }
@@ -92,26 +101,27 @@ module.exports = class Configuration {
             }
         }
 
-        if (!this.mahafuncs) { this.mahafuncs = []; }
-        if (!this.renderTo)  {
+        if (!this[_config_mahafuncs]) { this[_config_mahafuncs] = []; }
+
+        if (!this[_config_renderTo])  {
             if (fs.existsSync('out') && (stat = fs.statSync('out'))) {
                 if (stat.isDirectory()) {
-                    this.renderTo = 'out';
+                    this[_config_renderTo] = 'out';
                 } else {
                     throw new Error("'out' is not a directory");
                 }
             } else {
                 fs.mkdirsSync('out');
-                this.renderTo = 'out';
+                this[_config_renderTo] = 'out';
             }
-        } else if (this.renderTo && !fs.existsSync(this.renderTo)) {
-            fs.mkdirsSync(this.renderTo);
+        } else if (this[_config_renderTo] && !fs.existsSync(this[_config_renderTo])) {
+            fs.mkdirsSync(this[_config_renderTo]);
         }
 
-        if (!this.scripts)                  { this.scripts = { }; }
-        if (!this.scripts.stylesheets)      { this.scripts.stylesheets = []; }
-        if (!this.scripts.javaScriptTop)    { this.scripts.javaScriptTop = []; }
-        if (!this.scripts.javaScriptBottom) { this.scripts.javaScriptBottom = []; }
+        if (!this[_config_scripts])                  { this[_config_scripts] = { }; }
+        if (!this[_config_scripts].stylesheets)      { this[_config_scripts].stylesheets = []; }
+        if (!this[_config_scripts].javaScriptTop)    { this[_config_scripts].javaScriptTop = []; }
+        if (!this[_config_scripts].javaScriptBottom) { this[_config_scripts].javaScriptBottom = []; }
 
         // The akashacms-builtin plugin needs to be last on the chain so that
         // its partials etc can be easily overridden.  This is the most convenient
@@ -128,20 +138,24 @@ module.exports = class Configuration {
      * @param {string} dir The pathname to use
      */
     addDocumentsDir(dir) {
-        if (!this.documentDirs) { this.documentDirs = []; }
-        this.documentDirs.push(dir);
+        if (!this[_config_documentDirs]) { this[_config_documentDirs] = []; }
+        this[_config_documentDirs].push(dir);
         return this;
     }
+
+    get documentDirs() { return this[_config_documentDirs]; }
 
     /**
      * Add a directory to the layoutDirs configurtion array
      * @param {string} dir The pathname to use
      */
     addLayoutsDir(dir) {
-        if (!this.layoutDirs) { this.layoutDirs = []; }
-        this.layoutDirs.push(dir);
+        if (!this[_config_layoutDirs]) { this[_config_layoutDirs] = []; }
+        this[_config_layoutDirs].push(dir);
         return this;
     }
+
+    get layoutDirs() { return this[_config_layoutDirs]; }
 
     /**
      * Add a directory to the partialDirs configurtion array
@@ -168,10 +182,12 @@ module.exports = class Configuration {
      * @returns {Configuration}
      */
     addAssetsDir(dir) {
-        if (!this.assetDirs) { this.assetDirs = []; }
-        this.assetDirs.push(dir);
+        if (!this[_config_assetsDirs]) { this[_config_assetsDirs] = []; }
+        this[_config_assetsDirs].push(dir);
         return this;
     }
+
+    get assetDirs() { return this[_config_assetsDirs]; }
 
     /**
      * Add an array of Mahabhuta functions
@@ -179,10 +195,12 @@ module.exports = class Configuration {
      * @returns {Configuration}
      */
     addMahabhuta(mahafuncs) {
-        if (!this.mahafuncs) { this.mahafuncs = []; }
-        this.mahafuncs.push(mahafuncs);
+        if (!this[_config_mahafuncs]) { this[_config_mahafuncs] = []; }
+        this[_config_mahafuncs].push(mahafuncs);
         return this;
     }
+
+    get mahafuncs() { return this[_config_mahafuncs]; }
 
     /**
      * Define the directory into which the project is rendered.
@@ -190,12 +208,13 @@ module.exports = class Configuration {
      * @returns {Configuration}
      */
     setRenderDestination(dir) {
-        this.renderTo = dir;
+        this[_config_renderTo] = dir;
         return this;
     }
 
     /** Fetch the declared destination for rendering the project. */
-    get renderDestination() { return this.renderTo; }
+    get renderDestination() { return this[_config_renderTo]; }
+    get renderTo() { return this[_config_renderTo]; }
 
     /* TODO:
 
@@ -209,12 +228,17 @@ module.exports = class Configuration {
      * @returns {Configuration}
      */
     addMetadata(index, value) {
-        if (typeof this.metadata === 'undefined' || !this.hasOwnProperty("metadata") || !this.metadata) {
-            this.metadata = {};
+        if (typeof this[_config_metadata] === 'undefined'
+        || !this.hasOwnProperty(_config_metadata)
+        || !this[_config_metadata]) {
+            this[_config_metadata] = {};
         }
-        this.metadata[index] = value;
+        var md = this[_config_metadata];
+        md[index] = value;
         return this;
     }
+
+    get metadata() { return this[_config_metadata]; }
 
     /**
     * Document the URL for a website project.
@@ -222,9 +246,11 @@ module.exports = class Configuration {
     * @returns {Configuration}
     */
     rootURL(root_url) {
-        this.root_url = root_url;
+        this[_config_root_url] = root_url;
         return this;
     }
+
+    get root_url() { return this[_config_root_url]; }
 
     /**
      * Declare JavaScript to add within the head tag of rendered pages.
@@ -232,13 +258,17 @@ module.exports = class Configuration {
      * @returns {Configuration}
      */
     addHeaderJavaScript(script) {
-        if (typeof this.scripts === 'undefined' || !this.hasOwnProperty("scripts") || !this.scripts) {
-            this.scripts = {};
+        if (typeof this[_config_scripts] === 'undefined'
+        || !this.hasOwnProperty(_config_scripts)
+        || !this[_config_scripts]) {
+            this[_config_scripts] = {};
         }
-        if (!this.scripts.javaScriptTop) this.scripts.javaScriptTop = [];
-        this.scripts.javaScriptTop.push(script);
+        if (!this[_config_scripts].javaScriptTop) this[_config_scripts].javaScriptTop = [];
+        this[_config_scripts].javaScriptTop.push(script);
         return this;
     }
+
+    get scripts() { return this[_config_scripts]; }
 
     /**
      * Declare JavaScript to add at the bottom of rendered pages.
@@ -246,11 +276,13 @@ module.exports = class Configuration {
      * @returns {Configuration}
      */
     addFooterJavaScript(script) {
-        if (typeof this.scripts === 'undefined' || !this.hasOwnProperty("scripts") || !this.scripts) {
-            this.scripts = {};
+        if (typeof this[_config_scripts] === 'undefined'
+        || !this.hasOwnProperty(_config_scripts)
+        || !this[_config_scripts]) {
+            this[_config_scripts] = {};
         }
-        if (!this.scripts.javaScriptBottom) this.scripts.javaScriptBottom = [];
-        this.scripts.javaScriptBottom.push(script);
+        if (!this[_config_scripts].javaScriptBottom) this[_config_scripts].javaScriptBottom = [];
+        this[_config_scripts].javaScriptBottom.push(script);
         return this;
     }
 
@@ -260,11 +292,13 @@ module.exports = class Configuration {
      * @returns {Configuration}
      */
     addStylesheet(css) {
-        if (typeof this.scripts === 'undefined' || !this.hasOwnProperty("scripts") || !this.scripts) {
-            this.scripts = {};
+        if (typeof this[_config_scripts] === 'undefined'
+        || !this.hasOwnProperty(_config_scripts)
+        || !this[_config_scripts]) {
+            this[_config_scripts] = {};
         }
-        if (!this.scripts.stylesheets) this.scripts.stylesheets = [];
-        this.scripts.stylesheets.push(css);
+        if (!this[_config_scripts].stylesheets) this[_config_scripts].stylesheets = [];
+        this[_config_scripts].stylesheets.push(css);
         return this;
     }
 
@@ -303,7 +337,7 @@ module.exports = class Configuration {
         // console.log('hookSiteRendered');
         var config = this;
         return new Promise((resolve, reject) => {
-            async.eachSeries(config._plugins,
+            async.eachSeries(config.plugins,
             (plugin, next) => {
                 // console.log(`PLUGIN ${util.inspect(plugin)}`);
                 if (typeof plugin.onSiteRendered !== 'undefined') {
@@ -328,8 +362,10 @@ module.exports = class Configuration {
      */
     use(PluginObj) {
         // console.log("Configuration #1 use PluginObj "+ typeof PluginObj +" "+ util.inspect(PluginObj));
-        if (typeof this._plugins === 'undefined' || !this.hasOwnProperty("_plugins") || ! this._plugins) {
-            this._plugins = [];
+        if (typeof this[_config_plugins] === 'undefined'
+        || !this.hasOwnProperty(_config_plugins)
+        || ! this[_config_plugins]) {
+            this[_config_plugins] = [];
         }
 
         if (typeof PluginObj === 'string') {
@@ -340,10 +376,12 @@ module.exports = class Configuration {
         }
         // console.log("Configuration #2 use PluginObj "+ typeof PluginObj +" "+ util.inspect(PluginObj));
         var plugin = new PluginObj();
-        this._plugins.push(plugin);
+        this[_config_plugins].push(plugin);
         plugin.configure(this);
         return this;
     }
+
+    get plugins() { return this[_config_plugins]; }
 
     /**
      * Iterate over the installed plugins, calling the function passed in `iterator`
@@ -353,7 +391,7 @@ module.exports = class Configuration {
      * @param final The function to call after all iterator calls have been made.  Signature: `function(err)`
      */
     eachPlugin(iterator, final) {
-        async.eachSeries(this._plugins,
+        async.eachSeries(this.plugins,
         function(plugin, next) {
             iterator(plugin, next);
         },
@@ -367,11 +405,11 @@ module.exports = class Configuration {
      */
     plugin(name) {
         // console.log('config.plugin: '+ util.inspect(this._plugins));
-        if (! this._plugins) {
+        if (! this.plugins) {
             return undefined;
         }
-        for (var pluginKey in this._plugins) {
-            var plugin = this._plugins[pluginKey];
+        for (var pluginKey in this.plugins) {
+            var plugin = this.plugins[pluginKey];
             // console.log(`FOUND ${util.inspect(plugin)}`);
             if (plugin.name === name) return plugin;
         }
