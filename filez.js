@@ -77,7 +77,7 @@ exports.findRendersTo = function(dirs, rendersTo) {
         // for each dir .. check path.join(dir, layoutName)
         // first match resolve's
 
-        // log(`filez.findRendersTo ${util.inspect(dirs)} ${rendersTo}`);
+        // console.log(`filez.findRendersTo ${util.inspect(dirs)} ${rendersTo}`);
 
 
 
@@ -94,7 +94,7 @@ exports.findRendersTo = function(dirs, rendersTo) {
 
         async.eachSeries(dirs,
         (dir, next) => {
-            // log(`${dir} ${rendersTo} ${found}`);
+            // console.log(`filez.findRendersTo ${dir} ${rendersTo} ${found}`);
             if (!found) {
                 // For cases of complex directory descriptions
                 let pathMountedOn = "/";
@@ -106,7 +106,7 @@ exports.findRendersTo = function(dirs, rendersTo) {
                     dirToRead = path.join(renderBaseDir, renderToDir);;
                 } else {
                     renderBaseDir = dir.src;
-                    // console.log(`Checking ${util.inspect(dir)} for ${rendersToNoSlash}`);
+                    // console.log(`filez.findRendersTo  Checking ${util.inspect(dir)} for ${rendersToNoSlash}`);
                     if (rendersToNoSlash.substring(0, dir.dest.length) === dir.dest
                      && rendersToNoSlash.substring(dir.dest.length).startsWith('/')) {
                         // These two are true if the path prefix of rendersTo is dir.dest

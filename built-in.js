@@ -257,12 +257,13 @@ class AnchorCleanup extends mahabhuta.Munger {
 
 			return akasha.findRendersTo(metadata.config.documentDirs, href)
 			.then(found => {
+                // console.log(`AnchorCleanup findRendersTo ${href} ${util.inspect(found)}`);
 				if (!found) {
 					throw new Error(`Did not find ${href} in ${util.inspect(metadata.config.documentDirs)} in ${metadata.document.path}`);
 				}
 				var renderer = akasha.findRendererPath(found.foundFullPath);
 				if (renderer && renderer.metadata) {
-					return renderer.metadata(found.foundDir, found.foundFullPath)
+					return renderer.metadata(found.foundDir, found.foundPathWithinDir)
 					.then(docmeta => {
 						// log(`${entry.foundDir} ${entry.foundPath} ${util.inspect(metadata)}`)
 						// Automatically add a title= attribute
@@ -273,7 +274,10 @@ class AnchorCleanup extends mahabhuta.Munger {
 							$link.text(docmeta.title);
 						}
 						return "ok";
-					});
+					})
+                    .catch(err => {
+                        throw new Error(`Could not retrieve document metadata for ${found.foundDir} ${found.foundFullPath} because ${err}`);
+                    });
 				} else return "ok";
 			});
 		} else return Promise.resolve("");
