@@ -433,6 +433,17 @@ module.exports = class Configuration {
         return pluginDataArray[name];
     }
 
+    askPluginsLegitLocalHref(href) {
+        for (var plugin of this.plugins) {
+            if (typeof plugin.isLegitLocalHref !== 'undefined') {
+                if (plugin.isLegitLocalHref(this, href)) {
+                    return true;
+                }
+            }
+        }
+        return false;
+    }
+
     /**
      * Add a new Renderer to the AkashaRender configuration
      */
