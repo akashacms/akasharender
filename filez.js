@@ -16,6 +16,36 @@ exports.copyAssets = function(assetdirs, renderTo) {
     return globfs.copyAsync(assetdirs, '**/*', renderTo);
 };
 
+exports.findAsset = co.wrap(function* (assetdirs, filename) {
+    var results = [];
+    for (let assetdir of assetdirs) {
+        let theAssetdir;
+        if (typeof assetdir === 'object') {
+            theAssetdir = assetdir.src;
+        } else if (typeof assetdir === 'string') {
+            theAssetdir = assetdir;
+        } else {
+            throw new Error(`findAsset unknown assetdir ${util.inspect(assetdir)}`);
+        }
+        var fn2find = path.join(theAssetdir, filename);
+        try {
+            if (yield !fs.existsAsync(fn2find)) continue;
+            var stats = yield fs.statAsync(fn2find);
+            if (!stats) continue;
+        } catch (e) {
+            if (e.code !== 'ENOENT') continue;
+            throw e;
+        }
+        results.push({
+            basedir: theAssetdir,
+            path: filename,
+            fullpath: fn2find
+        });
+    }
+    // console.log(`findAsset found ${util.inspect(results)} for ${util.inspect(assetdirs)} ${filename}`);
+    return results;
+});
+
 exports.findSync = function(dirs, fileName) {
     throw new Error('findSync deprecated - use globfs.findSync');
     for (var i = 0; i < dirs.length; i++) {
