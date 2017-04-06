@@ -244,30 +244,30 @@ class AnchorCleanup extends mahabhuta.Munger {
                 var uHref = url.parse(href, true, true);
                 if (uHref.protocol || uHref.slashes) return "ok";
 
-                if (! href.match(/^\//)) {
-                    href = path.join(path.dirname(metadata.document.path), href);
-                    // console.log(`***** AnchorCleanup FIXED href to ${href}`);
+                if (! uHref.pathname.match(/^\//)) {
+                    uHref.pathname = path.join(path.dirname(metadata.document.path), uHref.pathname);
+                    // console.log(`***** AnchorCleanup FIXED href to ${uHref.pathname}`);
                 }
 
                 // Look to see if it's an asset file
-                var foundAsset = yield filez.findAsset(metadata.config.assetDirs, href);
+                var foundAsset = yield filez.findAsset(metadata.config.assetDirs, uHref.pathname);
                 if (foundAsset && foundAsset.length > 0) {
                     return "ok";
                 }
 
                 // Ask plugins if the href is okay
-                if (metadata.config.askPluginsLegitLocalHref(href)) {
+                if (metadata.config.askPluginsLegitLocalHref(uHref.pathname)) {
                     return "ok";
                 }
 
                 // Does it exist in documents dir?
-                var found = yield filez.findRendersTo(metadata.config.documentDirs, href);
-                // console.log(`AnchorCleanup findRendersTo ${href} ${util.inspect(found)}`);
+                var found = yield filez.findRendersTo(metadata.config.documentDirs, uHref.pathname);
+                // console.log(`AnchorCleanup findRendersTo ${uHref.pathname} ${util.inspect(found)}`);
                 if (!found) {
                     throw new Error(`Did not find ${href} in ${util.inspect(metadata.config.documentDirs)} in ${metadata.document.path}`);
                 }
                 // If this link has a body, then don't modify it
-                if ((linktext && linktext.length > 0 && linktext !== href)
+                if ((linktext && linktext.length > 0 && linktext !== uHref.pathname)
                  || ($link.children > 0)) {
                     return "ok";
                 }
