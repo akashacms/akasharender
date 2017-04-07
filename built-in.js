@@ -243,6 +243,7 @@ class AnchorCleanup extends mahabhuta.Munger {
             if (href && href !== '#') {
                 var uHref = url.parse(href, true, true);
                 if (uHref.protocol || uHref.slashes) return "ok";
+                if (!uHref.pathname) return "ok";
 
                 if (! uHref.pathname.match(/^\//)) {
                     uHref.pathname = path.join(path.dirname(metadata.document.path), uHref.pathname);
