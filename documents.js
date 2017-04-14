@@ -399,6 +399,9 @@ exports.readDocument = function(config, documentPath) {
     return filez.findRendersTo(config.documentDirs, documentPath)
     .then(found => {
         // console.log('readDocument '+ documentPath +' '+ util.inspect(found));
+        if (!found) {
+            throw new Error(`Did not find document for ${util.inspect(documentPath)} in ${util.inspect(config.documentDirs)}`);
+        }
         found.renderer = akasha.findRendererPath(found.foundFullPath);
         return found;
     })
