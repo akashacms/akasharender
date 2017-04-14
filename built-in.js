@@ -269,7 +269,8 @@ class AnchorCleanup extends mahabhuta.Munger {
                 }
                 // If this link has a body, then don't modify it
                 if ((linktext && linktext.length > 0 && linktext !== uHref.pathname)
-                 || ($link.children > 0)) {
+                 || ($link.children().length > 0)) {
+                    // console.log(`AnchorCleanup skipping ${uHref.pathname} w/ ${util.inspect(linktext)} children= ${$link.children}`);
                     return "ok";
                 }
                 // Otherwise look into filling emptiness with title
