@@ -395,49 +395,31 @@ exports.documentSearch = co.wrap(function* (config, options) {
 
 });
 
-exports.readDocument = function(config, documentPath) {
-    return filez.findRendersTo(config.documentDirs, documentPath)
-    .then(found => {
-        // console.log('readDocument '+ documentPath +' '+ util.inspect(found));
-        if (!found) {
-            throw new Error(`Did not find document for ${util.inspect(documentPath)} in ${util.inspect(config.documentDirs)}`);
-        }
-        found.renderer = akasha.findRendererPath(found.foundFullPath);
-        return found;
-    })
-    .then(found => {
-        // console.log('readDocument #2 '+ documentPath +' '+ util.inspect(found));
-        return new Promise((resolve, reject) => {
-            fs.stat(path.join(found.foundDir, found.foundPathWithinDir), (err, stat) => {
-                if (err) reject(err);
-                else {
-                    found.stat = stat;
-                    resolve(found);
-                }
-            });
-        });
-    })
-    .then(found => {
-        return found.renderer.metadata(found.foundDir, found.foundPathWithinDir)
-        .then(metadata => {
-            return found.renderer.initMetadata(config, found.foundDir, found.foundFullPath, found.foundMountedOn, found.foundBaseMetadata, metadata);
-        })
-        .then(metadata => { found.metadata = metadata; return found; });
-    })
-    .then(found => {
-        let filepath = found.renderer ? found.renderer.filePath(found.foundPath) : undefined;
-        var doc = new exports.Document({
-            basedir: found.foundDir,
-            docpath: found.foundPath,
-            docname: path.basename(found.foundPath),
-            fullpath: found.foundFullPath,
-            renderer: found.renderer,
-            stat: found.stat,
-            renderpath: filepath,
-            rendername: filepath ? path.basename(filepath) : undefined,
-            metadata: found.metadata
-        });
-        // console.log('readDocument #3 '+ util.inspect(doc));
-        return doc;
+exports.readDocument = co.wrap(function* (config, documentPath) {
+    var found = yield filez.findRendersTo(config.documentDirs, documentPath)
+    // console.log('readDocument '+ documentPath +' '+ util.inspect(found));
+    if (!found) {
+        throw new Error(`Did not find document for ${util.inspect(documentPath)} in ${util.inspect(config.documentDirs)}`);
+    }
+    found.renderer = akasha.findRendererPath(found.foundFullPath);
+
+    found.stat = yield fs.statAsync(path.join(found.foundDir, found.foundPathWithinDir));
+    var metadata = yield found.renderer.metadata(found.foundDir, found.foundPathWithinDir);
+    found.metadata = yield found.renderer.initMetadata(config,
+            found.foundDir, found.foundFullPath, found.foundMountedOn,
+            found.foundBaseMetadata, metadata);
+    let filepath = found.renderer ? found.renderer.filePath(found.foundPath) : undefined;
+    var doc = new exports.Document({
+        basedir: found.foundDir,
+        docpath: found.foundPath,
+        docname: path.basename(found.foundPath),
+        fullpath: found.foundFullPath,
+        renderer: found.renderer,
+        stat: found.stat,
+        renderpath: filepath,
+        rendername: filepath ? path.basename(filepath) : undefined,
+        metadata: found.metadata
     });
-};
+    // console.log('readDocument #3 '+ util.inspect(doc));
+    return doc;
+});
