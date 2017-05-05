@@ -17,6 +17,10 @@ exports.copyAssets = function(assetdirs, renderTo) {
 };
 
 exports.findAsset = co.wrap(function* (assetdirs, filename) {
+    var cached = cache.get("filez-findAsset", filename);
+    if (cached) {
+        return Promise.resolve(cached);
+    }
     var results = [];
     for (let assetdir of assetdirs) {
         let theAssetdir;
@@ -43,6 +47,7 @@ exports.findAsset = co.wrap(function* (assetdirs, filename) {
         });
     }
     // console.log(`findAsset found ${util.inspect(results)} for ${util.inspect(assetdirs)} ${filename}`);
+    cache.set("filez-findAsset", filename, results);
     return results;
 });
 
