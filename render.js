@@ -118,7 +118,10 @@ exports.render = co.wrap(function* (config) {
                 renderFrom = docdir.src;
                 renderToPlus = docdir.dest;
                 renderIgnore = docdir.ignore;
-                if (docdir.baseMetadata) renderBaseMetadata = docdir.baseMetadata;
+                if (docdir.baseMetadata) {
+                    // console.log(`render fromDir: ${renderFrom} to: ${renderToPlus} baseMetadata ${util.inspect(docdir.baseMetadata)}`);
+                    renderBaseMetadata = docdir.baseMetadata;
+                }
             }
             // log(`******* render.render ${renderFrom} ${config.renderTo} ${renderToPlus} ${renderIgnore}`);
             log(`RENDER DIRECTORY ${renderFrom} ==> ${renderToPlus}`);
