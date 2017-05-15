@@ -1,5 +1,5 @@
 ---
-layout: plugin-documentation.html.ejs
+layout: ebook-page.html.ejs
 title: Documents
 ---
   - [exports.Document](#exportsdocument)

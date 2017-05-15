@@ -1,5 +1,5 @@
 ---
-layout: plugin-documentation.html.ejs
+layout: ebook-toc-page.html.ejs
 title: Table of Contents
 tags: AkashaRender
 # downloadURL: "/books/hahnemann/organon/assets/hahnemann-organon.epub"
@@ -11,7 +11,7 @@ headerHeight: "140px"
 bookTitle: "AkashaRender User Guide"
 # bookSubTitle: "Fifth American Edition, translated by C. WESSELHOEFT"
 bookAuthor: "David Herron"
-bookHomeURL: '/toc.html'
+# bookHomeURL: '/toc.html'
 authors: "David Herron"
 published: "2017 David Herron"
 language: "English"
@@ -27,7 +27,7 @@ noLogoImage: "true"
     <li><a href="2-setup.html" id="setup"></a></li>
     <li><a href="3-create-content.html" id="create-content"></a></li>
     <li><a href="configuration.html" id="configuration"></a></li>
-    <li>API
+    <!-- <li>API
         <ol>
         <li><a href="api/built-in.js.html" id="built-in">Built-in Plugin</a></li>
         <li><a href="api/caching.js.html" id="caching">Caching</a></li>
@@ -43,7 +43,7 @@ noLogoImage: "true"
         <li><a href="api/render.js.html" id="render">render</a></li>
         <li><a href="api/Renderer.js.html" id="Renderer">Renderer</a></li>
         </ol>
-    </li>
+    </li> -->
 </ol>
 
 </nav>

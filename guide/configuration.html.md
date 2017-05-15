@@ -1,7 +1,7 @@
 ---
-layout: plugin-documentation.html.ejs
+layout: ebook-page.html.ejs
 title: Configuring an AkashaCMS/AkashaRender project
-bookHomeURL: '/toc.html'
+# bookHomeURL: '/toc.html'
 ---
 
 The `Configuration` object contains everything AkashaRender requires to render an AkashaCMS project.  The project creator uses the Configuration API to create this object.  It is intended this object is created in a Node.js module, and that the filename for that module is passed on the `akasharender` command-line.
@@ -113,7 +113,7 @@ config
 
 The first allows you to share a set of fonts between multiple projects.  Whatever is in the fonts archive directory is then copied into the `vendor/fonts` directory within the output directory.
 
-The second case shows a simple way to include Bootstrap and jQuery files in the output directory.  First you list the `bootstrap` and `jquery` modules in `package.json`.  Those packages do not provide Node.js functionality, but simply bring down the browser-side code for the corresponding packages.  The `dist` directories in each case include the files you'd need to deploy to your website.  With these declarations, the files then land in `vendor/bootstrap` and `vendor/jquery` in the output directory.  The last step is to configure your rendered HTML to use those files.
+The second case shows a simple way to include Bootstrap and jQuery files in the output directory.  First you list the `bootstrap` and `jquery` modules in `package.json`.  Those packages do not provide Node.js functionality, but simply bring down the browser-side code for the corresponding packages.  The `dist` directories in each case include the files you'd need to deploy to your website.  With these declarations, the files then land in `vendor/bootstrap` and `vendor/jquery` in the output directory.  Once the jQuery and Bootstrap code is in your website, your rendered HTML must use those files, and we present one method later.
 
 ## Documents directories
 
