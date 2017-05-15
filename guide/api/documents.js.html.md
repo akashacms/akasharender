@@ -1,5 +1,5 @@
 ---
-layout: docpage.html.ejs
+layout: plugin-documentation.html.ejs
 title: Documents
 ---
   - [exports.Document](#exportsdocument)
@@ -24,7 +24,7 @@ title: Documents
 ## componentizeFileName
 
   Used by documentTree to convert a pathname to an array like this:
-  
+
   [ { type: 'dir', component: 'foo', entries: [] },
 ```js
 { type: 'dir', component: 'bar', entries: [] },
@@ -72,4 +72,3 @@ title: Documents
 { type: 'dir', component: 'baz', entries: [] },
 { type: 'file', component: 'xyzzy.html' } ]
 ```
-

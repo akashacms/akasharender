@@ -1,5 +1,5 @@
 ---
-layout: docpage.html.ejs
+layout: plugin-documentation.html.ejs
 title: Built-in Plugin
 ---
   - [undefined.if()](#undefinedif)
@@ -25,7 +25,7 @@ title: Built-in Plugin
 ## new AnchorCleanup()
 
   This was moved into Mahabhuta
-  
+
    class Partial extends mahabhuta.CustomElement {
   	get elementName() { return "partial"; }
   	process($element, metadata, dirty) {

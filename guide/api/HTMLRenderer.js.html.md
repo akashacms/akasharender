@@ -1,5 +1,5 @@
 ---
-layout: docpage.html.ejs
+layout: plugin-documentation.html.ejs
 title: HTML Renderer
 ---
   - [undefined.maharun()](#undefinedmaharun)
@@ -48,7 +48,7 @@ title: HTML Renderer
   Extract the metadata from the given file.  Where the `frontmatter` function
   returns an object that contains the metadata, this function returns only
   the metadata object.
-  
+
   This metadata is solely the data stored in the file.
 
 ## undefined.initMetadata()

@@ -2,108 +2,108 @@
 
 export PATH=../node_modules/.bin:${PATH}
 
-mkdir -p documents/api
+mkdir -p guide/api
 
-cat <<EOF >documents/api/built-in.js.html.md
+cat <<EOF >guide/api/built-in.js.html.md
 ---
-layout: docpage.html.ejs
+layout: plugin-documentation.html.ejs
 title: Built-in Plugin
 ---
 EOF
-dox --api <../built-in.js >>documents/api/built-in.js.html.md
+dox --api <../built-in.js >>guide/api/built-in.js.html.md
 
 cat <<EOF >documents/api/caching.js.html.md
 ---
-layout: docpage.html.ejs
+layout: plugin-documentation.html.ejs
 title: Caching
 ---
 EOF
-dox --api <../caching.js >>documents/api/caching.js.html.md
+dox --api <../caching.js >>guide/api/caching.js.html.md
 
-cat <<EOF >documents/api/Configuration.js.html.md
+cat <<EOF >guide/api/Configuration.js.html.md
 ---
-layout: docpage.html.ejs
+layout: plugin-documentation.html.ejs
 title: AkashaRender Configuration object
 ---
 EOF
-dox --api <../Configuration.js >>documents/api/Configuration.js.html.md
+dox --api <../Configuration.js >>guide/api/Configuration.js.html.md
 
-cat <<EOF >documents/api/documents.js.html.md
+cat <<EOF >guide/api/documents.js.html.md
 ---
-layout: docpage.html.ejs
+layout: plugin-documentation.html.ejs
 title: Documents
 ---
 EOF
-dox --api <../documents.js >>documents/api/documents.js.html.md
+dox --api <../documents.js >>guide/api/documents.js.html.md
 
-cat <<EOF >documents/api/filez.js.html.md
+cat <<EOF >guide/api/filez.js.html.md
 ---
-layout: docpage.html.ejs
+layout: plugin-documentation.html.ejs
 title: File-system operations
 ---
 EOF
-dox --api <../filez.js >>documents/api/filez.js.html.md
+dox --api <../filez.js >>guide/api/filez.js.html.md
 
-cat <<EOF >documents/api/HTMLRenderer.js.html.md
+cat <<EOF >guide/api/HTMLRenderer.js.html.md
 ---
-layout: docpage.html.ejs
+layout: plugin-documentation.html.ejs
 title: HTML Renderer
 ---
 EOF
-dox --api <../HTMLRenderer.js >>documents/api/HTMLRenderer.js.html.md
+dox --api <../HTMLRenderer.js >>guide/api/HTMLRenderer.js.html.md
 
-cat <<EOF >documents/api/index.js.html.md
+cat <<EOF >guide/api/index.js.html.md
 ---
-layout: docpage.html.ejs
+layout: plugin-documentation.html.ejs
 title: AkashaRenderer
 ---
 EOF
-dox --api <../index.js >>documents/api/index.js.html.md
+dox --api <../index.js >>guide/api/index.js.html.md
 
-cat <<EOF >documents/api/Plugin.js.html.md
+cat <<EOF >guide/api/Plugin.js.html.md
 ---
-layout: docpage.html.ejs
+layout: plugin-documentation.html.ejs
 title: AkashaRenderer Plugins
 ---
 EOF
-dox --api <../Plugin.js >>documents/api/Plugin.js.html.md
+dox --api <../Plugin.js >>guide/api/Plugin.js.html.md
 
-cat <<EOF >documents/api/render-cssless.js.html.md
+cat <<EOF >guide/api/render-cssless.js.html.md
 ---
-layout: docpage.html.ejs
+layout: plugin-documentation.html.ejs
 title: Rendering LESS files
 ---
 EOF
-dox --api <../render-cssless.js >>documents/api/render-cssless.js.html.md
+dox --api <../render-cssless.js >>guide/api/render-cssless.js.html.md
 
-cat <<EOF >documents/api/render-ejs.js.html.md
+cat <<EOF >guide/api/render-ejs.js.html.md
 ---
-layout: docpage.html.ejs
+layout: plugin-documentation.html.ejs
 title: Rendering EJS files
 ---
 EOF
-dox --api <../render-ejs.js >>documents/api/render-ejs.js.html.md
+dox --api <../render-ejs.js >>guide/api/render-ejs.js.html.md
 
-cat <<EOF >documents/api/render-md.js.html.md
+cat <<EOF >guide/api/render-md.js.html.md
 ---
-layout: docpage.html.ejs
+layout: plugin-documentation.html.ejs
 title: Rendering Markdown files
 ---
 EOF
-dox --api <../render-md.js >>documents/api/render-md.js.html.md
+dox --api <../render-md.js >>guide/api/render-md.js.html.md
 
-cat <<EOF >documents/api/render.js.html.md
+cat <<EOF >guide/api/render.js.html.md
 ---
-layout: docpage.html.ejs
+layout: plugin-documentation.html.ejs
 title: AkashaRenderer rendering engine
 ---
 EOF
-dox --api <../render.js >>documents/api/render.js.html.md
+dox --api <../render.js >>guide/api/render.js.html.md
 
-cat <<EOF >documents/api/Renderer.js.html.md
+cat <<EOF >guide/api/Renderer.js.html.md
 ---
-layout: docpage.html.ejs
+layout: plugin-documentation.html.ejs
 title: Renderer base class
 ---
 EOF
-dox --api <../Renderer.js >>documents/api/Renderer.js.html.md
+dox --api <../Renderer.js >>guide/api/Renderer.js.html.md

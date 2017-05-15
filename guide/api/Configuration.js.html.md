@@ -1,5 +1,5 @@
 ---
-layout: docpage.html.ejs
+layout: plugin-documentation.html.ejs
 title: AkashaRender Configuration object
 ---
   - [undefined.prepare()](#undefinedprepare)
@@ -29,9 +29,9 @@ title: AkashaRender Configuration object
   already been configured.  Some built-in defaults have been decided
   ahead of time.  For each configuration setting, if nothing has been
   declared, then the default is substituted.
-  
+
   It is expected this function will be called last in the config file.
-  
+
   This function installs the `built-in` plugin.  It needs to be last on
   the plugin chain so that its stylesheets and partials and whatnot
   can be overridden by other plugins.

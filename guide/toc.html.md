@@ -1,5 +1,5 @@
 ---
-layout: ebook-toc-page.html.ejs
+layout: plugin-documentation.html.ejs
 title: Table of Contents
 tags: AkashaRender
 # downloadURL: "/books/hahnemann/organon/assets/hahnemann-organon.epub"
@@ -23,9 +23,10 @@ noLogoImage: "true"
 <nav epub:type="toc" id="toc">
 
 <ol type="1" start="1">
-    <li><a href="1-introduction.html" id="introduction">Introduction</a></li>
-    <li><a href="2-setup.html" id="setup">Setup</a></li>
-    <li><a href="3-create-content.html" id="create-content">Creating Content</a></li>
+    <li><a href="index.html" id="index"></a></li>
+    <li><a href="2-setup.html" id="setup"></a></li>
+    <li><a href="3-create-content.html" id="create-content"></a></li>
+    <li><a href="configuration.html" id="configuration"></a></li>
     <li>API
         <ol>
         <li><a href="api/built-in.js.html" id="built-in">Built-in Plugin</a></li>

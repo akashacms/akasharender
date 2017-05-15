@@ -1,5 +1,5 @@
 ---
-layout: docpage.html.ejs
+layout: plugin-documentation.html.ejs
 title: AkashaRenderer
 ---
   - [exports.Configuration](#exportsconfiguration)
@@ -16,9 +16,9 @@ title: AkashaRenderer
   Finds the source document matching the filename for a rendered file.  That is, for
   a rendered file path like {movies/wallachia/vlad-tepes/son-of-dracul.html} it will search
   for the {.html.md} file generating that rendered file.
-  
+
   The returned object has at least these fields:
-  
+
   * {foundDir} - The basedir within which the file was found
   * {foundPath} - The path under basedir to that file
   * {foundFullPath} - The path, including the full file extension, to that file
@@ -27,5 +27,3 @@ title: AkashaRenderer
   * {foundBaseMetadata} - For complex directories, the metadata associated with that directory
 
 ## exports.readFile
-
-  

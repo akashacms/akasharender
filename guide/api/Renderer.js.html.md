@@ -1,5 +1,5 @@
 ---
-layout: docpage.html.ejs
+layout: plugin-documentation.html.ejs
 title: Renderer base class
 ---
   - [undefined.filePath()](#undefinedfilepath)
@@ -13,4 +13,3 @@ title: Renderer base class
   	extension: matches[2]
   };
 ```
-

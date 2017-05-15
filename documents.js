@@ -395,6 +395,7 @@ exports.documentSearch = co.wrap(function* (config, options) {
 
 });
 
+// TODO Is this function used anywhere?  Is it still required?
 exports.readDocument = co.wrap(function* (config, documentPath) {
     var found = yield filez.findRendersTo(config.documentDirs, documentPath)
     // console.log('readDocument '+ documentPath +' '+ util.inspect(found));

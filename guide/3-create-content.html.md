@@ -1,5 +1,5 @@
 ---
-layout: ebook-page.html.ejs
+layout: plugin-documentation.html.ejs
 title: Creating content with AkashaRender
 bookHomeURL: '/toc.html'
 ---
@@ -8,34 +8,22 @@ AkashaRender's purpose is easy generation of HTML and related files for use on w
 
 We touched on this briefly in the previous chapter, [](2-setup.html).  Now it's time to dive deeply down the rabbit hole.
 
-# Rendering source(s) and destination
+1. File name convention and Renderers -- applies to files in Documents, Layouts and partials
+2. CSS from LESS
+3. HTMLRenderer formats
+    1. Metadata section
+    2. Content section
+    3. EJS as template language
+    4. Mahabhuta custom tags
+    5. Partials
+    6. Layouts
 
-The key thing AkashaRender does is render files in one or more source directories, into the destination directory.
-
-In the configuration we specify these using `.addDocumentsDir` and `.setRenderDestination` as so:
-
-```
-config.addDocumentsDir('documents');
-config.setRenderDestination('rendered');
-```
 
 This says to render files stored in `documents` into the `out` directory, using the same directory hierarchy in both.  A file, `documents/romania/vlad-tepes/history.html.md`, is rendered to `out/romania/vlad-tepes/history.html`.  
 
-If these are not specified, default values of `documents` and `out` are used respectively.
-
-It's possible to have multiple document directories.
-
-```
-config.addDocumentsDir('documents');
-config.addDocumentsDir('archive');
-config.setRenderDestination('rendered');
-```
-
-The contents of both document directories will be rendered into the Render Destination.  The resulting hierarchy will be a merge of the two.  No attempt is made to prevent the same file path to be used in two document directories.  
 
 A file, `archive/1989/ceaucescu/revolution.html.md` would be rendered as `out/1989/ceaucescu/revolution.html`.
 
-That's easy enough.. files are copied/rendered from an input directory to a matching file in the output directory.  You, the author, create your files in the desired input format(s), organizing them as you wish, and the result derives exactly from the directory hierarchy you design.
 
 What would it mean if two files existed `archive/romania/vlad-tepes/history.html.md`, and `documents/romania/vlad-tepes/history.html.md`?
 
@@ -49,44 +37,17 @@ Document | Rendered To
 Both files are rendered to `out` but because the file in `archive` is processed second the final product will be derived from that file.
 
 
-## Rendering documents to subdirectories, adding metadata
-
-A `addDocumentsDir` specification can also be an object specifying additional data.  The purpose is so documents under a given directory land in a subdirectory, and perhaps carry custom metadata.   
-
-```
-config.addDocumentsDir('documents');
-config.addDocumentsDir({
-    src: 'archive',
-    dest: 'archive',
-    baseMetadata: {
-        meaningOfLife: "42",
-        me: "Ashildr Einarrsdottir"
-    }
-});
-config.setRenderDestination('rendered');
-```
-
-In this case `archive/romania/vlad-tepes/history.html.md` does not overwrite `documents/romania/vlad-tepes/history.html.md`.  Instead the files are rendered as follows
-
-Document | Rendered To
----------|--------------
-`archive/romania/vlad-tepes/history.html.md` | `out/archive/romania/vlad-tepes/history.html`
-`documents/romania/vlad-tepes/history.html.md` | `out/romania/vlad-tepes/history.html`
-
-We haven't discussed document metadata yet.  Metadata is used in the rendering, and can be used for a wide variety of purposes.  The option to provide custom metadata for each Documents Dir let's us customize the rendering in each subdirectory.
 
 # Renderers, Rendering and File Extensions
 
 AkashaRender's flexibility comes from the variety of Renderer classes we can use.  Each Renderer processes one or more file-types, as determined by the file extension.  For each file AkashaRender processes, it searches the registered Renderer's for one which will process that file.  File extension matching is used in determining the Renderer to use.
 
-<table>
-<tr><th>Type</th><th>Extension</th><th>Description</th></tr>
-<tr><td>Markdown</td><td>`example.html.md` </td><td> A Markdown file, that produces HTML.</td></tr>
-<tr><td>EJS</td><td>`example.html.ejs` or `example.php.ejs` </td><td> for HTML, or PHP, with EJS markup, that produces HTML or PHP.</td></tr>
-<tr><td>LESS</td><td>`example.css.less` </td><td> A LESS file, that produces CSS.</td></tr>
-<tr><td>Fallback</td><td>any unmatched file </td><td>copied with no processing.</td></tr>
-</tr>
-</table>
+Type | Extension | Description
+-----|-----------|------------
+Markdown | `example.html.md` | A Markdown file, that produces HTML.
+EJS | `example.html.ejs` or `example.php.ejs` | for HTML, or PHP, with EJS markup, that produces HTML or PHP.
+LESS | `example.css.less` | A LESS file, that produces CSS.
+Fallback | any unmatched file | copied with no processing.
 
 It's easy to add new Renderer's and extend the file-types AkashaRender can process in many directions.  You do so through the AkashaRender API, which we'll go over elsewhere (or you can study the source code).
 
@@ -96,7 +57,7 @@ Renderers are organized with a classification hierarchy.  That let's a Renderer 
 
 ## HTMLRenderer capabilities
 
-The HTMLRenderer builds on the Renderer class to add extensive capabilities in formatting content into page layouts, using partials (content snippets), and a custom tag processing engine called Mahabhuta.  With HTMLRenderer, complete control over page layout and structure is possible.  It is used by both Markdown and EJS renderers.
+The HTMLRenderer handles rendering to HTML, as the name implies, and is used for `example.html.md` and `example.html.ejs` and `example.php.ejs`.  This Renderer class adds extensive capabilities in formatting content with page layouts, using partials (content snippets), and a custom tag processing engine called Mahabhuta.  With HTMLRenderer, complete control over page layout and structure is possible.
 
 ### YAML Frontmatter Metadata
 
@@ -442,57 +403,6 @@ But what if you want teasers to be rendered in italics rather than bold text?  Y
 ```
 <p><em><%= teaser %></em></p>
 ```
-
-# Plugins
-
-We already saw in [](2-setup.html) some plugins being used.  But, what is a plugin?
-
-As the name implies plugins extend AkashaRender's behavior or capabilities.  There are several plugins provided by the AkashaRender project, and anybody is free to write their own plugin.  Primarily, plugins work by adding extra Partials directories or Mahabhuta functions.
-
-Plugins are declared in the configuration as so:
-
-```
-config
-    .use(require('akashacms-theme-bootstrap'))
-    .use(require('akashacms-base'))
-    .use(require('akashacms-breadcrumbs'))
-    .use(require('akashacms-booknav'))
-    .use(require('akashacms-embeddables'));
-```
-
-This list adds Bootstrap support, some commonly used Mahabhuta tags (the `base` plugin), generation of breadcrumb trails, "Book" style navigation of a group of pages, and embeddable content like YouTube videos.
-
-When the `.use` method is called, it instantiates the plugin and calls its `configure` function.  That function will then do whatever it needs to extend AkashaRender in the desired way.  Typically it calls `.addPartialsDir` and `.addMahabhuta` to add functionality.
-
-It's useful to maintain overridability.  That means the website configuration file should add its Partials directories before it defines the plugins:
-
-```
-config
-    .addPartialsDir('partials');
-
-config
-    .use(require('akashacms-theme-bootstrap'))
-    .use(require('akashacms-base'))
-    .use(require('akashacms-breadcrumbs'))
-    .use(require('akashacms-booknav'))
-    .use(require('akashacms-embeddables'));
-```
-
-This declares the website Partials directory before the plugins are defined.  Even though each plugin probably declares its own Partials directory, the website Partial directory appears first.  Therefore it can override any of those Partials in its own directory.
-
-
-# Completing the configuration file
-
-The last step in a configuration file is these two lines:
-
-```
-config.prepare();
-module.exports = config;
-```
-
-The `.prepare` method adds some default values for anything not declared in the configuration.  
-
-The last line makes sure the configuration object is available to other code.  The `akasharender` command requires this.
 
 # The akasharender command
 

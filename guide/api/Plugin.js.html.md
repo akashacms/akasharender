@@ -1,5 +1,5 @@
 ---
-layout: docpage.html.ejs
+layout: plugin-documentation.html.ejs
 title: AkashaRenderer Plugins
 ---
   - [undefined.configure()](#undefinedconfigure)

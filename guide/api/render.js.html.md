@@ -1,5 +1,5 @@
 ---
-layout: docpage.html.ejs
+layout: plugin-documentation.html.ejs
 title: AkashaRenderer rendering engine
 ---
   - [exports.renderDocument](#exportsrenderdocument)

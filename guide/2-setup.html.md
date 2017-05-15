@@ -1,12 +1,12 @@
 ---
 title: Project Setup
-layout: ebook-page.html.ejs
+layout: plugin-documentation.html.ejs
 bookHomeURL: '/toc.html'
 ---
 
 An AkashaRender project directory has these attributes:
 
-* _package.json_ This file lists dependencies on Node.js packages used to build the project, and a _scripts_ section containing commands to drive the rendering and deployment process.
+* `package.json` This file lists dependencies on Node.js packages used to build the project, and a _scripts_ section containing commands to drive the rendering and deployment process.
 * Several input directories to hold project assets, content files, layout templates, and partials (smaller templates).
 * One or more AkashaRender configuration files, _e.g._ `config.js`, describing the rendering process.  Typically there will be one configuration file, but sometimes you'll need more than one to reuse the same content for multiple destinations.
 * (Optionally) Another Node.js script containing DOM processing functions for use with the Mahabhuta engine.
@@ -82,9 +82,9 @@ Create a simple layout template as `layouts/page.html.ejs` containing
 
 The double file extension is a convention in AkashaRender meant to indicate
 
-* _filename.css.less_: The file is first compiled from LESS, and is output as CSS to: _filename.css_
-* _filename.html.ejs_: The file is rendered with EJS, and is output as HTML to: _filename.html_
-* _filename.html.md_: The file is rendered with Markdown, and is output as HTML to: _filename.html_
+* `filename.css.less`: The file is first compiled from LESS, and is output as CSS to: `filename.css`
+* `filename.html.ejs`: The file is rendered with EJS, and is output as HTML to: `filename.html`
+* `filename.html.md`: The file is rendered with Markdown, and is output as HTML to: `filename.html`
 
 The template file demonstrates two types of content inclusion, using EJS.  With `<%= title %>` we are inserting a metadata value with interpolation such that any HTML tags get encoded.  However with `<%- content %>` the metadata value is not encoded, so that any HTML tags are copied verbatim.
 
@@ -128,13 +128,6 @@ config
     .addDocumentsDir('documents')
     .addPartialsDir('partials');
 
-config
-    .use(require('akashacms-theme-bootstrap'))
-    .use(require('akashacms-base'))
-    .use(require('akashacms-breadcrumbs'))
-    .use(require('akashacms-booknav'))
-    .use(require('akashacms-embeddables'));
-
 config.setMahabhutaConfig({
     recognizeSelfClosing: true,
     recognizeCDATA: true
@@ -148,8 +141,6 @@ module.exports = config;
 The `akasha.Configuration` object contains all the data describing the rendering of input files to produce an output - such as an eBook or website.
 
 The first section we show tells AkashaRender the input directories to use, and their purpose.  These commands aren't entirely necessary, because of the baked-in default directory names.  But, if you need to change the names you can use these functions.
-
-The `.use` method declares a plugin to use in the rendering.  Plugins extend AkashaRender's capabilities adding useful functionality, such as breadcrumb trail generation, or supporting embedding content from 3rd party services like Youtube.
 
 The `.setMahabhutaConfig` method is necessary for the Mahabhuta DOM processing engine.  Mahabhuta supports a jQuery-like API for processing HTML during the rendering process.  Because it uses Cheerio under-the-covers, the values specified in this object actually from the Cheerio project.
 

@@ -1,6 +1,6 @@
 ---
 title: AkashaRender
-layout: ebook-page.html.ejs
+layout: plugin-documentation.html.ejs
 bookHomeURL: '/toc.html'
 ---
 
