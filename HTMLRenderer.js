@@ -113,9 +113,10 @@ module.exports = class HTMLRenderer extends Renderer {
      */
     renderToFile(basedir, fpath, renderTo, renderToPlus, metadata, config) {
 
+        // console.log(`renderToFile ${basedir} ${fpath} ${renderTo} ${renderToPlus} ${util.inspect(metadata)}`);
         // var doctext;
         var doccontent;
-        var docdata;
+        var docdata = metadata;
         var docrendered;
 
         var thisRenderer = this;
@@ -123,7 +124,8 @@ module.exports = class HTMLRenderer extends Renderer {
         return co(function* () {
             var fm = yield thisRenderer.frontmatter(basedir, fpath);
             doccontent = fm.content;
-            var metadata = yield thisRenderer.initMetadata(config, basedir, fpath, renderToPlus, metadata, fm.data);
+            // console.log(`renderToFile ${basedir} ${fpath} ${renderTo} ${renderToPlus} ${util.inspect(docdata)}`);
+            var metadata = yield thisRenderer.initMetadata(config, basedir, fpath, renderToPlus, docdata, fm.data);
             docdata = metadata;
             log('about to render '+ fpath);
             // log(`metadata before render ${util.inspect(docdata)}`);
@@ -204,6 +206,7 @@ module.exports = class HTMLRenderer extends Renderer {
      */
     initMetadata(config, basedir, fpath, renderToPlus, baseMetadata, fmMetadata) {
 
+        // console.log(`initMetadata ${basedir} ${fpath} ${renderToPlus} ${util.inspect(baseMetadata)} ${util.inspect(fmMetadata)}`);
         return new Promise((resolve, reject) => {
 
             // Start with a base object that will be passed into the template
@@ -211,6 +214,7 @@ module.exports = class HTMLRenderer extends Renderer {
 
             // Copy data from frontmatter
             for (var yprop in baseMetadata) {
+                // console.log(`initMetadata ${basedir} ${fpath} baseMetadata ${baseMetadata[yprop]}`);
                 metadata[yprop] = baseMetadata[yprop];
             }
             for (var yprop in config.metadata) {
