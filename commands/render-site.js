@@ -29,10 +29,14 @@ module.exports = (() => {
             akasha.render(config)
             .then(results => {
                 for (let result of results) {
+
+                    // TODO --- if AKASHARENDER_TRACE_RENDER then output tracing data
+                    // TODO --- also set process.env.GLOBFS_TRACE=1
+
                     if (result.error) {
                         console.error(result.error);
                     } else {
-                        console.log(result.result);
+                        console.log(util.inspect(result.result));
                     }
                 }
                 // console.log(`Caching Stats: ${util.inspect(cache.getStats())}`)

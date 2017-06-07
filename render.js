@@ -134,7 +134,7 @@ exports.render = co.wrap(function* (config) {
                     }
                 });
                 log(`RENDER? ${renderFrom} ${fpath} ${doIgnore}`);
-                if (!doIgnore)
+                if (!doIgnore) {
                     exports.renderDocument(
                         config,
                         basedir,
@@ -151,7 +151,7 @@ exports.render = co.wrap(function* (config) {
                         error(`render renderDocument ${err}`);
                         fini(err);
                     });
-                else fini(undefined, `IGNORED ${fpath}`);
+                } else fini(undefined, `IGNORED ${renderFrom} ${fpath}`);
             });
         }));
 

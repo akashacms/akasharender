@@ -29,6 +29,7 @@ const _config_metadata = Symbol('metadata');
 const _config_root_url = Symbol('root_url');
 const _config_scripts = Symbol('scripts');
 const _config_plugins = Symbol('plugins');
+const _config_cheerio = Symbol('cheerio');
 
 /**
  * Configuration of an AkashaRender project, including the input directories,
@@ -70,11 +71,11 @@ module.exports = class Configuration {
             }
         }
 
-        if (!this.layoutDirs) {
-            this.layoutDirs = [];
+        if (!this[_config_layoutDirs]) {
+            this[_config_layoutDirs] = [];
             if (fs.existsSync('layouts') && (stat = fs.statSync('layouts'))) {
                 if (stat.isDirectory()) {
-                    this.layoutDirs = [ 'layouts' ];
+                    this[_config_layoutDirs] = [ 'layouts' ];
                 }
             }
         }
@@ -144,6 +145,22 @@ module.exports = class Configuration {
     }
 
     get documentDirs() { return this[_config_documentDirs]; }
+
+    /**
+     * Look up the document directory information for a given document directory.
+     * @param {string} dirname The document directory to search for
+     */
+    documentDirInfo(dirname) {
+        for (var docDir of this.documentDirs) {
+            if (typeof docDir === 'object') {
+                if (docDir.src === dirname) {
+                    return docDir;
+                }
+            } else if (docDir === dirname) {
+                return docDir;
+            }
+        }
+    }
 
     /**
      * Add a directory to the layoutDirs configurtion array
@@ -303,8 +320,10 @@ module.exports = class Configuration {
     }
 
     setMahabhutaConfig(cheerio) {
-        this.cheerio = cheerio;
+        this[_config_cheerio] = cheerio;
     }
+
+    get mahabhutaConfig() { return this[_config_cheerio]; }
 
     /**
      * Copy the contents of all directories in assetDirs to the render destination.

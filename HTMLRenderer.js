@@ -27,7 +27,7 @@ module.exports = class HTMLRenderer extends Renderer {
      * down to HTML text.
      */
     maharun(rendered, metadata, mahafuncs) {
-        if (metadata.config.cheerio) mahabhuta.config(metadata.config.cheerio);
+        if (metadata.config.mahabhutaConfig) mahabhuta.config(metadata.config.mahabhutaConfig);
         return mahabhuta.processAsync(rendered, metadata, mahafuncs);
     }
 
