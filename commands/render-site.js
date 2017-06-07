@@ -36,7 +36,8 @@ module.exports = (() => {
                     if (result.error) {
                         console.error(result.error);
                     } else {
-                        console.log(util.inspect(result.result));
+                        console.log(result.result);
+                        // console.log(util.inspect(result.result));
                     }
                 }
                 // console.log(`Caching Stats: ${util.inspect(cache.getStats())}`)
