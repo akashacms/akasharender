@@ -8,7 +8,7 @@ Remember that AkashaCMS is a generalized name for the synergistic combination of
 
 Plugin provides useful extensions to AkashaRender's functionality
 
-See [list of known plugins](plugins/index.html)
+See [list of known plugins](https://akashacms.com/new/plugins/index.html)
 
 Plugin exports a `Plugin` object with a minimum of ?two? methods
 
