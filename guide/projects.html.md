@@ -113,7 +113,7 @@ Consider:
 "build": "npm run render-site && npm run minify-site && npm run html-validation && npm run css-linter "
 ```
 
-This orchestrates execution of a series of scripts you must define in `package.json`.  For example a useful `minify-site` implementation uses the Node.js `html-minifier` package as so:
+This orchestrates execution of a series of scripts you must define in `package.json`.  For example, a useful `minify-site` script uses the Node.js `html-minifier` package as so:
 
 ```
 "minify-site": "html-minifier --collapse-whitespace --conservative-collapse --html5 --keep-closing-slash --preserve-line-breaks --remove-comments --file-ext html  --input-dir out --output-dir out",
