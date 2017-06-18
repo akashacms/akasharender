@@ -86,8 +86,8 @@ exports.renderDocument = co.wrap(function* (config, basedir, fpath, renderTo, re
             yield renderer.renderToFile(basedir, fpath, path.join(renderTo, renderToPlus), renderToPlus, renderBaseMetadata, config)
             return `${renderer.name} ${docPathname} ==> ${renderToFpath}`;
         } catch (err) {
-            error(`in renderer branch for ${fpath} error=${err.stack}`);
-            throw new Error(`in renderer branch for ${fpath} error=${err.stack}`);
+            console.error(`in renderer branch for ${fpath} error=${err.stack ? err.stack : err}`);
+            throw new Error(`in renderer branch for ${fpath} error=${err.stack ? err.stack : err}`);
         }
     } else {
         log(`COPY ${docPathname} ==> ${renderToFpath}`);
@@ -95,8 +95,8 @@ exports.renderDocument = co.wrap(function* (config, basedir, fpath, renderTo, re
             yield fs.copyAsync(docPathname, renderToFpath)
             return `COPY ${docPathname} ==> ${renderToFpath}`;
         } catch(err) {
-            error(`in copy branch for ${fpath} error=${err.stack}`);
-            throw new Error(`in copy branch for ${fpath} error=${err.stack}`);
+            console.error(`in copy branch for ${fpath} error=${err.stack ? err.stack : err}`);
+            throw new Error(`in copy branch for ${fpath} error=${err.stack ? err.stack : err}`);
         }
     }
 });

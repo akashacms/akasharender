@@ -3,6 +3,7 @@
 const Renderer = require('./Renderer');
 const render   = require('./render');
 const less     = require('less');
+const co       = require('co');
 
 class CSSLESSRenderer extends Renderer {
     constructor() {
@@ -23,9 +24,14 @@ class CSSLESSRenderer extends Renderer {
     }
 
     renderToFile(basedir, fpath, renderTo, renderToPlus, metadata, config) {
-        return this.readFile(basedir, fpath)
-        .then(lesstxt => this.render(lesstxt, {}))
-        .then(css => this.writeFile(renderTo, this.filePath(fpath), css.css));
+        var thisRenderer = this;
+        return co(function* () {
+            var lesstxt = yield thisRenderer.readFile(basedir, fpath);
+            var css = yield thisRenderer.render(lesstxt, {});
+            return yield thisRenderer.writeFile(renderTo,
+                                    thisRenderer.filePath(fpath),
+                                    css.css);
+        });
     }
 }
 
