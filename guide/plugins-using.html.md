@@ -16,7 +16,7 @@ We've already seen quite a bit about using plugins in [](configuration.html)
 
 Adding the plugin to the `package.json` file enables `npm` to install and update the plugin.  Simply add the package to the `dependencies` as noted in [](projects.html)
 
-With the plugin installed in the Node.js `node_modules` directory, you inform AkashaRender with `config.use(require("plugin-reference"))` in the Configuration.  See [](configuation.html)
+With the plugin installed in the Node.js `node_modules` directory, you inform AkashaRender with `config.use(require("plugin-reference"))` in the Configuration.  See [](configuration.html)
 
 ## Plugin Configuration
 
