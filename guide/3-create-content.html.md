@@ -18,12 +18,17 @@ We touched on this briefly in the previous chapter, [](2-setup.html).  Now it's 
     5. Partials
     6. Layouts
 
+```
+config
+    .addDocumentsDir('documents')
+    .addDocumentsDir('archive');
 
-This says to render files stored in `documents` into the `out` directory, using the same directory hierarchy in both.  A file, `documents/romania/vlad-tepes/history.html.md`, is rendered to `out/romania/vlad-tepes/history.html`.  
+config.setRenderDestination('out');
+```
 
+This says to render files stored in `documents` and in `archive` into the rendering destination (`out`) directory, using the same directory hierarchy in both.  A file, `documents/romania/vlad-tepes/history.html.md`, is rendered to `out/romania/vlad-tepes/history.html`.  
 
 A file, `archive/1989/ceaucescu/revolution.html.md` would be rendered as `out/1989/ceaucescu/revolution.html`.
-
 
 What would it mean if two files existed `archive/romania/vlad-tepes/history.html.md`, and `documents/romania/vlad-tepes/history.html.md`?
 
@@ -36,8 +41,6 @@ Document | Rendered To
 
 Both files are rendered to `out` but because the file in `archive` is processed second the final product will be derived from that file.
 
-
-
 # Renderers, Rendering and File Extensions
 
 AkashaRender's flexibility comes from the variety of Renderer classes we can use.  Each Renderer processes one or more file-types, as determined by the file extension.  For each file AkashaRender processes, it searches the registered Renderer's for one which will process that file.  File extension matching is used in determining the Renderer to use.
@@ -47,6 +50,7 @@ Type | Extension | Description
 Markdown | `example.html.md` | A Markdown file, that produces HTML.
 EJS | `example.html.ejs` or `example.php.ejs` | for HTML, or PHP, with EJS markup, that produces HTML or PHP.
 LESS | `example.css.less` | A LESS file, that produces CSS.
+JSON | `example.html.json` | A JSON file, with metadata header, producing HTML
 Fallback | any unmatched file | copied with no processing.
 
 It's easy to add new Renderer's and extend the file-types AkashaRender can process in many directions.  You do so through the AkashaRender API, which we'll go over elsewhere (or you can study the source code).
@@ -58,6 +62,65 @@ Renderers are organized with a classification hierarchy.  That let's a Renderer 
 ## HTMLRenderer capabilities
 
 The HTMLRenderer handles rendering to HTML, as the name implies, and is used for `example.html.md` and `example.html.ejs` and `example.php.ejs`.  This Renderer class adds extensive capabilities in formatting content with page layouts, using partials (content snippets), and a custom tag processing engine called Mahabhuta.  With HTMLRenderer, complete control over page layout and structure is possible.
+
+### Special considerations for PHP
+
+It's been determined that if PHP code is processed by Mahabhuta, the tags get screwed up.  As a result in `EJSRenderer` the `doMahabhuta` method returns `false` for PHP files.  As a result Mahabhuta processing is automatically skipped, meaning that Mahabhuta tags will not be expanded in PHP files.
+
+That limits how much you can do inside a PHP file.  A workaround is code like this:
+
+```
+<%- config.plugin('akashacms-base').doHeaderMetaSync(config, locals) %>
+<%- config.plugin('akashacms-base').doGoogleSitemap(locals) %>
+<%- partialSync('google-site-verification.html') %>
+<%- config.plugin('akashacms-builtin').doStylesheets(locals) %>
+<%- config.plugin('akashacms-builtin').doHeaderJavaScript(locals) %>
+<%- partialSync("php-recaptcha-check.html") %>
+```
+
+And
+
+```
+<%- partialSync('topnavbar.html') %>
+<%- partialSync('siteheader.html.ejs') %>
+```
+
+In other words, you can make function calls to AkashaRender functions and thereby get access to certain capabilities.
+
+The `partialSync` function can take a data object like so:
+
+```
+<%= partial('some-partial.html.ejs', locals) %>
+<%= partial('some-partial.html.ejs', {
+    data: "value", data2: "value2"
+}) %>
+```
+
+The values passed are of course available as template variables.  The special variable `locals` passes along the template variables used in this template.
+
+### Markdown
+
+AkashaRender uses the [Markdown-it](https://www.npmjs.com/package/markdown-it) markdown processor.  This gives us quite a lot of capabilities, as well as a focus on the [CommonMark](http://commonmark.org/) spec.  As nice as Markdown is, the original "specification" was not terribly precise leading to some fragmentation among the various Markdown processors.  The CommonMark spec aims to fix that, opening a route to a day of compatibility between Markdown processors.
+
+Perhaps the most useful thing is that Markdown-it adopts the [Tables](https://help.github.com/articles/github-flavored-markdown/#tables) markup from Github Flavored Markdown.
+
+That means:
+
+```
+First Header  | Second Header
+------------- | -------------
+Content Cell  | Content Cell
+Content Cell  | Content Cell
+```
+
+Renders to
+
+First Header  | Second Header
+------------- | -------------
+Content Cell  | Content Cell
+Content Cell  | Content Cell
+
+It also supports "strikethrough text" where `~~deleted text~~` renders as ~~deleted text~~.
 
 ### YAML Frontmatter Metadata
 
@@ -85,7 +148,7 @@ layout: page.html.ejs
 otherTag: otherValue
 tag42: "The Meaning of Life"
 ---
-content
+This is the content area.
 ```
 
 That is, most of what we'll do in AkashaRender will be satisfied by simple `name:value` pairs.  But, because we support YAML, the flexibility is there to go over the top with data modeling if desired.
@@ -295,7 +358,7 @@ The [Mahabhuta](https://github.com/akashacms/mahabhuta) engine allows website au
 
 The name?  "Mahabhuta" is the Sanskrit name for the five elements, with Akasha being one of those elements.  The Mahabhuta engine deals with HTML Elements, so it seems like a fitting name.
 
-We won't go into developing Mahabhuta tags at this point, but let's go over how to use them.
+We won't go into developing Mahabhuta tags at this point, but let's go over how to use them.  For full documentation see: https://akashacms.com/mahabhuta/toc.html
 
 A few tags and partials and Mahabhuta tags are provided by AkashaRender.  Judicious use of those tags can simplify the header code we just showed.
 
@@ -403,6 +466,67 @@ But what if you want teasers to be rendered in italics rather than bold text?  Y
 ```
 <p><em><%= teaser %></em></p>
 ```
+
+### JSON Document Files in AkashaCMS
+
+
+It may be useful for some documents, rather than use a recognized text format (like HTML or Markdown) to use a data format.  That is, take some data, formatting it through a template, to make a web page.  To that end, AkashaCMS supports JSON documents that can be processed through the AkashaCMS rendering system and producing HTML.
+
+For example, this file named `json-data.html.json` ([from akashacms-example](https://github.com/akashacms/akashacms-example/blob/master/documents/json-data.html.json))
+
+```
+---
+layout: default.html.ejs
+title: JSON example
+JSONFormatter: json-format.html.ejs
+---
+{
+    "Row1": "value 1",
+    "Row2": "value 2",
+    "Row3": "value 3"
+}
+```
+
+This is a fairly normal AkashaCMS document, but the body is JSON.
+
+The JSON RenderChain triggers on file names ending in `.html.json`.  It parses the content body as JSON, passing it as a variable named `data` to the partial named in `JSONFormatter`.
+
+The named partial used here is [json-format.html.ejs](https://github.com/akashacms/akashacms-example/blob/master/partials/json-format.html.ejs), or
+
+```
+<%
+var keys = Object.keys(data);
+for (var i = 0; i < keys.length; i++) {
+    var datum = data[keys[i]];
+    %>
+    <p>
+    <%= keys[i] %> :- <%= datum %>
+    </p>
+    <%
+} %>
+```
+
+With this data it produces, live copy: https://example.akashacms.com/json-data.html
+
+```
+<p>
+Row1 :- value 1
+</p>
+
+<p>
+Row2 :- value 2
+</p>
+
+<p>
+Row3 :- value 3
+</p>
+```
+
+This example shows the steps.
+
+* JSON data
+* Format that data using a partial into HTML
+* That HTML used as input to the AkashaCMS rendering to produce the final page
 
 # The akasharender command
 
