@@ -101,7 +101,7 @@ That is, these scripts can run multiple commands in sequence by using the `&&` p
 
 The `preview` command runs a small webserver on your computer, letting you preview the website without deploying it anywhere.
 
-The `deploy` command shows using an external tool, like `rsync`.  In this case it automatically uploads the rendered website to a server.
+The `deploy` command shows using an external tool, like `rsync`.  In this case it automatically uploads the rendered website to a server.  Including this kind of `deploy` command is extremely **disrecommended** for projects kept in public repositories.  Disclosing the _username_ and _host_ combination to your web hosting account is a potential security problem.  Hence it may be best to leave `deploy` out of `package.json` to keep that information within your build system.
 
 This command has a problem that's not entirely obvious.  The `rsync` command is depended on by the project, but that dependency is not declared in `package.json`.  How do you work with the project on a computer that does not have `rsync`, like a Windows machine?  You have to install `rsync` separately since it's not explicitly installed by `npm install`.  Further, the configuration required for password-less SSH login, as required by `rsync`, is also not under control of anything in `package.json`.  These system configuration and administrative attributes of the project are therefore not automated, and might be forgotten.
 
