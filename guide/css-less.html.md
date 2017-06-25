@@ -1,30 +1,42 @@
 ---
 layout: ebook-page.html.ejs
-title: Using CSS and LESS files
+title: Using CSS and LESS and JS files
 # bookHomeURL: '/toc.html'
 ---
 
-Obviously CSS files are widely used to customize the look and structure of web pages, EPUB book pages, and more.  
+Obviously CSS files are widely used to customize the look and structure of web pages, EPUB book pages, and more.  JavaScript can add behavior to elements in the window, or can even implement full-fledged applications.
 
-# Site-wide CSS declarations
+# Site-wide CSS and JS declarations
 
 AkashaRender has a simple method to declare the same set of CSS files across the entire website.  In your Configuration file simply make declarations like this:
 
 ```
 config
+    .addFooterJavaScript({ href: "/vendor/jquery/jquery.min.js" })
+    .addFooterJavaScript({ href: "/vendor/bootstrap/js/bootstrap.min.js"  })
     .addStylesheet({ href: "/vendor/bootstrap/css/bootstrap.min.css" })
     .addStylesheet({ href: "/vendor/bootstrap/css/bootstrap-theme.min.css" })
     .addStylesheet({ href: "/vendor/mythemedirectory/bootstrap.min.css" })
     .addStylesheet({ href: "/style.css" });
 ```
 
+
 The `config.scripts` getter returns an object listing not just the CSS stylesheets, but JavaScript for page header and footer areas.
 
 If you want to use the mechanism provided by AkashaRender's _built-in_ plugin, put the tag `<ak-stylesheets>` in your page layout templates.  That tag automatically expands `config.scripts.stylesheets` into a set of `<link>` tags so that the page references the stylesheets.
 
-# Per-page CSS declarations
+The actual process is handled by these tags and partials:
 
-That's well and dandy to give every page the same CSS declarations.  What if you want a given page to have additional CSS?  The page metadata can include an entry `headerStylesheetsAdd` listing any additional CSS files:
+<table width="100%" border="1">
+<tr><th>Tag Name</th><th>Partial</th><th>Discussion</th></tr>
+<tr><td>ak-stylesheets</td><td>ak_stylesheets.html.ejs</td><td>Puts CSS file links in the &lt;head&gt; section</td></tr>
+<tr><td>ak-headerJavaScript</td><td>ak_javaScript.html.ejs</td><td> Puts JavaScript links in the &lt;head&gt; section</td></tr>
+<tr><td>ak-footerJavaScript</td><td>ak_javaScript.html.ejs</td><td> Puts JavaScript links at the bottom of the &lt;body&gt;</td></tr>
+</table>
+
+# Per-page CSS or JS declarations
+
+That's well and dandy to give every page the same CSS declarations.  What if you want a given page to have additional CSS?  The page metadata can include entries `headerStylesheetsAdd`, or `headerJavaScriptAddTop`, or `headerJavaScriptAddBottom` listing any additional CSS or JS files:
 
 ```
 ---
@@ -32,11 +44,17 @@ That's well and dandy to give every page the same CSS declarations.  What if you
 headerStylesheetsAdd:
    - href: /vendor/foo/baz.css
    - href: /vendor/funky/walk.css
+headerJavaScriptAddTop:
+   - href: /extraTop1.js
+   - href: /extraTop2.js
+headerJavaScriptAddBottom:
+   - href: /extraBottom1.js
+   - href: /extraBottom2.js
 ...
 ---
 ```
 
-# Per page-group CSS declarations
+# Per page-group CSS or JS declarations
 
 Remember that AkashaRender supports multiple document directories, and that a given document directory can be mounted into a subdirectory of the website, and that this mechanism supports metadata values on each document directory.  That is, if you want a subsection of your website to have additional CSS files, that subsection should be mounted as a separate document directory, with have metadata including the `headerStylesheetsAdd` object:
 
@@ -53,16 +71,24 @@ config.addDocumentsDir({
         headerStylesheetsAdd: [
             { href: "/vendor/groovy/beat.css" },
             { href: "/vendor/smooth/jazz.css" }
+        ],
+        headerJavaScriptAddTop: [
+            { href: "/extraTop1.js" },
+            { href: "/extraTop2.js" },
+        ],
+        headerJavaScriptAddBottom: [
+            { href: "/extraBottom1.js" },
+            { href: "/extraBottom2.js" }
         ]
     }
 });
 ```
 
-# The structure of the config.scripts.stylesheets object
+# The structure of the config.scripts.stylesheets/javaScriptTop/javaScriptBottom objects
 
-We've seen that `config.scripts.stylesheets` is an array of objects, each of which is to have an `href` attribute.  It's the same object whether declared with the `addStylesheet` function, or the two versions of the `headerStylesheetsAdd` metadata object.
+We've seen that `config.scripts.stylesheets/javaScriptTop/javaScriptBottom` is an array of objects, each of which is to have an `href` attribute.  It's the same object whether declared with the `addStylesheet`/`addFooterJavaScript`/`addHeaderJavaScript` function, or the two versions of the `headerStylesheetsAdd`/`headerJavaScriptAddTop`/`headerJavaScriptAddBottom` metadata object.
 
-These objects supports a `media` attribute that can also show up in `<link rel="stylesheet">` tags.
+The stylesheet-related object supports a `media` attribute that can also show up in `<link rel="stylesheet">` tags.
 
 Suppose you have a stylesheet for printed output:
 
@@ -75,6 +101,12 @@ config
 ```
 
 The _media_ attribute can express a variety of conditions.  Whatever string you specify is passed through unmodified.
+
+For JavaScript declarations you use the `href` tag even though the resulting `script` tag uses the `src` attribute:
+
+```
+<script src="..."/>
+```
 
 # Inline style tags?
 
