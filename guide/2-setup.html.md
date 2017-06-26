@@ -2,6 +2,7 @@
 title: Project Setup
 layout: ebook-page.html.ejs
 # bookHomeURL: '/toc.html'
+publicationDate: June 25, 2017
 ---
 
 An AkashaRender project directory has these attributes:
@@ -11,7 +12,21 @@ An AkashaRender project directory has these attributes:
 * One or more AkashaRender configuration files, _e.g._ `config.js`, describing the rendering process.  Typically there will be one configuration file, but sometimes you'll need more than one to reuse the same content for multiple destinations.
 * (Optionally) Another Node.js script containing DOM processing functions for use with the Mahabhuta engine.
 
+
+AkashaCMS is written for the Node.js platform, and therefore requires that you install Node.js first.  If you don't have Node.js installed the `npm` commands above will have failed.
+
+The first stop is the [Node.js download page](https://nodejs.org/en/download/) where you'll see all the download options.  You may prefer to install via a package manager for your system, [which is also documented on nodejs.org](https://nodejs.org/en/download/package-manager/).
+
+A quick test is to run these commands
+
+```
+$ node --help
+$ npm help
+```
+
 ## Simple project initialization
+
+We made the https://github.com/akashacms/akashacms-skeleton repository available to use as a starting point for your website.  You can simply clone that website and start hacking away.  Or, read on to see how to set up an AkashaCMS project from scratch.
 
 Start by making a project directory:
 
@@ -24,10 +39,10 @@ $ npm init
 Is this ok? (yes) yes
 ```
 
-Then install AkashaRender and globfs.
+Then install AkashaRender, Mahabhuta and globfs.
 
 ```
-$ npm install globfs akasharender --save
+$ npm install globfs akasharender mahabhuta --save
 ```
 
 If this project is to generate an EPUB3, then you must also install epubtools:
@@ -50,7 +65,6 @@ $ touch assets/style/main.css
 ```
 
 It's also easy to use LESS that is autocompiled to CSS.  Do this instead:
-
 
 ```
 $ mkdir documents/style
@@ -103,7 +117,7 @@ title: Four Score and Seven Years Ago
 Four score and seven years ago our fathers brought forth on this continent a new nation conceived in liberty and dedicated to the proposition that all men are created equal.
 ```
 
-The frontmatter appears between the --- lines.  It is formatted with YAML, a fairly simple markup system to represent data objects as simple text.  The best documentation I know of for YAML is on the Wikipedia: https://en.wikipedia.org/wiki/YAML
+The frontmatter appears between the `---` lines.  It is formatted with YAML, a fairly simple markup system to represent data objects as simple text.  The best documentation I know of for YAML is on the Wikipedia: https://en.wikipedia.org/wiki/YAML
 
 The way to interpret the file name is to think of multiple extensions that describe the conversion process and the final output format.  In this case the file is written in Markdown, and produces HTML.
 
