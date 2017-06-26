@@ -4,20 +4,6 @@ title: Theming an AkashaRender Project
 publicationDate: June 25, 2017
 ---
 
-In other CMS's you have "themes" which are the overall color scheme, font choices, etc.
-
-In other words this needs to consider techniques for
-
-* CSS for a readable look
-* how to make color choices (in Bootstrap?)
-* How to select a base theme other than Bootstrap
-* Overriding partials to control the theme
-
-
-
-
-
-
 Unlike the other parts of AkashaCMS we've talked about, theming is not precisely defined.  A site "theme" touches on the CSS, fonts, layout, and possibly the HTML "framework" you choose.  For example the simplest framework to adopt is Twitter's Bootstrap, which gives a solid foundation of mobile-responsive HTML5 CSS3 goodness.  Bootstrap provides many built-in components that are nice ways to present information.
 
 The basic mechanisms with which to establish the theme for your site are:
