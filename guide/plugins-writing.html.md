@@ -1,6 +1,7 @@
 ---
 layout: ebook-page.html.ejs
 title: Writing AkashaCMS plugins for use by AkashaRender projects
+publicationDate: June 25, 2017
 ---
 
 Remember that AkashaCMS is a generalized name for the synergistic combination of AkashaRender with the plugins.  In this section we'll look into coding a Plugin.  Plugins provide useful extensions to AkashaRender, and what makes AkashaCMS is the combination of AkashaRender, Mahabhuta, and the plugins.
