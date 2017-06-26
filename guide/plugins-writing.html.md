@@ -7,7 +7,7 @@ Remember that AkashaCMS is a generalized name for the synergistic combination of
 
 It is not required to register a plugin with anyone.  As we saw [in the documentation on using plugins](plugins-using.html), a project uses a plugin by declaring it in the `package.json` and Configuration.  No centralized registry is required.  
 
-Anyone who has developed a generally useful Plugin may register it on the [list of known plugins](https://akashacms.com/new/plugins/index.html).  We can even arrange for the plugin documentation to appear on the AkashaCMS website.
+Anyone who has developed a generally useful Plugin may register it on the [list of known plugins](https://akashacms.com/plugins/index.html).  We can even arrange for the plugin documentation to appear on the AkashaCMS website.
 
 # The Plugin object
 
@@ -82,7 +82,7 @@ A useful naming convention is to store assets in: `/vendor/plugin-name/asset.fil
 
 ### Mahafuncs
 
-See the Mahabhuta documentation to see how to write Mahafuncs: https://akashacms.com/new/mahabhuta/index.html
+See the Mahabhuta documentation to see how to write Mahafuncs: https://akashacms.com/mahabhuta/toc.html
 
 ### Stashing data in the Configuration
 
