@@ -5,18 +5,6 @@ publicationDate: June 25, 2017
 ---
 
 
-
-A _partial_ enables
-1. website creator to have a library of shared things (snippets)
-2. plugin authors to provide useful shared things (snippets)
-3. Can be either static content, or a dynamically constructed template (EJS)
-
-The _partial_ feature is implemented with Mahabhuta
-
-Quick overview of Mahabhuta - point to the Using Plugins section on Mahabhuta
-
-TODO Move most of the layouts/partials from 3-create-content to this page, leaving behind a brief description and a link.
-
 Website designers need freedom to flow their content in all kinds of ways, to have sidebar widgets of all kinds, and on and on.  The marketing department needs to have microformat tags of all kinds to express semantic information to search engines, hopefully having a positive SEO benefit.  Your visitors need to be able to read/view the content, especially on their mobile device.  Finally, the content authors need to be relieved of the burden of supplying HTML for the entire page for every document, and instead need to reuse each layout on multiple pages.
 
 # Specifying the layout used on a given page
