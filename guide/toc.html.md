@@ -31,6 +31,7 @@ noLogoImage: "true"
     <li><a href="layouts-partials.html" id="layouts-partials"></a>
         <ol>
             <li><a href="css-less.html" id="css-less"></a></li>
+                <li><a href="theming.html" id="theming"></a></li>
         </ol>
     </li>
     <li><a href="plugins-using.html" id="plugins-using"></a></li>

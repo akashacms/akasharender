@@ -8,15 +8,7 @@ AkashaRender's purpose is easy generation of HTML and related files for use on w
 
 We touched on this briefly in the previous chapter, [](2-setup.html).  Now it's time to dive deeply down the rabbit hole.
 
-1. File name convention and Renderers -- applies to files in Documents, Layouts and partials
-2. CSS from LESS
-3. HTMLRenderer formats
-    1. Metadata section
-    2. Content section
-    3. EJS as template language
-    4. Mahabhuta custom tags
-    5. Partials
-    6. Layouts
+Given a configuration like so:
 
 ```
 config
@@ -39,7 +31,7 @@ Document | Rendered To
 `documents/romania/vlad-tepes/history.html.md` | `out/romania/vlad-tepes/history.html`
 `archive/romania/vlad-tepes/history.html.md` | `out/romania/vlad-tepes/history.html`
 
-Both files are rendered to `out` but because the file in `archive` is processed second the final product will be derived from that file.
+Both files are rendered to `out` but because the file in `archive` is processed second the final product will be derived from that file.  You could reverse this behavior by reversing the order of the `addDocumentsDir` calls, reversing the processing order.  The copy under `documents` would then be the version to appear on the rendered website.
 
 # Renderers, Rendering and File Extensions
 
@@ -183,7 +175,9 @@ Support for metadata variables in renderer
 
 ### Page Layouts
 
-HTMLRenderer supports much more than just rendering content files.  That would be very boring and not useful to simply render from a document directory to the rendering directory.  Website designers need freedom to flow their content in all kinds of ways, to have sidebar widgets of all kinds, and on and on.  The marketing department needs to have microformat tags of all kinds to express semantic information to search engines, hopefully having a positive SEO benefit.  Your visitors need to be able to read/view the content, especially on their mobile device.  Finally, the content authors need to be relieved of the burden of supplying HTML for the entire page for every document, and instead need to reuse each layout on multiple pages.
+HTMLRenderer supports much more than just rendering content files.  That would be very boring and not useful to simply render from a document directory to the rendering destination directory.  
+
+For more details beyond this brief overview see: [](layouts-partials.html)
 
 The template is specified in the metadata:
 
@@ -196,24 +190,9 @@ layout: page.html.ejs
 content
 ```
 
-We find templates by looking in directories specified in the configuration object:
+The template filename uses the same sort of file extension we use for content files.  The same Renderer objects are used to render the template.  As it currently stands it's expected content authors will write files in Markdown, while the website designer will design page layouts in HTML using EJS layout templates.
 
-```
-config.addLayoutsDir('layouts');
-```
-
-We can use multiple `addLayoutsDir` declarations, and AkashaRender will consult each directory in order.  When searching for a specific layout file, it stops at the first matching file.   In this case, with a single directory to search, the matching file would be `layouts/page.html.ejs`.
-
-It's quite easy to have multiple page layouts available.  Simply put as many layout templates as desired in these directories, and specify the appropriate template in the metadata for each file.
-
-The template filename uses the same sort of file extension we use for content files.  The same Renderer objects are used to render the template.  
-
-The envisioned normal AkashaRender usage is:
-
-* Content files are written in Markdown - `documents/path/to/content.html.md`
-* Layout files are written in EJS - `layouts/layoutFile.html.ejs`
-
-Markdown is easy to create and edit, making it suitable for the writer.  But it doesn't support variable substitution into the rendered output.  That capability is required for performing full page layout.
+Markdown is easy to create and edit, making it suitable for the writer.  But it doesn't support the HTML details required by the website designer.  Hence the designer needs precise control over the HTML, while the writer simply needs support for their writing.
 
 HTMLRenderer uses a two-stage process
 
@@ -223,59 +202,6 @@ HTMLRenderer uses a two-stage process
     1. Because the previous stage rendering is a metadata value, the layout template MUST support variable substitution.  That means using the EJS Renderer.
 
 The final output (after partials and Mahabhuta tags are processed) is written to the rendering directory.
-
-Here's a slightly more comprehensive page template:
-
-```
-<!doctype html>
-<!-- paulirish.com/2008/conditional-stylesheets-vs-css-hacks-answer-neither/ -->
-<!--[if lt IE 7]> <html class="no-js lt-ie9 lt-ie8 lt-ie7" lang="en"> <![endif]-->
-<!--[if IE 7]>    <html class="no-js lt-ie9 lt-ie8" lang="en"> <![endif]-->
-<!--[if IE 8]>    <html class="no-js lt-ie9" lang="en"> <![endif]-->
-<!-- Consider adding a manifest.appcache: h5bp.com/d/Offline -->
-<!--[if gt IE 8]><!--> <html class="no-js" lang="en"> <!--<![endif]-->
-<head>
-<meta charset="utf-8" />
-<!-- Use the .htaccess and remove these lines to avoid edge case issues. More info: h5bp.com/i/378 -->
-<meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1" />
-<%
-// Our site title and description
-if (typeof pagetitle !== "undefined") { %><title><%= pagetitle %></title><%
-} else if (typeof title !== "undefined") { %><title><%= title %></title><%
-} %>
-<link rel="stylesheet" href="/style/main.css" type="text/css" media="screen"/>
-</head>
-<body>
-<div class="container" role="main">
-<div class="row">
-<header class="col-md-12">
-  <h1><%= title %></h1>
-</header>
-</row>
-<div class="row">
-<div class="col-md-12">
-<%- content %>
-</div>
-</div>
-</div>
-</body>
-</html>
-```
-
-This one uses Bootstrap tags to structure the page, and in the `<head>` section we've added a couple best practices recommended by that project.  It lets you use `pagetitle` in the metadata for the `<title>` tag if your thoughts are to use different text for the `<title>` than for the primary `<h1>`.
-
-You see two kinds of substitutions here:
-
-Substitution type | Description
-------------------|--------------
-`<%= value %>` | Substitutes the content of the named variable, encoding any HTML as HTML entities
-`<%- value %>` | Substitutes the content of the named variable, with no encoding
-
-These come from the EJS template engine.  The choice between the two depends on the variable you're substituting, and your purpose with that variable.  
-
-In the case of `content`, we have HTML that we want to appear as it is with no encoding.  For other variables shown in this template, it's expected they'll be simple text values and that HTML were in the variable would be an accident.
-
-The most important bit is where the `content` variable is substituted.  The idea is to surround the `content` with the desired page layout, navigational widgets, etc.
 
 ### Partials
 
@@ -323,34 +249,6 @@ Consider this implementation of `listrender.html.ejs`
 ```
 
 The EJS engine allows you to mix JavaScript and HTML this way.  The variable `items` is iterated, producing a `<ul>` full of `<li>` tags containing the content.
-
-One way to use partials is in the `<head>` section where you'll be referencing common JavaScript or CSS assets.  Rather than duplicate that coding across every page template, put them in a partial.
-
-```
-<head>
-<meta charset="utf-8" />
-<!-- Use the .htaccess and remove these lines to avoid edge case issues. More info: h5bp.com/i/378 -->
-<meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1" />
-<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-<%
-// Our site title and description
-if (typeof pagetitle !== "undefined") { %><title><%= pagetitle %></title><%
-} else if (typeof title !== "undefined") { %><title><%= title %></title><%
-} %>
-<%- partial('sitemap.html.ejs') %>
-<%- partial('siteverification.html.ejs', locals) %>
-<!-- http://en.wikipedia.org/wiki/Canonical_link_element -->
-<% if (typeof rendered_url !== "undefined") {
-    %><link rel="canonical" href="<%- rendered_url %>" /><%
-} %>
-<%- partial('stylesheets.html.ejs', locals) %>
-<% if (headerScripts && headerScripts.javaScriptTop) {
-    %><%- partial('javaScript.html.ejs', { javaScripts: headerScripts.javaScriptTop }) %><%
-} %>
-</head>
-```
-
-This way you can reuse header code across multiple page layouts.
 
 ### Custom HTML tags and DOM manipulation with Mahabhuta
 
