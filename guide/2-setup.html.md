@@ -162,7 +162,7 @@ The `.prepare` method adds the baked-in default configuration values so that Aka
 
 The last line is required for AkashaRender to access the configuration data.
 
-## A build simple process
+## A simple build process
 
 The last thing is to set up the scripts section of the `package.json` with tasks used in building the project:
 
