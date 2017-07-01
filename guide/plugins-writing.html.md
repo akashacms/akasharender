@@ -85,6 +85,47 @@ A useful naming convention is to store assets in: `/vendor/plugin-name/asset.fil
 
 See the Mahabhuta documentation to see how to write Mahafuncs: https://akashacms.com/mahabhuta/toc.html
 
+To see how Mahabhuta is used in AkashaCMS projects, it's useful to study some source code:
+
+* https://github.com/akashacms/akashacms-affiliates/blob/master/index.js
+* https://github.com/akashacms/akasharender/blob/master/built-in.js
+* https://github.com/akashacms/akashacms-base/blob/master/index.js
+* https://github.com/akashacms/akashacms-blog-podcast/blob/master/index.js
+* https://github.com/akashacms/akashacms-booknav/blob/master/index.js
+* https://github.com/akashacms/akashacms-breadcrumbs/blob/master/index.js
+* https://github.com/akashacms/akashacms-document-viewers/blob/master/index.js
+* https://github.com/akashacms/akashacms-embeddables/blob/master/index.js
+* https://github.com/akashacms/akashacms-footnotes/blob/master/index.js
+* https://github.com/akashacms/akashacms-tagged-content/blob/master/index.js
+
+In each case, the Plugin `configure` method contains a line of code similar to:
+
+```
+config.addMahabhuta(module.exports.mahabhuta);
+```
+
+Then elsewhere you assign a MahafuncArray array to that object as so:
+
+```
+module.exports.mahabhuta = new mahabhuta.MahafuncArray("akashacms-blog-podcast", {});
+```
+
+And from there start adding Mahafunc's to the MahafuncArray.
+
+In a website `config.js` the steps are similar.  For example:
+
+```
+config.addMahabhuta(require('./mahafuncs'));
+```
+
+Then in `mahafuncs.js` you create a MahafuncArray
+
+```
+module.exports = new mahabhuta.MahafuncArray("techsparx website", {});
+```
+
+And start filling it with Mahafunc's.
+
 ### Stashing data in the Configuration
 
 The Configuration object can store per-config-per-plugin data.
@@ -92,6 +133,8 @@ The Configuration object can store per-config-per-plugin data.
 For example, in `akashacms-base` we have this in the `configure` function:
 
 ```
+const pluginName = "akashacms-base";
+...
 config.pluginData(pluginName).linkRelTags = [];
 ```
 
