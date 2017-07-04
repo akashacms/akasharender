@@ -1,6 +1,6 @@
 {
   "name": "akasharender",
-  "version": "0.6.0",
+  "version": "0.6.1",
   "description": "Rendering support for generating static HTML websites or EPUB eBooks",
   "keywords": [
     "content management system",
@@ -17,7 +17,7 @@
     "blog",
     "akashacms"
   ],
-  "homepage": "https://akasharender.akashacms.com",
+  "homepage": "https://akashacms.com/akasharender/toc.html",
   "repository": {
     "type": "git",
     "url": "git://github.com/akashacms/akasharender.git"

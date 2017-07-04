@@ -132,6 +132,27 @@ exports.indexChain = co.wrap(function* (config, fname) {
     return ret.reverse();
 });
 
+/**
+ * Manipulate the rel= attributes on a link returned from Mahabhuta.
+ *
+ * @params {$link} The link to manipulate
+ * @params {attr} The attribute name
+ * @params {doattr} Boolean flag whether to set (true) or remove (false) the attribute
+ *
+ */
+exports.linkRelSetAttr = function($link, attr, doattr) {
+    let linkrel = $link.attr('rel');
+    let rels = linkrel ? linkrel.split(' ') : [];
+    let hasattr = rels.indexOf(attr) >= 0;
+    if (!hasattr && doattr) {
+        rels.unshift(attr);
+        $link.attr('rel', rels.join(' '));
+    } else if (hasattr && !doattr) {
+        rels.splice(rels.indexOf(attr));
+        $link.attr('rel', rels.join(' '));
+    }
+};
+
 ///////////////// RSS Feed Generation
 
 exports.generateRSS = co.wrap(function* (config, configrss, feedData, items, renderTo) {
