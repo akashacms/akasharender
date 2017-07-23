@@ -1,7 +1,6 @@
 ---
 layout: ebook-page.html.ejs
 title: Configuring an AkashaCMS/AkashaRender project
-# bookHomeURL: '/toc.html'
 ---
 
 The `Configuration` object contains everything AkashaRender requires to render an AkashaCMS project.  The project creator uses the Configuration API to create this object.  It is intended this object is created in a Node.js module, and that the filename for that module is passed on the `akasharender` command-line.

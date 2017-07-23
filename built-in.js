@@ -236,6 +236,69 @@ class AnchorCleanup extends mahabhuta.Munger {
     get selector() { return "html body a"; }
 
     process($, $link, metadata, dirty) {
+        /*
+        try {
+            var href     = $link.attr('href');
+            var linktext = $link.text();
+            console.log(`AnchorCleanup ${href} ${linktext}`);
+
+            if (href && href !== '#') {
+                var uHref = url.parse(href, true, true);
+                if (uHref.protocol || uHref.slashes) return Promise.resolve("ok");
+                if (!uHref.pathname) return Promise.resolve("ok");
+
+                if (! uHref.pathname.match(/^\//)) {
+                    uHref.pathname = path.join(path.dirname(metadata.document.path), uHref.pathname);
+                    console.log(`***** AnchorCleanup FIXED href to ${uHref.pathname}`);
+                }
+                return filez.findAsset(metadata.config.assetDirs, uHref.pathname)
+                .then(foundAsset => {
+                    if (foundAsset && foundAsset.length > 0) {
+                        return "ok";
+                    }
+                    // Ask plugins if the href is okay
+                    if (metadata.config.askPluginsLegitLocalHref(uHref.pathname)) {
+                        return "ok";
+                    }
+                    return filez.findRendersTo(metadata.config.documentDirs, uHref.pathname)
+                    .then(found => {
+                        console.log(`AnchorCleanup findRendersTo ${uHref.pathname} ${util.inspect(found)}`);
+                        if (!found) {
+                            throw new Error(`Did not find ${href} in ${util.inspect(metadata.config.documentDirs)} in ${metadata.document.path}`);
+                        }
+                        // If this link has a body, then don't modify it
+                        if ((linktext && linktext.length > 0 && linktext !== uHref.pathname)
+                         || ($link.children().length > 0)) {
+                            console.log(`AnchorCleanup skipping ${uHref.pathname} w/ ${util.inspect(linktext)} children= ${$link.children}`);
+                            return "ok";
+                        }
+                        // Otherwise look into filling emptiness with title
+                        var renderer = akasha.findRendererPath(found.foundFullPath);
+                        if (renderer && renderer.metadata) {
+                            return renderer.metadata(found.foundDir, found.foundPathWithinDir)
+                            .then(docmeta => {
+                                // Automatically add a title= attribute
+                                if (!$link.attr('title') && docmeta.title) {
+                                    $link.attr('title', docmeta.title);
+                                }
+                                if (docmeta.title) {
+                                    $link.text(docmeta.title);
+                                }
+                                return "ok";
+                            });
+                        } else {
+                            throw new Error(`Could not fill in empty 'a' element in ${metadata.document.path} with href ${href}`);
+                        }
+                    })
+                })
+            } else {
+                return Promise.resolve();
+            }
+
+        } catch (e) {
+            return Promise.reject(e);
+        }
+        */
         return co(function* () {
             var href     = $link.attr('href');
             var linktext = $link.text();
@@ -288,10 +351,13 @@ class AnchorCleanup extends mahabhuta.Munger {
                     if (docmeta.title) {
                         $link.text(docmeta.title);
                     }
+                    // console.log(`AnchorCleanup finished`);
                     return "ok";
                 } else {
                     throw new Error(`Could not fill in empty 'a' element in ${metadata.document.path} with href ${href}`);
                 }
+            } else {
+                return "ok";
             }
 
         });

@@ -46,6 +46,7 @@ exports.findRendererPath = function(_path) {
 
 // Register built-in renderers
 exports.registerRenderer(require('./render-md'));
+// exports.registerRenderer(require('./render-asciidoc'));
 exports.registerRenderer(require('./render-ejs'));
 exports.registerRenderer(require('./render-cssless'));
 exports.registerRenderer(require('./render-json'));
@@ -81,18 +82,20 @@ exports.renderDocument = co.wrap(function* (config, basedir, fpath, renderTo, re
     if (renderer) {
         // Have to re-do the renderToFpath to give the Renderer a say in the file name
         renderToFpath = path.join(renderTo, renderToPlus, renderer.filePath(fpath));
-        log(`${renderer.name} ${docPathname} ==> ${renderToFpath}`);
+        // console.log(`ABOUT TO RENDER ${renderer.name} ${docPathname} ==> ${renderToFpath}`);
         try {
-            yield renderer.renderToFile(basedir, fpath, path.join(renderTo, renderToPlus), renderToPlus, renderBaseMetadata, config)
+            yield renderer.renderToFile(basedir, fpath, path.join(renderTo, renderToPlus), renderToPlus, renderBaseMetadata, config);
+            // console.log(`RENDERED ${renderer.name} ${docPathname} ==> ${renderToFpath}`);
             return `${renderer.name} ${docPathname} ==> ${renderToFpath}`;
         } catch (err) {
             console.error(`in renderer branch for ${fpath} error=${err.stack ? err.stack : err}`);
             throw new Error(`in renderer branch for ${fpath} error=${err.stack ? err.stack : err}`);
         }
     } else {
-        log(`COPY ${docPathname} ==> ${renderToFpath}`);
+        // console.log(`COPYING ${docPathname} ==> ${renderToFpath}`);
         try {
-            yield fs.copyAsync(docPathname, renderToFpath)
+            yield fs.copyAsync(docPathname, renderToFpath);
+            // console.log(`COPIED ${docPathname} ==> ${renderToFpath}`);
             return `COPY ${docPathname} ==> ${renderToFpath}`;
         } catch(err) {
             console.error(`in copy branch for ${fpath} error=${err.stack ? err.stack : err}`);
