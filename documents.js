@@ -184,10 +184,14 @@ exports.documentTree = function(config, documents) {
 		return undefined;
 	};
 
-    for (let docidx in documents) {
+    for (let doc of documents) {
 
-        let doc = documents[docidx];
+        // let doc = documents[docidx];
         // log(`makeBookTree ${util.inspect(doc)}`);
+
+        // if (typeof doc.renderpath === 'undefined') {
+        //    console.log(`documentTree strange document ${util.inspect(doc)}`);
+        // }
 
         let curDirInTree = documentTreeRoot;
         let components = componentizeFileName(doc.renderpath);
