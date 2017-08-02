@@ -1,11 +1,33 @@
 
 'use strict';
 
+const FlatCache = require('flat-cache');
+var cache = FlatCache.load('akasharender');
+
+exports.set = function(module, key, val) {
+    return cache.setKey(`${module}-${key}`, val);
+};
+
+exports.get = function(module, key) {
+    return cache.getKey(`${module}-${key}`);
+};
+
+exports.del = function(module, key) {
+    return cache.removeKey(`${module}-${key}`);
+};
+
+exports.flushAll = function() {
+    return cache.clearAll();
+};
+
+
+/*
 const NodeCache = require( "node-cache" );
 var AKCache = new NodeCache();
 
 exports.set = function(module, key, val) {
-    return AKCache.set(`${module}-${key}`, val);
+    return undefined;
+    // return AKCache.set(`${module}-${key}`, val);
 };
 
 exports.get = function(module, key) {
@@ -51,3 +73,4 @@ exports.close = function() {
 exports.on = function(event, cb) {
     return AKCache.on(event, cb);
 };
+*/
