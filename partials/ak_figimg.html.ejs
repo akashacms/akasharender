@@ -1,0 +1,21 @@
+<figure <%
+    if (typeof clazz !== 'undefined') {
+        %>class="<%= clazz %>" <%
+    }
+    if (typeof width !== 'undefined' && width) {
+        %>width="<%= width %>" <%
+    }
+
+    if (typeof style !== 'undefined' && style) {
+        %>style="<%= style %>" <%
+    }
+    %> >
+    <img src="<%= href %>"/>
+    <%
+        if (typeof caption !== 'undefined' && caption) {
+            %>
+            <figcaption><%- caption %></figcaption>
+            <%
+        }
+    %>
+</figure>

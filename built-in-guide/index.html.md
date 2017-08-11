@@ -9,6 +9,33 @@ AkashaRender includes a "built-in" plugin with custom tags useful for any target
 
 There's nothing to do, the built-in plugin is, well, built-in to AkashaRender.
 
+# Simplification for `figure/img` tags
+
+This construct is recommended in the HTML5 world for its microformat goodness
+
+```
+<figure>
+<img src="an-image.jpg"/>
+<figcaption>Image caption</figcaption>
+</figure>
+```
+
+While you can surely write these tags yourself, the `<fig-img>` tag offers a simplification.
+
+```
+<fig-img href="an-image.jpg" class="class-name" id="id-name" style="...CSS..." width="...width..." template="template-partial.html.ejs">
+Optional caption text
+</fig-img>
+```
+
+Using the default template (`ak_figimg.html.ejs`) the tag converts into the structure shown above.  The attributes are interpreted as so:
+
+* `class` is added as a `class` attribute to the `<figure>`
+* `id` is added as a `id` attribute to the `<figure>`
+* `style` is added as a `style` attribute to the `<figure>`
+* `width` is added as a `width` attribute to the `<figure>`
+* `template` overrides the default template
+
 # Stylesheets
 
 The `<ak-stylesheets>` tag generates links to CSS stylesheets, as declared in `config.js` or in the document metadata.

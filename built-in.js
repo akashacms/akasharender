@@ -199,6 +199,26 @@ class AkBodyClassAdd extends mahabhuta.PageProcessor {
 }
 module.exports.mahabhuta.addMahafunc(new AkBodyClassAdd());
 
+class FigureImage extends mahabhuta.CustomElement {
+    get elementName() { return "fig-img"; }
+    process($element, metadata, dirty) {
+        var template = $element.attr('template');
+        if (!template) template = 'ak_figimg.html.ejs';
+        const href    = $element.attr('href');
+        if (!href) return Promise.reject(new Error('fig-img must receive an href'));
+        const clazz   = $element.attr('class');
+        const id      = $element.attr('id');
+        const caption = $element.html();
+        const width   = $element.attr('width');
+        const style   = $element.attr('style');
+        return akasha.partial(metadata.config, template, {
+            href, clazz, id, caption, width, style
+        })
+        .then(html => { dirty(); return html; });
+    }
+}
+module.exports.mahabhuta.addMahafunc(new FigureImage());
+
 /*
 
 This was moved into Mahabhuta
