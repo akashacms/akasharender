@@ -46,7 +46,7 @@ exports.findRendererPath = function(_path) {
 
 // Register built-in renderers
 exports.registerRenderer(require('./render-md'));
-// exports.registerRenderer(require('./render-asciidoc'));
+exports.registerRenderer(require('./render-asciidoc'));
 exports.registerRenderer(require('./render-ejs'));
 exports.registerRenderer(require('./render-cssless'));
 exports.registerRenderer(require('./render-json'));
