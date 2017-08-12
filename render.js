@@ -127,7 +127,7 @@ exports.render = co.wrap(function* (config) {
                 }
             }
             // log(`******* render.render ${renderFrom} ${config.renderTo} ${renderToPlus} ${renderIgnore}`);
-            log(`RENDER DIRECTORY ${renderFrom} ==> ${renderToPlus}`);
+            // console.log(`RENDER DIRECTORY ${renderFrom} ==> ${renderToPlus}`);
             return globfs.operateAsync(renderFrom, '**/*', (basedir, fpath, fini) => {
                 var doIgnore = false;
                 if (renderIgnore) renderIgnore.forEach(ign => {
@@ -136,7 +136,7 @@ exports.render = co.wrap(function* (config) {
                         doIgnore = true;
                     }
                 });
-                log(`RENDER? ${renderFrom} ${fpath} ${doIgnore}`);
+                // console.log(`RENDER? ${renderFrom} ${fpath} ${doIgnore}`);
                 if (!doIgnore) {
                     exports.renderDocument(
                         config,
@@ -147,11 +147,11 @@ exports.render = co.wrap(function* (config) {
                         renderBaseMetadata
                     )
                     .then((result) => {
-                        log(`render renderDocument ${result}`);
+                        // log(`render renderDocument ${result}`);
                         fini(undefined, result);
                     })
                     .catch(err => {
-                        error(`render renderDocument ${err}`);
+                        console.error(`render renderDocument ${err}`);
                         fini(err);
                     });
                 } else fini(undefined, `IGNORED ${renderFrom} ${fpath}`);
@@ -172,7 +172,7 @@ exports.render = co.wrap(function* (config) {
         }
         return res;
     } catch (e) {
-        console.error(`render FAIL because of ${e}`);
+        console.error(`render FAIL because of ${e.stack}`);
         throw e;
     }
 });
