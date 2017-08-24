@@ -40,6 +40,7 @@ AkashaRender's flexibility comes from the variety of Renderer classes we can use
 Type | Extension | Description
 -----|-----------|------------
 Markdown | `example.html.md` | A Markdown file, that produces HTML.
+AsciiDoc | `example.html.adoc` | An AsciiDoc file, that produces HTML.
 EJS | `example.html.ejs` or `example.php.ejs` | for HTML, or PHP, with EJS markup, that produces HTML or PHP.
 LESS | `example.css.less` | A LESS file, that produces CSS.
 JSON | `example.html.json` | A JSON file, with metadata header, producing HTML
@@ -53,7 +54,7 @@ Renderers are organized with a classification hierarchy.  That let's a Renderer 
 
 ## HTMLRenderer capabilities
 
-The HTMLRenderer handles rendering to HTML, as the name implies, and is used for `example.html.md` and `example.html.ejs` and `example.php.ejs`.  This Renderer class adds extensive capabilities in formatting content with page layouts, using partials (content snippets), and a custom tag processing engine called Mahabhuta.  With HTMLRenderer, complete control over page layout and structure is possible.
+The HTMLRenderer handles rendering to HTML, as the name implies, and is used for `example.html.md` and `example.html.adoc` and `example.html.ejs` and `example.php.ejs`.  This Renderer class adds extensive capabilities in formatting content with page layouts, using partials (content snippets), and a custom tag processing engine called Mahabhuta.  With HTMLRenderer, complete control over page layout and structure is possible.
 
 ### Special considerations for PHP
 
@@ -113,6 +114,19 @@ Content Cell  | Content Cell
 Content Cell  | Content Cell
 
 It also supports "strikethrough text" where `~~deleted text~~` renders as ~~deleted text~~.
+
+### AsciiDoc
+
+AkashaRender uses the [AsciiDoctor.js](https://github.com/asciidoctor/asciidoctor.js) package to process AsciiDoc.  It is a direct transliteration of the official AsciiDoctor renderer from its Ruby source code.
+
+The integration of AsciiDoc is minimal as of this writing.  It renders content using the _article_ doctype, and doesn't allow you to override that choice.
+
+A subset of AkashaRender metadata is made available to AsciiDoc for use as what they call an _attribute_.  This means your metadata values can be rendered as `{attributeName}`.  
+
+Because of limitations in AsciiDoc, AkashaRender only supplies String and Number metadata values.  Any functions or objects are dropped out of the metadata supplied to AsciiDoc.
+
+AsciiDoc user manual: http://asciidoctor.org/docs/user-manual/
+
 
 ### YAML Frontmatter Metadata
 
@@ -387,7 +401,7 @@ JSONFormatter: json-format.html.ejs
 
 This is a fairly normal AkashaCMS document, but the body is JSON.
 
-The JSON RenderChain triggers on file names ending in `.html.json`.  It parses the content body as JSON, passing it as a variable named `data` to the partial named in `JSONFormatter`.
+The JSON Renderer triggers on file names ending in `.html.json`.  It parses the content body as JSON, passing it as a variable named `data` to the partial named in `JSONFormatter`.
 
 The named partial used here is [json-format.html.ejs](https://github.com/akashacms/akashacms-example/blob/master/partials/json-format.html.ejs), or
 
