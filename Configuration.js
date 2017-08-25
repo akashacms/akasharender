@@ -11,6 +11,7 @@ const globfs = require('globfs');
 const util   = require('util');
 const path   = require('path');
 const async  = require('async');
+const akasha = require('./index');
 const render = require('./render');
 const Plugin = require('./Plugin');
 const mahabhuta = require('mahabhuta');
@@ -23,6 +24,7 @@ const _config_pluginData = Symbol('pluginData');
 const _config_assetsDirs = Symbol('assetsDirs');
 const _config_documentDirs = Symbol('documentDirs');
 const _config_layoutDirs = Symbol('layoutDirs');
+const _config_partialDirs = Symbol('partialDirs');
 const _config_mahafuncs = Symbol('mahafuncs');
 const _config_renderTo = Symbol('renderTo');
 const _config_metadata = Symbol('metadata');
@@ -130,6 +132,12 @@ module.exports = class Configuration {
         //
         this.use(require('./built-in'));
 
+        var config = this;
+
+        mahaPartial.configuration.renderPartial = function(fname, metadata) {
+            return akasha.partial(config, fname, metadata);
+        }
+
         return this;
     }
 
@@ -180,19 +188,13 @@ module.exports = class Configuration {
      * @returns {Configuration}
      */
     addPartialsDir(dir) {
-        // We'll store this data in Mahabhuta instead of in this object
-        if (!mahaPartial.configuration.partialDirs) {
-            mahaPartial.configuration.partialDirs = [];
-        }
-        mahaPartial.configuration.partialDirs.push(dir);
+        if (!this[_config_partialDirs]) { this[_config_partialDirs] = []; }
+        this[_config_partialDirs].push(dir);
         return this;
-        /* if (!this.partialDirs) { this.partialDirs = []; }
-        this.partialDirs.push(dir);
-        return this; */
     }
 
-    get partialsDirs() { return mahaPartial.configuration.partialDirs; }
-
+    get partialsDirs() { return this[_config_partialDirs]; }
+    
     /**
      * Add a directory to the assetDirs configurtion array
      * @param {string} dir The pathname to use

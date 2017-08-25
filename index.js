@@ -12,7 +12,7 @@ const error = require('debug')('akasha:error-index');
 const filez  = require('./filez');
 const render = require('./render');
 const util   = require('util');
-const fs     = require('fs-extra-promise');
+const fs     = require('fs-extra');
 const co     = require('co');
 const path   = require('path');
 const oembetter = require('oembetter')();
@@ -77,16 +77,62 @@ exports.documentTree = documents.documentTree;
 exports.documentSearch = documents.documentSearch;
 exports.readDocument   = documents.readDocument;
 
-exports.partial = function(config, partial, attrs) {
+exports.partial = co.wrap(function* (config, fname, metadata) {
 
+    var partialFound = yield globfs.findAsync(config.partialsDirs, fname);
+    if (!partialFound) throw new Error(`No partial found for ${fname} in ${util.inspect(config.partialsDirs)}`);
+    // Pick the first partial found
+    partialFound = partialFound[0];
+    // console.log(`partial ${util.inspect(partialFound)}`);
+    if (!partialFound) throw new Error(`No partial found for ${fname} in ${util.inspect(config.partialsDirs)}`);
+
+    var partialFname = path.join(partialFound.basedir, partialFound.path);
+    // console.log(`partial ${util.inspect(partialFname)}`);
+    var stats = yield fs.stat(partialFname);
+    if (!stats.isFile()) {
+        throw new Error(`renderPartial non-file found for ${fname} - ${partialFname}`);
+    }
+
+    var renderer = render.findRendererPath(partialFname);
+    if (renderer) {
+        // console.log(`partial about to render ${util.inspect(partialFname)}`);
+        var partialText = yield fs.readFile(partialFname, 'utf8');
+        return renderer.render(partialText, metadata);
+    } else if (partialFname.endsWith('.html') || partialFname.endsWith('.xhtml')) {
+        // console.log(`partial reading file ${partialFname}`);
+        return fs.readFile(partialFname, 'utf8');
+    } else {
+        throw new Error(`renderPartial no Renderer found for ${fname} - ${partialFname}`);
+    }
     // This has been moved into Mahabhuta
-    return mahaPartial.doPartialAsync(partial, attrs);
-};
+    // return mahaPartial.doPartialAsync(partial, attrs);
+});
 
 exports.partialSync = function(config, fname, metadata) {
 
+    var partialFound = globfs.findSync(config.partialsDirs, fname);
+    if (!partialFound) throw new Error(`No partial directory found for ${fname}`);
+    // Pick the first partial found
+    partialFound = partialFound[0];
+
+    var partialFname = path.join(partialFound.basedir, partialFound.path);
+    // console.log(`doPartialSync before reading ${partialFname}`);
+    var stats = fs.statSync(partialFname);
+    if (!stats.isFile()) {
+        throw new Error(`doPartialSync non-file found for ${fname} - ${partialFname}`);
+    }
+    var partialText = fs.readFileSync(partialFname, 'utf8');
+
+    var renderer = render.findRendererPath(partialFname);
+    if (renderer) {
+        return renderer.renderSync(partialText, metadata);
+    } else if (partialFname.endsWith('.html') || partialFname.endsWith('.xhtml')) {
+        return fs.readFileSync(partialFname, 'utf8');
+    } else {
+        throw new Error(`renderPartial no Renderer found for ${fname} - ${partialFname}`);
+    }
     // This has been moved into Mahabhuta
-    return mahaPartial.doPartialSync(fname, metadata);
+    // return mahaPartial.doPartialSync(fname, metadata);
 };
 
 exports.indexChain = co.wrap(function* (config, fname) {

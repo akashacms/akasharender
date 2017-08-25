@@ -127,7 +127,7 @@ module.exports = class HTMLRenderer extends Renderer {
             // console.log(`renderToFile ${basedir} ${fpath} ${renderTo} ${renderToPlus} ${util.inspect(docdata)}`);
             var metadata = yield thisRenderer.initMetadata(config, basedir, fpath, renderToPlus, docdata, fm.data);
             docdata = metadata;
-            log('about to render '+ fpath);
+            // console.log('about to render '+ fpath);
             // log(`metadata before render ${util.inspect(docdata)}`);
             try {
                 docrendered = yield thisRenderer.render(doccontent, docdata);

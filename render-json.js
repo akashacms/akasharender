@@ -18,7 +18,7 @@ class JSONRenderer extends HTMLRenderer {
 
     renderSync(text, metadata) {
         var json = JSON.parse(text);
-        return mahaPartial.doPartialSync(metadata.JSONFormatter, { data: json });
+        return akasha.partialSync(metadata.config, metadata.JSONFormatter, { data: json });
     }
 
     render(text, metadata) {
@@ -26,7 +26,7 @@ class JSONRenderer extends HTMLRenderer {
             var json = JSON.parse(text);
             // console.log(`JSONRenderer ${text} ==> ${util.inspect(json)}`);
             // console.log(`JSONRenderer JSONFormatter ${metadata.JSONFormatter}`);
-            return yield mahaPartial.doPartialAsync(metadata.JSONFormatter, { data: json });
+            return yield akasha.partial(metadata.config, metadata.JSONFormatter, { data: json });
         })
         .catch(e => {
             var docpath = metadata.document ? metadata.document.path : "unknown";
