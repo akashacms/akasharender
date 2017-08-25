@@ -2,7 +2,7 @@
 
 const Renderer  = require('./Renderer');
 const render    = require('./render');
-const fs        = require('fs-extra-promise');
+const fs        = require('fs-extra');
 const co        = require('co');
 const url       = require('url');
 const path      = require('path');
@@ -67,7 +67,7 @@ module.exports = class HTMLRenderer extends Renderer {
                 foundDir = foundDir[0];
                 if (!foundDir) throw new Error(`No layout directory found in ${util.inspect(config.layoutDirs)} ${metadata.layout} in file ${metadata.document.path}`);
                 var layoutFname = path.join(foundDir.basedir, foundDir.path);
-                var layout = yield fs.readFileAsync(layoutFname, 'utf8');
+                var layout = yield fs.readFile(layoutFname, 'utf8');
                 layouttext = layout;
                 var fm = matter(layout);
                 layoutcontent = fm.content;
@@ -175,7 +175,7 @@ module.exports = class HTMLRenderer extends Renderer {
                 // return the cached data
                 return cachedFrontmatter;
             }
-            var text = yield fs.readFileAsync(path.join(basedir, fpath), 'utf8')
+            var text = yield fs.readFile(path.join(basedir, fpath), 'utf8')
             var fm = matter(text);
             cache.set("htmlrenderer", cachekey, fm);
             // log(`frontmatter ${cachekey} ${util.inspect(fm)}`);

@@ -238,8 +238,8 @@ exports.generateRSS = co.wrap(function* (config, configrss, feedData, items, ren
     var xml = rssfeed.xml();
     var renderOut = path.join(config.renderDestination, renderTo);
 
-    yield fs.mkdirsAsync(path.dirname(renderOut))
-    yield fs.writeFileAsync(renderOut, xml, { encoding: 'utf8' });
+    yield fs.mkdirs(path.dirname(renderOut))
+    yield fs.writeFile(renderOut, xml, { encoding: 'utf8' });
 
 });
 

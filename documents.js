@@ -8,10 +8,9 @@
 
 const path  = require('path');
 const util  = require('util');
-const async = require('async');
 const co    = require('co');
 const filez = require('./filez');
-const fs    = require('fs-extra-promise');
+const fs    = require('fs-extra');
 const globfs = require('globfs');
 const akasha = require('./index');
 
@@ -408,7 +407,7 @@ exports.readDocument = co.wrap(function* (config, documentPath) {
     }
     found.renderer = akasha.findRendererPath(found.foundFullPath);
 
-    found.stat = yield fs.statAsync(path.join(found.foundDir, found.foundPathWithinDir));
+    found.stat = yield fs.stat(path.join(found.foundDir, found.foundPathWithinDir));
     var metadata = yield found.renderer.metadata(found.foundDir, found.foundPathWithinDir);
     found.metadata = yield found.renderer.initMetadata(config,
             found.foundDir, found.foundFullPath, found.foundMountedOn,

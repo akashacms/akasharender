@@ -2,9 +2,8 @@
 
 const globfs    = require('globfs');
 const path      = require('path');
-const fs        = require('fs-extra-promise');
+const fs        = require('fs-extra');
 const util      = require('util');
-const async     = require('async');
 const co        = require('co');
 const mahabhuta = require('mahabhuta');
 const filez     = require('./filez');
@@ -70,12 +69,12 @@ exports.renderDocument = co.wrap(function* (config, basedir, fpath, renderTo, re
     var docPathname = path.join(basedir, fpath);
     var renderToFpath = path.join(renderTo, renderToPlus, fpath);
 
-    var stats = yield fs.statAsync(docPathname);
+    var stats = yield fs.stat(docPathname);
 
     if (stats && stats.isFile()) {
         var renderToDir = path.dirname(renderToFpath);
         log(`renderDocument ${basedir} ${fpath} ${renderToDir} ${renderToFpath}`);
-        yield fs.ensureDirAsync(renderToDir);
+        yield fs.ensureDir(renderToDir);
     } else { return `SKIP DIRECTORY ${docPathname}`; }
 
     var renderer = exports.findRendererPath(fpath);
@@ -94,7 +93,7 @@ exports.renderDocument = co.wrap(function* (config, basedir, fpath, renderTo, re
     } else {
         // console.log(`COPYING ${docPathname} ==> ${renderToFpath}`);
         try {
-            yield fs.copyAsync(docPathname, renderToFpath);
+            yield fs.copy(docPathname, renderToFpath);
             // console.log(`COPIED ${docPathname} ==> ${renderToFpath}`);
             return `COPY ${docPathname} ==> ${renderToFpath}`;
         } catch(err) {

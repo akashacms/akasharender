@@ -1,6 +1,6 @@
 'use strict';
 
-const fs         = require('fs-extra-promise');
+const fs         = require('fs-extra');
 const globfs     = require('globfs');
 const util       = require('util');
 const path       = require('path');
@@ -33,8 +33,8 @@ exports.findAsset = co.wrap(function* (assetdirs, filename) {
         }
         var fn2find = path.join(theAssetdir, filename);
         try {
-            if (yield !fs.existsAsync(fn2find)) continue;
-            var stats = yield fs.statAsync(fn2find);
+            if (yield !fs.exists(fn2find)) continue;
+            var stats = yield fs.stat(fn2find);
             if (!stats) continue;
         } catch (e) {
             if (e.code !== 'ENOENT') continue;
@@ -79,7 +79,7 @@ exports.find = co.wrap(function* (dirs, fileName) {
     for (var dir of dirs) {
         var stats = undefined;
         try {
-            stats = yield fs.statAsync(path.join(dir, fileName));
+            stats = yield fs.stat(path.join(dir, fileName));
         } catch (e) {
             if (e.code !== 'ENOENT') throw e;
             stats = undefined;
@@ -232,12 +232,12 @@ exports.findRendersTo = function(dirs, rendersTo) {
 exports.readFile = function(dir, fpath) {
     return Promise.reject(new Error("readFile deprecated - use fs.readFileAsync instead"));
     var readFpath = path.join(dir, fpath);
-    return fs.readFileAsync(readFpath, 'utf8');
+    return fs.readFile(readFpath, 'utf8');
 };
 
 exports.writeFile = co.wrap(function* (dir, fpath, text) {
-    yield fs.ensureDirAsync(dir);
+    yield fs.ensureDir(dir);
     var renderToFile = path.join(dir, fpath);
     log(`filez.writeFile ${dir} ${fpath} ==> ${renderToFile}`);
-    yield fs.writeFileAsync(renderToFile, text, 'utf8');
+    yield fs.writeFile(renderToFile, text, 'utf8');
 });
