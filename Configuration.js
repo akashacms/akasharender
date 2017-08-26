@@ -10,7 +10,8 @@ const fs     = require('fs-extra-promise');
 const globfs = require('globfs');
 const util   = require('util');
 const path   = require('path');
-const async  = require('async');
+// const async  = require('async');
+const co     = require('co');
 const akasha = require('./index');
 const render = require('./render');
 const Plugin = require('./Plugin');
@@ -357,7 +358,15 @@ module.exports = class Configuration {
     hookSiteRendered() {
         // console.log('hookSiteRendered');
         var config = this;
-        return new Promise((resolve, reject) => {
+        return co(function* () {
+            for (let plugin of config.plugins) {
+                if (typeof plugin.onSiteRendered !== 'undefined') {
+                    // console.log(`CALLING plugin ${plugin.name} onSiteRendered`);
+                    yield plugin.onSiteRendered(config);
+                }
+            }
+        });
+        /* return new Promise((resolve, reject) => {
             async.eachSeries(config.plugins,
             (plugin, next) => {
                 // console.log(`PLUGIN ${util.inspect(plugin)}`);
@@ -372,7 +381,7 @@ module.exports = class Configuration {
                 if (err) reject(err);
                 else resolve();
             });
-        });
+        }); */
     }
 
     /**
@@ -412,11 +421,12 @@ module.exports = class Configuration {
      * @param final The function to call after all iterator calls have been made.  Signature: `function(err)`
      */
     eachPlugin(iterator, final) {
-        async.eachSeries(this.plugins,
+        throw new Exception("eachPlugin deprecated");
+        /* async.eachSeries(this.plugins,
         function(plugin, next) {
             iterator(plugin, next);
         },
-        final);
+        final); */
     }
 
     /**
