@@ -15,6 +15,7 @@ AkashaRender has several built-in rendering engines.  You don't need to do anyth
 Class | Type | Extension | Description
 ------|-----|-----------|------------
 MarkdownRenderer | Markdown | `example.html.md` | A Markdown file, that produces HTML.
+AsciidocRenderer | AsciiDoc | `example.html.adoc` | An AsciiDoc file, that produces HTML.
 EJSRenderer | EJS | `example.html.ejs` or `example.php.ejs` | for HTML, or PHP, with EJS markup, that produces HTML or PHP.
 CSSLESSRenderer | LESS | `example.css.less` | A LESS file, that produces CSS.
 JSONRenderer | JSON | `example.html.json` | A JSON file, with metadata header, producing HTML
@@ -50,6 +51,7 @@ akasha.registerRenderer(new FooBarHTMLRenderer());
 
 The Renderer class has a few simple methods for you to implement.  It may be useful to study the source code:
 
+* AsciidocRenderer: https://github.com/akashacms/akasharender/blob/master/render-asciidoc.js
 * CSSLESSRenderer: https://github.com/akashacms/akasharender/blob/master/render-cssless.js
 * EJSRenderer: https://github.com/akashacms/akasharender/blob/master/render-ejs.js
 * MarkdownRenderer: https://github.com/akashacms/akasharender/blob/master/render-md.js
