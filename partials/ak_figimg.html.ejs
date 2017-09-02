@@ -10,7 +10,9 @@
         %>style="<%= style %>" <%
     }
     %> >
+    <% if (typeof dest !== 'undefined') { %><a href="<%= dest %>"><% } %>
     <img src="<%= href %>"/>
+    <% if (typeof dest !== 'undefined') { %></a><% } %>
     <%
         if (typeof caption !== 'undefined' && caption) {
             %>

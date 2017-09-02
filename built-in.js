@@ -211,8 +211,9 @@ class FigureImage extends mahabhuta.CustomElement {
         const caption = $element.html();
         const width   = $element.attr('width');
         const style   = $element.attr('style');
+        const dest    = $element.attr('dest');
         return akasha.partial(metadata.config, template, {
-            href, clazz, id, caption, width, style
+            href, clazz, id, caption, width, style, dest
         })
         .then(html => { dirty(); return html; });
     }
