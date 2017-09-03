@@ -32,6 +32,8 @@ const config = new akasha.Configuration();
 
 config.rootURL("http://example.com");
 
+config.configDir = __dirname;
+
 config
     .addAssetsDir('assets')
     .addLayoutsDir('layouts')
@@ -53,6 +55,22 @@ This is just a normal every-day Node.js module.  At the top we create a `Configu
 # Project rootURL
 
 The `rootURL` method declares the base URL of the project.  This is necessary for website projects, so that AkashaRender can generate correct URL's in certain circumstances.
+
+# Project Configuration Directory
+
+It's useful to inform the Configuration the directory containing the project.
+
+```
+config.configDir = __dirname;
+```
+
+With this setting, when you add a directory (as shown below) the Configuration automatically converts it into an absolute path spec.  That is:
+
+```
+config.addAssetsDir('assets1')
+```
+
+Ends up adding `/path/to/configuration/directory/assets1` to the AssetsDir array.
 
 # Input directories and the Output directory
 
