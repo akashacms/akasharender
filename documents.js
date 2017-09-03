@@ -17,56 +17,98 @@ const akasha = require('./index');
 const log   = require('debug')('akasha:documents');
 const error = require('debug')('akasha:error-documents');
 
+const _document_basedir = Symbol('basedir');
+const _document_docpath = Symbol('docpath');
+const _document_fullpath = Symbol('fullpath');
+const _document_renderer = Symbol('renderer');
+const _document_stat = Symbol('stat');
+const _document_renderpath = Symbol('renderpath');
+const _document_data = Symbol('data');
+const _document_metadata = Symbol('metadata');
+const _document_text = Symbol('text');
+
 /**
  * Standardized object to describe document files which render using an HTMLRenderer.
  */
 exports.Document = class Document {
     constructor(params) {
-        this._basedir = params.basedir;
-        this._docpath = params.docpath;
-        this._docname = params.docname;
-        this._fullpath = params.fullpath;
-        this._renderer = params.renderer;
-        this._stat     = params.stat;
-        this._renderpath = params.renderpath;
-        this._rendername = params.rendername;
-        this._metadata = params.metadata;
+        this.basedir  = params ? params.basedir : undefined;
+        this.docpath  = params ? params.docpath : undefined;
+        this.fullpath = params ? params.fullpath : undefined;
+        this.renderer = params ? params.renderer : undefined;
+        this.stat     = params ? params.stat : undefined;
+        this.renderpath = params ? params.renderpath : undefined;
+        this.metadata = params ? params.metadata : undefined;
+        this.data = params ? params.data : undefined;
+        this.text = params ? params.text : undefined;
     }
 
     /**
      * The directory structure within which this document was found.
      * @member {string} basedir
      */
-    get basedir() { return this._basedir; }
-    set basedir(dir) { this._basedir = dir; }
+    get basedir() { return this[_document_basedir]; }
+    set basedir(dir) { this[_document_basedir] = dir; }
 
     /**
      * The path for this document within basedir.
      * @member {string} docpath
      */
-    get docpath() { return this._docpath; }
-    set docpath(docpath) { this._docpath = docpath; }
+    get docpath() { return this[_document_docpath]; }
+    set docpath(docpath) { this[_document_docpath] = docpath; }
 
-    get docname() { return this._docname; }
-    set docname(docname) { this._docname = docname; }
+    /**
+     * The basename of docpath.
+     */
+    get docname() { return this.docpath ? path.basename(this.docpath) : undefined; }
 
-    get fullpath() { return this._fullpath; }
-    set fullpath(fullpath) { this._fullpath = fullpath; }
+    /**
+     * Full pathname for the source file -- essentially path.join(basedir, docpath)
+     */
+    get fullpath() { return this[_document_fullpath]; }
+    set fullpath(fullpath) { this[_document_fullpath] = fullpath; }
 
-    get renderer() { return this._renderer; }
-    set renderer(renderer) { this._renderer = renderer; }
+    /**
+     * The renderer that is to be used to render this document
+     */
+    get renderer() { return this[_document_renderer]; }
+    set renderer(renderer) { this[_document_renderer] = renderer; }
 
-    get stat() { return this._stat; }
-    set stat(stat) { this._stat = stat; }
+    /**
+     * The Stats object returned from fs.stat
+     */
+    get stat() { return this[_document_stat]; }
+    set stat(stat) { this[_document_stat] = stat; }
 
-    get renderpath() { return this._renderpath; }
-    set renderpath(renderpath) { this._renderpath = renderpath; }
+    /**
+     * The path for rendering this document into RenderDestination
+     */
+    get renderpath() { return this[_document_renderpath]; }
+    set renderpath(renderpath) { this[_document_renderpath] = renderpath; }
 
-    get rendername() { return this._rendername; }
-    set rendername(rendername) { this._rendername = rendername; }
+    /**
+     * The basename of renderpath
+     */
+    get rendername() { return this.renderpath ? path.basename(this.renderpath) : undefined; }
 
-    get metadata() { return this._metadata; }
-    set metadata(metadata) { this._metadata = metadata; }
+    /**
+     * Original data for document
+     */
+    get data() { return this[_document_data]; }
+    set data(data) { this[_document_data] = data; }
+
+    /**
+     * Document metadata
+     */
+    get metadata() { return this[_document_metadata]; }
+    set metadata(metadata) { this[_document_metadata] = metadata; }
+
+    /**
+     * Text portion of the document
+     */
+    get text() { return this[_document_text]; }
+    set text(textbody) { this[_document_text] = textbody; }
+
 };
 
 exports.HTMLDocument = class HTMLDocument extends module.exports.Document {
@@ -331,12 +373,10 @@ exports.documentSearch = co.wrap(function* (config, options) {
         return new exports.Document({
             basedir: doc.basedir,
             docpath: doc.result.fpath,
-            docname: doc.result.fname,
             fullpath: doc.fullpath,
             renderer: doc.result.renderer,
             stat: doc.result.stat,
             renderpath: doc.result.filepath,
-            rendername: doc.result.name,
             metadata: doc.result.metadata
         });
     });
@@ -398,32 +438,35 @@ exports.documentSearch = co.wrap(function* (config, options) {
 
 });
 
-// TODO Is this function used anywhere?  Is it still required?
+/**
+ * Find the Document by its path within one of the DocumentDirs, then construct a Document object.
+ */
 exports.readDocument = co.wrap(function* (config, documentPath) {
+    var doc = new exports.Document();
     var found = yield filez.findRendersTo(config.documentDirs, documentPath)
     // console.log('readDocument '+ documentPath +' '+ util.inspect(found));
     if (!found) {
         throw new Error(`Did not find document for ${util.inspect(documentPath)} in ${util.inspect(config.documentDirs)}`);
     }
-    found.renderer = akasha.findRendererPath(found.foundFullPath);
+    doc.basedir = found.foundDir;
+    doc.docpath = found.foundPath;
+    doc.fullpath = found.foundFullPath;
+    doc.renderer = akasha.findRendererPath(found.foundFullPath);
+    doc.renderpath = found.renderer ? found.renderer.filePath(found.foundPath) : undefined;
 
-    found.stat = yield fs.stat(path.join(found.foundDir, found.foundPathWithinDir));
-    var metadata = yield found.renderer.metadata(found.foundDir, found.foundPathWithinDir);
-    found.metadata = yield found.renderer.initMetadata(config,
-            found.foundDir, found.foundFullPath, found.foundMountedOn,
-            found.foundBaseMetadata, metadata);
-    let filepath = found.renderer ? found.renderer.filePath(found.foundPath) : undefined;
-    var doc = new exports.Document({
-        basedir: found.foundDir,
-        docpath: found.foundPath,
-        docname: path.basename(found.foundPath),
-        fullpath: found.foundFullPath,
-        renderer: found.renderer,
-        stat: found.stat,
-        renderpath: filepath,
-        rendername: filepath ? path.basename(filepath) : undefined,
-        metadata: found.metadata
-    });
+    doc.stat = yield fs.stat(path.join(found.foundDir, found.foundPathWithinDir));
+
+    if (doc.renderer && doc.renderer.frontmatter) {
+        // console.log(`readDocument getting frontmatter ${found.foundDir} / ${found.foundPathWithinDir}`);
+        var matter = yield doc.renderer.frontmatter(found.foundDir, found.foundPathWithinDir);
+        // console.log(`readDocument frontmatter ${util.inspect(matter)}`);
+        doc.data = matter.orig;
+        doc.metadata = yield doc.renderer.initMetadata(config,
+                found.foundDir, found.foundPathWithinDir, found.foundMountedOn,
+                found.foundBaseMetadata, matter.data);
+        doc.text = matter.content;
+    }
+
     // console.log('readDocument #3 '+ util.inspect(doc));
     return doc;
 });
