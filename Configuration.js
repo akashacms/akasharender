@@ -33,6 +33,7 @@ const _config_root_url = Symbol('root_url');
 const _config_scripts = Symbol('scripts');
 const _config_plugins = Symbol('plugins');
 const _config_cheerio = Symbol('cheerio');
+const _config_configdir = Symbol('configdir');
 
 /**
  * Configuration of an AkashaRender project, including the input directories,
@@ -66,37 +67,33 @@ module.exports = class Configuration {
 
         var stat;
         if (!this[_config_assetsDirs]) {
-            this[_config_assetsDirs] = [];
             if (fs.existsSync('assets') && (stat = fs.statSync('assets'))) {
                 if (stat.isDirectory()) {
-                    this[_config_assetsDirs] = [ 'assets' ];
+                    this.addAssetsDir('assets');
                 }
             }
         }
 
         if (!this[_config_layoutDirs]) {
-            this[_config_layoutDirs] = [];
             if (fs.existsSync('layouts') && (stat = fs.statSync('layouts'))) {
                 if (stat.isDirectory()) {
-                    this[_config_layoutDirs] = [ 'layouts' ];
+                    this.addLayoutsDir('layouts');
                 }
             }
         }
 
         if (!mahaPartial.configuration.partialDirs) {
-            mahaPartial.configuration.partialDirs = [];
             if (fs.existsSync('partials') && (stat = fs.statSync('partials'))) {
                 if (stat.isDirectory()) {
-                    mahaPartial.configuration.partialDirs = [ 'partials' ];
+                    this.addPartialsDir('partials');
                 }
             }
         }
 
         if (!this[_config_documentDirs]) {
-            this[_config_documentDirs] = [];
             if (fs.existsSync('documents') && (stat = fs.statSync('documents'))) {
                 if (stat.isDirectory()) {
-                    this[_config_documentDirs] = [ 'documents' ];
+                    this.addDocumentsDir('documents');
                 } else {
                     throw new Error("'documents' is not a directory");
                 }
@@ -110,13 +107,13 @@ module.exports = class Configuration {
         if (!this[_config_renderTo])  {
             if (fs.existsSync('out') && (stat = fs.statSync('out'))) {
                 if (stat.isDirectory()) {
-                    this[_config_renderTo] = 'out';
+                    this.setRenderDestination('out');
                 } else {
                     throw new Error("'out' is not a directory");
                 }
             } else {
                 fs.mkdirsSync('out');
-                this[_config_renderTo] = 'out';
+                this.setRenderDestination('out');
             }
         } else if (this[_config_renderTo] && !fs.existsSync(this[_config_renderTo])) {
             fs.mkdirsSync(this[_config_renderTo]);
@@ -133,8 +130,9 @@ module.exports = class Configuration {
         //
         this.use(require('./built-in'));
 
-        var config = this;
+        // Set up the Mahabhuta partial tag so it renders through AkashaRender
 
+        var config = this;
         mahaPartial.configuration.renderPartial = function(fname, metadata) {
             return akasha.partial(config, fname, metadata);
         }
@@ -142,6 +140,12 @@ module.exports = class Configuration {
         return this;
     }
 
+    /**
+     * Record the configuration directory so that we can correctly interpolate
+     * the pathnames we're provided.
+     */
+    set configDir(cfgdir) { this[_config_configdir] = cfgdir; }
+    get configDir() { return this[_config_configdir]; }
 
     /**
      * Add a directory to the documentDirs configuration array
@@ -149,6 +153,15 @@ module.exports = class Configuration {
      */
     addDocumentsDir(dir) {
         if (!this[_config_documentDirs]) { this[_config_documentDirs] = []; }
+        // If we have a configDir, and it's a relative directory, make it
+        // relative to the configDir
+        if (this.configDir != null) {
+            if (typeof dir === 'string' && ! dir.startsWith("/")) {
+                dir = path.join(this.configDir, dir);
+            } else if (typeof dir === 'object' && ! dir.src.startsWith("/")) {
+                dir.src = path.join(this.configDir, dir.src);
+            }
+        }
         this[_config_documentDirs].push(dir);
         return this;
     }
@@ -177,6 +190,13 @@ module.exports = class Configuration {
      */
     addLayoutsDir(dir) {
         if (!this[_config_layoutDirs]) { this[_config_layoutDirs] = []; }
+        // If we have a configDir, and it's a relative directory, make it
+        // relative to the configDir
+        if (this.configDir != null) {
+            if (typeof dir === 'string' && ! dir.startsWith("/")) {
+                dir = path.join(this.configDir, dir);
+            }
+        }
         this[_config_layoutDirs].push(dir);
         return this;
     }
@@ -190,6 +210,13 @@ module.exports = class Configuration {
      */
     addPartialsDir(dir) {
         if (!this[_config_partialDirs]) { this[_config_partialDirs] = []; }
+        // If we have a configDir, and it's a relative directory, make it
+        // relative to the configDir
+        if (this.configDir != null) {
+            if (typeof dir === 'string' && ! dir.startsWith("/")) {
+                dir = path.join(this.configDir, dir);
+            }
+        }
         this[_config_partialDirs].push(dir);
         return this;
     }
@@ -203,6 +230,15 @@ module.exports = class Configuration {
      */
     addAssetsDir(dir) {
         if (!this[_config_assetsDirs]) { this[_config_assetsDirs] = []; }
+        // If we have a configDir, and it's a relative directory, make it
+        // relative to the configDir
+        if (this.configDir != null) {
+            if (typeof dir === 'string' && ! dir.startsWith("/")) {
+                dir = path.join(this.configDir, dir);
+            } else if (typeof dir === 'object' && ! dir.src.startsWith("/")) {
+                dir.src = path.join(this.configDir, dir.src);
+            }
+        }
         this[_config_assetsDirs].push(dir);
         return this;
     }
@@ -228,6 +264,13 @@ module.exports = class Configuration {
      * @returns {Configuration}
      */
     setRenderDestination(dir) {
+        // If we have a configDir, and it's a relative directory, make it
+        // relative to the configDir
+        if (this.configDir != null) {
+            if (typeof dir === 'string' && ! dir.startsWith("/")) {
+                dir = path.join(this.configDir, dir);
+            }
+        }
         this[_config_renderTo] = dir;
         return this;
     }
@@ -366,22 +409,6 @@ module.exports = class Configuration {
                 }
             }
         });
-        /* return new Promise((resolve, reject) => {
-            async.eachSeries(config.plugins,
-            (plugin, next) => {
-                // console.log(`PLUGIN ${util.inspect(plugin)}`);
-                if (typeof plugin.onSiteRendered !== 'undefined') {
-                    // console.log(`CALLING plugin ${plugin.name} onSiteRendered`);
-                    plugin.onSiteRendered(config)
-                    .then(() => { next(); })
-                    .catch(err => { next(err); });
-                } else next();
-            },
-            err => {
-                if (err) reject(err);
-                else resolve();
-            });
-        }); */
     }
 
     /**
