@@ -207,7 +207,8 @@ module.exports = class HTMLRenderer extends Renderer {
     initMetadata(config, basedir, fpath, renderToPlus, baseMetadata, fmMetadata) {
 
         // console.log(`initMetadata ${basedir} ${fpath} ${renderToPlus} ${util.inspect(baseMetadata)} ${util.inspect(fmMetadata)}`);
-        return new Promise((resolve, reject) => {
+        const renderer = this;
+        return co(function* () {
 
             // Start with a base object that will be passed into the template
             var metadata = { };
@@ -231,13 +232,13 @@ module.exports = class HTMLRenderer extends Renderer {
             metadata.document = {};
             metadata.document.basedir = basedir;
             metadata.document.relpath = fpath;
-            metadata.document.relrender = this.filePath(fpath);
+            metadata.document.relrender = renderer.filePath(fpath);
             metadata.document.path = path.join(renderToPlus, fpath);
-            metadata.document.renderTo = path.join(renderToPlus, this.filePath(fpath));
+            metadata.document.renderTo = path.join(renderToPlus, renderer.filePath(fpath));
 
             metadata.config      = config;
-            metadata.partialSync = akasha.partialSync.bind(this, config);
-            metadata.partial     = akasha.partial.bind(this, config);
+            metadata.partialSync = akasha.partialSync.bind(renderer, config);
+            metadata.partial     = akasha.partial.bind(renderer, config);
 
             metadata.root_url = config.root_url;
 
@@ -255,32 +256,31 @@ module.exports = class HTMLRenderer extends Renderer {
             metadata.plugin = config.plugin;
 
             // log('HTMLRenderer before path.join '+util.inspect(path));
-            fs.stat(path.join(basedir, fpath), (err, stats) => {
-                if (err || !stats) {
-                    metadata.rendered_date = new Date();
-                } else {
-                    metadata.rendered_date = stats.mtime;
-                }
+            const stats = yield fs.stat(path.join(basedir, fpath));
+            if (!stats) {
+                metadata.rendered_date = new Date();
+            } else {
+                metadata.rendered_date = stats.mtime;
+            }
 
+            if (!metadata.publicationDate) {
+                var dateSet = false;
+                if (fmMetadata && fmMetadata.publDate) {
+                    var parsed = Date.parse(fmMetadata.publDate);
+                    if (! isNaN(parsed)) {
+                        metadata.publicationDate = new Date(parsed);
+                    }
+                    dateSet = true;
+                }
+                if (! dateSet && stats && stats.mtime) {
+                    metadata.publicationDate = stats.mtime;
+                }
                 if (!metadata.publicationDate) {
-                    var dateSet = false;
-                    if (fmMetadata && fmMetadata.publDate) {
-                        var parsed = Date.parse(fmMetadata.publDate);
-                        if (! isNaN(parsed)) {
-                          metadata.publicationDate = new Date(parsed);
-                        }
-                        dateSet = true;
-                    }
-                    if (! dateSet && stats && stats.mtime) {
-                        metadata.publicationDate = stats.mtime;
-                    }
-                    if (!metadata.publicationDate) {
-                        metadata.publicationDate = new Date();
-                    }
+                    metadata.publicationDate = new Date();
                 }
+            }
 
-                resolve(metadata);
-            });
+            return metadata;
         });
     };
 
