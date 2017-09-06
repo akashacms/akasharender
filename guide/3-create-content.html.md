@@ -448,7 +448,12 @@ When AkashaRender is installed, a new command is available:  `akasharender`
 $ akasharender help
 copy-assets [config_file]
 	Copy assets into output directory
-
+	
+document [config_file] [document]
+	Show information about a document
+	
 render [config_file]
 	Render a site into output directory
+	
+
 ```

@@ -448,6 +448,7 @@ exports.readDocument = co.wrap(function* (config, documentPath) {
     if (!found) {
         throw new Error(`Did not find document for ${util.inspect(documentPath)} in ${util.inspect(config.documentDirs)}`);
     }
+    // console.log('readDocument #1 '+ util.inspect(doc));
     doc.basedir = found.foundDir;
     doc.docpath = found.foundPath;
     doc.fullpath = found.foundFullPath;
@@ -456,6 +457,7 @@ exports.readDocument = co.wrap(function* (config, documentPath) {
 
     doc.stat = yield fs.stat(path.join(found.foundDir, found.foundPathWithinDir));
 
+    // console.log(`readDocument #2 basedir ${doc.basedir} docpath ${doc.docpath} fullpath ${doc.fullpath} renderer ${doc.renderer} renderpath ${doc.renderpath}`);
     if (doc.renderer && doc.renderer.frontmatter) {
         // console.log(`readDocument getting frontmatter ${found.foundDir} / ${found.foundPathWithinDir}`);
         var matter = yield doc.renderer.frontmatter(found.foundDir, found.foundPathWithinDir);
@@ -467,6 +469,6 @@ exports.readDocument = co.wrap(function* (config, documentPath) {
         doc.text = matter.content;
     }
 
-    // console.log('readDocument #3 '+ util.inspect(doc));
+    // console.log(`readDocument #3 data ${doc.data} metadata ${doc.metadata}`);
     return doc;
 });

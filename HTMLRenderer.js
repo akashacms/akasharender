@@ -175,8 +175,10 @@ module.exports = class HTMLRenderer extends Renderer {
                 // return the cached data
                 return cachedFrontmatter;
             }
-            var text = yield fs.readFile(path.join(basedir, fpath), 'utf8')
+            var text = yield fs.readFile(path.join(basedir, fpath), 'utf8');
+            // console.log(`frontmatter ${path.join(basedir, fpath)} ${text}`);
             var fm = matter(text);
+            // console.log(`frontmatter ${path.join(basedir, fpath)} ${util.inspect(fm)}`);
             cache.set("htmlrenderer", cachekey, fm);
             // log(`frontmatter ${cachekey} ${util.inspect(fm)}`);
             return fm;
