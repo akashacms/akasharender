@@ -142,8 +142,9 @@ exports.indexChain = co.wrap(function* (config, fname) {
     var findParents = function(config, fileName) {
         // var newFileName;
         var parentDir;
-        // log(`findParents ${fileName}`);
-        if (path.dirname(fileName) === '.') {
+        // console.log(`findParents ${fileName}`);
+        if (path.dirname(fileName) === '.'
+         || path.dirname(fileName) === '/') {
             return Promise.resolve();
         } else {
             if (path.basename(fileName) === "index.html") {
@@ -154,7 +155,7 @@ exports.indexChain = co.wrap(function* (config, fname) {
             var lookFor = path.join(parentDir, "index.html");
             return filez.findRendersTo(config.documentDirs, lookFor)
             .then(found => {
-                // log(util.inspect(foundDir));
+                // console.log(util.inspect(found));
                 if (typeof found !== 'undefined') {
                     ret.push({ foundDir: found.foundDir, foundPath: found.foundPath, filename: lookFor });
                 }
@@ -175,6 +176,7 @@ exports.indexChain = co.wrap(function* (config, fname) {
     ret.push({ foundDir: found.foundDir, foundPath: found.foundPath, filename: fname });
     yield findParents(config, fname);
 
+    // console.log(`indexChain FINI ${util.inspect(ret.reverse)}`);
     return ret.reverse();
 });
 
