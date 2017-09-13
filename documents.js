@@ -18,6 +18,8 @@ const log   = require('debug')('akasha:documents');
 const error = require('debug')('akasha:error-documents');
 
 const _document_basedir = Symbol('basedir');
+const _document_mountedOn = Symbol('mountedOn');
+const _document_mountedMeta = Symbol('mountedMetadata');
 const _document_docpath = Symbol('docpath');
 const _document_fullpath = Symbol('fullpath');
 const _document_renderer = Symbol('renderer');
@@ -49,6 +51,20 @@ exports.Document = class Document {
      */
     get basedir() { return this[_document_basedir]; }
     set basedir(dir) { this[_document_basedir] = dir; }
+
+    /**
+     * Metadata for the mounted directory.
+     * @member {string} basedir
+     */
+    get mountedDirMetadata() { return this[_document_mountedMeta]; }
+    set mountedDirMetadata(meta) { this[_document_mountedMeta] = meta; }
+
+    /**
+     * The directory structure mounted within basedir in which this document was found.
+     * @member {string} basedir
+     */
+    get dirMountedOn() { return this[_document_mountedOn]; }
+    set dirMountedOn(dir) { this[_document_mountedOn] = dir; }
 
     /**
      * The path for this document within basedir.
@@ -109,6 +125,72 @@ exports.Document = class Document {
     get text() { return this[_document_text]; }
     set text(textbody) { this[_document_text] = textbody; }
 
+    /**
+     * Update the Document, and save the new contents to disk.
+     * @param {*} content 
+     */
+    updateSave(config, content) {
+        var document = this;
+        // console.log(`updateSave ${util.inspect(document)}`);
+        return co(function* () {
+            let writeTo = path.join(document.basedir, document.fullpath);
+            // console.log(`writeFile writeTo ${writeTo}`);
+            yield fs.writeFile(writeTo, content, 'utf8');
+            document.stat = yield fs.stat(writeTo);
+            return document.readDocumentContent(config);
+        });
+    }
+
+    readDocumentContent(config) {
+        var document = this;
+        return co(function* () {
+            // console.log(`readDocumentContent ${document.basedir} ${document.dirMountedOn} docpath ${document.docpath} fullpath ${document.fullpath} renderer ${document.renderer} renderpath ${document.renderpath}`);
+            const readFrom = path.join(
+                                document.basedir,
+                                document.dirMountedOn,
+                                document.fullpath);
+            // console.log(`readDocumentContent read from ${readFrom}`);
+            document.stat = yield fs.stat(readFrom);
+            const content = yield fs.readFile(readFrom, 'utf8');
+            if (document.renderer && document.renderer.frontmatter) {
+                const matter = document.renderer.parseFrontmatter(content);
+                document.data = matter.orig;
+                document.metadata = yield document.renderer.initMetadata(config, 
+                    document.basedir, document.fullpath, document.dirMountedOn,
+                    document.mountedDirMetadatal, matter.data);
+                    document.text = matter.content;
+                document.text = matter.content;
+            } else {
+                document.data = content;
+            }
+            return document;
+        });
+        // .catch(err => { console.error('readDocumentContent '+ err.stack); throw err; });
+    }
+
+    renderToFile(config) {
+        var document = this;
+        return co(function * () {
+            var docrendered = yield document.renderer.render(
+                document.text, document.metadata
+            );
+            if (document.renderer.doMahabhuta(document.fullpath)) {
+                docrendered = yield document.renderer.maharun(
+                    docrendered, document.metadata, config.mahafuncs
+                );
+            }
+            docrendered = yield document.renderer.renderForLayout(
+                docrendered, document.metadata, config
+            );
+
+            // console.log(`renderToFile ${path.join(config.renderTo, document.dirMountedOn)} ${document.renderpath}`)
+            yield filez.writeFile(
+                path.join(config.renderTo, document.dirMountedOn),
+                document.renderer.filePath(document.fullpath),
+                docrendered
+            );
+        });
+    }
 };
 
 exports.HTMLDocument = class HTMLDocument extends module.exports.Document {
@@ -450,12 +532,17 @@ exports.readDocument = co.wrap(function* (config, documentPath) {
     }
     // console.log('readDocument #1 '+ util.inspect(doc));
     doc.basedir = found.foundDir;
+    doc.dirMountedOn = found.foundMountedOn;
+    doc.mountedDirMetadata = found.foundBaseMetadata;
     doc.docpath = found.foundPath;
     doc.fullpath = found.foundFullPath;
     doc.renderer = akasha.findRendererPath(found.foundFullPath);
     doc.renderpath = found.renderer ? found.renderer.filePath(found.foundPath) : undefined;
 
-    doc.stat = yield fs.stat(path.join(found.foundDir, found.foundPathWithinDir));
+    // console.log(`readDocument before readDocumentContent ${doc.basedir} docpath ${doc.docpath} fullpath ${doc.fullpath} renderer ${doc.renderer} renderpath ${doc.renderpath}`);
+    yield doc.readDocumentContent(config);
+
+    /* doc.stat = yield fs.stat(path.join(found.foundDir, found.foundPathWithinDir));
 
     // console.log(`readDocument #2 basedir ${doc.basedir} docpath ${doc.docpath} fullpath ${doc.fullpath} renderer ${doc.renderer} renderpath ${doc.renderpath}`);
     if (doc.renderer && doc.renderer.frontmatter) {
@@ -467,7 +554,7 @@ exports.readDocument = co.wrap(function* (config, documentPath) {
                 found.foundDir, found.foundPathWithinDir, found.foundMountedOn,
                 found.foundBaseMetadata, matter.data);
         doc.text = matter.content;
-    }
+    } */
 
     // console.log(`readDocument #3 data ${doc.data} metadata ${doc.metadata}`);
     return doc;

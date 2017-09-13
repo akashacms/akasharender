@@ -60,7 +60,7 @@ module.exports = class HTMLRenderer extends Renderer {
 
             var thisRenderer = this;
 
-            log(`renderForLayout find ${util.inspect(config.layoutDirs)} ${metadata.layout}`);
+            // console.log(`renderForLayout find ${util.inspect(config.layoutDirs)} ${metadata.layout}`);
             return co(function* () {
                 var foundDir = yield globfs.findAsync(config.layoutDirs, metadata.layout);
                 if (!foundDir) throw new Error(`No layout directory found in ${util.inspect(config.layoutDirs)} ${metadata.layout} in file ${metadata.document.path}`);
@@ -124,18 +124,18 @@ module.exports = class HTMLRenderer extends Renderer {
         return co(function* () {
             var fm = yield thisRenderer.frontmatter(basedir, fpath);
             doccontent = fm.content;
-            // console.log(`renderToFile ${basedir} ${fpath} ${renderTo} ${renderToPlus} ${util.inspect(docdata)}`);
+            // console.log(`renderToFile ${basedir} ${fpath} ${renderTo} ${renderToPlus} ${doccontent}`);
             var metadata = yield thisRenderer.initMetadata(config, basedir, fpath, renderToPlus, docdata, fm.data);
             docdata = metadata;
             // console.log('about to render '+ fpath);
-            // log(`metadata before render ${util.inspect(docdata)}`);
+            // console.log(`metadata before render ${util.inspect(docdata)}`);
             try {
                 docrendered = yield thisRenderer.render(doccontent, docdata);
             } catch (err) {
                 console.error("Error rendering "+ fpath +" "+ (err.stack ? err.stack : err));
                 throw new Error("Error rendering "+ fpath +" "+ (err.stack ? err.stack : err));
             }
-            log('rendered to maharun '+ fpath);
+            // console.log('rendered to maharun '+ fpath);
             if (thisRenderer.doMahabhuta(fpath)) {
                 try {
                     docrendered = yield thisRenderer.maharun(docrendered, docdata, config.mahafuncs);
@@ -144,10 +144,11 @@ module.exports = class HTMLRenderer extends Renderer {
                     throw new Error("Error in Mahabhuta for "+ fpath +" "+ (err2.stack ? err2.stack : err2));
                 }
             }
-            log('maharun to renderForLayout '+ fpath);
+            // console.log('maharun to renderForLayout '+ fpath);
             docrendered = yield thisRenderer.renderForLayout(docrendered, docdata, config);
-            log(`renderToFile ${basedir} ${fpath} ==> ${renderTo} ${thisRenderer.filePath(fpath)}`);
-            return yield filez.writeFile(renderTo, thisRenderer.filePath(fpath), docrendered);
+            // console.log(`renderToFile ${basedir} ${fpath} ==> ${renderTo} ${thisRenderer.filePath(fpath)}`);
+            // console.log(docrendered);
+            yield filez.writeFile(renderTo, thisRenderer.filePath(fpath), docrendered);
         });
     }
 
@@ -158,6 +159,10 @@ module.exports = class HTMLRenderer extends Renderer {
      */
     doMahabhuta(fpath) {
         return true;
+    }
+
+    parseFrontmatter(content) {
+        return matter(content);
     }
 
     /**
@@ -236,6 +241,7 @@ module.exports = class HTMLRenderer extends Renderer {
             metadata.document.relpath = fpath;
             metadata.document.relrender = renderer.filePath(fpath);
             metadata.document.path = path.join(renderToPlus, fpath);
+            // console.log(`initMetadata ${renderToPlus} ${fpath} ${renderer.filePath(fpath)}`);
             metadata.document.renderTo = path.join(renderToPlus, renderer.filePath(fpath));
 
             metadata.config      = config;

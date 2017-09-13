@@ -69,6 +69,7 @@ exports.renderDocument = co.wrap(function* (config, basedir, fpath, renderTo, re
     var docPathname = path.join(basedir, fpath);
     var renderToFpath = path.join(renderTo, renderToPlus, fpath);
 
+    // console.log(`renderDocument basedir ${basedir} fpath ${fpath} docPathname ${docPathname} renderToFpath ${renderToFpath}`);
     var stats = yield fs.stat(docPathname);
 
     if (stats && stats.isFile()) {
