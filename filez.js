@@ -219,6 +219,7 @@ exports.findRendersTo = function(dirs, rendersTo) {
                     foundMountedOn, foundPathWithinDir,
                     foundBaseMetadata: (foundBaseMetadata ? foundBaseMetadata : {} )
                 };
+                // console.log(`filez.findRendersTo FOUND ${util.inspect(ret)}`);
                 cache.set("filez-findRendersTo", foundPath, ret);
                 resolve(ret);
             } else {

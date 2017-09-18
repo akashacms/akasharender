@@ -39,7 +39,7 @@ exports.Document = class Document {
         this.fullpath = params ? params.fullpath : undefined;
         this.renderer = params ? params.renderer : undefined;
         this.stat     = params ? params.stat : undefined;
-        this.renderpath = params ? params.renderpath : undefined;
+        // this.renderpath = params ? params.renderpath : undefined;
         this.metadata = params ? params.metadata : undefined;
         this.data = params ? params.data : undefined;
         this.text = params ? params.text : undefined;
@@ -99,8 +99,7 @@ exports.Document = class Document {
     /**
      * The path for rendering this document into RenderDestination
      */
-    get renderpath() { return this[_document_renderpath]; }
-    set renderpath(renderpath) { this[_document_renderpath] = renderpath; }
+    get renderpath() { return this.renderer.filePath(this.docpath); }
 
     /**
      * The basename of renderpath
@@ -133,7 +132,7 @@ exports.Document = class Document {
         var document = this;
         // console.log(`updateSave ${util.inspect(document)}`);
         return co(function* () {
-            let writeTo = path.join(document.basedir, document.fullpath);
+            let writeTo = path.join(document.basedir, document.docpath);
             // console.log(`writeFile writeTo ${writeTo}`);
             yield fs.writeFile(writeTo, content, 'utf8');
             document.stat = yield fs.stat(writeTo);
@@ -147,16 +146,17 @@ exports.Document = class Document {
             // console.log(`readDocumentContent ${document.basedir} ${document.dirMountedOn} docpath ${document.docpath} fullpath ${document.fullpath} renderer ${document.renderer} renderpath ${document.renderpath}`);
             const readFrom = path.join(
                                 document.basedir,
-                                document.dirMountedOn,
-                                document.fullpath);
+                                // document.dirMountedOn,
+                                document.docpath);
             // console.log(`readDocumentContent read from ${readFrom}`);
             document.stat = yield fs.stat(readFrom);
             const content = yield fs.readFile(readFrom, 'utf8');
             if (document.renderer && document.renderer.frontmatter) {
                 const matter = document.renderer.parseFrontmatter(content);
+                // console.log(`readDocumentContent got frontmatter ${util.inspect(matter)}`);
                 document.data = matter.orig;
                 document.metadata = yield document.renderer.initMetadata(config, 
-                    document.basedir, document.fullpath, document.dirMountedOn,
+                    document.basedir, document.docpath, document.dirMountedOn,
                     document.mountedDirMetadatal, matter.data);
                     document.text = matter.content;
                 document.text = matter.content;
@@ -186,7 +186,7 @@ exports.Document = class Document {
             // console.log(`renderToFile ${path.join(config.renderTo, document.dirMountedOn)} ${document.renderpath}`)
             yield filez.writeFile(
                 path.join(config.renderTo, document.dirMountedOn),
-                document.renderer.filePath(document.fullpath),
+                document.renderpath,
                 docrendered
             );
         });
@@ -534,10 +534,10 @@ exports.readDocument = co.wrap(function* (config, documentPath) {
     doc.basedir = found.foundDir;
     doc.dirMountedOn = found.foundMountedOn;
     doc.mountedDirMetadata = found.foundBaseMetadata;
-    doc.docpath = found.foundPath;
+    doc.docpath = found.foundPathWithinDir;
     doc.fullpath = found.foundFullPath;
     doc.renderer = akasha.findRendererPath(found.foundFullPath);
-    doc.renderpath = found.renderer ? found.renderer.filePath(found.foundPath) : undefined;
+    // doc.renderpath = found.renderer ? found.renderer.filePath(found.foundPathWithinDir) : undefined;
 
     // console.log(`readDocument before readDocumentContent ${doc.basedir} docpath ${doc.docpath} fullpath ${doc.fullpath} renderer ${doc.renderer} renderpath ${doc.renderpath}`);
     yield doc.readDocumentContent(config);

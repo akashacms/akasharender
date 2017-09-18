@@ -263,7 +263,7 @@ module.exports = class HTMLRenderer extends Renderer {
             metadata.akasha = akasha;
             metadata.plugin = config.plugin;
 
-            // log('HTMLRenderer before path.join '+util.inspect(path));
+            // console.log(`HTMLRenderer before path.join ${path.join(basedir, fpath)}`);
             const stats = yield fs.stat(path.join(basedir, fpath));
             if (!stats) {
                 metadata.rendered_date = new Date();
