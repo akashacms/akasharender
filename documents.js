@@ -34,15 +34,15 @@ const _document_text = Symbol('text');
  */
 exports.Document = class Document {
     constructor(params) {
-        this.basedir  = params ? params.basedir : undefined;
-        this.docpath  = params ? params.docpath : undefined;
-        this.fullpath = params ? params.fullpath : undefined;
-        this.renderer = params ? params.renderer : undefined;
-        this.stat     = params ? params.stat : undefined;
+        this[_document_basedir]  = params ? params.basedir : undefined;
+        this[_document_docpath]  = params ? params.docpath : undefined;
+        this[_document_fullpath] = params ? params.fullpath : undefined;
+        this[_document_renderer] = params ? params.renderer : undefined;
+        this[_document_stat]     = params ? params.stat : undefined;
         // this.renderpath = params ? params.renderpath : undefined;
-        this.metadata = params ? params.metadata : undefined;
-        this.data = params ? params.data : undefined;
-        this.text = params ? params.text : undefined;
+        this[_document_metadata] = params ? params.metadata : undefined;
+        this[_document_data] = params ? params.data : undefined;
+        this[_document_text] = params ? params.text : undefined;
     }
 
     /**
@@ -99,7 +99,13 @@ exports.Document = class Document {
     /**
      * The path for rendering this document into RenderDestination
      */
-    get renderpath() { return this.renderer.filePath(this.docpath); }
+    get renderpath() { 
+        if (! this.renderer) {
+            this.docpath;
+        } else {
+            return this.renderer.filePath(this.docpath); 
+        }
+    }
 
     /**
      * The basename of renderpath
@@ -171,14 +177,17 @@ exports.Document = class Document {
     renderToFile(config) {
         var document = this;
         return co(function * () {
+            // console.log(`before render `);
             var docrendered = yield document.renderer.render(
                 document.text, document.metadata
             );
+            // console.log(`before maharun `);
             if (document.renderer.doMahabhuta(document.fullpath)) {
                 docrendered = yield document.renderer.maharun(
                     docrendered, document.metadata, config.mahafuncs
                 );
             }
+            // console.log(`before renderForLayout `);
             docrendered = yield document.renderer.renderForLayout(
                 docrendered, document.metadata, config
             );
@@ -201,37 +210,46 @@ exports.ImageDocument = class ImageDocument extends module.exports.Document {
     constructor(params) { super(params); }
 };
 
+const _document_tree_type = Symbol('tree_type');
+const _document_tree_entryname = Symbol('tree_entryname');
+const _document_tree_dirpath = Symbol('tree_dirpath');
+const _document_tree_children = Symbol('tree_children');
+const _document_tree_teaser = Symbol('tree_teaser');
+const _document_tree_title = Symbol('tree_title');
+
 exports.DocumentTreeEntry = class DocumentTreeEntry extends module.exports.Document {
 
     constructor(params) {
         super(params);
-        this._type = params.type;
-        this._entryname = params.entryname;
-        this._dirpath = params.dirpath;
-        this._children = params.children;
-        this._teaser = params.teaser;
-        this._title = params.title;
+        this[_document_tree_type] = params ? params.type : undefined;
+        this[_document_tree_entryname] = params ? params.entryname : undefined;
+        this[_document_tree_dirpath] = params ? params.dirpath : undefined;
+        this[_document_tree_children] = params ? params.children : undefined;
+        this[_document_tree_teaser] = params ? params.teaser : undefined;
+        this[_document_tree_title] = params ? params.title : undefined;
     }
 
-    get type() { return this._type; }
+    get type() { return this[_document_tree_type]; }
+    set type(t) { this[_document_tree_type] = t; }
 
-    get entryname() { return this._entryname; }
-    set entryname(entryname) { this._entryname = entryname; }
+    get entryname() { return this[_document_tree_entryname]; }
+    set entryname(entryname) { this[_document_tree_entryname] = entryname; }
 
-    get dirpath() { return this._dirpath; }
-    set dirpath(dirpath) { this._dirpath = dirpath; }
+    get dirpath() { return this[_document_tree_dirpath]; }
+    set dirpath(dirpath) { this[_document_tree_dirpath] = dirpath; }
 
-    get children() { return this._children; }
+    get children() { return this[_document_tree_children]; }
+    set children(arry) { this[_document_tree_children] = arry; }
 
-    get teaser() { return this._teaser; }
-    set teaser(teaser) { this._teaser = teaser; }
+    get teaser() { return this[_document_tree_teaser]; }
+    set teaser(teaser) { this[_document_tree_teaser] = teaser; }
 
-    get title() { return this._title; }
-    set title(title) { this._title = title; }
+    get title() { return this[_document_tree_title]; }
+    set title(title) { this[_document_tree_title] = title; }
 
     addChild(child) {
-        if (!(this._type === "dir" || this._type === "root")) throw new Error("Not a directory in adding "+ util.inspect(child));
-        if (this._children) this._children.push(child);
+        if (!(this[_document_tree_type] === "dir" || this[_document_tree_type] === "root")) throw new Error("Not a directory in adding "+ util.inspect(child));
+        if (this[_document_tree_children]) this[_document_tree_children].push(child);
     }
 }
 
@@ -287,12 +305,12 @@ var componentizeFileName = module.exports.componentizeFileName = function(filena
  */
 exports.documentTree = function(config, documents) {
 
-    var documentTreeRoot = new module.exports.DocumentTreeEntry({
-        type: "root",
-        children: []
-    });
+    var documentTreeRoot = new module.exports.DocumentTreeEntry();
+    documentTreeRoot.type = "root";
+    documentTreeRoot.children = [];
 
 	var findComponentEntry = function(treeEntry, component) {
+        if (!treeEntry) return undefined;
 		for (var i = 0; i < treeEntry.children.length; i++) {
 			var entry = treeEntry.children[i];
             // log('findComponentEntry '+ util.inspect(entry) +' === '+ component.component);
@@ -334,33 +352,29 @@ exports.documentTree = function(config, documents) {
             if (component.type === 'file') {
                 let entry = findComponentEntry(curDirInTree, component);
                 if (!entry) {
-                    curDirInTree.addChild(new module.exports.DocumentTreeEntry({
-                        type: "file",
-                        entryname: component.component,
-                        basedir: doc.basedir,
-                        docpath: doc.docpath,
-                        docname: doc.docname,
-                        fullpath: doc.fullpath,
-                        renderer: doc.renderer,
-                        stat: doc.stat,
-                        renderpath: doc.renderpath,
-                        rendername: doc.rendername,
-                        metadata: doc.metadata,
-                        teaser: doc.metadata.teaser,
-                        title: doc.metadata.title
-                    }));
+                    let treeEntry = new module.exports.DocumentTreeEntry();
+                    treeEntry.type = "file";
+                    treeEntry.entryname = component.component;
+                    treeEntry.basedir = doc.basedir;
+                    treeEntry.docpath = doc.docpath;
+                    treeEntry.fullpath = doc.fullpath;
+                    treeEntry.renderer = doc.renderer;
+                    treeEntry.stat = doc.stat;
+                    treeEntry.metadata = doc.metadata;
+                    treeEntry.teaser = doc.metadata.teaser;
+                    treeEntry.title = doc.metadata.title;
+                    curDirInTree.addChild(treeEntry);
                 }
             } else if (component.type === 'dir') {
                 let entry = findComponentEntry(curDirInTree, component);
                 if (!entry) {
-                    entry = new module.exports.DocumentTreeEntry({
-                        type: "dir",
-                        entryname: component.component,
-                        children: [],
-                        dirpath: curDirInTree.dirpath
-                                ? path.join(curDirInTree.dirpath, component.component)
-                                : component.component
-                    });
+                    entry = new module.exports.DocumentTreeEntry();
+                    entry.type = "dir";
+                    entry.entryname = component.component;
+                    entry.children = [];
+                    entry.dirpath = curDirInTree && curDirInTree.dirpath
+                            ? path.join(curDirInTree.dirpath, component.component)
+                            : component.component;
                     curDirInTree.addChild(entry);
                 }
                 curDirInTree = entry;
@@ -452,15 +466,14 @@ exports.documentSearch = co.wrap(function* (config, options) {
     // We first flatten it so it's more useful
     // console.log(`documentSearch before filtering ${util.inspect(documents)}`);
     documents = documents.map(doc => {
-        return new exports.Document({
-            basedir: doc.basedir,
-            docpath: doc.result.fpath,
-            fullpath: doc.fullpath,
-            renderer: doc.result.renderer,
-            stat: doc.result.stat,
-            renderpath: doc.result.filepath,
-            metadata: doc.result.metadata
-        });
+        let ret = new exports.Document();
+        ret.basedir = doc.basedir;
+        ret.docpath = doc.result.fpath;
+        ret.fullpath = doc.fullpath;
+        ret.stat = doc.result.stat;
+        ret.renderer = doc.result.renderer;
+        ret.metadata = doc.result.metadata;
+        return ret;
     });
 
     // Then filter the list, potentially removing some items if they
@@ -515,7 +528,13 @@ exports.documentSearch = co.wrap(function* (config, options) {
         else return 1;
     });
 
-    // console.log(`documentSearch final ${util.inspect(documents)}`);
+    /* console.log(`documentSearch final ${util.inspect(documents.map(doc => {
+        return {
+            basedir: doc.basedir, 
+            docpath: doc.docpath,
+            stat: doc.stat
+        }
+    }))}`); */
     return documents;
 
 });
