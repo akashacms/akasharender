@@ -45,8 +45,24 @@ const _config_configdir = Symbol('configdir');
  * const config = new akasha.Configuration();
  */
 module.exports = class Configuration {
-    constructor() {
-
+    constructor(modulepath) {
+        // Provide a mechanism to easily specify configDir
+        // The path in configDir must be the path of the configuration file.
+        // There doesn't appear to be a way to determine that from here.
+        //
+        // For example module.parent.filename in this case points
+        // to akasharender/index.js because that's the module which
+        // loaded this module.
+        //
+        // One could imagine a different initialization pattern.  Instead
+        // of akasharender requiring Configuration.js, that file could be
+        // required by the configuration file.  In such a case
+        // module.parent.filename WOULD indicate the filename for the
+        // configuration file, and would be a source of setting
+        // the configDir value.
+        if (typeof modulepath !== 'undefined' && modulepath !== null) {
+            this.configDir = path.dirname(modulepath);
+        }
     }
 
     /**
