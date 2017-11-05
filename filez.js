@@ -230,6 +230,19 @@ exports.findRendersTo = function(dirs, rendersTo) {
     });
 };
 
+exports.createNewFile = co.wrap(function* (dir, fpath, text) {
+    try {
+        // yield fs.ensureDir(dir);
+        var renderToFile = path.join(dir, fpath);
+        yield fs.ensureDir(path.dirname(renderToFile));
+        var fd = yield fs.open(renderToFile, 'wx');
+        yield fs.write(fd, text, 0, 'utf8');
+        yield fs.close(fd);
+    } catch (e) {
+        throw new Error(`createNewFile FAIL because ${e.stack}`)
+    }
+});
+
 exports.readFile = function(dir, fpath) {
     return Promise.reject(new Error("readFile deprecated - use fs.readFileAsync instead"));
     var readFpath = path.join(dir, fpath);
@@ -237,8 +250,12 @@ exports.readFile = function(dir, fpath) {
 };
 
 exports.writeFile = co.wrap(function* (dir, fpath, text) {
-    yield fs.ensureDir(dir);
-    var renderToFile = path.join(dir, fpath);
-    log(`filez.writeFile ${dir} ${fpath} ==> ${renderToFile}`);
-    yield fs.writeFile(renderToFile, text, 'utf8');
+    try {
+        var renderToFile = path.join(dir, fpath);
+        yield fs.ensureDir(path.dirname(renderToFile));
+        log(`filez.writeFile ${dir} ${fpath} ==> ${renderToFile}`);
+        yield fs.writeFile(renderToFile, text, 'utf8');
+    } catch (e) {
+        throw new Error(`writeFile FAIL because ${e.stack}`);
+    }
 });
