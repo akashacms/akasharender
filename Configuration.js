@@ -81,33 +81,47 @@ module.exports = class Configuration {
      */
     prepare() {
 
+        const CONFIG = this;
+
+        const configDirPath = function(dirnm) {
+            let configPath = dirnm;
+            if (typeof CONFIG.configDir !== 'undefined' && CONFIG.configDir != null) {
+                configPath = path.join(CONFIG.configDir, dirnm);
+            }
+            return configPath;
+        }
+
         var stat;
+        const assetsDirsPath = configDirPath('assets');
         if (!this[_config_assetsDirs]) {
-            if (fs.existsSync('assets') && (stat = fs.statSync('assets'))) {
+            if (fs.existsSync(assetsDirsPath) && (stat = fs.statSync(assetsDirsPath))) {
                 if (stat.isDirectory()) {
                     this.addAssetsDir('assets');
                 }
             }
         }
 
+        const layoutsDirsPath = configDirPath('layouts');
         if (!this[_config_layoutDirs]) {
-            if (fs.existsSync('layouts') && (stat = fs.statSync('layouts'))) {
+            if (fs.existsSync(layoutsDirsPath) && (stat = fs.statSync(layoutsDirsPath))) {
                 if (stat.isDirectory()) {
                     this.addLayoutsDir('layouts');
                 }
             }
         }
 
+        const partialDirsPath = configDirPath('partials');
         if (!mahaPartial.configuration.partialDirs) {
-            if (fs.existsSync('partials') && (stat = fs.statSync('partials'))) {
+            if (fs.existsSync(partialDirsPath) && (stat = fs.statSync(partialDirsPath))) {
                 if (stat.isDirectory()) {
                     this.addPartialsDir('partials');
                 }
             }
         }
 
+        const documentDirsPath = configDirPath('documents');
         if (!this[_config_documentDirs]) {
-            if (fs.existsSync('documents') && (stat = fs.statSync('documents'))) {
+            if (fs.existsSync(documentDirsPath) && (stat = fs.statSync(documentDirsPath))) {
                 if (stat.isDirectory()) {
                     this.addDocumentsDir('documents');
                 } else {
@@ -120,15 +134,17 @@ module.exports = class Configuration {
 
         if (!this[_config_mahafuncs]) { this[_config_mahafuncs] = []; }
 
+        const renderToPath = configDirPath('out');
         if (!this[_config_renderTo])  {
-            if (fs.existsSync('out') && (stat = fs.statSync('out'))) {
+            if (fs.existsSync(renderToPath)
+             && (stat = fs.statSync(renderToPath))) {
                 if (stat.isDirectory()) {
                     this.setRenderDestination('out');
                 } else {
                     throw new Error("'out' is not a directory");
                 }
             } else {
-                fs.mkdirsSync('out');
+                fs.mkdirsSync(renderToPath);
                 this.setRenderDestination('out');
             }
         } else if (this[_config_renderTo] && !fs.existsSync(this[_config_renderTo])) {
