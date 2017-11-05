@@ -19,6 +19,7 @@ const oembetter = require('oembetter')();
 const RSS    = require('rss');
 const globfs = require('globfs');
 const mahabhuta = require('mahabhuta');
+exports.mahabhuta = mahabhuta;
 const mahaPartial = require('mahabhuta/maha/partial');
 const documents = require('./documents');
 
@@ -70,6 +71,7 @@ exports.findRendersTo = filez.findRendersTo;
  * @param fpath
  */
 exports.readFile = filez.readFile;
+exports.createNewFile = filez.createNewFile;
 
 exports.Document = documents.Document;
 exports.HTMLDocument = documents.HTMLDocument;
