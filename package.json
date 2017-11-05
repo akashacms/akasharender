@@ -1,6 +1,6 @@
 {
   "name": "akasharender",
-  "version": "0.6.12",
+  "version": "0.6.13",
   "description": "Rendering support for generating static HTML websites or EPUB eBooks",
   "keywords": [
     "content management system",
@@ -30,6 +30,7 @@
     "akasharender": "bin/cli.js"
   },
   "dependencies": {
+    "mahabhuta": ">=0.6",
     "async": "^1.5.2",
     "co": "*",
     "cmnd": "0.0.6",
@@ -49,8 +50,8 @@
     "dox": "^0.8.1"
   },
   "scripts": {
-      "gendocs": "cd guide && npm run build",
-      "gendocssetup": "cd guide && npm install"
+    "gendocs": "cd guide && npm run build",
+    "gendocssetup": "cd guide && npm install"
   },
   "author": {
     "name": "David Herron",
