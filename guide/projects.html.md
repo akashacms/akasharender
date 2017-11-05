@@ -40,8 +40,7 @@ A minimal starting point for the dependencies is:
 
 ```
 "dependencies": {
-    "mahabhuta": ">=0.6.1",
-    "akasharender": ">=0.5.7",
+    "akasharender": ">=0.6",
     "debug": "^2.2.0",
     "globfs": "*",
     "oembetter": "*",

@@ -8,10 +8,10 @@ const url       = require('url');
 const path      = require('path');
 const util      = require('util');
 const matter    = require('gray-matter');
+const akasha    = require('./index');
 const mahabhuta = require('mahabhuta');
 const filez     = require('./filez');
 const cache     = require('./caching');
-const akasha    = require('./index');
 const globfs    = require('globfs');
 
 const log   = require('debug')('akasha:HTMLRenderer');
@@ -27,6 +27,16 @@ module.exports = class HTMLRenderer extends Renderer {
      * down to HTML text.
      */
     maharun(rendered, metadata, mahafuncs) {
+        if (typeof rendered === 'undefined' || rendered === null) {
+            throw new Error('no rendered provided');
+        }
+        if (typeof metadata === 'undefined' || metadata === null) {
+            throw new Error('no metadata provided');
+        }
+        if (typeof mahabhuta === 'undefined' || mahabhuta === null) {
+            throw new Error('no mahabhuta provided');
+        }
+        
         if (metadata.config.mahabhutaConfig) mahabhuta.config(metadata.config.mahabhutaConfig);
         return mahabhuta.processAsync(rendered, metadata, mahafuncs);
     }

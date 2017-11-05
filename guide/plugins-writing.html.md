@@ -39,7 +39,7 @@ const util  = require('util');
 const url   = require('url');
 const co    = require('co');
 const akasha = require('akasharender');
-const mahabhuta = require('mahabhuta');
+const mahabhuta = akasha.mahabhuta;
 
 const pluginName = "akashacms-base";
 
