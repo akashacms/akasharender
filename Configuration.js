@@ -188,9 +188,9 @@ module.exports = class Configuration {
         // If we have a configDir, and it's a relative directory, make it
         // relative to the configDir
         if (this.configDir != null) {
-            if (typeof dir === 'string' && ! dir.startsWith("/")) {
+            if (typeof dir === 'string' && !path.isAbsolute(dir)) {
                 dir = path.join(this.configDir, dir);
-            } else if (typeof dir === 'object' && ! dir.src.startsWith("/")) {
+            } else if (typeof dir === 'object' && !path.isAbsolute(dir.src)) {
                 dir.src = path.join(this.configDir, dir.src);
             }
         }
@@ -225,7 +225,7 @@ module.exports = class Configuration {
         // If we have a configDir, and it's a relative directory, make it
         // relative to the configDir
         if (this.configDir != null) {
-            if (typeof dir === 'string' && ! dir.startsWith("/")) {
+            if (typeof dir === 'string' && !path.isAbsolute(dir)) {
                 dir = path.join(this.configDir, dir);
             }
         }
@@ -245,7 +245,7 @@ module.exports = class Configuration {
         // If we have a configDir, and it's a relative directory, make it
         // relative to the configDir
         if (this.configDir != null) {
-            if (typeof dir === 'string' && ! dir.startsWith("/")) {
+            if (typeof dir === 'string' && !path.isAbsolute(dir)) {
                 dir = path.join(this.configDir, dir);
             }
         }
@@ -265,9 +265,9 @@ module.exports = class Configuration {
         // If we have a configDir, and it's a relative directory, make it
         // relative to the configDir
         if (this.configDir != null) {
-            if (typeof dir === 'string' && ! dir.startsWith("/")) {
+            if (typeof dir === 'string' && !path.isAbsolute(dir)) {
                 dir = path.join(this.configDir, dir);
-            } else if (typeof dir === 'object' && ! dir.src.startsWith("/")) {
+            } else if (typeof dir === 'object' && !path.isAbsolute(dir.src)) {
                 dir.src = path.join(this.configDir, dir.src);
             }
         }
@@ -299,7 +299,7 @@ module.exports = class Configuration {
         // If we have a configDir, and it's a relative directory, make it
         // relative to the configDir
         if (this.configDir != null) {
-            if (typeof dir === 'string' && ! dir.startsWith("/")) {
+            if (typeof dir === 'string' && !path.isAbsolute(dir)) {
                 dir = path.join(this.configDir, dir);
             }
         }

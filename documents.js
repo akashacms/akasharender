@@ -264,9 +264,12 @@ exports.DocumentTreeEntry = class DocumentTreeEntry extends module.exports.Docum
  *
  */
 var componentizeFileName = module.exports.componentizeFileName = function(filename) {
-	var ret = [];
+    var ret = [];
+    const parsed = path.parse(filename);
 	ret.push({ type: 'file', component: path.basename(filename) });
-	for (filename = path.dirname(filename); filename != '.' && filename != '/'; filename = path.dirname(filename)) {
+    for (filename = path.dirname(filename);
+     filename !== '.' && filename !== parsed.root;
+     filename = path.dirname(filename)) {
 		ret.unshift({ type: 'dir', component: path.basename(filename), entries: [] });
 	}
 	return ret;

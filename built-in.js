@@ -329,7 +329,7 @@ class AnchorCleanup extends mahabhuta.Munger {
                 if (uHref.protocol || uHref.slashes) return "ok";
                 if (!uHref.pathname) return "ok";
 
-                if (! uHref.pathname.match(/^\//)) {
+                if (!path.isAbsolute(uHref.pathname)) {
                     uHref.pathname = path.join(path.dirname(metadata.document.path), uHref.pathname);
                     // console.log(`***** AnchorCleanup FIXED href to ${uHref.pathname}`);
                 }

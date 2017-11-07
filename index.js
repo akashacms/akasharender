@@ -140,13 +140,14 @@ exports.partialSync = function(config, fname, metadata) {
 exports.indexChain = co.wrap(function* (config, fname) {
 
     var ret = [];
+    const parsed = path.parse(fname);
 
     var findParents = function(config, fileName) {
         // var newFileName;
         var parentDir;
         // console.log(`findParents ${fileName}`);
         if (path.dirname(fileName) === '.'
-         || path.dirname(fileName) === '/') {
+         || path.dirname(fileName) === parsed.root) {
             return Promise.resolve();
         } else {
             if (path.basename(fileName) === "index.html") {
