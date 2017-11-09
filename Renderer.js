@@ -1,7 +1,7 @@
 'use strict';
 
 const filez = require('./filez');
-const fs    = require('fs-extra-promise');
+const fs    = require('fs-extra');
 const path  = require('path');
 
 const log   = require('debug')('akasha:Renderer');
@@ -64,7 +64,7 @@ module.exports = class Renderer {
     }
 
     readFile(basedir, fpath) {
-        return fs.readFileAsync(path.join(basedir, fpath), 'utf8');
+        return fs.readFile(path.join(basedir, fpath), 'utf8');
     }
 
     writeFile(renderTo, fpath, text) {

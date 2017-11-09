@@ -6,7 +6,7 @@
 
 'use strict';
 
-const fs     = require('fs-extra-promise');
+const fs     = require('fs-extra');
 const globfs = require('globfs');
 const util   = require('util');
 const path   = require('path');
