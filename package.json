@@ -31,7 +31,7 @@
   },
   "dependencies": {
     "mahabhuta": ">=0.6",
-    "async": "^1.5.2",
+    "async": "^2.6.0",
     "co": "*",
     "cmnd": "0.0.6",
     "debug": "^2.2.0",
