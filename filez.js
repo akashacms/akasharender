@@ -16,7 +16,7 @@ exports.copyAssets = function(assetdirs, renderTo) {
     return globfs.copyAsync(assetdirs, '**/*', renderTo);
 };
 
-exports.findAsset = co.wrap(function* (assetdirs, filename) {
+exports.findAsset = async function(assetdirs, filename) {
     var cached = cache.get("filez-findAsset", filename);
     if (cached) {
         return Promise.resolve(cached);
@@ -33,8 +33,8 @@ exports.findAsset = co.wrap(function* (assetdirs, filename) {
         }
         var fn2find = path.join(theAssetdir, filename);
         try {
-            if (yield !fs.exists(fn2find)) continue;
-            var stats = yield fs.stat(fn2find);
+            if (await !fs.exists(fn2find)) continue;
+            var stats = await fs.stat(fn2find);
             if (!stats) continue;
         } catch (e) {
             if (e.code !== 'ENOENT') continue;
@@ -49,7 +49,7 @@ exports.findAsset = co.wrap(function* (assetdirs, filename) {
     // console.log(`findAsset found ${util.inspect(results)} for ${util.inspect(assetdirs)} ${filename}`);
     cache.set("filez-findAsset", filename, results);
     return results;
-});
+};
 
 exports.findSync = function(dirs, fileName) {
     throw new Error('findSync deprecated - use globfs.findSync');
@@ -67,7 +67,7 @@ exports.findSync = function(dirs, fileName) {
     return undefined;
 };
 
-exports.find = co.wrap(function* (dirs, fileName) {
+exports.find = async function(dirs, fileName) {
     throw new Error('find deprecated - use globfs.findAsync');
     if (!dirs) throw new Error("Must supply directories to search");
     if (!fileName) throw new Error("Must supply a fileName");
@@ -79,7 +79,7 @@ exports.find = co.wrap(function* (dirs, fileName) {
     for (var dir of dirs) {
         var stats = undefined;
         try {
-            stats = yield fs.stat(path.join(dir, fileName));
+            stats = await fs.stat(path.join(dir, fileName));
         } catch (e) {
             if (e.code !== 'ENOENT') throw e;
             stats = undefined;
@@ -97,7 +97,7 @@ exports.find = co.wrap(function* (dirs, fileName) {
         log(`filez.find FAIL ${util.inspect(dirs)} ${fileName}`);
         return undefined;
     }
-});
+};
 
 exports.findRendersTo = function(dirs, rendersTo) {
 
@@ -230,18 +230,18 @@ exports.findRendersTo = function(dirs, rendersTo) {
     });
 };
 
-exports.createNewFile = co.wrap(function* (dir, fpath, text) {
+exports.createNewFile = async function(dir, fpath, text) {
     try {
-        // yield fs.ensureDir(dir);
+        // await fs.ensureDir(dir);
         var renderToFile = path.join(dir, fpath);
-        yield fs.ensureDir(path.dirname(renderToFile));
-        var fd = yield fs.open(renderToFile, 'wx');
-        yield fs.write(fd, text, 0, 'utf8');
-        yield fs.close(fd);
+        await fs.ensureDir(path.dirname(renderToFile));
+        var fd = await fs.open(renderToFile, 'wx');
+        await fs.write(fd, text, 0, 'utf8');
+        await fs.close(fd);
     } catch (e) {
         throw new Error(`createNewFile FAIL because ${e.stack}`)
     }
-});
+};
 
 exports.readFile = function(dir, fpath) {
     return Promise.reject(new Error("readFile deprecated - use fs.readFileAsync instead"));
@@ -249,13 +249,13 @@ exports.readFile = function(dir, fpath) {
     return fs.readFile(readFpath, 'utf8');
 };
 
-exports.writeFile = co.wrap(function* (dir, fpath, text) {
+exports.writeFile = async function(dir, fpath, text) {
     try {
         var renderToFile = path.join(dir, fpath);
-        yield fs.ensureDir(path.dirname(renderToFile));
+        await fs.ensureDir(path.dirname(renderToFile));
         log(`filez.writeFile ${dir} ${fpath} ==> ${renderToFile}`);
-        yield fs.writeFile(renderToFile, text, 'utf8');
+        await fs.writeFile(renderToFile, text, 'utf8');
     } catch (e) {
         throw new Error(`writeFile FAIL because ${e.stack}`);
     }
-});
+};

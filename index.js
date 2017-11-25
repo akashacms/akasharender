@@ -79,9 +79,9 @@ exports.documentTree = documents.documentTree;
 exports.documentSearch = documents.documentSearch;
 exports.readDocument   = documents.readDocument;
 
-exports.partial = co.wrap(function* (config, fname, metadata) {
+exports.partial = async function(config, fname, metadata) {
 
-    var partialFound = yield globfs.findAsync(config.partialsDirs, fname);
+    var partialFound = await globfs.findAsync(config.partialsDirs, fname);
     if (!partialFound) throw new Error(`No partial found for ${fname} in ${util.inspect(config.partialsDirs)}`);
     // Pick the first partial found
     partialFound = partialFound[0];
@@ -90,7 +90,7 @@ exports.partial = co.wrap(function* (config, fname, metadata) {
 
     var partialFname = path.join(partialFound.basedir, partialFound.path);
     // console.log(`partial ${util.inspect(partialFname)}`);
-    var stats = yield fs.stat(partialFname);
+    var stats = await fs.stat(partialFname);
     if (!stats.isFile()) {
         throw new Error(`renderPartial non-file found for ${fname} - ${partialFname}`);
     }
@@ -98,7 +98,7 @@ exports.partial = co.wrap(function* (config, fname, metadata) {
     var renderer = render.findRendererPath(partialFname);
     if (renderer) {
         // console.log(`partial about to render ${util.inspect(partialFname)}`);
-        var partialText = yield fs.readFile(partialFname, 'utf8');
+        var partialText = await fs.readFile(partialFname, 'utf8');
         return renderer.render(partialText, metadata);
     } else if (partialFname.endsWith('.html') || partialFname.endsWith('.xhtml')) {
         // console.log(`partial reading file ${partialFname}`);
@@ -108,7 +108,7 @@ exports.partial = co.wrap(function* (config, fname, metadata) {
     }
     // This has been moved into Mahabhuta
     // return mahaPartial.doPartialAsync(partial, attrs);
-});
+};
 
 exports.partialSync = function(config, fname, metadata) {
 
@@ -137,7 +137,7 @@ exports.partialSync = function(config, fname, metadata) {
     // return mahaPartial.doPartialSync(fname, metadata);
 };
 
-exports.indexChain = co.wrap(function* (config, fname) {
+exports.indexChain = async function(config, fname) {
 
     var ret = [];
     const parsed = path.parse(fname);
@@ -172,16 +172,16 @@ exports.indexChain = co.wrap(function* (config, fname) {
         fname = renderer.filePath(fname);
     }
 
-    var found = yield filez.findRendersTo(config.documentDirs, fname);
+    var found = await filez.findRendersTo(config.documentDirs, fname);
     if (typeof found === 'undefined') {
         throw new Error(`Did not find directory for ${fname}`);
     }
     ret.push({ foundDir: found.foundDir, foundPath: found.foundPath, filename: fname });
-    yield findParents(config, fname);
+    await findParents(config, fname);
 
     // console.log(`indexChain FINI ${util.inspect(ret.reverse)}`);
     return ret.reverse();
-});
+};
 
 /**
  * Manipulate the rel= attributes on a link returned from Mahabhuta.
@@ -206,7 +206,7 @@ exports.linkRelSetAttr = function($link, attr, doattr) {
 
 ///////////////// RSS Feed Generation
 
-exports.generateRSS = co.wrap(function* (config, configrss, feedData, items, renderTo) {
+exports.generateRSS = async function(config, configrss, feedData, items, renderTo) {
 
     // Supposedly it's required to use hasOwnProperty
     // http://stackoverflow.com/questions/728360/how-do-i-correctly-clone-a-javascript-object#728694
@@ -243,10 +243,10 @@ exports.generateRSS = co.wrap(function* (config, configrss, feedData, items, ren
     var xml = rssfeed.xml();
     var renderOut = path.join(config.renderDestination, renderTo);
 
-    yield fs.mkdirs(path.dirname(renderOut))
-    yield fs.writeFile(renderOut, xml, { encoding: 'utf8' });
+    await fs.mkdirs(path.dirname(renderOut))
+    await fs.writeFile(renderOut, xml, { encoding: 'utf8' });
 
-});
+};
 
 // Consider making an external plugin
 // https://www.npmjs.com/package/oembed-all

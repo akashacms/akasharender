@@ -65,18 +65,18 @@ exports.registerRenderer(require('./render-json'));
  * @param renderToPlus String further pathname addition for the rendering.  The final pathname is renderTo/renderToPlus/flath
  * @param renderBaseMetadata Object The metadata object to start with.  Typically this is an empty object, but sometimes we'll have some metadata to start with.
  */
-exports.renderDocument = co.wrap(function* (config, basedir, fpath, renderTo, renderToPlus, renderBaseMetadata) {
+exports.renderDocument = async function(config, basedir, fpath, renderTo, renderToPlus, renderBaseMetadata) {
 
     var docPathname = path.join(basedir, fpath);
     var renderToFpath = path.join(renderTo, renderToPlus, fpath);
 
     // console.log(`renderDocument basedir ${basedir} fpath ${fpath} docPathname ${docPathname} renderToFpath ${renderToFpath}`);
-    var stats = yield fs.stat(docPathname);
+    var stats = await fs.stat(docPathname);
 
     if (stats && stats.isFile()) {
         var renderToDir = path.dirname(renderToFpath);
         log(`renderDocument ${basedir} ${fpath} ${renderToDir} ${renderToFpath}`);
-        yield fs.ensureDir(renderToDir);
+        await fs.ensureDir(renderToDir);
     } else { return `SKIP DIRECTORY ${docPathname}`; }
 
     var renderer = exports.findRendererPath(fpath);
@@ -85,7 +85,7 @@ exports.renderDocument = co.wrap(function* (config, basedir, fpath, renderTo, re
         renderToFpath = path.join(renderTo, renderToPlus, renderer.filePath(fpath));
         // console.log(`ABOUT TO RENDER ${renderer.name} ${docPathname} ==> ${renderToFpath}`);
         try {
-            yield renderer.renderToFile(basedir, fpath, path.join(renderTo, renderToPlus), renderToPlus, renderBaseMetadata, config);
+            await renderer.renderToFile(basedir, fpath, path.join(renderTo, renderToPlus), renderToPlus, renderBaseMetadata, config);
             // console.log(`RENDERED ${renderer.name} ${docPathname} ==> ${renderToFpath}`);
             return `${renderer.name} ${docPathname} ==> ${renderToFpath}`;
         } catch (err) {
@@ -95,7 +95,7 @@ exports.renderDocument = co.wrap(function* (config, basedir, fpath, renderTo, re
     } else {
         // console.log(`COPYING ${docPathname} ==> ${renderToFpath}`);
         try {
-            yield fs.copy(docPathname, renderToFpath);
+            await fs.copy(docPathname, renderToFpath);
             // console.log(`COPIED ${docPathname} ==> ${renderToFpath}`);
             return `COPY ${docPathname} ==> ${renderToFpath}`;
         } catch(err) {
@@ -103,17 +103,17 @@ exports.renderDocument = co.wrap(function* (config, basedir, fpath, renderTo, re
             throw new Error(`in copy branch for ${fpath} error=${err.stack ? err.stack : err}`);
         }
     }
-});
+};
 
 //exports.render = function(docdirs, layoutDirs, partialDirs, mahafuncs, renderTo) {
-exports.render = co.wrap(function* (config) {
+exports.render = async function(config) {
 
     // util.log(util.inspect(config.mahafuncs));
     // log('render');
     // log(`render ${util.inspect(config.documentDirs)}`);
 
     try {
-        var renderResults = yield Promise.all(config.documentDirs.map(docdir => {
+        var renderResults = await Promise.all(config.documentDirs.map(docdir => {
             var renderToPlus = "";
             var renderFrom = docdir;
             var renderIgnore;
@@ -160,7 +160,7 @@ exports.render = co.wrap(function* (config) {
         }));
 
         // console.log('CALLING config.hookSiteRendered');
-        var hookResults = yield config.hookSiteRendered();
+        var hookResults = await config.hookSiteRendered();
 
         // The array resulting from the above has two levels, when we
         // want to return one level.  The two levels are due to globfs.operate
@@ -176,4 +176,4 @@ exports.render = co.wrap(function* (config) {
         console.error(`render FAIL because of ${e.stack}`);
         throw e;
     }
-});
+};

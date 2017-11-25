@@ -134,71 +134,65 @@ exports.Document = class Document {
      * Update the Document, and save the new contents to disk.
      * @param {*} content 
      */
-    updateSave(config, content) {
+    async updateSave(config, content) {
         var document = this;
         // console.log(`updateSave ${util.inspect(document)}`);
-        return co(function* () {
-            let writeTo = path.join(document.basedir, document.docpath);
-            // console.log(`writeFile writeTo ${writeTo}`);
-            yield fs.writeFile(writeTo, content, 'utf8');
-            document.stat = yield fs.stat(writeTo);
-            return document.readDocumentContent(config);
-        });
+        let writeTo = path.join(document.basedir, document.docpath);
+        // console.log(`writeFile writeTo ${writeTo}`);
+        await fs.writeFile(writeTo, content, 'utf8');
+        document.stat = await fs.stat(writeTo);
+        return document.readDocumentContent(config);
     }
 
-    readDocumentContent(config) {
+    async readDocumentContent(config) {
         var document = this;
-        return co(function* () {
-            // console.log(`readDocumentContent ${document.basedir} ${document.dirMountedOn} docpath ${document.docpath} fullpath ${document.fullpath} renderer ${document.renderer} renderpath ${document.renderpath}`);
-            const readFrom = path.join(
-                                document.basedir,
-                                // document.dirMountedOn,
-                                document.docpath);
-            // console.log(`readDocumentContent read from ${readFrom}`);
-            document.stat = yield fs.stat(readFrom);
-            const content = yield fs.readFile(readFrom, 'utf8');
-            if (document.renderer && document.renderer.frontmatter) {
-                const matter = document.renderer.parseFrontmatter(content);
-                // console.log(`readDocumentContent got frontmatter ${util.inspect(matter)}`);
-                document.data = matter.orig;
-                document.metadata = yield document.renderer.initMetadata(config, 
-                    document.basedir, document.docpath, document.dirMountedOn,
-                    document.mountedDirMetadatal, matter.data);
-                    document.text = matter.content;
+        // console.log(`readDocumentContent ${document.basedir} ${document.dirMountedOn} docpath ${document.docpath} fullpath ${document.fullpath} renderer ${document.renderer} renderpath ${document.renderpath}`);
+        const readFrom = path.join(
+                            document.basedir,
+                            // document.dirMountedOn,
+                            document.docpath);
+        // console.log(`readDocumentContent read from ${readFrom}`);
+        document.stat = await fs.stat(readFrom);
+        const content = await fs.readFile(readFrom, 'utf8');
+        if (document.renderer && document.renderer.frontmatter) {
+            const matter = document.renderer.parseFrontmatter(content);
+            // console.log(`readDocumentContent got frontmatter ${util.inspect(matter)}`);
+            document.data = matter.orig;
+            document.metadata = await document.renderer.initMetadata(config, 
+                document.basedir, document.docpath, document.dirMountedOn,
+                document.mountedDirMetadatal, matter.data);
                 document.text = matter.content;
-            } else {
-                document.data = content;
-            }
-            return document;
-        });
+            document.text = matter.content;
+        } else {
+            document.data = content;
+        }
+        return document;
         // .catch(err => { console.error('readDocumentContent '+ err.stack); throw err; });
     }
 
-    renderToFile(config) {
+    async renderToFile(config) {
         var document = this;
-        return co(function * () {
-            // console.log(`before render `);
-            var docrendered = yield document.renderer.render(
-                document.text, document.metadata
+        // console.log(`before render `);
+        var docrendered = await document.renderer.render(
+            document.text, document.metadata
+        );
+        // console.log(`before maharun `);
+        if (document.renderer.doMahabhuta(document.fullpath)) {
+            docrendered = await document.renderer.maharun(
+                docrendered, document.metadata, config.mahafuncs
             );
-            // console.log(`before maharun `);
-            if (document.renderer.doMahabhuta(document.fullpath)) {
-                docrendered = yield document.renderer.maharun(
-                    docrendered, document.metadata, config.mahafuncs
-                );
-            }
-            // console.log(`before renderForLayout `);
-            docrendered = yield document.renderer.renderForLayout(
-                docrendered, document.metadata, config
-            );
+        }
+        // console.log(`before renderForLayout `);
+        docrendered = await document.renderer.renderForLayout(
+            docrendered, document.metadata, config
+        );
 
-            // console.log(`renderToFile ${path.join(config.renderTo, document.dirMountedOn)} ${document.renderpath}`)
-            yield filez.writeFile(
-                path.join(config.renderTo, document.dirMountedOn),
-                document.renderpath,
-                docrendered
-            );
-        });
+        // console.log(`renderToFile ${path.join(config.renderTo, document.dirMountedOn)} ${document.renderpath}`)
+        await filez.writeFile(
+            path.join(config.renderTo, document.dirMountedOn),
+            document.renderpath,
+            docrendered
+        );
     }
 };
 
@@ -421,14 +415,14 @@ exports.documentTree = function(config, documents) {
 };
 
 
-exports.documentSearch = co.wrap(function* (config, options) {
+exports.documentSearch = async function(config, options) {
 
     // console.log(`documentSearch ${util.inspect(config.documentDirs)} ${util.inspect(options)}`);
 
     // Find all the documents, under rootPath if specified
     // Build up a useful object for each
 
-    var documents = yield globfs.operateAsync(
+    var documents = await globfs.operateAsync(
     config.documentDirs.map(docdir => {
         // This handles complex documentDirs entries
         return typeof docdir === 'string' ? docdir : docdir.src;
@@ -540,14 +534,14 @@ exports.documentSearch = co.wrap(function* (config, options) {
     }))}`); */
     return documents;
 
-});
+};
 
 /**
  * Find the Document by its path within one of the DocumentDirs, then construct a Document object.
  */
-exports.readDocument = co.wrap(function* (config, documentPath) {
+exports.readDocument = async function(config, documentPath) {
     var doc = new exports.Document();
-    var found = yield filez.findRendersTo(config.documentDirs, documentPath)
+    var found = await filez.findRendersTo(config.documentDirs, documentPath)
     // console.log('readDocument '+ documentPath +' '+ util.inspect(found));
     if (!found) {
         throw new Error(`Did not find document for ${util.inspect(documentPath)} in ${util.inspect(config.documentDirs)}`);
@@ -562,17 +556,17 @@ exports.readDocument = co.wrap(function* (config, documentPath) {
     // doc.renderpath = found.renderer ? found.renderer.filePath(found.foundPathWithinDir) : undefined;
 
     // console.log(`readDocument before readDocumentContent ${doc.basedir} docpath ${doc.docpath} fullpath ${doc.fullpath} renderer ${doc.renderer} renderpath ${doc.renderpath}`);
-    yield doc.readDocumentContent(config);
+    await doc.readDocumentContent(config);
 
-    /* doc.stat = yield fs.stat(path.join(found.foundDir, found.foundPathWithinDir));
+    /* doc.stat = await fs.stat(path.join(found.foundDir, found.foundPathWithinDir));
 
     // console.log(`readDocument #2 basedir ${doc.basedir} docpath ${doc.docpath} fullpath ${doc.fullpath} renderer ${doc.renderer} renderpath ${doc.renderpath}`);
     if (doc.renderer && doc.renderer.frontmatter) {
         // console.log(`readDocument getting frontmatter ${found.foundDir} / ${found.foundPathWithinDir}`);
-        var matter = yield doc.renderer.frontmatter(found.foundDir, found.foundPathWithinDir);
+        var matter = await doc.renderer.frontmatter(found.foundDir, found.foundPathWithinDir);
         // console.log(`readDocument frontmatter ${util.inspect(matter)}`);
         doc.data = matter.orig;
-        doc.metadata = yield doc.renderer.initMetadata(config,
+        doc.metadata = await doc.renderer.initMetadata(config,
                 found.foundDir, found.foundPathWithinDir, found.foundMountedOn,
                 found.foundBaseMetadata, matter.data);
         doc.text = matter.content;
@@ -580,4 +574,4 @@ exports.readDocument = co.wrap(function* (config, documentPath) {
 
     // console.log(`readDocument #3 data ${doc.data} metadata ${doc.metadata}`);
     return doc;
-});
+};
