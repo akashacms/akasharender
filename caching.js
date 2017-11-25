@@ -2,7 +2,7 @@
 'use strict';
 
 const FlatCache = require('flat-cache');
-var cache = FlatCache.load('akasharender');
+const cache = FlatCache.load('akasharender');
 
 exports.set = function(module, key, val) {
     return cache.setKey(`${module}-${key}`, val);
@@ -19,6 +19,38 @@ exports.del = function(module, key) {
 exports.flushAll = function() {
     return cache.clearAll();
 };
+
+var persistentCache;
+
+exports.persistenceDir = function(dir) {
+    if (persistentCache) return;
+    persistentCache = FlatCache.load('akasharender-persistent', dir);
+};
+
+exports.persist = function(module, key, val) {
+    return !persistentCache
+        ? exports.set(module, key, val)
+        : persistentCache.setKey(`${module}-${key}`, val);
+};
+
+exports.retrieve = function(module, key, val) {
+    return !persistentCache
+        ? exports.get(module, key)
+        : persistentCache.getKey(`${module}-${key}`);
+};
+
+exports.forget = function(module, key, val) {
+    return !persistentCache
+        ? exports.del(module, key)
+        : persistentCache.removeKey(`${module}-${key}`);
+};
+
+exports.flushPersistence = function() {
+    return !persistentCache
+        ? exports.flushAll()
+        : persistentCache.clearAll();
+};
+
 
 
 /*
