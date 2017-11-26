@@ -256,7 +256,7 @@ module.exports.mahabhuta.addMahafunc(new Partial()); */
 class AnchorCleanup extends mahabhuta.Munger {
     get selector() { return "html body a"; }
 
-    process($, $link, metadata, dirty) {
+    async process($, $link, metadata, dirty) {
         /*
         try {
             var href     = $link.attr('href');
@@ -320,68 +320,65 @@ class AnchorCleanup extends mahabhuta.Munger {
             return Promise.reject(e);
         }
         */
-        return co(function* () {
-            var href     = $link.attr('href');
-            var linktext = $link.text();
-            // console.log(`AnchorCleanup ${href} ${linktext}`);
-            if (href && href !== '#') {
-                var uHref = url.parse(href, true, true);
-                if (uHref.protocol || uHref.slashes) return "ok";
-                if (!uHref.pathname) return "ok";
+        var href     = $link.attr('href');
+        var linktext = $link.text();
+        // console.log(`AnchorCleanup ${href} ${linktext}`);
+        if (href && href !== '#') {
+            var uHref = url.parse(href, true, true);
+            if (uHref.protocol || uHref.slashes) return "ok";
+            if (!uHref.pathname) return "ok";
 
-                if (!path.isAbsolute(uHref.pathname)) {
-                    uHref.pathname = path.join(path.dirname(metadata.document.path), uHref.pathname);
-                    // console.log(`***** AnchorCleanup FIXED href to ${uHref.pathname}`);
-                }
+            if (!path.isAbsolute(uHref.pathname)) {
+                uHref.pathname = path.join(path.dirname(metadata.document.path), uHref.pathname);
+                // console.log(`***** AnchorCleanup FIXED href to ${uHref.pathname}`);
+            }
 
-                // Look to see if it's an asset file
-                var foundAsset = yield filez.findAsset(metadata.config.assetDirs, uHref.pathname);
-                if (foundAsset && foundAsset.length > 0) {
-                    return "ok";
-                }
-
-                // Ask plugins if the href is okay
-                if (metadata.config.askPluginsLegitLocalHref(uHref.pathname)) {
-                    return "ok";
-                }
-
-                // Does it exist in documents dir?
-                var found = yield filez.findRendersTo(metadata.config.documentDirs, uHref.pathname);
-                // console.log(`AnchorCleanup findRendersTo ${uHref.pathname} ${util.inspect(found)}`);
-                if (!found) {
-                    throw new Error(`Did not find ${href} in ${util.inspect(metadata.config.documentDirs)} in ${metadata.document.path}`);
-                }
-                // If this link has a body, then don't modify it
-                if ((linktext && linktext.length > 0 && linktext !== uHref.pathname)
-                 || ($link.children().length > 0)) {
-                    // console.log(`AnchorCleanup skipping ${uHref.pathname} w/ ${util.inspect(linktext)} children= ${$link.children}`);
-                    return "ok";
-                }
-                // Otherwise look into filling emptiness with title
-                var renderer = akasha.findRendererPath(found.foundFullPath);
-                if (renderer && renderer.metadata) {
-                    try {
-                        var docmeta = yield renderer.metadata(found.foundDir, found.foundPathWithinDir);
-                    } catch(err) {
-                        throw new Error(`Could not retrieve document metadata for ${found.foundDir} ${found.foundPathWithinDir} because ${err}`);
-                    }
-                    // Automatically add a title= attribute
-                    if (!$link.attr('title') && docmeta.title) {
-                        $link.attr('title', docmeta.title);
-                    }
-                    if (docmeta.title) {
-                        $link.text(docmeta.title);
-                    }
-                    // console.log(`AnchorCleanup finished`);
-                    return "ok";
-                } else {
-                    throw new Error(`Could not fill in empty 'a' element in ${metadata.document.path} with href ${href}`);
-                }
-            } else {
+            // Look to see if it's an asset file
+            var foundAsset = await filez.findAsset(metadata.config.assetDirs, uHref.pathname);
+            if (foundAsset && foundAsset.length > 0) {
                 return "ok";
             }
 
-        });
+            // Ask plugins if the href is okay
+            if (metadata.config.askPluginsLegitLocalHref(uHref.pathname)) {
+                return "ok";
+            }
+
+            // Does it exist in documents dir?
+            var found = await filez.findRendersTo(metadata.config.documentDirs, uHref.pathname);
+            // console.log(`AnchorCleanup findRendersTo ${uHref.pathname} ${util.inspect(found)}`);
+            if (!found) {
+                throw new Error(`Did not find ${href} in ${util.inspect(metadata.config.documentDirs)} in ${metadata.document.path}`);
+            }
+            // If this link has a body, then don't modify it
+            if ((linktext && linktext.length > 0 && linktext !== uHref.pathname)
+                || ($link.children().length > 0)) {
+                // console.log(`AnchorCleanup skipping ${uHref.pathname} w/ ${util.inspect(linktext)} children= ${$link.children}`);
+                return "ok";
+            }
+            // Otherwise look into filling emptiness with title
+            var renderer = akasha.findRendererPath(found.foundFullPath);
+            if (renderer && renderer.metadata) {
+                try {
+                    var docmeta = await renderer.metadata(found.foundDir, found.foundPathWithinDir);
+                } catch(err) {
+                    throw new Error(`Could not retrieve document metadata for ${found.foundDir} ${found.foundPathWithinDir} because ${err}`);
+                }
+                // Automatically add a title= attribute
+                if (!$link.attr('title') && docmeta.title) {
+                    $link.attr('title', docmeta.title);
+                }
+                if (docmeta.title) {
+                    $link.text(docmeta.title);
+                }
+                // console.log(`AnchorCleanup finished`);
+                return "ok";
+            } else {
+                throw new Error(`Could not fill in empty 'a' element in ${metadata.document.path} with href ${href}`);
+            }
+        } else {
+            return "ok";
+        }
     }
 }
 module.exports.mahabhuta.addMahafunc(new AnchorCleanup());
