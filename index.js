@@ -13,7 +13,6 @@ const filez  = require('./filez');
 const render = require('./render');
 const util   = require('util');
 const fs     = require('fs-extra');
-const co     = require('co');
 const path   = require('path');
 const oembetter = require('oembetter')();
 const RSS    = require('rss');

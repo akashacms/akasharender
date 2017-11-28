@@ -10,8 +10,6 @@ const fs     = require('fs-extra');
 const globfs = require('globfs');
 const util   = require('util');
 const path   = require('path');
-// const async  = require('async');
-const co     = require('co');
 const akasha = require('./index');
 const render = require('./render');
 const Plugin = require('./Plugin');
@@ -430,17 +428,15 @@ module.exports = class Configuration {
     /**
      * Call the onSiteRendered function of any plugin which has that function.
      */
-    hookSiteRendered() {
+    async hookSiteRendered() {
         // console.log('hookSiteRendered');
         var config = this;
-        return co(function* () {
-            for (let plugin of config.plugins) {
-                if (typeof plugin.onSiteRendered !== 'undefined') {
-                    // console.log(`CALLING plugin ${plugin.name} onSiteRendered`);
-                    yield plugin.onSiteRendered(config);
-                }
+        for (let plugin of config.plugins) {
+            if (typeof plugin.onSiteRendered !== 'undefined') {
+                // console.log(`CALLING plugin ${plugin.name} onSiteRendered`);
+                await plugin.onSiteRendered(config);
             }
-        });
+        }
     }
 
     /**

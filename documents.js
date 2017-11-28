@@ -8,7 +8,6 @@
 
 const path  = require('path');
 const util  = require('util');
-const co    = require('co');
 const filez = require('./filez');
 const fs    = require('fs-extra');
 const globfs = require('globfs');
