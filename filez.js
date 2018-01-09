@@ -147,7 +147,7 @@ exports.findRendersTo = async function(dirs, rendersTo) {
                 } else {
                     // Such a condition won't match the file name .. hence .. skip
                     // console.log(`SKIPPING src ${dir.src} dest ${dir.dest} because ${rendersTo} will not match`);
-                    return next();
+                    continue;
                 }
                 pathMountedOn = dir.dest;
             }
