@@ -1,6 +1,6 @@
 {
   "name": "akasharender",
-  "version": "0.6.17",
+  "version": "0.6.18",
   "description": "Rendering support for generating static HTML websites or EPUB eBooks",
   "keywords": [
     "content management system",
@@ -42,7 +42,8 @@
     "asciidoctor.js": "1.5.6-preview.2",
     "flat-cache": "^1.2.2",
     "oembetter": "*",
-    "rss": "^1.2.1"
+    "rss": "^1.2.1",
+    "cachd": "*"
   },
   "devDependencies": {
     "dox": "^0.8.1"
