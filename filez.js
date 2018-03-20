@@ -119,6 +119,7 @@ exports.findRendersTo = async function(dirs, rendersTo) {
     var foundMountedOn;
     var foundPathWithinDir;
     var foundBaseMetadata;
+    var foundIsDirectory = false;
 
     var rendersToNoSlash = rendersTo.startsWith("/") ? rendersTo.substring(1) : rendersTo;
     var renderToDir = path.dirname(rendersTo);
@@ -210,6 +211,18 @@ exports.findRendersTo = async function(dirs, rendersTo) {
                         // console.log(`filez.findRendersTo ${util.inspect(dirs)} ${rendersTo} found #2 ${foundDir} ${foundPath} ${fname2find} ${foundMountedOn} ${foundPathWithinDir} rendersToWithinDir ${rendersToWithinDir}`);
                     }
                 }
+                if (found) {
+                    let fullpath = path.join(foundDir, foundFullPath);
+                    let stats;
+                    try {
+                        stats = await fs.stat(fullpath);
+                    } catch (err) {
+                        stats = undefined;
+                    }
+                    if (stats && stats.isDirectory()) {
+                        foundIsDirectory = true;
+                    }
+                }
             }
         }
     }
@@ -219,7 +232,8 @@ exports.findRendersTo = async function(dirs, rendersTo) {
         var ret = {
             foundDir, foundPath, foundFullPath,
             foundMountedOn, foundPathWithinDir,
-            foundBaseMetadata: (foundBaseMetadata ? foundBaseMetadata : {} )
+            foundBaseMetadata: (foundBaseMetadata ? foundBaseMetadata : {} ),
+            foundIsDirectory
         };
         // console.log(`filez.findRendersTo FOUND ${util.inspect(ret)}`);
         cache.set("filez-findRendersTo", foundPath, ret);

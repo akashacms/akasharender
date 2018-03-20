@@ -286,6 +286,15 @@ class AnchorCleanup extends mahabhuta.Munger {
             if (!found) {
                 throw new Error(`Did not find ${href} in ${util.inspect(metadata.config.documentDirs)} in ${metadata.document.path}`);
             }
+            // If this is a directory, there might be /path/to/index.html so we try for that.
+            // The problem is that akasha.findRendererPath would fail on just /path/to but succeed
+            // on /path/to/index.html
+            if (found.foundIsDirectory) {
+                found = await filez.findRendersTo(metadata.config.documentDirs, path.join(uHref.pathname, "index.html"));
+                if (!found) {
+                    throw new Error(`Did not find ${href} in ${util.inspect(metadata.config.documentDirs)} in ${metadata.document.path}`);
+                }
+            }
             // If this link has a body, then don't modify it
             if ((linktext && linktext.length > 0 && linktext !== uHref.pathname)
                 || ($link.children().length > 0)) {
