@@ -36,6 +36,7 @@ const _document_basedir = Symbol('basedir');
 const _document_mountedOn = Symbol('mountedOn');
 const _document_mountedMeta = Symbol('mountedMetadata');
 const _document_docpath = Symbol('docpath');
+const _document_docdestpath = Symbol('docdestpath');
 const _document_fullpath = Symbol('fullpath');
 const _document_renderer = Symbol('renderer');
 const _document_stat = Symbol('stat');
@@ -51,6 +52,7 @@ exports.Document = class Document {
     constructor(params) {
         this[_document_basedir]  = params ? params.basedir : undefined;
         this[_document_docpath]  = params ? params.docpath : undefined;
+        this[_document_docdestpath]  = params ? params.docdestpath : undefined;
         this[_document_fullpath] = params ? params.fullpath : undefined;
         this[_document_renderer] = params ? params.renderer : undefined;
         this[_document_stat]     = params ? params.stat : undefined;
@@ -89,6 +91,13 @@ exports.Document = class Document {
     set docpath(docpath) { this[_document_docpath] = docpath; }
 
     /**
+     * The path for this document within the website.
+     * @member {string} docpath
+     */
+    get docdestpath() { return this[_document_docdestpath]; }
+    set docdestpath(docdestpath) { this[_document_docdestpath] = docdestpath; }
+
+    /**
      * The basename of docpath.
      */
     get docname() { return this.docpath ? path.basename(this.docpath) : undefined; }
@@ -116,9 +125,9 @@ exports.Document = class Document {
      */
     get renderpath() { 
         if (! this.renderer) {
-            this.docpath;
+            return this.docdestpath ? this.docdestpath : this.docpath;
         } else {
-            return this.renderer.filePath(this.docpath); 
+            return this.renderer.filePath(this.docdestpath); 
         }
     }
 
@@ -437,6 +446,21 @@ exports.documentSearch = async function(config, options) {
     // Find all the documents, under rootPath if specified
     // Build up a useful object for each
 
+    var dest4dir = (basedir) => {
+        let dest;
+        for (let dir of config.documentDirs) {
+            if (typeof dir === 'string') {
+                if (dir === basedir) {
+                    return undefined;
+                }
+            } else {
+                if (dir.src === basedir) {
+                    return dir.dest;
+                }
+            }
+        }
+    };
+
     var documents = await globfs.operateAsync(
     config.documentDirs.map(docdir => {
         // This handles complex documentDirs entries
@@ -448,6 +472,13 @@ exports.documentSearch = async function(config, options) {
             if (err) return fini(err);
             // Skip recording directories
             if (stat.isDirectory()) return fini();
+            let ddest = dest4dir(basedir);
+            let docdestpath;
+            if (ddest) {
+                docdestpath = path.join(ddest, fpath);
+            } else {
+                docdestpath = fpath;
+            }
             var renderer = akasha.findRendererPath(fpath);
             let filepath = renderer ? renderer.filePath(fpath) : undefined;
             if (renderer && renderer.metadata) {
@@ -456,7 +487,7 @@ exports.documentSearch = async function(config, options) {
                     // log(util.inspect(metadata));
                     fini(undefined, {
                         renderer, basedir, stat,
-                        fpath, fname: path.basename(fpath),
+                        fpath, docdestpath, fname: path.basename(fpath),
                         name: filepath ? path.basename(filepath) : path.basename(fpath),
                         filepath,
                         metadata
@@ -465,7 +496,7 @@ exports.documentSearch = async function(config, options) {
             } else {
                 fini(undefined, {
                     renderer, basedir, stat,
-                    fpath, fname: path.basename(fpath),
+                    fpath, docdestpath, fname: path.basename(fpath),
                     name: filepath ? path.basename(filepath) : path.basename(fpath),
                     filepath,
                     metadata: undefined
@@ -481,6 +512,7 @@ exports.documentSearch = async function(config, options) {
         let ret = new exports.Document();
         ret.basedir = doc.basedir;
         ret.docpath = doc.result.fpath;
+        ret.docdestpath = doc.result.docdestpath;
         ret.fullpath = doc.fullpath;
         ret.stat = doc.result.stat;
         ret.renderer = doc.result.renderer;
