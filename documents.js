@@ -127,7 +127,9 @@ exports.Document = class Document {
         if (! this.renderer) {
             return this.docdestpath ? this.docdestpath : this.docpath;
         } else {
-            return this.renderer.filePath(this.docdestpath); 
+            return this.renderer.filePath(
+                this.docdestpath ? this.docdestpath : this.docpath
+            ); 
         }
     }
 
@@ -598,6 +600,7 @@ exports.readDocument = async function(config, documentPath) {
     doc.dirMountedOn = found.foundMountedOn;
     doc.mountedDirMetadata = found.foundBaseMetadata;
     doc.docpath = found.foundPathWithinDir;
+    doc.docdestpath = path.join(found.foundMountedOn, found.foundPathWithinDir);
     doc.fullpath = found.foundFullPath;
     doc.renderer = akasha.findRendererPath(found.foundFullPath);
     // doc.renderpath = found.renderer ? found.renderer.filePath(found.foundPathWithinDir) : undefined;
