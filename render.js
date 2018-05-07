@@ -7,6 +7,7 @@ const util      = require('util');
 const akasha    = require('./index');
 const mahabhuta = require('mahabhuta');
 const filez     = require('./filez');
+const parallelLimit = require('run-parallel-limit');
 
 const log   = require('debug')('akasha:render');
 const error = require('debug')('akasha:error-render');
@@ -106,7 +107,7 @@ exports.renderDocument = async function(config, basedir, fpath, renderTo, render
 
 exports.newrender = async function(config) {
     var filez = [];
-    for (let dir of config.documentDirs) {
+    for (let docdir of config.documentDirs) {
 
         var renderToPlus = "";
         var renderFrom = docdir;

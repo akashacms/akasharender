@@ -43,7 +43,8 @@
     "flat-cache": "^1.2.2",
     "oembetter": "*",
     "rss": "^1.2.1",
-    "cachd": "*"
+    "cachd": "*",
+    "run-parallel-limit": ">=1.x"
   },
   "devDependencies": {
     "dox": "^0.8.1"
