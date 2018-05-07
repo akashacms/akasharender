@@ -144,7 +144,7 @@ exports.newrender = async function(config) {
                 });
             } else fini(undefined, { ignore: true });
         });
-        for (let entry in listForDir) {
+        for (let entry of listForDir) {
             if (!entry.ignore) filez.push(entry);
         }
     }
@@ -159,20 +159,20 @@ exports.newrender = async function(config) {
         parallelLimit(filez.map(entry => {
             return function(cb) {
                 exports.renderDocument(
-                    entry.config,
-                    entry.basedir,
-                    entry.fpath,
-                    entry.config.renderTo,
-                    entry.renderToPlus,
-                    entry.renderBaseMetadata
+                    entry.result.config,
+                    entry.result.basedir,
+                    entry.result.fpath,
+                    entry.result.renderTo,
+                    entry.result.renderToPlus,
+                    entry.result.renderBaseMetadata
                 )
                 .then((result) => {
                     // log(`render renderDocument ${result}`);
-                    cb(undefined, result);
+                    cb(undefined, { result });
                 })
                 .catch(err => {
-                    console.error(`render renderDocument ${err}`);
-                    cb(err);
+                    // console.error(`render renderDocument ${err} ${err.stack}`);
+                    cb(undefined, { error: err });
                 });
             };
         }), 
