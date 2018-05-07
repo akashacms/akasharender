@@ -104,6 +104,86 @@ exports.renderDocument = async function(config, basedir, fpath, renderTo, render
     }
 };
 
+exports.newrender = async function(config) {
+    var filez = [];
+    for (let dir of config.documentDirs) {
+
+        var renderToPlus = "";
+        var renderFrom = docdir;
+        var renderIgnore;
+        var renderBaseMetadata = {};
+        if (typeof docdir === 'object') {
+            renderFrom = docdir.src;
+            renderToPlus = docdir.dest;
+            renderIgnore = docdir.ignore;
+            if (docdir.baseMetadata) {
+                // console.log(`render fromDir: ${renderFrom} to: ${renderToPlus} baseMetadata ${util.inspect(docdir.baseMetadata)}`);
+                renderBaseMetadata = docdir.baseMetadata;
+            }
+        }
+
+        var listForDir = await globfs.operateAsync(renderFrom, '**/*', (basedir, fpath, fini) => {
+            var doIgnore = false;
+            if (renderIgnore) renderIgnore.forEach(ign => {
+                log(`CHECK ${fpath} === ${ign}`);
+                if (fpath === ign) {
+                    doIgnore = true;
+                }
+            });
+            // console.log(`RENDER? ${renderFrom} ${fpath} ${doIgnore}`);
+            if (!doIgnore) {
+                fini(undefined, {
+                    config,
+                    basedir,
+                    fpath,
+                    renderTo: config.renderTo,
+                    renderToPlus,
+                    renderBaseMetadata,
+                    ignore: false
+                });
+            } else fini(undefined, { ignore: true });
+        });
+        for (let entry in listForDir) {
+            if (!entry.ignore) filez.push(entry);
+        }
+    }
+
+    // The above code put a list of files in the filez array
+    // Now the task is to render the files, performing several in parallel
+
+    // TODO implement that loop
+    // TODO in mahabhuta, have each mahafunc execute under a nextTick
+
+    return new Promise((resolve, reject) => {
+        parallelLimit(filez.map(entry => {
+            return function(cb) {
+                exports.renderDocument(
+                    entry.config,
+                    entry.basedir,
+                    entry.fpath,
+                    entry.config.renderTo,
+                    entry.renderToPlus,
+                    entry.renderBaseMetadata
+                )
+                .then((result) => {
+                    // log(`render renderDocument ${result}`);
+                    cb(undefined, result);
+                })
+                .catch(err => {
+                    console.error(`render renderDocument ${err}`);
+                    cb(err);
+                });
+            };
+        }), 
+        5, // Concurrency count
+        function(err, results) {
+            // gets here on final results
+            if (err) reject(err);
+            else resolve(results);
+        });
+    });
+};
+
 //exports.render = function(docdirs, layoutDirs, partialDirs, mahafuncs, renderTo) {
 exports.render = async function(config) {
 

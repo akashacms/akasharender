@@ -37,7 +37,7 @@ exports.Renderer = require('./Renderer');
 
 exports.HTMLRenderer = require('./HTMLRenderer');
 
-exports.render = render.render;
+exports.render = render.newrender;
 exports.renderDocument = render.renderDocument;
 exports.findRendererName = render.findRendererName;
 exports.findRendererPath = render.findRendererPath;
