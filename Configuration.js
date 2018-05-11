@@ -32,6 +32,7 @@ const _config_scripts = Symbol('scripts');
 const _config_plugins = Symbol('plugins');
 const _config_cheerio = Symbol('cheerio');
 const _config_configdir = Symbol('configdir');
+const _config_concurrency = Symbol('concurrency');
 
 /**
  * Configuration of an AkashaRender project, including the input directories,
@@ -153,6 +154,8 @@ module.exports = class Configuration {
         if (!this[_config_scripts].stylesheets)      { this[_config_scripts].stylesheets = []; }
         if (!this[_config_scripts].javaScriptTop)    { this[_config_scripts].javaScriptTop = []; }
         if (!this[_config_scripts].javaScriptBottom) { this[_config_scripts].javaScriptBottom = []; }
+
+        if (!this[_config_concurrency]) { this[_config_concurrency] = 3; }
 
         // The akashacms-builtin plugin needs to be last on the chain so that
         // its partials etc can be easily overridden.  This is the most convenient
@@ -344,6 +347,18 @@ module.exports = class Configuration {
     }
 
     get root_url() { return this[_config_root_url]; }
+
+    /**
+     * Set how many documents to render concurrently.
+     * @param {number} concurrency
+    * @returns {Configuration}
+     */
+    setConcurrency(concurrency) {
+        this[_config_concurrency] = concurrency;
+        return this;
+    }
+
+    get concurrency() { return this[_config_concurrency]; }
 
     /**
      * Declare JavaScript to add within the head tag of rendered pages.

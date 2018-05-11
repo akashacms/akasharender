@@ -176,7 +176,7 @@ exports.newrender = async function(config) {
                 });
             };
         }), 
-        5, // Concurrency count
+        config.concurrency, // Concurrency count
         function(err, results) {
             // gets here on final results
             if (err) reject(err);
