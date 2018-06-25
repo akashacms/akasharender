@@ -87,7 +87,7 @@ module.exports = class HTMLRenderer extends Renderer {
                 return filez.readFile(partialDir, partial);
             } */
             if (!renderer) throw new Error(`No renderer for ${metadata.layout}`);
-            log(`renderForLayout rendering ${metadocpath} with ${metadata.layout}`);
+            // log(`renderForLayout rendering ${metadocpath} with ${metadata.layout}`);
             // console.log(`HTMLRenderer before render plugin=${util.inspect(metadata.plugin)}`);
             try {
                 layoutrendered = await renderer.render(layoutcontent, layoutdata);
@@ -97,7 +97,7 @@ module.exports = class HTMLRenderer extends Renderer {
                 throw ee;
             }
             // log('maharun '+ metadata.layout +' '+ util.inspect(layoutdata.config.headerScripts));
-            log(`renderForLayout maharun ${metadocpath} with ${metadata.layout}`);
+            // log(`renderForLayout maharun ${metadocpath} with ${metadata.layout}`);
             if (thisRenderer.doMahabhuta(metadocpath)) {
                 try {
                     layoutrendered = await thisRenderer.maharun(layoutrendered, layoutdata, config.mahafuncs);
@@ -109,7 +109,7 @@ module.exports = class HTMLRenderer extends Renderer {
             } else {
                 // console.log(`renderForLayout mahabhuta not allowed ${layoutrendered}`);
             }
-            log(`renderForLayout FINI ${metadocpath} with ${metadata.layout}`);
+            // log(`renderForLayout FINI ${metadocpath} with ${metadata.layout}`);
             return layoutrendered;
         } else return rendered;
     }
@@ -119,6 +119,8 @@ module.exports = class HTMLRenderer extends Renderer {
      * an output file.
      */
     async renderToFile(basedir, fpath, renderTo, renderToPlus, metadata, config) {
+
+        const renderStart = new Date();
 
         // console.log(`renderToFile ${basedir} ${fpath} ${renderTo} ${renderToPlus} ${util.inspect(metadata)}`);
         // var doctext;
@@ -130,6 +132,8 @@ module.exports = class HTMLRenderer extends Renderer {
 
         var fm = await thisRenderer.frontmatter(basedir, fpath);
         doccontent = fm.content;
+        const renderFrontmatter = new Date();
+        console.log(`renderToFile FRONTMATTER ${basedir} ${fpath} ${renderTo} ${(renderFrontmatter - renderStart) / 1000} seconds`);
         // console.log(`renderToFile ${basedir} ${fpath} ${renderTo} ${renderToPlus} ${doccontent}`);
         var metadata = await thisRenderer.initMetadata(config, basedir, fpath, renderToPlus, docdata, fm.data);
         docdata = metadata;
@@ -141,6 +145,8 @@ module.exports = class HTMLRenderer extends Renderer {
             console.error("Error rendering "+ fpath +" "+ (err.stack ? err.stack : err));
             throw new Error("Error rendering "+ fpath +" "+ (err.stack ? err.stack : err));
         }
+        const renderFirstRender = new Date();
+        console.log(`renderToFile FIRST RENDER ${basedir} ${fpath} ${renderTo} ${(renderFirstRender - renderStart) / 1000} seconds`);
         // console.log('rendered to maharun '+ fpath);
         if (thisRenderer.doMahabhuta(fpath)) {
             try {
@@ -150,8 +156,12 @@ module.exports = class HTMLRenderer extends Renderer {
                 throw new Error("Error in Mahabhuta for "+ fpath +" "+ (err2.stack ? err2.stack : err2));
             }
         }
+        const renderFirstMahabhuta = new Date();
+        console.log(`renderToFile FIRST MAHABHUTA ${basedir} ${fpath} ${renderTo} ${(renderFirstMahabhuta - renderStart) / 1000} seconds`);
         // console.log('maharun to renderForLayout '+ fpath);
         docrendered = await thisRenderer.renderForLayout(docrendered, docdata, config);
+        const renderSecondRender = new Date();
+        console.log(`renderToFile SECOND RENDER ${basedir} ${fpath} ${renderTo} ${(renderSecondRender - renderStart) / 1000} seconds`);
         // console.log(`renderToFile ${basedir} ${fpath} ==> ${renderTo} ${thisRenderer.filePath(fpath)}`);
         // console.log(docrendered);
         await filez.writeFile(renderTo, thisRenderer.filePath(fpath), docrendered);

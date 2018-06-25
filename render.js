@@ -67,6 +67,8 @@ exports.registerRenderer(require('./render-json'));
  */
 exports.renderDocument = async function(config, basedir, fpath, renderTo, renderToPlus, renderBaseMetadata) {
 
+    const renderStart = new Date();
+
     var docPathname = path.join(basedir, fpath);
     var renderToFpath = path.join(renderTo, renderToPlus, fpath);
 
@@ -87,7 +89,8 @@ exports.renderDocument = async function(config, basedir, fpath, renderTo, render
         try {
             await renderer.renderToFile(basedir, fpath, path.join(renderTo, renderToPlus), renderToPlus, renderBaseMetadata, config);
             // console.log(`RENDERED ${renderer.name} ${docPathname} ==> ${renderToFpath}`);
-            return `${renderer.name} ${docPathname} ==> ${renderToFpath}`;
+            const renderEndRendered = new Date();
+            return `${renderer.name} ${docPathname} ==> ${renderToFpath} (${(renderEndRendered - renderStart) / 1000} seconds)`;
         } catch (err) {
             console.error(`in renderer branch for ${fpath} error=${err.stack ? err.stack : err}`);
             throw new Error(`in renderer branch for ${fpath} error=${err.stack ? err.stack : err}`);
@@ -97,7 +100,8 @@ exports.renderDocument = async function(config, basedir, fpath, renderTo, render
         try {
             await fs.copy(docPathname, renderToFpath);
             // console.log(`COPIED ${docPathname} ==> ${renderToFpath}`);
-            return `COPY ${docPathname} ==> ${renderToFpath}`;
+            const renderEndCopied = new Date();
+            return `COPY ${docPathname} ==> ${renderToFpath} (${(renderEndCopied - renderStart) / 1000} seconds)`;
         } catch(err) {
             console.error(`in copy branch for ${fpath} error=${err.stack ? err.stack : err}`);
             throw new Error(`in copy branch for ${fpath} error=${err.stack ? err.stack : err}`);
