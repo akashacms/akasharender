@@ -155,7 +155,7 @@ exports.newrender = async function(config) {
     // TODO implement that loop
     // TODO in mahabhuta, have each mahafunc execute under a nextTick
 
-    return new Promise((resolve, reject) => {
+    var results = await new Promise((resolve, reject) => {
         parallelLimit(filez.map(entry => {
             return function(cb) {
                 exports.renderDocument(
@@ -183,6 +183,11 @@ exports.newrender = async function(config) {
             else resolve(results);
         });
     });
+
+    // console.log('CALLING config.hookSiteRendered');
+    var hookResults = await config.hookSiteRendered();
+
+    return results;
 };
 
 //exports.render = function(docdirs, layoutDirs, partialDirs, mahafuncs, renderTo) {
