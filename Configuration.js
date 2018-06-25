@@ -444,11 +444,11 @@ module.exports = class Configuration {
      * Call the onSiteRendered function of any plugin which has that function.
      */
     async hookSiteRendered() {
-        console.log('hookSiteRendered');
+        // console.log('hookSiteRendered');
         var config = this;
         for (let plugin of config.plugins) {
             if (typeof plugin.onSiteRendered !== 'undefined') {
-                console.log(`CALLING plugin ${plugin.name} onSiteRendered`);
+                // console.log(`CALLING plugin ${plugin.name} onSiteRendered`);
                 await plugin.onSiteRendered(config);
             }
         }
