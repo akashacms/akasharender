@@ -60,6 +60,8 @@ module.exports = class HTMLRenderer extends Renderer {
             // renderer.render
             // mahabhuta
 
+            const layoutStart = new Date();
+
             var fnLayout;
             var layouttext;
             var layoutcontent;
@@ -89,6 +91,8 @@ module.exports = class HTMLRenderer extends Renderer {
             if (!renderer) throw new Error(`No renderer for ${metadata.layout}`);
             // log(`renderForLayout rendering ${metadocpath} with ${metadata.layout}`);
             // console.log(`HTMLRenderer before render plugin=${util.inspect(metadata.plugin)}`);
+            const layoutPrepared = new Date();
+            console.log(`renderForLayout PREPARED ${metadocpath} ${layoutFname} ${(layoutPrepared - layoutStart) / 1000} seconds`);
             try {
                 layoutrendered = await renderer.render(layoutcontent, layoutdata);
             } catch (e) {
@@ -96,6 +100,8 @@ module.exports = class HTMLRenderer extends Renderer {
                 console.error(ee);
                 throw ee;
             }
+            const layoutFirstRender = new Date();
+            console.log(`renderForLayout FIRST RENDER ${metadocpath} ${layoutFname} ${(layoutFirstRender - layoutStart) / 1000} seconds`);
             // log('maharun '+ metadata.layout +' '+ util.inspect(layoutdata.config.headerScripts));
             // log(`renderForLayout maharun ${metadocpath} with ${metadata.layout}`);
             if (thisRenderer.doMahabhuta(metadocpath)) {
@@ -109,6 +115,8 @@ module.exports = class HTMLRenderer extends Renderer {
             } else {
                 // console.log(`renderForLayout mahabhuta not allowed ${layoutrendered}`);
             }
+            const layoutFinishMahabhuta = new Date();
+            console.log(`renderForLayout FINISH MAHABHUTS ${metadocpath} ${layoutFname} ${(layoutFinishMahabhuta - layoutStart) / 1000} seconds`);
             // log(`renderForLayout FINI ${metadocpath} with ${metadata.layout}`);
             return layoutrendered;
         } else return rendered;
