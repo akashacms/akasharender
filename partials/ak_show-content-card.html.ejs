@@ -15,9 +15,11 @@
     }
     %> >
     <figure>
+        <% if (typeof contentImage !== 'undefined') { %>
         <a href="<%- href %>">
             <img src="<%- contentImage %>" alt="<%= title %>" title="<%= title %>" style="width: 100%;">
         </a>
+        <% } %>
         <figcaption style="text-align: center;">
             <a href="<%- href %>"><strong><%= title %></strong></a><%
                 if (caption) { %>: <%- caption %><% } %>
