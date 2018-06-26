@@ -1,0 +1,13 @@
+<span <%
+    if (typeof clazz !== 'undefined') {
+        %> class="<%= clazz %>" <%
+    }
+    if (typeof id !== 'undefined') {
+        %> id="<%= id %>" <%
+    }
+    if (typeof style !== 'undefined') {
+        %> style="<%= style %>" <%
+    }
+    %> >
+    <a href="<%= href %>"><strong><%= document.metadata.title %></strong></a>
+</span>

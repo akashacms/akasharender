@@ -219,6 +219,29 @@ class FigureImage extends mahabhuta.CustomElement {
 }
 module.exports.mahabhuta.addMahafunc(new FigureImage());
 
+class ShowContent extends mahabhuta.CustomElement {
+    get elementName() { return "show-content"; }
+    async process($element, metadata, dirty) {
+        var template = $element.attr('template');
+        if (!template) template = 'ak_show-content.html.ejs';
+        const href    = $element.attr('href');
+        if (!href) return Promise.reject(new Error('show-content must receive an href'));
+        const clazz   = $element.attr('class');
+        const id      = $element.attr('id');
+        const caption = $element.html();
+        const width   = $element.attr('width');
+        const style   = $element.attr('style');
+        const dest    = $element.attr('dest');
+        const doc     = await akasha.readDocument(metadata.config, href);
+        dirty();
+        return akasha.partial(metadata.config, template, {
+            href, clazz, id, caption, width, style, dest,
+            document: doc
+        });
+    }
+}
+module.exports.mahabhuta.addMahafunc(new ShowContent());
+
 /*
 
 This was moved into Mahabhuta

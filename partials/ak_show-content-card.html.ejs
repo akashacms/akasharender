@@ -1,0 +1,26 @@
+<div <%
+    if (typeof clazz !== 'undefined') {
+        %> class="<%= clazz %>" <%
+    }
+    if (typeof id !== 'undefined') {
+        %> id="<%= id %>" <%
+    }
+    if (typeof width !== 'undefined') {
+        %> width="<%= width %>" <%
+    }
+    if (typeof style !== 'undefined') {
+        %> style="<%= style %>" <%
+    } else {
+        %> style="float: left; width: <%= width %>; padding: 2px; margin: 2px;" <%
+    }
+    %> >
+    <figure>
+        <a href="<%- href %>">
+            <img src="<%- contentImage %>" alt="<%= title %>" title="<%= title %>" style="width: 100%;">
+        </a>
+        <figcaption style="text-align: center;">
+            <a href="<%- href %>"><strong><%= title %></strong></a><%
+                if (caption) { %>: <%- caption %><% } %>
+        </figcaption>
+    </figure>
+</div>
