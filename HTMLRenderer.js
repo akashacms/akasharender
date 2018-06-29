@@ -128,7 +128,7 @@ module.exports = class HTMLRenderer extends Renderer {
      */
     async renderToFile(basedir, fpath, renderTo, renderToPlus, metadata, config) {
 
-        // const renderStart = new Date();
+        const renderStart = new Date();
 
         // console.log(`renderToFile ${basedir} ${fpath} ${renderTo} ${renderToPlus} ${util.inspect(metadata)}`);
         // var doctext;
@@ -164,12 +164,12 @@ module.exports = class HTMLRenderer extends Renderer {
                 throw new Error("Error in Mahabhuta for "+ fpath +" "+ (err2.stack ? err2.stack : err2));
             }
         }
-        // const renderFirstMahabhuta = new Date();
-        // console.log(`renderToFile FIRST MAHABHUTA ${basedir} ${fpath} ${renderTo} ${(renderFirstMahabhuta - renderStart) / 1000} seconds`);
+        const renderFirstMahabhuta = new Date();
+        console.log(`renderToFile FIRST MAHABHUTA ${basedir} ${fpath} ${renderTo} ${(renderFirstMahabhuta - renderStart) / 1000} seconds`);
         // console.log('maharun to renderForLayout '+ fpath);
         docrendered = await thisRenderer.renderForLayout(docrendered, docdata, config);
-        // const renderSecondRender = new Date();
-        // console.log(`renderToFile SECOND RENDER ${basedir} ${fpath} ${renderTo} ${(renderSecondRender - renderStart) / 1000} seconds`);
+        const renderSecondRender = new Date();
+        console.log(`renderToFile SECOND RENDER ${basedir} ${fpath} ${renderTo} ${(renderSecondRender - renderStart) / 1000} seconds`);
         // console.log(`renderToFile ${basedir} ${fpath} ==> ${renderTo} ${thisRenderer.filePath(fpath)}`);
         // console.log(docrendered);
         await filez.writeFile(renderTo, thisRenderer.filePath(fpath), docrendered);
