@@ -139,7 +139,6 @@ function _doFooterJavaScript(metadata) {
 class StylesheetsElement extends mahabhuta.CustomElement {
 	get elementName() { return "ak-stylesheets"; }
 	process($element, metadata, dirty) {
-		dirty();
 		return Promise.resolve(_doStylesheets(metadata));
 	}
 }
@@ -177,7 +176,7 @@ class InsertTeaser extends mahabhuta.CustomElement {
 			teaser: typeof metadata["ak-teaser"] !== "undefined"
 				? metadata["ak-teaser"] : metadata.teaser
 		})
-		.then(html => { dirty(); return html; });
+		.then(html => { return html; });
 	}
 }
 module.exports.mahabhuta.addMahafunc(new InsertTeaser());
@@ -214,7 +213,7 @@ class FigureImage extends mahabhuta.CustomElement {
         return akasha.partial(metadata.config, template, {
             href, clazz, id, caption, width, style, dest
         })
-        .then(html => { dirty(); return html; });
+        .then(html => { return html; });
     }
 }
 module.exports.mahabhuta.addMahafunc(new FigureImage());
@@ -233,7 +232,6 @@ class ShowContent extends mahabhuta.CustomElement {
         const style   = $element.attr('style');
         const dest    = $element.attr('dest');
         const doc     = await akasha.readDocument(metadata.config, href);
-        dirty();
         return akasha.partial(metadata.config, template, {
             href, clazz, id, caption, width, style, dest,
             document: doc
