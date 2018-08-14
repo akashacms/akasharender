@@ -441,7 +441,7 @@ exports.documentTree = function(config, documents) {
     return documentTreeRoot;
 };
 
-_documentSearch = async function(config, options) {
+async function _documentSearch(config, options) {
 
     // console.log(`documentSearch ${util.inspect(config.documentDirs)} ${util.inspect(options)}`);
 
@@ -591,10 +591,7 @@ exports.documentSearch = function(config, options) {
     return memoized_documentSearch(config, options);
 }
 
-/**
- * Find the Document by its path within one of the DocumentDirs, then construct a Document object.
- */
-_readDocument = async function(config, documentPath) {
+async function _readDocument(config, documentPath) {
     var doc = new exports.Document();
     var found = await filez.findRendersTo(config.documentDirs, documentPath)
     // console.log('readDocument '+ documentPath +' '+ util.inspect(found));
@@ -634,6 +631,9 @@ _readDocument = async function(config, documentPath) {
 
 const memoized_readDocument = memoize(_readDocument);
 
+/**
+ * Find the Document by its path within one of the DocumentDirs, then construct a Document object.
+ */
 exports.readDocument = function(config, documentPath) {
     return memoized_readDocument(config, documentPath);
 }
