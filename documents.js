@@ -611,12 +611,12 @@ exports.readDocument = async function(config, documentPath) {
         throw new Error(`Did not find document for ${util.inspect(documentPath)} in ${util.inspect(config.documentDirs)}`);
     }
     // Check if the file has changed from the cached value
-    let fullpath = path.join(found.foundDir, found.foundFullPath);
+    let path2stat = path.join(found.foundDir, found.foundPathWithinDir);
     let stats;
     try {
-        stats = await fs.stat(fullpath);
+        stats = await fs.stat(path2stat);
     } catch (err) {
-        throw new Error(`readDocument found ${documentPath} at ${util.inspect(found)} but fs.stat threw error ${err.stack}`);
+        throw new Error(`readDocument found ${documentPath} at ${util.inspect(found)} but fs.stat(${path2stat}) threw error ${err.stack}`);
     }
     if (stats && stats.isDirectory()) {
         // It's an error if the file is a directory
