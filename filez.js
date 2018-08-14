@@ -105,7 +105,7 @@ exports.find = async function(dirs, fileName) {
 
 exports.findRendersToForce = function(dirs, rendersTo) {
     cache.del("filez-findRendersTo", rendersTo);
-    return findRendersTo(dirs, rendersTo);
+    return exports.findRendersTo(dirs, rendersTo);
 };
 
 exports.findRendersTo = async function(dirs, rendersTo) {
