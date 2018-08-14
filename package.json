@@ -44,7 +44,8 @@
     "oembetter": "*",
     "rss": "^1.2.1",
     "cachd": "*",
-    "run-parallel-limit": ">=1.x"
+    "run-parallel-limit": ">=1.x",
+    "fast-memoize": ">=2.5.1"
   },
   "devDependencies": {
     "dox": "^0.8.1"

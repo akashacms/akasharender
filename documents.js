@@ -28,6 +28,7 @@ const filez = require('./filez');
 const fs    = require('fs-extra');
 const globfs = require('globfs');
 const akasha = require('./index');
+const memoize = require('fast-memoize');
 
 const log   = require('debug')('akasha:documents');
 const error = require('debug')('akasha:error-documents');
@@ -440,8 +441,7 @@ exports.documentTree = function(config, documents) {
     return documentTreeRoot;
 };
 
-
-exports.documentSearch = async function(config, options) {
+_documentSearch = async function(config, options) {
 
     // console.log(`documentSearch ${util.inspect(config.documentDirs)} ${util.inspect(options)}`);
 
@@ -585,10 +585,16 @@ exports.documentSearch = async function(config, options) {
 
 };
 
+const memoized_documentSearch = memoize(_documentSearch);
+
+exports.documentSearch = function(config, options) {
+    return memoized_documentSearch(config, options);
+}
+
 /**
  * Find the Document by its path within one of the DocumentDirs, then construct a Document object.
  */
-exports.readDocument = async function(config, documentPath) {
+_readDocument = async function(config, documentPath) {
     var doc = new exports.Document();
     var found = await filez.findRendersTo(config.documentDirs, documentPath)
     // console.log('readDocument '+ documentPath +' '+ util.inspect(found));
@@ -625,3 +631,9 @@ exports.readDocument = async function(config, documentPath) {
     // console.log(`readDocument #3 data ${doc.data} metadata ${doc.metadata}`);
     return doc;
 };
+
+const memoized_readDocument = memoize(_readDocument);
+
+exports.readDocument = function(config, documentPath) {
+    return memoized_readDocument(config, documentPath);
+}
