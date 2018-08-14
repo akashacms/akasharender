@@ -465,42 +465,56 @@ async function _documentSearch(config, options) {
         return typeof docdir === 'string' ? docdir : docdir.src;
     }),
     options.rootPath ? options.rootPath+"/**/*" : "**/*",
-    (basedir, fpath, fini) => {
-        fs.stat(path.join(basedir, fpath), (err, stat) => {
-            if (err) return fini(err);
-            // Skip recording directories
-            if (stat.isDirectory()) return fini();
-            let ddest = dest4dir(basedir);
-            let docdestpath;
-            if (ddest) {
-                docdestpath = path.join(ddest, fpath);
-            } else {
-                docdestpath = fpath;
+    async (basedir, fpath, fini) => {
+        let fullFilePath = path.join(basedir, fpath);
+        var stat = await fs.stat(fullFilePath);
+        if (!stat) {
+            return fini(new Error(`DocumentSearch Could not get fs.stat for ${fullFilePath}`));
+        }
+        let fileData = cache.get("documents-search", fullFilePath);
+        if (fileData) {
+            if (fileData.stat && fileData.stat.ctime === stat.ctime && fileData.stat.mtime === stat.mtime) {
+                return fini(undefined, fileData);
             }
-            var renderer = akasha.findRendererPath(fpath);
-            let filepath = renderer ? renderer.filePath(fpath) : undefined;
-            if (renderer && renderer.metadata) {
-                renderer.metadata(basedir, fpath)
-                .then(metadata => {
-                    // log(util.inspect(metadata));
-                    fini(undefined, {
-                        renderer, basedir, stat,
-                        fpath, docdestpath, fname: path.basename(fpath),
-                        name: filepath ? path.basename(filepath) : path.basename(fpath),
-                        filepath,
-                        metadata
-                    });
-                });
-            } else {
-                fini(undefined, {
-                    renderer, basedir, stat,
-                    fpath, docdestpath, fname: path.basename(fpath),
-                    name: filepath ? path.basename(filepath) : path.basename(fpath),
-                    filepath,
-                    metadata: undefined
-                });
-            }
-        });
+        }
+        if (stat.isDirectory()) return fini();
+        let ddest = dest4dir(basedir);
+        let docdestpath;
+        if (ddest) {
+            docdestpath = path.join(ddest, fpath);
+        } else {
+            docdestpath = fpath;
+        }
+        var renderer = akasha.findRendererPath(fpath);
+        let filepath = renderer ? renderer.filePath(fpath) : undefined;
+
+        fileData = undefined;
+        if (renderer && renderer.metadata) {
+            let metadata = await renderer.metadata(basedir, fpath);
+            // log(util.inspect(metadata));
+            fileData = {
+                renderer, basedir, stat,
+                fpath, docdestpath, fname: path.basename(fpath),
+                name: filepath ? path.basename(filepath) : path.basename(fpath),
+                filepath,
+                metadata
+            };
+        } else {
+            fileData = {
+                renderer, basedir, stat,
+                fpath, docdestpath, fname: path.basename(fpath),
+                name: filepath ? path.basename(filepath) : path.basename(fpath),
+                filepath,
+                metadata: undefined
+            };
+        }
+        if (fileData) {
+            cache.set("documents-search", fileFullPath, fileData);
+            fini(undefined, fileData);
+        } else {
+            fini(new Error(`DocumentSearch found no FileData for ${fullFilePath}`));
+        }
+
     });
 
     // the object array we receive is suboptimally organized.
@@ -587,7 +601,10 @@ exports.documentSearch = function(config, options) {
     return _documentSearch(config, options); // memoized_documentSearch(config, options);
 }
 
-async function _readDocument(config, documentPath) {
+/**
+ * Find the Document by its path within one of the DocumentDirs, then construct a Document object.
+ */
+exports.readDocument = async function(config, documentPath) {
     var found = await filez.findRendersTo(config.documentDirs, documentPath)
     // console.log('readDocument '+ documentPath +' '+ util.inspect(found));
     if (!found) {
@@ -633,12 +650,3 @@ async function _readDocument(config, documentPath) {
     }
     return doc;
 };
-
-// const memoized_readDocument = memoize(_readDocument);
-
-/**
- * Find the Document by its path within one of the DocumentDirs, then construct a Document object.
- */
-exports.readDocument = function(config, documentPath) {
-    return _readDocument(config, documentPath); // memoized_readDocument(config, documentPath);
-}
