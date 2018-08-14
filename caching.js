@@ -20,6 +20,10 @@ exports.flushAll = function() {
     return cache.clearAll();
 };
 
+/**
+ * This second cache is for persisting data to a given directory
+ */
+
 var persistentCache;
 
 exports.persistenceDir = function(dir) {

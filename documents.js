@@ -28,10 +28,7 @@ const filez = require('./filez');
 const fs    = require('fs-extra');
 const globfs = require('globfs');
 const akasha = require('./index');
-const memoize = require('fast-memoize');
-
-const log   = require('debug')('akasha:documents');
-const error = require('debug')('akasha:error-documents');
+const cache  = require('./caching');
 
 const _document_basedir = Symbol('basedir');
 const _document_mountedOn = Symbol('mountedOn');
@@ -337,7 +334,7 @@ exports.documentTree = function(config, documents) {
         if (!treeEntry) return undefined;
 		for (var i = 0; i < treeEntry.children.length; i++) {
 			var entry = treeEntry.children[i];
-            // log('findComponentEntry '+ util.inspect(entry) +' === '+ component.component);
+            // console.log('findComponentEntry '+ util.inspect(entry) +' === '+ component.component);
 			if (entry && entry.type === "file" && entry.rendername === component.component) {
 				return entry;
             }
@@ -352,7 +349,7 @@ exports.documentTree = function(config, documents) {
     for (let doc of documents) {
 
         // let doc = documents[docidx];
-        // log(`makeBookTree ${util.inspect(doc)}`);
+        // console.log(`makeBookTree ${util.inspect(doc)}`);
 
         // if (typeof doc.renderpath === 'undefined') {
         //    console.log(`documentTree strange document ${util.inspect(doc)}`);
@@ -360,7 +357,7 @@ exports.documentTree = function(config, documents) {
 
         let curDirInTree = documentTreeRoot;
         let components = componentizeFileName(doc.renderpath);
-        // log(`makeBookTree components ${doc.path} ${util.inspect(components)}`);
+        // console.log(`makeBookTree components ${doc.path} ${util.inspect(components)}`);
 
         /*
          *
@@ -369,7 +366,6 @@ exports.documentTree = function(config, documents) {
          *   { type: 'dir', component: 'bas', entries: [] },
          *   { type: 'dir', component: 'baz', entries: [] },
          *   { type: 'file', component: 'xyzzy.html' } ]
-         *
          */
         for (let i = 0; i <  components.length; i++) {
             let component = components[i];
@@ -585,55 +581,64 @@ async function _documentSearch(config, options) {
 
 };
 
-const memoized_documentSearch = memoize(_documentSearch);
+// const memoized_documentSearch = memoize(_documentSearch);
 
 exports.documentSearch = function(config, options) {
-    return memoized_documentSearch(config, options);
+    return _documentSearch(config, options); // memoized_documentSearch(config, options);
 }
 
 async function _readDocument(config, documentPath) {
-    var doc = new exports.Document();
     var found = await filez.findRendersTo(config.documentDirs, documentPath)
     // console.log('readDocument '+ documentPath +' '+ util.inspect(found));
     if (!found) {
         throw new Error(`Did not find document for ${util.inspect(documentPath)} in ${util.inspect(config.documentDirs)}`);
     }
-    // console.log('readDocument #1 '+ util.inspect(doc));
-    doc.basedir = found.foundDir;
-    doc.dirMountedOn = found.foundMountedOn;
-    doc.mountedDirMetadata = found.foundBaseMetadata;
-    doc.docpath = found.foundPathWithinDir;
-    doc.docdestpath = path.join(found.foundMountedOn, found.foundPathWithinDir);
-    doc.fullpath = found.foundFullPath;
-    doc.renderer = akasha.findRendererPath(found.foundFullPath);
-    // doc.renderpath = found.renderer ? found.renderer.filePath(found.foundPathWithinDir) : undefined;
-
-    // console.log(`readDocument before readDocumentContent ${doc.basedir} docpath ${doc.docpath} fullpath ${doc.fullpath} renderer ${doc.renderer} renderpath ${doc.renderpath}`);
-    await doc.readDocumentContent(config);
-
-    /* doc.stat = await fs.stat(path.join(found.foundDir, found.foundPathWithinDir));
-
-    // console.log(`readDocument #2 basedir ${doc.basedir} docpath ${doc.docpath} fullpath ${doc.fullpath} renderer ${doc.renderer} renderpath ${doc.renderpath}`);
-    if (doc.renderer && doc.renderer.frontmatter) {
-        // console.log(`readDocument getting frontmatter ${found.foundDir} / ${found.foundPathWithinDir}`);
-        var matter = await doc.renderer.frontmatter(found.foundDir, found.foundPathWithinDir);
-        // console.log(`readDocument frontmatter ${util.inspect(matter)}`);
-        doc.data = matter.orig;
-        doc.metadata = await doc.renderer.initMetadata(config,
-                found.foundDir, found.foundPathWithinDir, found.foundMountedOn,
-                found.foundBaseMetadata, matter.data);
-        doc.text = matter.content;
-    } */
-
-    // console.log(`readDocument #3 data ${doc.data} metadata ${doc.metadata}`);
+    // Check if the file has changed from the cached value
+    let fullpath = path.join(found.foundDir, found.foundFullPath);
+    let stats;
+    try {
+        stats = await fs.stat(fullpath);
+    } catch (err) {
+        throw new Error(`readDocument found ${documentPath} at ${util.inspect(found)} but fs.stat threw error ${err.stack}`);
+    }
+    if (stats && stats.isDirectory()) {
+        // It's an error if the file is a directory
+        throw new Error(`readDocument found directory for ${documentPath}`);
+    }
+    // If the creation time or modified time is different then the file has changed
+    // and therefore needs to be re-read
+    if (stats && (stats.ctime !== found.foundStats.ctime || stats.mtime !== found.foundStats.mtime)) {
+        found = await filez.findRendersToForce(config.documentDirs, documentPath);
+        // Ensure there is no cached copy
+        cache.del("documents-readDocument", documentPath);
+    }
+    // Try to find the document in the cache, if not read it into memory
+    var doc = cache.get("documents-readDocument", documentPath);
+    if (!doc) {
+        // console.log('readDocument #1 '+ util.inspect(doc));
+        doc = new exports.Document();
+        doc.basedir = found.foundDir;
+        doc.dirMountedOn = found.foundMountedOn;
+        doc.mountedDirMetadata = found.foundBaseMetadata;
+        doc.docpath = found.foundPathWithinDir;
+        doc.docdestpath = path.join(found.foundMountedOn, found.foundPathWithinDir);
+        doc.fullpath = found.foundFullPath;
+        doc.renderer = akasha.findRendererPath(found.foundFullPath);
+        // doc.renderpath = found.renderer ? found.renderer.filePath(found.foundPathWithinDir) : undefined;
+    
+        // console.log(`readDocument before readDocumentContent ${doc.basedir} docpath ${doc.docpath} fullpath ${doc.fullpath} renderer ${doc.renderer} renderpath ${doc.renderpath}`);
+        await doc.readDocumentContent(config);
+        // Save the document into the cache
+        cache.set("documents-readDocument", documentPath);
+    }
     return doc;
 };
 
-const memoized_readDocument = memoize(_readDocument);
+// const memoized_readDocument = memoize(_readDocument);
 
 /**
  * Find the Document by its path within one of the DocumentDirs, then construct a Document object.
  */
 exports.readDocument = function(config, documentPath) {
-    return memoized_readDocument(config, documentPath);
+    return _readDocument(config, documentPath); // memoized_readDocument(config, documentPath);
 }
