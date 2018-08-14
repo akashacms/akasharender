@@ -218,15 +218,14 @@ exports.findRendersTo = async function(dirs, rendersTo) {
                     }
                 }
                 if (found) {
-                    let fullpath = path.join(foundDir, foundFullPath);
-                    let stats;
+                    let fullpath = path.join(foundDir, foundPathWithinDir);
                     try {
-                        stats = await fs.stat(fullpath);
+                        foundStats = await fs.stat(fullpath);
                     } catch (err) {
-                        stats = undefined;
+                        console.log(`filez.findRendersTo could not fs.stat ${fullpath} foundDir ${foundDir} foundPath ${foundPath} foundFullPath ${foundFullPath} foundMountedOn ${foundMountedOn} foundPathWithinDir ${foundPathWithinDir} because ${err.stack}`);
+                        foundStats = undefined;
                     }
-                    foundStats = stats;
-                    if (stats && stats.isDirectory()) {
+                    if (foundStats && foundStats.isDirectory()) {
                         foundIsDirectory = true;
                     }
                 }
