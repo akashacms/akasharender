@@ -509,7 +509,7 @@ async function _documentSearch(config, options) {
             };
         }
         if (fileData) {
-            cache.set("documents-search", fileFullPath, fileData);
+            cache.set("documents-search", fullFilePath, fileData);
             fini(undefined, fileData);
         } else {
             fini(new Error(`DocumentSearch found no FileData for ${fullFilePath}`));
