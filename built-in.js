@@ -285,6 +285,8 @@ class AnchorCleanup extends mahabhuta.Munger {
             if (uHref.protocol || uHref.slashes) return "ok";
             if (!uHref.pathname) return "ok";
 
+            // let startTime = new Date();
+
             if (!path.isAbsolute(uHref.pathname)) {
                 uHref.pathname = path.join(path.dirname(metadata.document.path), uHref.pathname);
                 // console.log(`***** AnchorCleanup FIXED href to ${uHref.pathname}`);
@@ -296,8 +298,16 @@ class AnchorCleanup extends mahabhuta.Munger {
                 return "ok";
             }
 
+            // console.log(`AnchorCleanup ${metadata.document.path} ${href} findAsset ${(new Date() - startTime) / 1000} seconds`);
+
             // Ask plugins if the href is okay
             if (metadata.config.askPluginsLegitLocalHref(uHref.pathname)) {
+                return "ok";
+            }
+            // If this link has a body, then don't modify it
+            if ((linktext && linktext.length > 0 && linktext !== uHref.pathname)
+                || ($link.children().length > 0)) {
+                // console.log(`AnchorCleanup skipping ${uHref.pathname} w/ ${util.inspect(linktext)} children= ${$link.children}`);
                 return "ok";
             }
 
@@ -307,6 +317,8 @@ class AnchorCleanup extends mahabhuta.Munger {
             if (!found) {
                 throw new Error(`Did not find ${href} in ${util.inspect(metadata.config.documentDirs)} in ${metadata.document.path}`);
             }
+            // console.log(`AnchorCleanup ${metadata.document.path} ${href} findRendersTo ${(new Date() - startTime) / 1000} seconds`);
+
             // If this is a directory, there might be /path/to/index.html so we try for that.
             // The problem is that akasha.findRendererPath would fail on just /path/to but succeed
             // on /path/to/index.html
@@ -316,14 +328,9 @@ class AnchorCleanup extends mahabhuta.Munger {
                     throw new Error(`Did not find ${href} in ${util.inspect(metadata.config.documentDirs)} in ${metadata.document.path}`);
                 }
             }
-            // If this link has a body, then don't modify it
-            if ((linktext && linktext.length > 0 && linktext !== uHref.pathname)
-                || ($link.children().length > 0)) {
-                // console.log(`AnchorCleanup skipping ${uHref.pathname} w/ ${util.inspect(linktext)} children= ${$link.children}`);
-                return "ok";
-            }
             // Otherwise look into filling emptiness with title
             var renderer = akasha.findRendererPath(found.foundFullPath);
+            // console.log(`AnchorCleanup ${metadata.document.path} ${href} findRendererPath ${(new Date() - startTime) / 1000} seconds`);
             if (renderer && renderer.metadata) {
                 try {
                     var docmeta = await renderer.metadata(found.foundDir, found.foundPathWithinDir);
@@ -338,6 +345,7 @@ class AnchorCleanup extends mahabhuta.Munger {
                     $link.text(docmeta.title);
                 }
                 // console.log(`AnchorCleanup finished`);
+                // console.log(`AnchorCleanup ${metadata.document.path} ${href} DONE ${(new Date() - startTime) / 1000} seconds`);
                 return "ok";
             } else {
                 throw new Error(`Could not fill in empty 'a' element in ${metadata.document.path} with href ${href}`);
