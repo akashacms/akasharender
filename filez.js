@@ -137,27 +137,83 @@ exports.findRendersTo = async function(dirs, rendersTo) {
             // For cases of complex directory descriptions
             let pathMountedOn = "/";
             let renderBaseDir = "";
-            var dirToRead;
-            var rendersToWithinDir = rendersTo;
+            let dirToRead;
+            let rendersToWithinDir = rendersTo;
             if (typeof dir === 'string') {
+                // If the dir is a simple pathname
+                // In Configure, it is forced to be an absolute pathname
                 renderBaseDir = dir;
-                dirToRead = path.join(renderBaseDir, renderToDir);;
+                if (rendersTo.startsWith('/')) {
+                    // If this is a full pathname rooted within the given dir ...
+                    if (rendersTo.substring(0, dir.length) === dir
+                     && rendersTo.substring(dir.length).startsWith('/')) {
+                        rendersToNoSlash = rendersTo.substring(dir.length+1);
+                        renderToDir = path.dirname(rendersToNoSlash);
+                        rendersToWithinDir = rendersToNoSlash;
+                    } else {
+                        // Otherwise this is to be taken as a pathname rooted within docroot
+                        rendersToNoSlash = rendersTo.startsWith("/") ? rendersTo.substring(1) : rendersTo;
+                        renderToDir = path.dirname(rendersTo);
+                        rendersToWithinDir = rendersTo;
+                    }
+                } else {
+                    // Otherwise it is a relative pathname within docroot
+                    rendersToNoSlash = rendersTo;
+                    renderToDir = path.dirname(rendersTo);
+                    rendersToWithinDir = rendersTo;
+                }
+                dirToRead = path.join(renderBaseDir, renderToDir);
             } else {
+                // Otherwise this is a directory mounted on a subtree in the site.
+                // The dir object will include these fields:
+                //     src: absolute pathname for the root
+                //          In Configure, dir.src is forced to be an absolute pathname
+                //     dest: slug within docroot to prepend to every pathname
                 renderBaseDir = dir.src;
                 // console.log(`filez.findRendersTo  Checking ${util.inspect(dir)} for ${rendersToNoSlash}`);
-                if (rendersToNoSlash.substring(0, dir.dest.length) === dir.dest
-                    && rendersToNoSlash.substring(dir.dest.length).startsWith('/')) {
-                    // These two are true if the path prefix of rendersTo is dir.dest
-                    rendersToWithinDir = rendersToNoSlash.substring(dir.dest.length).substring(1);
-                    dirToRead = path.join(dir.src, path.dirname(rendersToWithinDir));
-                    // console.log(`dirToRead ${dirToRead} rendersToWithinDir ${rendersToWithinDir}`);
+                if (rendersTo.startsWith('/')) {
+                    if (rendersTo.substring(0, dir.src.length) === dir.src
+                     && rendersTo.substring(dir.src.length).startsWith('/')) {
+                        // If this is an absolute pathname matching the source directory
+                        rendersToWithinDir = rendersTo.substring(dir.src.length+1);
+                        rendersToNoSlash = path.join(dir.dest, rendersToWithinDir);
+                        renderToDir = path.dirname(rendersToNoSlash);
+                        dirToRead = path.join(dir.src, path.dirname(rendersToWithinDir));
+                    } else {
+                        // Otherwise it is a relative pathname within the docroot 
+                        // that might happen to be for this subdirectory
+                        if (rendersTo.substring(1, dir.dest.length) === dir.dest
+                         && rendersTo.substring(1).substring(dir.dest.length).startsWith('/')) {
+                            rendersToWithinDir = rendersTo.substring(1).substring(dir.dest.length+1);
+                            rendersToNoSlash = path.join(dir.dest, rendersToWithinDir);
+                            renderToDir = path.dirname(rendersToNoSlash);
+                            dirToRead = path.join(dir.src, path.dirname(rendersToWithinDir));
+                        } else {
+                            // Such a condition won't match the file name .. hence .. skip
+                            // console.log(`SKIPPING src ${dir.src} dest ${dir.dest} because ${rendersTo} will not match`);
+                            continue;
+                        }
+                    }
                 } else {
-                    // Such a condition won't match the file name .. hence .. skip
-                    // console.log(`SKIPPING src ${dir.src} dest ${dir.dest} because ${rendersTo} will not match`);
-                    continue;
+                    if (rendersTo.substring(0, dir.dest.length) === dir.dest
+                    && rendersTo.substring(dir.dest.length).startsWith('/')) {
+                        // These two are true if the path prefix of rendersTo is dir.dest
+                        rendersToWithinDir = rendersToNoSlash.substring(dir.dest.length).substring(1);
+                        rendersToNoSlash = path.join(dir.dest, rendersToWithinDir);
+                        renderToDir = path.dirname(rendersToNoSlash);
+                        dirToRead = path.join(dir.src, path.dirname(rendersToWithinDir));
+                        // console.log(`dirToRead ${dirToRead} rendersToWithinDir ${rendersToWithinDir}`);
+                    } else {
+                        // Such a condition won't match the file name .. hence .. skip
+                        // console.log(`SKIPPING src ${dir.src} dest ${dir.dest} because ${rendersTo} will not match`);
+                        continue;
+                    }
                 }
                 pathMountedOn = dir.dest;
             }
+
+
+            // Check that dirToRead exists
             let stats;
             try {
 
@@ -174,6 +230,8 @@ exports.findRendersTo = async function(dirs, rendersTo) {
                 }
             }
             if (!stats.isDirectory()) continue;
+
+            // Get the list of files in dirToRead
             let files;
             try {
                 files = await fs.readdir(dirToRead);
@@ -182,10 +240,12 @@ exports.findRendersTo = async function(dirs, rendersTo) {
                 throw err;
             }
 
+            // Look through the files to see if there is a match
             // console.log(util.inspect(files));
             for (var i = 0; i < files.length; i++) {
                 var fname = files[i];
                 // console.log(`${dirToRead} ${pathMountedOn} ${fname} === ${path.basename(rendersTo)}`);
+                // If the file name directly matches what we're looking for - count this as a match
                 if (path.basename(rendersTo) === fname) {
                     found = true;
                     foundDir = typeof dir === 'string' ? dir : dir.src;
@@ -217,6 +277,8 @@ exports.findRendersTo = async function(dirs, rendersTo) {
                         // console.log(`filez.findRendersTo ${util.inspect(dirs)} ${rendersTo} found #2 ${foundDir} ${foundPath} ${fname2find} ${foundMountedOn} ${foundPathWithinDir} rendersToWithinDir ${rendersToWithinDir}`);
                     }
                 }
+
+                // Record some further data if it was found
                 if (found) {
                     let fullpath = path.join(foundDir, foundPathWithinDir);
                     try {
