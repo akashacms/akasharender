@@ -38,7 +38,9 @@ module.exports = class BuiltInPlugin extends akasha.Plugin {
 
 	configure(config) {
         this._config = config;
-        config.addPartialsDir(path.join(__dirname, 'partials'));
+        let moduleDirname = path.dirname(require.resolve('akasharender'));
+        config.addPartialsDir(path.join(moduleDirname, 'partials'));
+        // config.addPartialsDir(path.join(__dirname, 'partials'));
         config.addMahabhuta(module.exports.mahabhuta);
         config.addMahabhuta(mahaMetadata.mahabhuta);
         config.addMahabhuta(mahaPartial.mahabhuta);
