@@ -199,7 +199,7 @@ module.exports = class Configuration {
         return this;
     }
 
-    get documentDirs() { return this[_config_documentDirs]; }
+    get documentDirs() { return this[_config_documentDirs] ? this[_config_documentDirs] : []; }
 
     /**
      * Look up the document directory information for a given document directory.
@@ -234,7 +234,7 @@ module.exports = class Configuration {
         return this;
     }
 
-    get layoutDirs() { return this[_config_layoutDirs]; }
+    get layoutDirs() { return this[_config_layoutDirs] ? this[_config_layoutDirs] : []; }
 
     /**
      * Add a directory to the partialDirs configurtion array
@@ -254,7 +254,7 @@ module.exports = class Configuration {
         return this;
     }
 
-    get partialsDirs() { return this[_config_partialDirs]; }
+    get partialsDirs() { return this[_config_partialDirs] ? this[_config_partialDirs] : []; }
     
     /**
      * Add a directory to the assetDirs configurtion array
@@ -276,7 +276,7 @@ module.exports = class Configuration {
         return this;
     }
 
-    get assetDirs() { return this[_config_assetsDirs]; }
+    get assetDirs() { return this[_config_assetsDirs] ? this[_config_assetsDirs] : []; }
 
     /**
      * Add an array of Mahabhuta functions
