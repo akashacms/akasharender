@@ -92,8 +92,8 @@ exports.renderDocument = async function(config, basedir, fpath, renderTo, render
             const renderEndRendered = new Date();
             return `${renderer.name} ${docPathname} ==> ${renderToFpath} (${(renderEndRendered - renderStart) / 1000} seconds)`;
         } catch (err) {
-            console.error(`in renderer branch for ${fpath} error=${err.stack ? err.stack : err}`);
-            throw new Error(`in renderer branch for ${fpath} error=${err.stack ? err.stack : err}`);
+            console.error(`in renderer branch for ${docPathname} to ${renderToFpath} error=${err.stack ? err.stack : err}`);
+            throw new Error(`in renderer branch for ${docPathname} to ${renderToFpath} error=${err.stack ? err.stack : err}`);
         }
     } else {
         // console.log(`COPYING ${docPathname} ==> ${renderToFpath}`);
@@ -103,8 +103,8 @@ exports.renderDocument = async function(config, basedir, fpath, renderTo, render
             const renderEndCopied = new Date();
             return `COPY ${docPathname} ==> ${renderToFpath} (${(renderEndCopied - renderStart) / 1000} seconds)`;
         } catch(err) {
-            console.error(`in copy branch for ${fpath} error=${err.stack ? err.stack : err}`);
-            throw new Error(`in copy branch for ${fpath} error=${err.stack ? err.stack : err}`);
+            console.error(`in copy branch for ${docPathname} to ${renderToFpath} error=${err.stack ? err.stack : err}`);
+            throw new Error(`in copy branch for ${docPathname} to ${renderToFpath} error=${err.stack ? err.stack : err}`);
         }
     }
 };
@@ -113,10 +113,10 @@ exports.newrender = async function(config) {
     var filez = [];
     for (let docdir of config.documentDirs) {
 
-        var renderToPlus = "";
-        var renderFrom = docdir;
-        var renderIgnore;
-        var renderBaseMetadata = {};
+        let renderToPlus = "";
+        let renderFrom = docdir;
+        let renderIgnore;
+        let renderBaseMetadata = {};
         if (typeof docdir === 'object') {
             renderFrom = docdir.src;
             renderToPlus = docdir.dest;
@@ -127,7 +127,7 @@ exports.newrender = async function(config) {
             }
         }
 
-        var listForDir = await globfs.operateAsync(renderFrom, '**/*', (basedir, fpath, fini) => {
+        let listForDir = await globfs.operateAsync(renderFrom, '**/*', async (basedir, fpath, fini) => {
             var doIgnore = false;
             if (renderIgnore) renderIgnore.forEach(ign => {
                 log(`CHECK ${fpath} === ${ign}`);
@@ -135,7 +135,11 @@ exports.newrender = async function(config) {
                     doIgnore = true;
                 }
             });
-            // console.log(`RENDER? ${renderFrom} ${fpath} ${doIgnore}`);
+            let stats = await fs.stat(path.join(basedir, fpath));
+            if (!stats) doIgnore = true;
+            else if (stats.isDirectory()) doIgnore = true;
+            else if (fpath.endsWith('.DS_Store')) doIgnore = true;
+            console.log(`RENDER? renderFrom ${renderFrom} basedir ${basedir} fpath ${fpath} doIgnore ${doIgnore}`);
             if (!doIgnore) {
                 fini(undefined, {
                     config,
@@ -152,6 +156,10 @@ exports.newrender = async function(config) {
             if (!entry.ignore) filez.push(entry);
         }
     }
+
+    let filez2 = filez.map(entry => {
+        return entry.result && entry.result.ignore ? false : true;
+    });
 
     // The above code put a list of files in the filez array
     // Now the task is to render the files, performing several in parallel
