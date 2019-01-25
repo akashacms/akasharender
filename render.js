@@ -11,7 +11,7 @@ const parallelLimit = require('run-parallel-limit');
 const _renderer_name = Symbol('name');
 const _renderer_regex = Symbol('regex');
 
-module.exports = class Renderer {
+module.exports.Renderer = class Renderer {
     constructor(name, regex) {
         this[_renderer_name]  = name;
         if (regex instanceof RegExp) {
@@ -92,7 +92,7 @@ module.exports = class Renderer {
 /**
  * Rendering support for any file that produces HTML when rendered.
  */
-module.exports = class HTMLRenderer extends Renderer {
+module.exports.HTMLRenderer = class HTMLRenderer extends module.exports.Renderer {
 
     /**
      * Support for Mahabhuta -- jQuery-like processing of HTML DOM before Rendering
@@ -463,7 +463,7 @@ class AsciidocRenderer extends module.exports.HTMLRenderer {
 const ejs      = require('ejs');
 
 // TODO support .php.ejs
-class EJSRenderer extends HTMLRenderer {
+class EJSRenderer extends module.exports.HTMLRenderer {
     constructor() {
         super(".html.ejs", /^(.*\.html|.*\.php)\.(ejs)$/);
     }
@@ -514,7 +514,7 @@ const mditConfig = {
   const mdit = require('markdown-it');
   var md;
   
-  class MarkdownRenderer extends HTMLRenderer {
+  class MarkdownRenderer extends module.exports.HTMLRenderer {
       constructor() {
           super(".html.md", /^(.*\.html)\.(md)$/);
           md = mdit(mditConfig);
@@ -551,7 +551,7 @@ const mditConfig = {
 
 //////////// JSON Renderer
 
-class JSONRenderer extends HTMLRenderer {
+class JSONRenderer extends module.exports.HTMLRenderer {
     constructor() {
         super(".html.json", /^(.*\.html)\.(json)$/);
     }
@@ -577,7 +577,7 @@ class JSONRenderer extends HTMLRenderer {
 
 //////////// CSS/Less Renderer
 
-class CSSLESSRenderer extends Renderer {
+class CSSLESSRenderer extends module.exports.Renderer {
     constructor() {
         super(".css.less", /^(.*\.css)\.(less)$/);
     }
