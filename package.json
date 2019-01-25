@@ -23,11 +23,11 @@
     "url": "git://github.com/akashacms/akasharender.git"
   },
   "engines": {
-    "node": ">=6.1"
+    "node": ">=10.6.1"
   },
   "main": "index.js",
   "bin": {
-    "akasharender": "bin/cli.js"
+    "akasharender": "cli.js"
   },
   "dependencies": {
     "mahabhuta": "akashacms/mahabhuta",
