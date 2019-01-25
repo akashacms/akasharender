@@ -22,7 +22,7 @@ module.exports = (() => {
         
         run(args, flags, vflags, callback) {
             
-            const config = require(path.join(process.cwd(), args[0]));
+            const config = require(path.join(__dirname, args[0]));
 
             config.copyAssets()
             .then(() => { callback(null); })
