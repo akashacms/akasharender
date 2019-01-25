@@ -21,6 +21,8 @@ module.exports = (() => {
         }
         
         run(args, flags, vflags, callback) {
+
+            if (!args[0]) callback(new Error("copy-assets: no config file name given"));
             
             const config = require(path.join(__dirname, args[0]));
 
