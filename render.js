@@ -282,7 +282,13 @@ module.exports.HTMLRenderer = class HTMLRenderer extends module.exports.Renderer
         }
         var text = await fs.readFile(path.join(basedir, fpath), 'utf8');
         // console.log(`frontmatter ${path.join(basedir, fpath)} ${text}`);
-        var fm = matter(text);
+        var fm;
+        try {
+            fm = matter(text);
+        } catch (e) {
+            console.log(`HTMLRenderer.frontmatter FAIL to read frontmatter in ${fpath} because ${e.stack}`);
+            fm = {};
+        }
         // console.log(`frontmatter ${path.join(basedir, fpath)} ${util.inspect(fm)}`);
         cache.set("htmlrenderer", cachekey, fm);
         // log(`frontmatter ${cachekey} ${util.inspect(fm)}`);
@@ -341,8 +347,8 @@ module.exports.HTMLRenderer = class HTMLRenderer extends module.exports.Renderer
         metadata.document.renderTo = path.join(renderToPlus, renderer.filePath(fpath));
 
         metadata.config      = config;
-        metadata.partialSync = akasha.partialSync.bind(renderer, config);
-        metadata.partial     = akasha.partial.bind(renderer, config);
+        metadata.partialSync = config.akasha.partialSync.bind(renderer, config);
+        metadata.partial     = config.akasha.partial.bind(renderer, config);
 
         metadata.root_url = config.root_url;
 
@@ -356,7 +362,7 @@ module.exports.HTMLRenderer = class HTMLRenderer extends module.exports.Renderer
 
         // console.log('initMetadata '+ basedir +' '+ fpath +' '+ util.inspect(metadata));
 
-        metadata.akasha = akasha;
+        metadata.akasha = config.akasha;
         metadata.plugin = config.plugin;
 
         // console.log(`HTMLRenderer before path.join ${path.join(basedir, fpath)}`);
@@ -561,7 +567,7 @@ class JSONRenderer extends module.exports.HTMLRenderer {
 
     renderSync(text, metadata) {
         var json = JSON.parse(text);
-        return akasha.partialSync(metadata.config, metadata.JSONFormatter, { data: json });
+        return metadata.akasha.partialSync(metadata.config, metadata.JSONFormatter, { data: json });
     }
 
     async render(text, metadata) {
@@ -569,7 +575,7 @@ class JSONRenderer extends module.exports.HTMLRenderer {
             var json = JSON.parse(text);
             // console.log(`JSONRenderer ${text} ==> ${util.inspect(json)}`);
             // console.log(`JSONRenderer JSONFormatter ${metadata.JSONFormatter}`);
-            await akasha.partial(metadata.config, metadata.JSONFormatter, { data: json });
+            await metadata.akasha.partial(metadata.config, metadata.JSONFormatter, { data: json });
         } catch(e) {
             var docpath = metadata.document ? metadata.document.path : "unknown";
             var errstack = e.stack ? e.stack : e;
@@ -667,7 +673,7 @@ exports.partial = async function(config, fname, metadata) {
         throw new Error(`renderPartial non-file found for ${fname} - ${partialFname}`);
     }
 
-    var renderer = render.findRendererPath(partialFname);
+    var renderer = module.exports.findRendererPath(partialFname);
     if (renderer) {
         // console.log(`partial about to render ${util.inspect(partialFname)}`);
         var partialText = await fs.readFile(partialFname, 'utf8');
@@ -697,7 +703,7 @@ exports.partialSync = function(config, fname, metadata) {
     }
     var partialText = fs.readFileSync(partialFname, 'utf8');
 
-    var renderer = render.findRendererPath(partialFname);
+    var renderer = module.exports.findRendererPath(partialFname);
     if (renderer) {
         return renderer.renderSync(partialText, metadata);
     } else if (partialFname.endsWith('.html') || partialFname.endsWith('.xhtml')) {
@@ -733,7 +739,7 @@ exports.renderDocument = async function(config, basedir, fpath, renderTo, render
 
     if (stats && stats.isFile()) {
         var renderToDir = path.dirname(renderToFpath);
-        log(`renderDocument ${basedir} ${fpath} ${renderToDir} ${renderToFpath}`);
+        // console.log(`renderDocument ${basedir} ${fpath} ${renderToDir} ${renderToFpath}`);
         await fs.ensureDir(renderToDir);
     } else { return `SKIP DIRECTORY ${docPathname}`; }
 
