@@ -4,6 +4,9 @@ const globfs    = require('globfs');
 const path      = require('path');
 const fs        = require('fs-extra');
 const util      = require('util');
+const cache     = require('./caching');
+const mahabhuta = require('mahabhuta');
+const matter    = require('gray-matter');
 const parallelLimit = require('run-parallel-limit');
 
 /////////// Renderer class
