@@ -16,6 +16,7 @@ const RSS    = require('rss');
 const globfs = require('globfs');
 const mahabhuta = require('mahabhuta');
 exports.mahabhuta = mahabhuta;
+const mahaPartial = require('mahabhuta/maha/partial');
 const documents = require('./documents');
 
 exports.cache = require('./caching');
@@ -92,7 +93,7 @@ module.exports.Configuration = class Configuration {
 
         const CONFIG = this;
 
-        CONFIG.akasha = mmodule.exports;
+        CONFIG.akasha = module.exports;
 
         const configDirPath = function(dirnm) {
             let configPath = dirnm;
@@ -486,7 +487,7 @@ module.exports.Configuration = class Configuration {
         if (typeof PluginObj === 'string') {
             PluginObj = require(PluginObj);
         }
-        if (!PluginObj || PluginObj instanceof Plugin) {
+        if (!PluginObj || PluginObj instanceof exports.Plugin) {
             throw new Error("No plugin supplied");
         }
         // console.log("Configuration #2 use PluginObj "+ typeof PluginObj +" "+ util.inspect(PluginObj));

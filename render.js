@@ -4,6 +4,7 @@ const globfs    = require('globfs');
 const path      = require('path');
 const fs        = require('fs-extra');
 const util      = require('util');
+const url       = require('url');
 const cache     = require('./caching');
 const mahabhuta = require('mahabhuta');
 const matter    = require('gray-matter');
@@ -586,6 +587,8 @@ class JSONRenderer extends module.exports.HTMLRenderer {
 
 //////////// CSS/Less Renderer
 
+const less     = require('less');
+
 class CSSLESSRenderer extends module.exports.Renderer {
     constructor() {
         super(".css.less", /^(.*\.css)\.(less)$/);
@@ -604,15 +607,13 @@ class CSSLESSRenderer extends module.exports.Renderer {
         });
     }
 
-    renderToFile(basedir, fpath, renderTo, renderToPlus, metadata, config) {
+    async renderToFile(basedir, fpath, renderTo, renderToPlus, metadata, config) {
         var thisRenderer = this;
-        return co(function* () {
-            var lesstxt = yield thisRenderer.readFile(basedir, fpath);
-            var css = yield thisRenderer.render(lesstxt, {});
-            return yield thisRenderer.writeFile(renderTo,
+        var lesstxt = await thisRenderer.readFile(basedir, fpath);
+        var css = await thisRenderer.render(lesstxt, {});
+        return await thisRenderer.writeFile(renderTo,
                                     thisRenderer.filePath(fpath),
                                     css.css);
-        });
     }
 }
 
@@ -792,7 +793,7 @@ exports.newrender = async function(config) {
         let listForDir = await globfs.operateAsync(renderFrom, '**/*', async (basedir, fpath, fini) => {
             var doIgnore = false;
             if (renderIgnore) renderIgnore.forEach(ign => {
-                log(`CHECK ${fpath} === ${ign}`);
+                // console.log(`CHECK ${fpath} === ${ign}`);
                 if (fpath === ign) {
                     doIgnore = true;
                 }
@@ -802,6 +803,9 @@ exports.newrender = async function(config) {
             else if (stats.isDirectory()) doIgnore = true;
             else if (fpath.endsWith('.DS_Store')) doIgnore = true;
             console.log(`RENDER? renderFrom ${renderFrom} basedir ${basedir} fpath ${fpath} doIgnore ${doIgnore}`);
+            if (!basedir || !fpath) {
+                throw new Error(`RENDER? problem with file name ${util.inspect(basedir)} ${util.inspect(fpath)}`);
+            }
             if (!doIgnore) {
                 fini(undefined, {
                     config,
@@ -819,9 +823,16 @@ exports.newrender = async function(config) {
         }
     }
 
-    let filez2 = filez.map(entry => {
-        return entry.result && entry.result.ignore ? false : true;
+    let filez2 = filez.filter(entry => {
+        if (!entry.result) return false;
+        return entry.result.ignore ? false : true;
     });
+
+    for (let entry of filez2) {
+        if (!entry.result.basedir || !entry.result.fpath) {
+            throw new Error(`RENDER? problem with file name ${util.inspect(entry.result.basedir)} ${util.inspect(entry.result.fpath)}`);
+        }
+    }
 
     // The above code put a list of files in the filez array
     // Now the task is to render the files, performing several in parallel
@@ -830,7 +841,7 @@ exports.newrender = async function(config) {
     // TODO in mahabhuta, have each mahafunc execute under a nextTick
 
     var results = await new Promise((resolve, reject) => {
-        parallelLimit(filez.map(entry => {
+        parallelLimit(filez2.map(entry => {
             return function(cb) {
                 exports.renderDocument(
                     entry.result.config,
