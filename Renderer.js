@@ -1,11 +1,8 @@
 'use strict';
 
-const filez = require('./filez');
+// const filez = require('./filez');
 const fs    = require('fs-extra');
 const path  = require('path');
-
-const log   = require('debug')('akasha:Renderer');
-const error = require('debug')('akasha:error-Renderer');
 
 const _renderer_name = Symbol('name');
 const _renderer_regex = Symbol('regex');
@@ -68,7 +65,9 @@ module.exports = class Renderer {
     }
 
     writeFile(renderTo, fpath, text) {
-        return filez.writeFile(renderTo, fpath, text);
+        return fs.outputFile(path.join(renderTo, fpath), text, 'utf8');
+        // remove circular dependency
+        // return filez.writeFile(renderTo, fpath, text);
     }
 
     render(text, metadata) {

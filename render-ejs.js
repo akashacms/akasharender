@@ -1,11 +1,7 @@
 'use strict';
 
 const path      = require('path');
-const HTMLRenderer = require('./HTMLRenderer');
-const render   = require('./render');
-
-const log   = require('debug')('akasha:ejsRenderer');
-const error = require('debug')('akasha:error-ejsRenderer');
+const HTMLRenderer = require('./render').HTMLRenderer;//  require('./HTMLRenderer');
 
 const ejs      = require('ejs');
 

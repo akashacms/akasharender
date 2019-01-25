@@ -7,9 +7,6 @@ const path       = require('path');
 const render     = require('./render');
 const cache      = require('./caching');
 
-const log   = require('debug')('akasha:filez');
-const error = require('debug')('akasha:error-filez');
-
 exports.copyAssets = function(assetdirs, renderTo) {
     return globfs.copyAsync(assetdirs, '**/*', renderTo);
 };
@@ -336,7 +333,7 @@ exports.writeFile = async function(dir, fpath, text) {
     try {
         var renderToFile = path.join(dir, fpath);
         await fs.ensureDir(path.dirname(renderToFile));
-        log(`filez.writeFile ${dir} ${fpath} ==> ${renderToFile}`);
+        // console.log(`filez.writeFile ${dir} ${fpath} ==> ${renderToFile}`);
         await fs.writeFile(renderToFile, text, 'utf8');
     } catch (e) {
         throw new Error(`writeFile FAIL because ${e.stack}`);

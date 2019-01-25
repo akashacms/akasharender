@@ -5,8 +5,7 @@
 const program   = require('commander');
 const path      = require('path');
 const util      = require('util');
-const cache     = require('../caching');
-const filez     = require('../filez');
+const filez     = require('./filez');
 
 process.title = 'akasharender';
 program.version('0.4.0');
@@ -15,7 +14,7 @@ program
     .command('copy-assets <configFN>')
     .description('Copy assets into output directory')
     .action(async (configFN) => {
-        const akasha    = require('../index');
+        const akasha    = require('./index');
 
         try {
             const config = require(path.join(process.cwd(), configFN));
@@ -30,7 +29,7 @@ program
     .command('document <configFN> <documentFN>')
     .description('Show information about a document')
     .action(async (configFN, documentFN) => {
-        const akasha    = require('../index');
+        const akasha    = require('./index');
 
         try {
             const config = require(path.join(process.cwd(), configFN));
@@ -59,7 +58,7 @@ program
     .command('render-document <configFN> <documentFN>')
     .description('Render a document into output directory')
     .action(async (configFN, documentFN) => {
-        const akasha    = require('../index');
+        const akasha    = require('./index');
         try {
             const config = require(path.join(process.cwd(), configFN));
             let found = await filez.findRendersTo(config.documentDirs, documentFN);
@@ -80,7 +79,7 @@ program
     .command('render <configFN>')
     .description('Render a site into output directory')
     .action(async (configFN) => {
-        const akasha    = require('../index');
+        const akasha    = require('./index');
         console.log(`render: akasha: ${util.inspect(akasha)}`);
         try {
             const config = require(path.join(process.cwd(), configFN));

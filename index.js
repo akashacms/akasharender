@@ -6,9 +6,6 @@
 
 'use strict';
 
-const log   = require('debug')('akasha:index');
-const error = require('debug')('akasha:error-index');
-
 const filez  = require('./filez');
 const render = require('./render');
 const util   = require('util');
@@ -19,7 +16,6 @@ const RSS    = require('rss');
 const globfs = require('globfs');
 const mahabhuta = require('mahabhuta');
 exports.mahabhuta = mahabhuta;
-const mahaPartial = require('mahabhuta/maha/partial');
 const documents = require('./documents');
 
 exports.cache = require('./caching');
@@ -33,9 +29,9 @@ exports.Configuration = require('./Configuration');
 
 exports.Plugin = require('./Plugin');
 
-exports.Renderer = require('./Renderer');
+exports.Renderer = render.Renderer; //  require('./Renderer');
 
-exports.HTMLRenderer = require('./HTMLRenderer');
+exports.HTMLRenderer = render.HTMLRenderer; //  require('./HTMLRenderer');
 
 exports.render = render.newrender;
 exports.renderDocument = render.renderDocument;
@@ -78,7 +74,9 @@ exports.documentTree = documents.documentTree;
 exports.documentSearch = documents.documentSearch;
 exports.readDocument   = documents.readDocument;
 
-exports.partial = async function(config, fname, metadata) {
+exports.partial = render.partial;
+
+/* async function(config, fname, metadata) {
 
     var partialFound = await globfs.findAsync(config.partialsDirs, fname);
     if (!partialFound) throw new Error(`No partial found for ${fname} in ${util.inspect(config.partialsDirs)}`);
@@ -107,9 +105,11 @@ exports.partial = async function(config, fname, metadata) {
     }
     // This has been moved into Mahabhuta
     // return mahaPartial.doPartialAsync(partial, attrs);
-};
+}; */
 
-exports.partialSync = function(config, fname, metadata) {
+exports.partialSync = render.partialSync; 
+
+/* function(config, fname, metadata) {
 
     var partialFound = globfs.findSync(config.partialsDirs, fname);
     if (!partialFound) throw new Error(`No partial directory found for ${fname}`);
@@ -134,7 +134,7 @@ exports.partialSync = function(config, fname, metadata) {
     }
     // This has been moved into Mahabhuta
     // return mahaPartial.doPartialSync(fname, metadata);
-};
+}; */
 
 exports.indexChain = async function(config, fname) {
 

@@ -1,7 +1,6 @@
 'use strict';
 
 const Renderer = require('./Renderer');
-const render   = require('./render');
 const less     = require('less');
 const co       = require('co');
 

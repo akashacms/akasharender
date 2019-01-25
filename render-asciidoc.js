@@ -2,11 +2,7 @@
 
 const path      = require('path');
 const util      = require('util');
-const HTMLRenderer = require('./HTMLRenderer');
-const render    = require('./render');
-
-const log   = require('debug')('akasha:asciidocRenderer');
-const error = require('debug')('akasha:error-asciidocRenderer');
+const HTMLRenderer = require('./render').HTMLRenderer;//  require('./HTMLRenderer');
 
 const asciidoctor = require('asciidoctor.js')();
 

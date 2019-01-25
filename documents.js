@@ -27,7 +27,8 @@ const util  = require('util');
 const filez = require('./filez');
 const fs    = require('fs-extra');
 const globfs = require('globfs');
-const akasha = require('./index');
+const render = require('./render');
+// const akasha = require('./index');
 const cache  = require('./caching');
 
 const _document_basedir = Symbol('basedir');
@@ -485,7 +486,7 @@ async function _documentSearch(config, options) {
         } else {
             docdestpath = fpath;
         }
-        var renderer = akasha.findRendererPath(fpath);
+        var renderer = render.findRendererPath(fpath);
         let filepath = renderer ? renderer.filePath(fpath) : undefined;
 
         fileData = undefined;
@@ -640,7 +641,7 @@ exports.readDocument = async function(config, documentPath) {
         doc.docpath = found.foundPathWithinDir;
         doc.docdestpath = path.join(found.foundMountedOn, found.foundPathWithinDir);
         doc.fullpath = found.foundFullPath;
-        doc.renderer = akasha.findRendererPath(found.foundFullPath);
+        doc.renderer = render.findRendererPath(found.foundFullPath);
         // doc.renderpath = found.renderer ? found.renderer.filePath(found.foundPathWithinDir) : undefined;
     
         // console.log(`readDocument before readDocumentContent ${doc.basedir} docpath ${doc.docpath} fullpath ${doc.fullpath} renderer ${doc.renderer} renderpath ${doc.renderpath}`);

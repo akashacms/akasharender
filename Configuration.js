@@ -10,10 +10,9 @@ const fs     = require('fs-extra');
 const globfs = require('globfs');
 const util   = require('util');
 const path   = require('path');
-const akasha = require('./index');
+// const akasha = require('./index');
 const render = require('./render');
 const Plugin = require('./Plugin');
-const mahabhuta = require('mahabhuta');
 const mahaPartial = require('mahabhuta/maha/partial');
 
 const log    = require('debug')('akasha:configuration');
@@ -167,7 +166,7 @@ module.exports = class Configuration {
 
         var config = this;
         mahaPartial.configuration.renderPartial = function(fname, metadata) {
-            return akasha.partial(config, fname, metadata);
+            return render.partial(config, fname, metadata);
         }
 
         return this;

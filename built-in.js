@@ -22,16 +22,16 @@
 const url   = require('url');
 const path  = require('path');
 const util  = require('util');
+const documents = require('./documents');
 const filez = require('./filez');
-const akasha   = require('./index');
+const render = require('./render');
+const Plugin = require('./Plugin');
+// const akasha   = require('./index');
 const mahabhuta = require('mahabhuta');
 const mahaMetadata = require('mahabhuta/maha/metadata');
 const mahaPartial = require('mahabhuta/maha/partial');
 
-const log   = require('debug')('akasha:builtin-plugin');
-const error = require('debug')('akasha:error-builtin-plugin');
-
-module.exports = class BuiltInPlugin extends akasha.Plugin {
+module.exports = class BuiltInPlugin extends Plugin {
 	constructor() {
 		super("akashacms-builtin");
 	}
@@ -124,7 +124,7 @@ function _doHeaderJavaScript(metadata) {
 	// console.log(`_doHeaderJavaScript ${util.inspect(scripts)}`);
 	// console.log(`_doHeaderJavaScript ${util.inspect(metadata.config.scripts)}`);
 	return _doJavaScripts(scripts);
-	// return akasha.partialSync(metadata.config, "ak_javaScript.html.ejs", { javaScripts: scripts });
+	// return render.partialSync(metadata.config, "ak_javaScript.html.ejs", { javaScripts: scripts });
 }
 
 function _doFooterJavaScript(metadata) {
@@ -135,7 +135,7 @@ function _doFooterJavaScript(metadata) {
 		scripts = metadata.config.scripts ? metadata.config.scripts.javaScriptBottom : undefined;
 	}
 	return _doJavaScripts(scripts);
-	// return akasha.partialSync(metadata.config, "ak_javaScript.html.ejs", { javaScripts: scripts });
+	// return render.partialSync(metadata.config, "ak_javaScript.html.ejs", { javaScripts: scripts });
 }
 
 class StylesheetsElement extends mahabhuta.CustomElement {
@@ -174,7 +174,7 @@ module.exports.mahabhuta.addMahafunc(new InsertBodyContent());
 class InsertTeaser extends mahabhuta.CustomElement {
 	get elementName() { return "ak-teaser"; }
 	process($element, metadata, dirty) {
-		return akasha.partial(metadata.config, "ak_teaser.html.ejs", {
+		return render.partial(metadata.config, "ak_teaser.html.ejs", {
 			teaser: typeof metadata["ak-teaser"] !== "undefined"
 				? metadata["ak-teaser"] : metadata.teaser
 		})
@@ -212,7 +212,7 @@ class FigureImage extends mahabhuta.CustomElement {
         const width   = $element.attr('width');
         const style   = $element.attr('style');
         const dest    = $element.attr('dest');
-        return akasha.partial(metadata.config, template, {
+        return render.partial(metadata.config, template, {
             href, clazz, id, caption, width, style, dest
         })
         .then(html => { return html; });
@@ -233,8 +233,8 @@ class ShowContent extends mahabhuta.CustomElement {
         const width   = $element.attr('width');
         const style   = $element.attr('style');
         const dest    = $element.attr('dest');
-        const doc     = await akasha.readDocument(metadata.config, href);
-        return akasha.partial(metadata.config, template, {
+        const doc     = await documents.readDocument(metadata.config, href);
+        return render.partial(metadata.config, template, {
             href, clazz, id, caption, width, style, dest,
             document: doc
         });
@@ -265,7 +265,7 @@ This was moved into Mahabhuta
 		for (var dprop in data) { d[dprop] = data[dprop]; }
 		d["partialBody"] = txt;
 		log('partial tag fname='+ fname +' attrs '+ util.inspect(data));
-		return akasha.partial(metadata.config, fname, d)
+		return render.partial(metadata.config, fname, d)
 		.then(html => { return html; })
 		.catch(err => {
 			error(new Error("FAIL partial file-name="+ fname +" because "+ err));
@@ -322,7 +322,7 @@ class AnchorCleanup extends mahabhuta.Munger {
             // console.log(`AnchorCleanup ${metadata.document.path} ${href} findRendersTo ${(new Date() - startTime) / 1000} seconds`);
 
             // If this is a directory, there might be /path/to/index.html so we try for that.
-            // The problem is that akasha.findRendererPath would fail on just /path/to but succeed
+            // The problem is that render.findRendererPath would fail on just /path/to but succeed
             // on /path/to/index.html
             if (found.foundIsDirectory) {
                 found = await filez.findRendersTo(metadata.config.documentDirs, path.join(uHref.pathname, "index.html"));
@@ -331,7 +331,7 @@ class AnchorCleanup extends mahabhuta.Munger {
                 }
             }
             // Otherwise look into filling emptiness with title
-            var renderer = akasha.findRendererPath(found.foundFullPath);
+            var renderer = render.findRendererPath(found.foundFullPath);
             // console.log(`AnchorCleanup ${metadata.document.path} ${href} findRendererPath ${(new Date() - startTime) / 1000} seconds`);
             if (renderer && renderer.metadata) {
                 try {

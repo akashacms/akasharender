@@ -1,11 +1,7 @@
 'use strict';
 
 const path      = require('path');
-const HTMLRenderer = require('./HTMLRenderer');
-const render   = require('./render');
-
-const log   = require('debug')('akasha:markdownRenderer');
-const error = require('debug')('akasha:error-markdownRenderer');
+const HTMLRenderer = require('./render').HTMLRenderer;//  require('./HTMLRenderer');
 
 const mditConfig = {
   html:         true,         // Enable html tags in source

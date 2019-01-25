@@ -1,7 +1,7 @@
 'use strict';
 
 const Renderer  = require('./Renderer');
-const render    = require('./render');
+// const render    = require('./render');
 const fs        = require('fs-extra');
 const url       = require('url');
 const path      = require('path');
@@ -9,12 +9,8 @@ const util      = require('util');
 const matter    = require('gray-matter');
 const akasha    = require('./index');
 const mahabhuta = require('mahabhuta');
-const filez     = require('./filez');
 const cache     = require('./caching');
 const globfs    = require('globfs');
-
-const log   = require('debug')('akasha:HTMLRenderer');
-const error = require('debug')('akasha:error');
 
 /**
  * Rendering support for any file that produces HTML when rendered.
@@ -84,7 +80,7 @@ module.exports = class HTMLRenderer extends Renderer {
             layoutdata    = thisRenderer.copyMetadataProperties(metadata, fm.data);
             layoutdata.content = rendered;
             // if (!fm.data.layout) layoutdata.layout = undefined;
-            const renderer = render.findRendererPath(metadata.layout);
+            const renderer = akasha.findRendererPath(metadata.layout);
             /* if (!renderer && metadata.layout.match(/\.html$/) != null) {
                 return filez.readFile(partialDir, partial);
             } */
@@ -172,7 +168,9 @@ module.exports = class HTMLRenderer extends Renderer {
         console.log(`renderToFile SECOND RENDER ${basedir} ${fpath} ${renderTo} ${(renderSecondRender - renderStart) / 1000} seconds`);
         // console.log(`renderToFile ${basedir} ${fpath} ==> ${renderTo} ${thisRenderer.filePath(fpath)}`);
         // console.log(docrendered);
-        await filez.writeFile(renderTo, thisRenderer.filePath(fpath), docrendered);
+        await fs.outputFile(path.join(renderTo, thisRenderer.filePath(fpath)), docrendered, 'utf8');
+        // remove circular dependency
+        // await filez.writeFile(renderTo, thisRenderer.filePath(fpath), docrendered);
     }
 
     /**
