@@ -18,7 +18,7 @@ program
     .action(async (configFN) => {
 
         try {
-            const config = require(path.join(__dirname, configFN));
+            const config = require(path.join(process.cwd(), configFN));
             await config.copyAssets();
         } catch (e) {
             console.error(`copy-assets command ERRORED ${e.stack}`);
@@ -32,7 +32,7 @@ program
     .action(async (configFN, documentFN) => {
 
         try {
-            const config = require(path.join(__dirname, configFN));
+            const config = require(path.join(process.cwd(), configFN));
             let doc = await akasha.readDocument(config, documentFN);
             console.log(`
 basedir: ${doc.basedir}
@@ -59,7 +59,7 @@ program
     .description('Render a document into output directory')
     .action(async (configFN, documentFN) => {
         try {
-            const config = require(path.join(__dirname, configFN));
+            const config = require(path.join(process.cwd(), configFN));
             let found = await filez.findRendersTo(config.documentDirs, documentFN);
             let result = await akasha.renderDocument(
                         config,
@@ -79,7 +79,7 @@ program
     .description('Render a site into output directory')
     .action(async (configFN) => {
         try {
-            const config = require(path.join(__dirname, configFN));
+            const config = require(path.join(process.cwd(), configFN));
             let results = await akasha.render(config);
             for (let result of results) {
 
