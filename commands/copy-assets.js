@@ -2,6 +2,7 @@
 'use strict';
 
 const path = require('path');
+const util = require('util');
 
 module.exports = (() => {
     // const akasha = require('../index');
@@ -22,7 +23,9 @@ module.exports = (() => {
         
         run(args, flags, vflags, callback) {
 
-            if (!args[0]) callback(new Error("copy-assets: no config file name given"));
+            console.log(`copy-assets: args: ${util.inspect(args)} callback: ${util.inspect(callback)}`);
+
+            if (!args[0]) return callback(new Error("copy-assets: no config file name given"));
             
             const config = require(path.join(__dirname, args[0]));
 
