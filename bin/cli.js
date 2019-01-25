@@ -81,6 +81,7 @@ program
     .description('Render a site into output directory')
     .action(async (configFN) => {
         const akasha    = require('../index');
+        console.log(`render: akasha: ${util.inspect(akasha)}`);
         try {
             const config = require(path.join(process.cwd(), configFN));
             let results = await akasha.render(config);
