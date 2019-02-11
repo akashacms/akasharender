@@ -436,7 +436,7 @@ module.exports.Configuration = class Configuration {
      * Copy the contents of all directories in assetDirs to the render destination.
      */
     copyAssets() {
-        log('copyAssets START');
+        // console.log('copyAssets START');
 
         return Promise.all(this.assetDirs.map(assetsdir => {
             var copyTo;

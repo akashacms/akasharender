@@ -625,7 +625,7 @@ var renderers = [];
 
 exports.registerRenderer = function(renderer) {
     if (!(renderer instanceof module.exports.Renderer)) {
-        error('Not A Renderer '+ util.inspect(renderer));
+        console.error('Not A Renderer '+ util.inspect(renderer));
         throw new Error('Not a Renderer');
     }
     if (!exports.findRendererName(renderer.name)) {
