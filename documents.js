@@ -606,8 +606,9 @@ exports.documentSearch = function(config, options) {
  * Find the Document by its path within one of the DocumentDirs, then construct a Document object.
  */
 exports.readDocument = async function(config, documentPath) {
+    // console.log('readDocument '+ documentPath);
     var found = await filez.findRendersTo(config.documentDirs, documentPath)
-    // console.log('readDocument '+ documentPath +' '+ util.inspect(found));
+    // console.log('readDocument '+ documentPath +' ==> found: '+ util.inspect(found));
     if (!found) {
         throw new Error(`Did not find document for ${util.inspect(documentPath)} in ${util.inspect(config.documentDirs)}`);
     }

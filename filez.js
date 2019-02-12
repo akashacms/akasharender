@@ -167,7 +167,7 @@ exports.findRendersTo = async function(dirs, rendersTo) {
                 //          In Configure, dir.src is forced to be an absolute pathname
                 //     dest: slug within docroot to prepend to every pathname
                 renderBaseDir = dir.src;
-                // console.log(`filez.findRendersTo  Checking ${util.inspect(dir)} for ${rendersToNoSlash}`);
+                // console.log(`filez.findRendersTo  Checking ${util.inspect(dir)} for ${rendersTo} rendersToNoSlash ${rendersToNoSlash}`);
                 if (rendersTo.startsWith('/')) {
                     if (rendersTo.substring(0, dir.src.length) === dir.src
                      && rendersTo.substring(dir.src.length).startsWith('/')) {
@@ -179,7 +179,7 @@ exports.findRendersTo = async function(dirs, rendersTo) {
                     } else {
                         // Otherwise it is a relative pathname within the docroot 
                         // that might happen to be for this subdirectory
-                        if (rendersTo.substring(1, dir.dest.length) === dir.dest
+                        if (rendersTo.substring(1, dir.dest.length + 1) === dir.dest
                          && rendersTo.substring(1).substring(dir.dest.length).startsWith('/')) {
                             rendersToWithinDir = rendersTo.substring(1).substring(dir.dest.length+1);
                             rendersToNoSlash = path.join(dir.dest, rendersToWithinDir);
@@ -281,7 +281,7 @@ exports.findRendersTo = async function(dirs, rendersTo) {
                     try {
                         foundStats = await fs.stat(fullpath);
                     } catch (err) {
-                        console.log(`filez.findRendersTo could not fs.stat ${fullpath} foundDir ${foundDir} foundPath ${foundPath} foundFullPath ${foundFullPath} foundMountedOn ${foundMountedOn} foundPathWithinDir ${foundPathWithinDir} because ${err.stack}`);
+                        // console.log(`filez.findRendersTo could not fs.stat ${fullpath} foundDir ${foundDir} foundPath ${foundPath} foundFullPath ${foundFullPath} foundMountedOn ${foundMountedOn} foundPathWithinDir ${foundPathWithinDir} because ${err.stack}`);
                         foundStats = undefined;
                     }
                     if (foundStats && foundStats.isDirectory()) {
