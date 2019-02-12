@@ -9,6 +9,7 @@ const cache     = require('./caching');
 const mahabhuta = require('mahabhuta');
 const matter    = require('gray-matter');
 const parallelLimit = require('run-parallel-limit');
+const data = require('./data');
 
 /////////// Renderer class
 
@@ -220,6 +221,8 @@ module.exports.HTMLRenderer = class HTMLRenderer extends module.exports.Renderer
         // const renderFrontmatter = new Date();
         // console.log(`renderToFile FRONTMATTER ${basedir} ${fpath} ${renderTo} ${(renderFrontmatter - renderStart) / 1000} seconds`);
         // console.log(`renderToFile ${basedir} ${fpath} ${renderTo} ${renderToPlus} ${doccontent}`);
+        data.report(basedir, fpath, renderTo, "FRONTMATTER", renderStart);
+
         var metadata = await thisRenderer.initMetadata(config, basedir, fpath, renderToPlus, docdata, fm.data);
         docdata = metadata;
         // console.log('about to render '+ fpath);
@@ -232,6 +235,7 @@ module.exports.HTMLRenderer = class HTMLRenderer extends module.exports.Renderer
         }
         // const renderFirstRender = new Date();
         // console.log(`renderToFile FIRST RENDER ${basedir} ${fpath} ${renderTo} ${(renderFirstRender - renderStart) / 1000} seconds`);
+        data.report(basedir, fpath, renderTo, "FIRST RENDER", renderStart);
         // console.log('rendered to maharun '+ fpath);
         if (thisRenderer.doMahabhuta(fpath)) {
             try {
@@ -242,11 +246,13 @@ module.exports.HTMLRenderer = class HTMLRenderer extends module.exports.Renderer
             }
         }
         const renderFirstMahabhuta = new Date();
-        console.log(`renderToFile FIRST MAHABHUTA ${basedir} ${fpath} ${renderTo} ${(renderFirstMahabhuta - renderStart) / 1000} seconds`);
+        // console.log(`renderToFile FIRST MAHABHUTA ${basedir} ${fpath} ${renderTo} ${(renderFirstMahabhuta - renderStart) / 1000} seconds`);
+        data.report(basedir, fpath, renderTo, "FIRST MAHABHUTA", renderStart);
         // console.log('maharun to renderForLayout '+ fpath);
         docrendered = await thisRenderer.renderForLayout(docrendered, docdata, config);
         const renderSecondRender = new Date();
-        console.log(`renderToFile SECOND RENDER ${basedir} ${fpath} ${renderTo} ${(renderSecondRender - renderStart) / 1000} seconds`);
+        // console.log(`renderToFile SECOND RENDER ${basedir} ${fpath} ${renderTo} ${(renderSecondRender - renderStart) / 1000} seconds`);
+        data.report(basedir, fpath, renderTo, "SECOND RENDER", renderStart);
         // console.log(`renderToFile ${basedir} ${fpath} ==> ${renderTo} ${thisRenderer.filePath(fpath)}`);
         // console.log(docrendered);
         await fs.outputFile(path.join(renderTo, thisRenderer.filePath(fpath)), docrendered, 'utf8');
@@ -753,7 +759,8 @@ exports.renderDocument = async function(config, basedir, fpath, renderTo, render
             await renderer.renderToFile(basedir, fpath, path.join(renderTo, renderToPlus), renderToPlus, renderBaseMetadata, config);
             // console.log(`RENDERED ${renderer.name} ${docPathname} ==> ${renderToFpath}`);
             const renderEndRendered = new Date();
-            return `${renderer.name} ${docPathname} ==> ${renderToFpath} (${(renderEndRendered - renderStart) / 1000} seconds)`;
+            data.report(basedir, fpath, path.join(renderTo, renderToPlus), "RENDERED", renderStart);
+            return `${renderer.name} ${docPathname} ==> ${renderToFpath} (${(renderEndRendered - renderStart) / 1000} seconds)\n${data.data4file(basedir, fpath)}`;
         } catch (err) {
             console.error(`in renderer branch for ${docPathname} to ${renderToFpath} error=${err.stack ? err.stack : err}`);
             throw new Error(`in renderer branch for ${docPathname} to ${renderToFpath} error=${err.stack ? err.stack : err}`);
@@ -773,6 +780,7 @@ exports.renderDocument = async function(config, basedir, fpath, renderTo, render
 };
 
 exports.newrender = async function(config) {
+    data.init();
     var filez = [];
     for (let docdir of config.documentDirs) {
 
@@ -802,7 +810,7 @@ exports.newrender = async function(config) {
             if (!stats) doIgnore = true;
             else if (stats.isDirectory()) doIgnore = true;
             else if (fpath.endsWith('.DS_Store')) doIgnore = true;
-            console.log(`RENDER? renderFrom ${renderFrom} basedir ${basedir} fpath ${fpath} doIgnore ${doIgnore}`);
+            // console.log(`RENDER? renderFrom ${renderFrom} basedir ${basedir} fpath ${fpath} doIgnore ${doIgnore}`);
             if (!basedir || !fpath) {
                 throw new Error(`RENDER? problem with file name ${util.inspect(basedir)} ${util.inspect(fpath)}`);
             }
@@ -872,6 +880,7 @@ exports.newrender = async function(config) {
     // console.log('CALLING config.hookSiteRendered');
     var hookResults = await config.hookSiteRendered();
 
+    // data.print();
     return results;
 };
 
