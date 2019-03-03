@@ -547,8 +547,8 @@ module.exports = class Configuration {
     /**
      * Add a new Renderer to the AkashaRender configuration
      */
-    addRenderer(renderer) {
-        throw new Error("Implement this");
+    registerRenderer(renderer) {
+        render.registerRenderer(renderer);
     }
 
     /**

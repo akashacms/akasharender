@@ -563,8 +563,13 @@ async function _documentSearch(config, options) {
         documents = documents.filter(doc => {
             for (let layout of options.layouts) {
                 // console.log(`options.layouts ${doc.metadata.layout} === ${layout}?`);
-                if (doc.metadata.layout === layout) {
-                    return true;
+                try {
+                    if (doc.metadata.layout === layout) {
+                        return true;
+                    }
+                } catch (err) {
+                    console.error(`documentSearch FAIL filter layouts ${doc.docpath} has no layout`);
+                    throw err;
                 }
             }
             return false;
