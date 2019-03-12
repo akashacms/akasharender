@@ -6,6 +6,7 @@ const program   = require('commander');
 const path      = require('path');
 const util      = require('util');
 const filez     = require('./filez');
+const data      = require('./data');
 
 process.title = 'akasharender';
 program.version('0.4.0');
@@ -61,6 +62,7 @@ program
         const akasha    = require('./index');
         try {
             const config = require(path.join(process.cwd(), configFN));
+            data.init();
             let found = await filez.findRendersTo(config.documentDirs, documentFN);
             let result = await akasha.renderDocument(
                         config,
