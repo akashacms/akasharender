@@ -10,7 +10,7 @@ module.exports.init = function() {
 };
 
 module.exports.report = function(basedir, fpath, renderTo, stage, start) {
-    traces.push({
+    if (traces) traces.push({
         file: {
             basedir, fpath, renderTo
         },
@@ -21,6 +21,7 @@ module.exports.report = function(basedir, fpath, renderTo, stage, start) {
 };
 
 module.exports.print = function() {
+    if (!traces) return;
     let traces2 = traces.sort((a, b) => {
         let aFile = path.join(a.file.basedir, a.file.fpath);
         let bFile = path.join(b.file.basedir, b.file.fpath);
@@ -35,6 +36,7 @@ module.exports.print = function() {
 
 module.exports.data4file = function(basedir, fpath) {
     let ret = "";
+    if (!traces) return ret;
     for (let trace of traces) {
         if (trace.file.basedir === basedir && trace.file.fpath === fpath) {
             ret += `${trace.file.basedir} ${trace.file.fpath} ${trace.file.renderTo} ${trace.time.stage} ${(trace.time.now - trace.time.start) / 1000} seconds\n`;
