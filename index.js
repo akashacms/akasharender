@@ -476,7 +476,7 @@ module.exports.Configuration = class Configuration {
      * @param PluginObj The plugin name or object to add
      * @returns {Configuration}
      */
-    use(PluginObj) {
+    use(PluginObj, options) {
         // console.log("Configuration #1 use PluginObj "+ typeof PluginObj +" "+ util.inspect(PluginObj));
         if (typeof this[_config_plugins] === 'undefined'
         || !this.hasOwnProperty(_config_plugins)
@@ -487,13 +487,14 @@ module.exports.Configuration = class Configuration {
         if (typeof PluginObj === 'string') {
             PluginObj = require(PluginObj);
         }
-        if (!PluginObj || PluginObj instanceof exports.Plugin) {
+        if (!PluginObj || PluginObj instanceof module.exports.Plugin) {
             throw new Error("No plugin supplied");
         }
         // console.log("Configuration #2 use PluginObj "+ typeof PluginObj +" "+ util.inspect(PluginObj));
         var plugin = new PluginObj();
         this[_config_plugins].push(plugin);
-        plugin.configure(this);
+        if (!options) options = {};
+        plugin.configure(this, options);
         return this;
     }
 
