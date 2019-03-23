@@ -6,6 +6,7 @@ const fs        = require('fs-extra');
 const util      = require('util');
 const url       = require('url');
 const cache     = require('./caching');
+const akasha    = require('./index');
 const mahabhuta = require('mahabhuta');
 const matter    = require('gray-matter');
 const parallelLimit = require('run-parallel-limit');
@@ -15,9 +16,11 @@ const data = require('./data');
 
 const _renderer_name = Symbol('name');
 const _renderer_regex = Symbol('regex');
+const _renderer_akasha = Symbol('akasha');
 
 module.exports.Renderer = class Renderer {
     constructor(name, regex) {
+        this[_renderer_akasha]  = akasha;
         this[_renderer_name]  = name;
         if (regex instanceof RegExp) {
             this[_renderer_regex] = [ regex ];
@@ -28,6 +31,7 @@ module.exports.Renderer = class Renderer {
         }
     }
 
+    get akasha() { return this[_renderer_akasha]; }
     get name() { return this[_renderer_name]; }
     get regex() { return this[_renderer_regex]; }
 
@@ -147,8 +151,6 @@ module.exports.HTMLRenderer = class HTMLRenderer extends module.exports.Renderer
             var layoutrendered;
             var metadocpath = metadata.document ? metadata.document.path : "unknown";
 
-            var thisRenderer = this;
-
             // console.log(`renderForLayout find ${util.inspect(config.layoutDirs)} ${metadata.layout}`);
             var foundDir = await globfs.findAsync(config.layoutDirs, metadata.layout);
             if (!foundDir) throw new Error(`No layout directory found in ${util.inspect(config.layoutDirs)} ${metadata.layout} in file ${metadata.document.path}`);
@@ -159,7 +161,7 @@ module.exports.HTMLRenderer = class HTMLRenderer extends module.exports.Renderer
             layouttext = layout;
             var fm = matter(layout);
             layoutcontent = fm.content;
-            layoutdata    = thisRenderer.copyMetadataProperties(metadata, fm.data);
+            layoutdata    = this.copyMetadataProperties(metadata, fm.data);
             layoutdata.content = rendered;
             // if (!fm.data.layout) layoutdata.layout = undefined;
             const renderer = module.exports.findRendererPath(metadata.layout);
@@ -182,9 +184,9 @@ module.exports.HTMLRenderer = class HTMLRenderer extends module.exports.Renderer
             // console.log(`renderForLayout FIRST RENDER ${metadocpath} ${layoutFname} ${(layoutFirstRender - layoutStart) / 1000} seconds`);
             // log('maharun '+ metadata.layout +' '+ util.inspect(layoutdata.config.headerScripts));
             // log(`renderForLayout maharun ${metadocpath} with ${metadata.layout}`);
-            if (thisRenderer.doMahabhuta(metadocpath)) {
+            if (this.doMahabhuta(metadocpath)) {
                 try {
-                    layoutrendered = await thisRenderer.maharun(layoutrendered, layoutdata, config.mahafuncs);
+                    layoutrendered = await this.maharun(layoutrendered, layoutdata, config.mahafuncs);
                 } catch (e2) {
                     let eee = new Error(`Error with Mahabhuta ${metadocpath} with ${metadata.layout} ${e2.stack ? e2.stack : e2}`);
                     console.error(eee);
@@ -214,21 +216,19 @@ module.exports.HTMLRenderer = class HTMLRenderer extends module.exports.Renderer
         var docdata = metadata;
         var docrendered;
 
-        var thisRenderer = this;
-
-        var fm = await thisRenderer.frontmatter(basedir, fpath);
+        var fm = await this.frontmatter(basedir, fpath);
         doccontent = fm.content;
         // const renderFrontmatter = new Date();
         // console.log(`renderToFile FRONTMATTER ${basedir} ${fpath} ${renderTo} ${(renderFrontmatter - renderStart) / 1000} seconds`);
         // console.log(`renderToFile ${basedir} ${fpath} ${renderTo} ${renderToPlus} ${doccontent}`);
         data.report(basedir, fpath, renderTo, "FRONTMATTER", renderStart);
 
-        var metadata = await thisRenderer.initMetadata(config, basedir, fpath, renderToPlus, docdata, fm.data);
+        var metadata = await this.initMetadata(config, basedir, fpath, renderToPlus, docdata, fm.data);
         docdata = metadata;
         // console.log('about to render '+ fpath);
         // console.log(`metadata before render ${util.inspect(docdata)}`);
         try {
-            docrendered = await thisRenderer.render(doccontent, docdata);
+            docrendered = await this.render(doccontent, docdata);
         } catch (err) {
             console.error("Error rendering "+ fpath +" "+ (err.stack ? err.stack : err));
             throw new Error("Error rendering "+ fpath +" "+ (err.stack ? err.stack : err));
@@ -237,9 +237,9 @@ module.exports.HTMLRenderer = class HTMLRenderer extends module.exports.Renderer
         // console.log(`renderToFile FIRST RENDER ${basedir} ${fpath} ${renderTo} ${(renderFirstRender - renderStart) / 1000} seconds`);
         data.report(basedir, fpath, renderTo, "FIRST RENDER", renderStart);
         // console.log('rendered to maharun '+ fpath);
-        if (thisRenderer.doMahabhuta(fpath)) {
+        if (this.doMahabhuta(fpath)) {
             try {
-                docrendered = await thisRenderer.maharun(docrendered, docdata, config.mahafuncs);
+                docrendered = await this.maharun(docrendered, docdata, config.mahafuncs);
             } catch (err2) {
                 console.error("Error in Mahabhuta for "+ fpath +" "+ (err2.stack ? err2.stack : err2));
                 throw new Error("Error in Mahabhuta for "+ fpath +" "+ (err2.stack ? err2.stack : err2));
@@ -249,15 +249,15 @@ module.exports.HTMLRenderer = class HTMLRenderer extends module.exports.Renderer
         // console.log(`renderToFile FIRST MAHABHUTA ${basedir} ${fpath} ${renderTo} ${(renderFirstMahabhuta - renderStart) / 1000} seconds`);
         data.report(basedir, fpath, renderTo, "FIRST MAHABHUTA", renderStart);
         // console.log('maharun to renderForLayout '+ fpath);
-        docrendered = await thisRenderer.renderForLayout(docrendered, docdata, config);
+        docrendered = await this.renderForLayout(docrendered, docdata, config);
         const renderSecondRender = new Date();
         // console.log(`renderToFile SECOND RENDER ${basedir} ${fpath} ${renderTo} ${(renderSecondRender - renderStart) / 1000} seconds`);
         data.report(basedir, fpath, renderTo, "SECOND RENDER", renderStart);
-        // console.log(`renderToFile ${basedir} ${fpath} ==> ${renderTo} ${thisRenderer.filePath(fpath)}`);
+        // console.log(`renderToFile ${basedir} ${fpath} ==> ${renderTo} ${this.filePath(fpath)}`);
         // console.log(docrendered);
-        await fs.outputFile(path.join(renderTo, thisRenderer.filePath(fpath)), docrendered, 'utf8');
+        await fs.outputFile(path.join(renderTo, this.filePath(fpath)), docrendered, 'utf8');
         // remove circular dependency
-        // await filez.writeFile(renderTo, thisRenderer.filePath(fpath), docrendered);
+        // await filez.writeFile(renderTo, this.filePath(fpath), docrendered);
     }
 
     /**
@@ -629,13 +629,30 @@ class CSSLESSRenderer extends module.exports.Renderer {
 
 var renderers = [];
 
-exports.registerRenderer = function(renderer) {
+const isRenderer = (renderer) => {
     if (!(renderer instanceof module.exports.Renderer)) {
         console.error('Not A Renderer '+ util.inspect(renderer));
         throw new Error('Not a Renderer');
-    }
-    if (!exports.findRendererName(renderer.name)) {
+    } else return true;
+}
+
+exports.registerRenderer = function(renderer) {
+    if (isRenderer(renderer) && !exports.findRendererName(renderer.name)) {
         renderers.push(renderer);
+    }
+};
+
+/**
+ * Allow an application to override one of the built-in renderers
+ * that are initialized below.  The inspiration is epubtools that
+ * must write HTML files with an .xhtml extension.  Therefore it
+ * can subclass EJSRenderer etc with implementations that force the
+ * file name to be .xhtml.  We're not checking if the renderer name
+ * is already there in case epubtools must use the same renderer name.
+ */
+exports.registerOverrideRenderer = function(renderer) {
+    if (isRenderer(renderer)) {
+        renderers.unshift(renderer);
     }
 };
 
