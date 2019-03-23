@@ -582,12 +582,18 @@ exports.Plugin = require('./Plugin');
 exports.Renderer = render.Renderer; //  require('./Renderer');
 
 exports.HTMLRenderer = render.HTMLRenderer; //  require('./HTMLRenderer');
+exports.AsciidocRenderer = render.AsciidocRenderer;
+exports.EJSRenderer = render.EJSRenderer;
+exports.MarkdownRenderer = render.MarkdownRenderer;
+exports.JSONRenderer = render.JSONRenderer;
+exports.CSSLESSRenderer = render.CSSLESSRenderer;
 
 exports.render = render.newrender;
 exports.renderDocument = render.renderDocument;
 exports.findRendererName = render.findRendererName;
 exports.findRendererPath = render.findRendererPath;
 exports.registerRenderer = render.registerRenderer;
+exports.registerOverrideRenderer = render.registerOverrideRenderer;
 
 /**
  * Finds the source document matching the filename for a rendered file.  That is, for
