@@ -6,6 +6,7 @@ const path  = require('path');
 
 const _renderer_name = Symbol('name');
 const _renderer_regex = Symbol('regex');
+const _renderer_akasha = Symbol('akasha');
 
 
 module.exports = class Renderer {
@@ -20,6 +21,8 @@ module.exports = class Renderer {
         }
     }
 
+    get akasha() { return this[_renderer_akasha]; }
+    set akasha(_akasha) { this[_renderer_akasha] = _akasha; }
     get name() { return this[_renderer_name]; }
     get regex() { return this[_renderer_regex]; }
 

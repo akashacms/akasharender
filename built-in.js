@@ -314,7 +314,7 @@ class AnchorCleanup extends mahabhuta.Munger {
             }
 
             // Does it exist in documents dir?
-            var found = await filez.findRendersTo(metadata.config.documentDirs, uHref.pathname);
+            var found = await filez.findRendersTo(metadata.config, uHref.pathname);
             // console.log(`AnchorCleanup findRendersTo ${uHref.pathname} ${util.inspect(found)}`);
             if (!found) {
                 throw new Error(`Did not find ${href} in ${util.inspect(metadata.config.documentDirs)} in ${metadata.document.path}`);
@@ -322,16 +322,16 @@ class AnchorCleanup extends mahabhuta.Munger {
             // console.log(`AnchorCleanup ${metadata.document.path} ${href} findRendersTo ${(new Date() - startTime) / 1000} seconds`);
 
             // If this is a directory, there might be /path/to/index.html so we try for that.
-            // The problem is that render.findRendererPath would fail on just /path/to but succeed
+            // The problem is that metadata.config.findRendererPath would fail on just /path/to but succeed
             // on /path/to/index.html
             if (found.foundIsDirectory) {
-                found = await filez.findRendersTo(metadata.config.documentDirs, path.join(uHref.pathname, "index.html"));
+                found = await filez.findRendersTo(metadata.config, path.join(uHref.pathname, "index.html"));
                 if (!found) {
                     throw new Error(`Did not find ${href} in ${util.inspect(metadata.config.documentDirs)} in ${metadata.document.path}`);
                 }
             }
             // Otherwise look into filling emptiness with title
-            var renderer = render.findRendererPath(found.foundFullPath);
+            var renderer = metadata.config.findRendererPath(found.foundFullPath);
             // console.log(`AnchorCleanup ${metadata.document.path} ${href} findRendererPath ${(new Date() - startTime) / 1000} seconds`);
             if (renderer && renderer.metadata) {
                 try {

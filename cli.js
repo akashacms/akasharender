@@ -63,7 +63,7 @@ program
         try {
             const config = require(path.join(process.cwd(), configFN));
             data.init();
-            let found = await filez.findRendersTo(config.documentDirs, documentFN);
+            let found = await filez.findRendersTo(config, documentFN);
             let result = await akasha.renderDocument(
                         config,
                         found.foundDir,

@@ -15,9 +15,6 @@ const render = require('./render');
 const Plugin = require('./Plugin');
 const mahaPartial = require('mahabhuta/maha/partial');
 
-const log    = require('debug')('akasha:configuration');
-const error  = require('debug')('akasha:error-configuration');
-
 const _config_pluginData = Symbol('pluginData');
 const _config_assetsDirs = Symbol('assetsDirs');
 const _config_documentDirs = Symbol('documentDirs');
@@ -32,6 +29,8 @@ const _config_plugins = Symbol('plugins');
 const _config_cheerio = Symbol('cheerio');
 const _config_configdir = Symbol('configdir');
 const _config_concurrency = Symbol('concurrency');
+const _config_akasha = Symbol('akasha');
+const _config_renderers = Symbol('renderers');
 
 /**
  * Configuration of an AkashaRender project, including the input directories,
@@ -42,8 +41,18 @@ const _config_concurrency = Symbol('concurrency');
  * const akasha = require('akasharender');
  * const config = new akasha.Configuration();
  */
-module.exports = class Configuration {
+module.exports.Configuration = class Configuration {
     constructor(modulepath) {
+
+        /*
+         * Is this the best place for this?  It is necessary to
+         * call this function somewhere.  The nature of this function
+         * is that it can be called multiple times with no impact.  
+         * By being located here, it will always be called by the
+         * time any Configuration is generated.
+         */
+        // render.registerBuiltInRenderers();
+
         // Provide a mechanism to easily specify configDir
         // The path in configDir must be the path of the configuration file.
         // There doesn't appear to be a way to determine that from here.
@@ -61,6 +70,8 @@ module.exports = class Configuration {
         if (typeof modulepath !== 'undefined' && modulepath !== null) {
             this.configDir = path.dirname(modulepath);
         }
+
+        this[_config_renderers] = [];
     }
 
     /**
@@ -80,6 +91,8 @@ module.exports = class Configuration {
     prepare() {
 
         const CONFIG = this;
+
+        CONFIG.akasha = module.exports;
 
         const configDirPath = function(dirnm) {
             let configPath = dirnm;
@@ -178,6 +191,9 @@ module.exports = class Configuration {
      */
     set configDir(cfgdir) { this[_config_configdir] = cfgdir; }
     get configDir() { return this[_config_configdir]; }
+
+    set akasha(_akasha)  { this[_config_akasha] = _akasha; }
+    get akasha() { return this[_config_akasha]; }
 
     /**
      * Add a directory to the documentDirs configuration array
@@ -419,7 +435,7 @@ module.exports = class Configuration {
      * Copy the contents of all directories in assetDirs to the render destination.
      */
     copyAssets() {
-        log('copyAssets START');
+        // console.log('copyAssets START');
 
         return Promise.all(this.assetDirs.map(assetsdir => {
             var copyTo;
@@ -470,7 +486,7 @@ module.exports = class Configuration {
         if (typeof PluginObj === 'string') {
             PluginObj = require(PluginObj);
         }
-        if (!PluginObj || PluginObj instanceof Plugin) {
+        if (!PluginObj || PluginObj instanceof module.exports.Plugin) {
             throw new Error("No plugin supplied");
         }
         // console.log("Configuration #2 use PluginObj "+ typeof PluginObj +" "+ util.inspect(PluginObj));
@@ -545,17 +561,61 @@ module.exports = class Configuration {
         return false;
     }
 
-    /**
-     * Add a new Renderer to the AkashaRender configuration
-     */
     registerRenderer(renderer) {
-        render.registerRenderer(renderer);
+        if (!(renderer instanceof module.exports.Renderer)) {
+            console.error('Not A Renderer '+ util.inspect(renderer));
+            throw new Error('Not a Renderer');
+        }
+        if (!this.findRendererName(renderer.name)) {
+            this[_config_renderers].push(renderer);
+        }
+    }
+
+    /**
+     * Allow an application to override one of the built-in renderers
+     * that are initialized below.  The inspiration is epubtools that
+     * must write HTML files with an .xhtml extension.  Therefore it
+     * can subclass EJSRenderer etc with implementations that force the
+     * file name to be .xhtml.  We're not checking if the renderer name
+     * is already there in case epubtools must use the same renderer name.
+     */
+    registerOverrideRenderer(renderer) {
+        if (!(renderer instanceof module.exports.Renderer)) {
+            console.error('Not A Renderer '+ util.inspect(renderer));
+            throw new Error('Not a Renderer');
+        }
+        this[_config_renderers].unshift(renderer);
+    }
+
+    findRendererName(name) {
+        for (var r of this[_config_renderers]) {
+            if (r.name === name) return r;
+        }
+        return undefined;
+    }
+
+    findRendererPath = function(_path) {
+        // log(`findRendererPath ${_path}`);
+        for (var r of this[_config_renderers]) {
+            if (r.match(_path)) return r;
+        }
+        // console.log(`findRendererPath NO RENDERER for ${_path}`);
+        return undefined;
+    }
+
+    registerBuiltInRenderers = function() {
+        // Register built-in renderers
+        this.registerRenderer(new MarkdownRenderer() /* require('./render-md') */);
+        this.registerRenderer(new AsciidocRenderer() /* require('./render-asciidoc') */);
+        this.registerRenderer(new EJSRenderer() /* require('./render-ejs') */);
+        this.registerRenderer(new CSSLESSRenderer() /* require('./render-cssless') */);
+        this.registerRenderer(new JSONRenderer() /* require('./render-json') */);
     }
 
     /**
      * Find a Renderer by its extension.
      */
     findRenderer(name) {
-        return render.findRendererName(name);
+        return this.findRendererName(name);
     }
 }

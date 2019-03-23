@@ -486,7 +486,7 @@ async function _documentSearch(config, options) {
         } else {
             docdestpath = fpath;
         }
-        var renderer = render.findRendererPath(fpath);
+        var renderer = config.findRendererPath(fpath);
         let filepath = renderer ? renderer.filePath(fpath) : undefined;
 
         fileData = undefined;
@@ -612,7 +612,7 @@ exports.documentSearch = function(config, options) {
  */
 exports.readDocument = async function(config, documentPath) {
     // console.log('readDocument '+ documentPath);
-    var found = await filez.findRendersTo(config.documentDirs, documentPath)
+    var found = await filez.findRendersTo(config, documentPath)
     // console.log('readDocument '+ documentPath +' ==> found: '+ util.inspect(found));
     if (!found) {
         throw new Error(`Did not find document for ${util.inspect(documentPath)} in ${util.inspect(config.documentDirs)}`);
@@ -632,7 +632,7 @@ exports.readDocument = async function(config, documentPath) {
     // If the creation time or modified time is different then the file has changed
     // and therefore needs to be re-read
     if (stats && (stats.ctime !== found.foundStats.ctime || stats.mtime !== found.foundStats.mtime)) {
-        found = await filez.findRendersToForce(config.documentDirs, documentPath);
+        found = await filez.findRendersToForce(config, documentPath);
         // Ensure there is no cached copy
         cache.del("documents-readDocument", documentPath);
     }
@@ -647,7 +647,7 @@ exports.readDocument = async function(config, documentPath) {
         doc.docpath = found.foundPathWithinDir;
         doc.docdestpath = path.join(found.foundMountedOn, found.foundPathWithinDir);
         doc.fullpath = found.foundFullPath;
-        doc.renderer = render.findRendererPath(found.foundFullPath);
+        doc.renderer = config.findRendererPath(found.foundFullPath);
         // doc.renderpath = found.renderer ? found.renderer.filePath(found.foundPathWithinDir) : undefined;
     
         // console.log(`readDocument before readDocumentContent ${doc.basedir} docpath ${doc.docpath} fullpath ${doc.fullpath} renderer ${doc.renderer} renderpath ${doc.renderpath}`);

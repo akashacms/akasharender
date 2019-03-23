@@ -7,7 +7,6 @@
 'use strict';
 
 const filez  = require('./filez');
-const render = require('./render');
 const util   = require('util');
 const fs     = require('fs-extra');
 const path   = require('path');
@@ -20,14 +19,197 @@ const mahaPartial = require('mahabhuta/maha/partial');
 const documents = require('./documents');
 
 exports.cache = require('./caching');
+exports.Plugin = require('./Plugin');
+
+const render = require('./render');
+
+module.exports.Renderer = require('./Renderer');
+module.exports.HTMLRenderer = require('./HTMLRenderer');
+module.exports.AsciidocRenderer = require('./render-asciidoc');
+module.exports.EJSRenderer = require('./render-ejs');
+module.exports.MarkdownRenderer = require('./render-md');
+module.exports.JSONRenderer = require('./render-json');
+module.exports.CSSLESSRenderer = require('./render-cssless');
+
+exports.render = render.newrender;
+exports.renderDocument = render.renderDocument;
+
+exports.findRendererPath = function(p) {
+    throw new Error(`akasha.findRendererPath deprecated use config.findRendererPath instead for ${p}`);
+}
+
+/**
+ * Finds the source document matching the filename for a rendered file.  That is, for
+ * a rendered file path like {movies/wallachia/vlad-tepes/son-of-dracul.html} it will search
+ * for the {.html.md} file generating that rendered file.
+ *
+ * The returned object has at least these fields:
+ *
+ * * {foundDir} - The basedir within which the file was found
+ * * {foundPath} - The path under basedir to that file
+ * * {foundFullPath} - The path, including the full file extension, to that file
+ * * {foundMountedOn} - For complex directories, the path  this directory is mounted on .. e.g. dir.dest
+ * * {foundPathWithinDir} - For complex directories, the path within that directory.
+ * * {foundBaseMetadata} - For complex directories, the metadata associated with that directory
+ *
+ * @params {Array} dirs The documentDirs directory
+ * @params {string} rendersTo The full path of the rendered file
+ * @return {Object} Description of the source file
+ */
+exports.findRendersTo = filez.findRendersTo;
+
+/**
+ *
+ *
+ * @param dir
+ * @param fpath
+ */
+exports.readFile = filez.readFile;
+exports.createNewFile = filez.createNewFile;
+
+exports.Document = documents.Document;
+exports.HTMLDocument = documents.HTMLDocument;
+exports.documentTree = documents.documentTree;
+exports.documentSearch = documents.documentSearch;
+exports.readDocument   = documents.readDocument;
+
+exports.partial = render.partial;
+
+exports.partialSync = render.partialSync; 
+
+exports.indexChain = async function(config, fname) {
+
+    var ret = [];
+    const parsed = path.parse(fname);
+
+    var findParents = function(config, fileName) {
+        // var newFileName;
+        var parentDir;
+        // console.log(`findParents ${fileName}`);
+        if (path.dirname(fileName) === '.'
+         || path.dirname(fileName) === parsed.root) {
+            return Promise.resolve();
+        } else {
+            if (path.basename(fileName) === "index.html") {
+                parentDir = path.dirname(path.dirname(fileName));
+            } else {
+                parentDir = path.dirname(fileName);
+            }
+            var lookFor = path.join(parentDir, "index.html");
+            return filez.findRendersTo(config, lookFor)
+            .then(found => {
+                // console.log(util.inspect(found));
+                if (typeof found !== 'undefined') {
+                    ret.push({ foundDir: found.foundDir, foundPath: found.foundPath, filename: lookFor });
+                }
+                return findParents(config, lookFor);
+            });
+        }
+    };
+
+    let renderer = config.findRendererPath(fname);
+    if (renderer) {
+        fname = renderer.filePath(fname);
+    }
+
+    var found = await filez.findRendersTo(config, fname);
+    if (typeof found === 'undefined') {
+        throw new Error(`Did not find directory for ${fname}`);
+    }
+    ret.push({ foundDir: found.foundDir, foundPath: found.foundPath, filename: fname });
+    await findParents(config, fname);
+
+    // console.log(`indexChain FINI ${util.inspect(ret.reverse)}`);
+    return ret.reverse();
+};
+
+/**
+ * Manipulate the rel= attributes on a link returned from Mahabhuta.
+ *
+ * @params {$link} The link to manipulate
+ * @params {attr} The attribute name
+ * @params {doattr} Boolean flag whether to set (true) or remove (false) the attribute
+ *
+ */
+exports.linkRelSetAttr = function($link, attr, doattr) {
+    let linkrel = $link.attr('rel');
+    let rels = linkrel ? linkrel.split(' ') : [];
+    let hasattr = rels.indexOf(attr) >= 0;
+    if (!hasattr && doattr) {
+        rels.unshift(attr);
+        $link.attr('rel', rels.join(' '));
+    } else if (hasattr && !doattr) {
+        rels.splice(rels.indexOf(attr));
+        $link.attr('rel', rels.join(' '));
+    }
+};
+
+///////////////// RSS Feed Generation
+
+exports.generateRSS = async function(config, configrss, feedData, items, renderTo) {
+
+    // Supposedly it's required to use hasOwnProperty
+    // http://stackoverflow.com/questions/728360/how-do-i-correctly-clone-a-javascript-object#728694
+    //
+    // But, in our case that resulted in an empty object
+
+    // console.log('configrss '+ util.inspect(configrss));
+
+    // Construct initial rss object
+    var rss = {};
+    for (let key in configrss.rss) {
+        //if (configrss.hasOwnProperty(key)) {
+            rss[key] = configrss.rss[key];
+        //}
+    }
+
+    // console.log('rss '+ util.inspect(rss));
+
+    // console.log('feedData '+ util.inspect(feedData));
+
+    // Then fill in from feedData
+    for (let key in feedData) {
+        //if (feedData.hasOwnProperty(key)) {
+            rss[key] = feedData[key];
+        //}
+    }
+
+    // console.log('rss '+ util.inspect(rss));
+
+    var rssfeed = new RSS(rss);
+
+    items.forEach(function(item) { rssfeed.item(item); });
+
+    var xml = rssfeed.xml();
+    var renderOut = path.join(config.renderDestination, renderTo);
+
+    await fs.mkdirs(path.dirname(renderOut))
+    await fs.writeFile(renderOut, xml, { encoding: 'utf8' });
+
+};
+
+// Consider making an external plugin
+// https://www.npmjs.com/package/oembed-all
+// https://www.npmjs.com/package/embedable
+// https://www.npmjs.com/package/media-parser
+// https://www.npmjs.com/package/oembetter
+module.exports.oEmbedData = function(url) {
+    return new Promise((resolve, reject) => {
+        oembetter.fetch(url,
+        (err, result) => {
+            if (err) return reject(err);
+            else resolve(result);
+        }
+        );
+    });
+};
+
 
 /**
  * The AkashaRender project configuration object.  One instantiates a Configuration
  * object, then fills it with settings and plugins.
  * @see module:Configuration
  */
-// exports.Configuration = require('./Configuration');
-
 
 const _config_pluginData = Symbol('pluginData');
 const _config_assetsDirs = Symbol('assetsDirs');
@@ -44,6 +226,7 @@ const _config_cheerio = Symbol('cheerio');
 const _config_configdir = Symbol('configdir');
 const _config_concurrency = Symbol('concurrency');
 const _config_akasha = Symbol('akasha');
+const _config_renderers = Symbol('renderers');
 
 /**
  * Configuration of an AkashaRender project, including the input directories,
@@ -56,6 +239,19 @@ const _config_akasha = Symbol('akasha');
  */
 module.exports.Configuration = class Configuration {
     constructor(modulepath) {
+
+        this[_config_renderers] = [];
+        this[_config_akasha] = module.exports;
+
+        /*
+         * Is this the best place for this?  It is necessary to
+         * call this function somewhere.  The nature of this function
+         * is that it can be called multiple times with no impact.  
+         * By being located here, it will always be called by the
+         * time any Configuration is generated.
+         */
+        this.registerBuiltInRenderers();
+
         // Provide a mechanism to easily specify configDir
         // The path in configDir must be the path of the configuration file.
         // There doesn't appear to be a way to determine that from here.
@@ -73,7 +269,10 @@ module.exports.Configuration = class Configuration {
         if (typeof modulepath !== 'undefined' && modulepath !== null) {
             this.configDir = path.dirname(modulepath);
         }
+
     }
+
+    get akasha() { return this[_config_akasha]; }
 
     /**
      * Initialize default configuration values for anything which has not
@@ -92,8 +291,6 @@ module.exports.Configuration = class Configuration {
     prepare() {
 
         const CONFIG = this;
-
-        CONFIG.akasha = module.exports;
 
         const configDirPath = function(dirnm) {
             let configPath = dirnm;
@@ -539,7 +736,7 @@ module.exports.Configuration = class Configuration {
      * Retrieve the pluginData object for the named plugin.
      * @param {string} name
      * @returns {Object}
-     */
+     */ 
     pluginData(name) {
         if (!this[_config_pluginData]) {
             this[_config_pluginData] = [];
@@ -562,259 +759,63 @@ module.exports.Configuration = class Configuration {
         return false;
     }
 
+    registerRenderer(renderer) {
+        if (!(renderer instanceof module.exports.Renderer)) {
+            console.error('Not A Renderer '+ util.inspect(renderer));
+            throw new Error('Not a Renderer');
+        }
+        if (!this.findRendererName(renderer.name)) {
+            this[_config_renderers].push(renderer);
+            renderer.akasha = this.akasha;
+        }
+    }
+
     /**
-     * Add a new Renderer to the AkashaRender configuration
+     * Allow an application to override one of the built-in renderers
+     * that are initialized below.  The inspiration is epubtools that
+     * must write HTML files with an .xhtml extension.  Therefore it
+     * can subclass EJSRenderer etc with implementations that force the
+     * file name to be .xhtml.  We're not checking if the renderer name
+     * is already there in case epubtools must use the same renderer name.
      */
-    addRenderer(renderer) {
-        throw new Error("Implement this");
+    registerOverrideRenderer(renderer) {
+        if (!(renderer instanceof module.exports.Renderer)) {
+            console.error('Not A Renderer '+ util.inspect(renderer));
+            throw new Error('Not a Renderer');
+        }
+        this[_config_renderers].unshift(renderer);
+        renderer.akasha = this.akasha;
+    }
+
+    findRendererName(name) {
+        for (var r of this[_config_renderers]) {
+            if (r.name === name) return r;
+        }
+        return undefined;
+    }
+
+    findRendererPath(_path) {
+        // log(`findRendererPath ${_path}`);
+        for (var r of this[_config_renderers]) {
+            if (r.match(_path)) return r;
+        }
+        // console.log(`findRendererPath NO RENDERER for ${_path}`);
+        return undefined;
+    }
+
+    registerBuiltInRenderers() {
+        // Register built-in renderers
+        this.registerRenderer(new module.exports.MarkdownRenderer());
+        this.registerRenderer(new module.exports.AsciidocRenderer());
+        this.registerRenderer(new module.exports.EJSRenderer());
+        this.registerRenderer(new module.exports.CSSLESSRenderer());
+        this.registerRenderer(new module.exports.JSONRenderer());
     }
 
     /**
      * Find a Renderer by its extension.
      */
     findRenderer(name) {
-        return render.findRendererName(name);
+        return this.findRendererName(name);
     }
 }
-
-exports.Plugin = require('./Plugin');
-
-exports.Renderer = render.Renderer; //  require('./Renderer');
-
-exports.HTMLRenderer = render.HTMLRenderer; //  require('./HTMLRenderer');
-exports.AsciidocRenderer = render.AsciidocRenderer;
-exports.EJSRenderer = render.EJSRenderer;
-exports.MarkdownRenderer = render.MarkdownRenderer;
-exports.JSONRenderer = render.JSONRenderer;
-exports.CSSLESSRenderer = render.CSSLESSRenderer;
-
-exports.render = render.newrender;
-exports.renderDocument = render.renderDocument;
-exports.findRendererName = render.findRendererName;
-exports.findRendererPath = render.findRendererPath;
-exports.registerRenderer = render.registerRenderer;
-exports.registerOverrideRenderer = render.registerOverrideRenderer;
-
-/**
- * Finds the source document matching the filename for a rendered file.  That is, for
- * a rendered file path like {movies/wallachia/vlad-tepes/son-of-dracul.html} it will search
- * for the {.html.md} file generating that rendered file.
- *
- * The returned object has at least these fields:
- *
- * * {foundDir} - The basedir within which the file was found
- * * {foundPath} - The path under basedir to that file
- * * {foundFullPath} - The path, including the full file extension, to that file
- * * {foundMountedOn} - For complex directories, the path  this directory is mounted on .. e.g. dir.dest
- * * {foundPathWithinDir} - For complex directories, the path within that directory.
- * * {foundBaseMetadata} - For complex directories, the metadata associated with that directory
- *
- * @params {Array} dirs The documentDirs directory
- * @params {string} rendersTo The full path of the rendered file
- * @return {Object} Description of the source file
- */
-exports.findRendersTo = filez.findRendersTo;
-
-/**
- *
- *
- * @param dir
- * @param fpath
- */
-exports.readFile = filez.readFile;
-exports.createNewFile = filez.createNewFile;
-
-exports.Document = documents.Document;
-exports.HTMLDocument = documents.HTMLDocument;
-exports.documentTree = documents.documentTree;
-exports.documentSearch = documents.documentSearch;
-exports.readDocument   = documents.readDocument;
-
-exports.partial = render.partial;
-
-/* async function(config, fname, metadata) {
-
-    var partialFound = await globfs.findAsync(config.partialsDirs, fname);
-    if (!partialFound) throw new Error(`No partial found for ${fname} in ${util.inspect(config.partialsDirs)}`);
-    // Pick the first partial found
-    partialFound = partialFound[0];
-    // console.log(`partial ${util.inspect(partialFound)}`);
-    if (!partialFound) throw new Error(`No partial found for ${fname} in ${util.inspect(config.partialsDirs)}`);
-
-    var partialFname = path.join(partialFound.basedir, partialFound.path);
-    // console.log(`partial ${util.inspect(partialFname)}`);
-    var stats = await fs.stat(partialFname);
-    if (!stats.isFile()) {
-        throw new Error(`renderPartial non-file found for ${fname} - ${partialFname}`);
-    }
-
-    var renderer = render.findRendererPath(partialFname);
-    if (renderer) {
-        // console.log(`partial about to render ${util.inspect(partialFname)}`);
-        var partialText = await fs.readFile(partialFname, 'utf8');
-        return renderer.render(partialText, metadata);
-    } else if (partialFname.endsWith('.html') || partialFname.endsWith('.xhtml')) {
-        // console.log(`partial reading file ${partialFname}`);
-        return fs.readFile(partialFname, 'utf8');
-    } else {
-        throw new Error(`renderPartial no Renderer found for ${fname} - ${partialFname}`);
-    }
-    // This has been moved into Mahabhuta
-    // return mahaPartial.doPartialAsync(partial, attrs);
-}; */
-
-exports.partialSync = render.partialSync; 
-
-/* function(config, fname, metadata) {
-
-    var partialFound = globfs.findSync(config.partialsDirs, fname);
-    if (!partialFound) throw new Error(`No partial directory found for ${fname}`);
-    // Pick the first partial found
-    partialFound = partialFound[0];
-
-    var partialFname = path.join(partialFound.basedir, partialFound.path);
-    // console.log(`doPartialSync before reading ${partialFname}`);
-    var stats = fs.statSync(partialFname);
-    if (!stats.isFile()) {
-        throw new Error(`doPartialSync non-file found for ${fname} - ${partialFname}`);
-    }
-    var partialText = fs.readFileSync(partialFname, 'utf8');
-
-    var renderer = render.findRendererPath(partialFname);
-    if (renderer) {
-        return renderer.renderSync(partialText, metadata);
-    } else if (partialFname.endsWith('.html') || partialFname.endsWith('.xhtml')) {
-        return fs.readFileSync(partialFname, 'utf8');
-    } else {
-        throw new Error(`renderPartial no Renderer found for ${fname} - ${partialFname}`);
-    }
-    // This has been moved into Mahabhuta
-    // return mahaPartial.doPartialSync(fname, metadata);
-}; */
-
-exports.indexChain = async function(config, fname) {
-
-    var ret = [];
-    const parsed = path.parse(fname);
-
-    var findParents = function(config, fileName) {
-        // var newFileName;
-        var parentDir;
-        // console.log(`findParents ${fileName}`);
-        if (path.dirname(fileName) === '.'
-         || path.dirname(fileName) === parsed.root) {
-            return Promise.resolve();
-        } else {
-            if (path.basename(fileName) === "index.html") {
-                parentDir = path.dirname(path.dirname(fileName));
-            } else {
-                parentDir = path.dirname(fileName);
-            }
-            var lookFor = path.join(parentDir, "index.html");
-            return filez.findRendersTo(config.documentDirs, lookFor)
-            .then(found => {
-                // console.log(util.inspect(found));
-                if (typeof found !== 'undefined') {
-                    ret.push({ foundDir: found.foundDir, foundPath: found.foundPath, filename: lookFor });
-                }
-                return findParents(config, lookFor);
-            });
-        }
-    };
-
-    let renderer = exports.findRendererPath(fname);
-    if (renderer) {
-        fname = renderer.filePath(fname);
-    }
-
-    var found = await filez.findRendersTo(config.documentDirs, fname);
-    if (typeof found === 'undefined') {
-        throw new Error(`Did not find directory for ${fname}`);
-    }
-    ret.push({ foundDir: found.foundDir, foundPath: found.foundPath, filename: fname });
-    await findParents(config, fname);
-
-    // console.log(`indexChain FINI ${util.inspect(ret.reverse)}`);
-    return ret.reverse();
-};
-
-/**
- * Manipulate the rel= attributes on a link returned from Mahabhuta.
- *
- * @params {$link} The link to manipulate
- * @params {attr} The attribute name
- * @params {doattr} Boolean flag whether to set (true) or remove (false) the attribute
- *
- */
-exports.linkRelSetAttr = function($link, attr, doattr) {
-    let linkrel = $link.attr('rel');
-    let rels = linkrel ? linkrel.split(' ') : [];
-    let hasattr = rels.indexOf(attr) >= 0;
-    if (!hasattr && doattr) {
-        rels.unshift(attr);
-        $link.attr('rel', rels.join(' '));
-    } else if (hasattr && !doattr) {
-        rels.splice(rels.indexOf(attr));
-        $link.attr('rel', rels.join(' '));
-    }
-};
-
-///////////////// RSS Feed Generation
-
-exports.generateRSS = async function(config, configrss, feedData, items, renderTo) {
-
-    // Supposedly it's required to use hasOwnProperty
-    // http://stackoverflow.com/questions/728360/how-do-i-correctly-clone-a-javascript-object#728694
-    //
-    // But, in our case that resulted in an empty object
-
-    // console.log('configrss '+ util.inspect(configrss));
-
-    // Construct initial rss object
-    var rss = {};
-    for (let key in configrss.rss) {
-        //if (configrss.hasOwnProperty(key)) {
-            rss[key] = configrss.rss[key];
-        //}
-    }
-
-    // console.log('rss '+ util.inspect(rss));
-
-    // console.log('feedData '+ util.inspect(feedData));
-
-    // Then fill in from feedData
-    for (let key in feedData) {
-        //if (feedData.hasOwnProperty(key)) {
-            rss[key] = feedData[key];
-        //}
-    }
-
-    // console.log('rss '+ util.inspect(rss));
-
-    var rssfeed = new RSS(rss);
-
-    items.forEach(function(item) { rssfeed.item(item); });
-
-    var xml = rssfeed.xml();
-    var renderOut = path.join(config.renderDestination, renderTo);
-
-    await fs.mkdirs(path.dirname(renderOut))
-    await fs.writeFile(renderOut, xml, { encoding: 'utf8' });
-
-};
-
-// Consider making an external plugin
-// https://www.npmjs.com/package/oembed-all
-// https://www.npmjs.com/package/embedable
-// https://www.npmjs.com/package/media-parser
-// https://www.npmjs.com/package/oembetter
-module.exports.oEmbedData = function(url) {
-    return new Promise((resolve, reject) => {
-        oembetter.fetch(url,
-        (err, result) => {
-            if (err) return reject(err);
-            else resolve(result);
-        }
-        );
-    });
-};

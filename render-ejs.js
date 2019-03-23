@@ -1,12 +1,12 @@
 'use strict';
 
 const path      = require('path');
-const HTMLRenderer = require('./render').HTMLRenderer;//  require('./HTMLRenderer');
+const HTMLRenderer = require('./HTMLRenderer');
 
 const ejs      = require('ejs');
 
 // TODO support .php.ejs
-class EJSRenderer extends HTMLRenderer {
+module.exports = class EJSRenderer extends HTMLRenderer {
     constructor() {
         super(".html.ejs", /^(.*\.html|.*\.php)\.(ejs)$/);
     }
@@ -38,5 +38,3 @@ class EJSRenderer extends HTMLRenderer {
             return true;
     }
 }
-
-module.exports = new EJSRenderer();

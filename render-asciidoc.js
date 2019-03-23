@@ -2,13 +2,13 @@
 
 const path      = require('path');
 const util      = require('util');
-const HTMLRenderer = require('./render').HTMLRenderer;//  require('./HTMLRenderer');
+const HTMLRenderer = require('./HTMLRenderer');
 
 const asciidoctor = require('asciidoctor.js')();
 
 const _renderer_doctype = Symbol('doctype');
 
-class AsciidocRenderer extends HTMLRenderer {
+module.exports = class AsciidocRenderer extends HTMLRenderer {
     constructor() {
         super(".html.adoc", /^(.*\.html)\.(adoc)$/);
         this[_renderer_doctype] = 'article';
@@ -71,5 +71,3 @@ class AsciidocRenderer extends HTMLRenderer {
         });
     }
 }
-
-module.exports = new AsciidocRenderer();

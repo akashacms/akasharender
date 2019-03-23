@@ -4,7 +4,6 @@ const fs         = require('fs-extra');
 const globfs     = require('globfs');
 const util       = require('util');
 const path       = require('path');
-const render     = require('./render');
 const cache      = require('./caching');
 
 exports.copyAssets = function(assetdirs, renderTo) {
@@ -100,12 +99,18 @@ exports.find = async function(dirs, fileName) {
     // }
 };
 
-exports.findRendersToForce = function(dirs, rendersTo) {
+exports.findRendersToForce = function(config, rendersTo) {
     cache.del("filez-findRendersTo", rendersTo);
-    return exports.findRendersTo(dirs, rendersTo);
+    return exports.findRendersTo(config, rendersTo);
 };
 
-exports.findRendersTo = async function(dirs, rendersTo) {
+exports.findRendersTo = async function(config, rendersTo) {
+
+    if (Array.isArray(config)) {
+        throw new Error(`findRendersTo must now be given a Configuration object rather than the document array - for ${rendersTo}`);
+    }
+
+    const dirs = config.documentDirs;
 
     var cached = cache.get("filez-findRendersTo", rendersTo);
     if (cached) {
@@ -251,7 +256,7 @@ exports.findRendersTo = async function(dirs, rendersTo) {
                     foundMountedOn = pathMountedOn;
                     foundPathWithinDir = rendersToWithinDir;
                     foundBaseMetadata = typeof dir === 'string' ? {} : dir.baseMetadata;
-                    let renderer = render.findRendererPath(foundPath);
+                    let renderer = config.findRendererPath(foundPath);
                     if (renderer) {
                         foundPath = renderer.filePath(foundPath);
                     }
@@ -259,7 +264,7 @@ exports.findRendersTo = async function(dirs, rendersTo) {
                 }
                 var fname2find = path.join(renderToDir, fname);
                 // console.log(`${renderToDir} ${fname} ${fname2find}`);
-                let renderer = render.findRendererPath(fname2find);
+                let renderer = config.findRendererPath(fname2find);
                 if (renderer) {
                     var renderToFname = path.basename(renderer.filePath(fname2find));
                     // console.log(`${renderer.name} ${util.inspect(dir)} ${fname} === ${renderToFname}`);

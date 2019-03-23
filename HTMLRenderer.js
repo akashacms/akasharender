@@ -7,10 +7,10 @@ const url       = require('url');
 const path      = require('path');
 const util      = require('util');
 const matter    = require('gray-matter');
-const akasha    = require('./index');
 const mahabhuta = require('mahabhuta');
 const cache     = require('./caching');
 const globfs    = require('globfs');
+const data = require('./data');
 
 /**
  * Rendering support for any file that produces HTML when rendered.
@@ -65,22 +65,20 @@ module.exports = class HTMLRenderer extends Renderer {
             var layoutrendered;
             var metadocpath = metadata.document ? metadata.document.path : "unknown";
 
-            var thisRenderer = this;
-
             // console.log(`renderForLayout find ${util.inspect(config.layoutDirs)} ${metadata.layout}`);
             var foundDir = await globfs.findAsync(config.layoutDirs, metadata.layout);
             if (!foundDir) throw new Error(`No layout directory found in ${util.inspect(config.layoutDirs)} ${metadata.layout} in file ${metadata.document.path}`);
             foundDir = foundDir[0];
-            if (!foundDir) await new Error(`No layout directory found in ${util.inspect(config.layoutDirs)} ${metadata.layout} in file ${metadata.document.path}`);
+            if (!foundDir) throw new Error(`No layout directory found in ${util.inspect(config.layoutDirs)} ${metadata.layout} in file ${metadata.document.path}`);
             var layoutFname = path.join(foundDir.basedir, foundDir.path);
             var layout = await fs.readFile(layoutFname, 'utf8');
             layouttext = layout;
             var fm = matter(layout);
             layoutcontent = fm.content;
-            layoutdata    = thisRenderer.copyMetadataProperties(metadata, fm.data);
+            layoutdata    = this.copyMetadataProperties(metadata, fm.data);
             layoutdata.content = rendered;
             // if (!fm.data.layout) layoutdata.layout = undefined;
-            const renderer = akasha.findRendererPath(metadata.layout);
+            const renderer = config.findRendererPath(metadata.layout);
             /* if (!renderer && metadata.layout.match(/\.html$/) != null) {
                 return filez.readFile(partialDir, partial);
             } */
@@ -100,9 +98,9 @@ module.exports = class HTMLRenderer extends Renderer {
             // console.log(`renderForLayout FIRST RENDER ${metadocpath} ${layoutFname} ${(layoutFirstRender - layoutStart) / 1000} seconds`);
             // log('maharun '+ metadata.layout +' '+ util.inspect(layoutdata.config.headerScripts));
             // log(`renderForLayout maharun ${metadocpath} with ${metadata.layout}`);
-            if (thisRenderer.doMahabhuta(metadocpath)) {
+            if (this.doMahabhuta(metadocpath)) {
                 try {
-                    layoutrendered = await thisRenderer.maharun(layoutrendered, layoutdata, config.mahafuncs);
+                    layoutrendered = await this.maharun(layoutrendered, layoutdata, config.mahafuncs);
                 } catch (e2) {
                     let eee = new Error(`Error with Mahabhuta ${metadocpath} with ${metadata.layout} ${e2.stack ? e2.stack : e2}`);
                     console.error(eee);
@@ -132,45 +130,48 @@ module.exports = class HTMLRenderer extends Renderer {
         var docdata = metadata;
         var docrendered;
 
-        var thisRenderer = this;
-
-        var fm = await thisRenderer.frontmatter(basedir, fpath);
+        var fm = await this.frontmatter(basedir, fpath);
         doccontent = fm.content;
         // const renderFrontmatter = new Date();
         // console.log(`renderToFile FRONTMATTER ${basedir} ${fpath} ${renderTo} ${(renderFrontmatter - renderStart) / 1000} seconds`);
         // console.log(`renderToFile ${basedir} ${fpath} ${renderTo} ${renderToPlus} ${doccontent}`);
-        var metadata = await thisRenderer.initMetadata(config, basedir, fpath, renderToPlus, docdata, fm.data);
+        data.report(basedir, fpath, renderTo, "FRONTMATTER", renderStart);
+
+        var metadata = await this.initMetadata(config, basedir, fpath, renderToPlus, docdata, fm.data);
         docdata = metadata;
         // console.log('about to render '+ fpath);
         // console.log(`metadata before render ${util.inspect(docdata)}`);
         try {
-            docrendered = await thisRenderer.render(doccontent, docdata);
+            docrendered = await this.render(doccontent, docdata);
         } catch (err) {
             console.error("Error rendering "+ fpath +" "+ (err.stack ? err.stack : err));
             throw new Error("Error rendering "+ fpath +" "+ (err.stack ? err.stack : err));
         }
         // const renderFirstRender = new Date();
         // console.log(`renderToFile FIRST RENDER ${basedir} ${fpath} ${renderTo} ${(renderFirstRender - renderStart) / 1000} seconds`);
+        data.report(basedir, fpath, renderTo, "FIRST RENDER", renderStart);
         // console.log('rendered to maharun '+ fpath);
-        if (thisRenderer.doMahabhuta(fpath)) {
+        if (this.doMahabhuta(fpath)) {
             try {
-                docrendered = await thisRenderer.maharun(docrendered, docdata, config.mahafuncs);
+                docrendered = await this.maharun(docrendered, docdata, config.mahafuncs);
             } catch (err2) {
                 console.error("Error in Mahabhuta for "+ fpath +" "+ (err2.stack ? err2.stack : err2));
                 throw new Error("Error in Mahabhuta for "+ fpath +" "+ (err2.stack ? err2.stack : err2));
             }
         }
         const renderFirstMahabhuta = new Date();
-        console.log(`renderToFile FIRST MAHABHUTA ${basedir} ${fpath} ${renderTo} ${(renderFirstMahabhuta - renderStart) / 1000} seconds`);
+        // console.log(`renderToFile FIRST MAHABHUTA ${basedir} ${fpath} ${renderTo} ${(renderFirstMahabhuta - renderStart) / 1000} seconds`);
+        data.report(basedir, fpath, renderTo, "FIRST MAHABHUTA", renderStart);
         // console.log('maharun to renderForLayout '+ fpath);
-        docrendered = await thisRenderer.renderForLayout(docrendered, docdata, config);
+        docrendered = await this.renderForLayout(docrendered, docdata, config);
         const renderSecondRender = new Date();
-        console.log(`renderToFile SECOND RENDER ${basedir} ${fpath} ${renderTo} ${(renderSecondRender - renderStart) / 1000} seconds`);
-        // console.log(`renderToFile ${basedir} ${fpath} ==> ${renderTo} ${thisRenderer.filePath(fpath)}`);
+        // console.log(`renderToFile SECOND RENDER ${basedir} ${fpath} ${renderTo} ${(renderSecondRender - renderStart) / 1000} seconds`);
+        data.report(basedir, fpath, renderTo, "SECOND RENDER", renderStart);
+        // console.log(`renderToFile ${basedir} ${fpath} ==> ${renderTo} ${this.filePath(fpath)}`);
         // console.log(docrendered);
-        await fs.outputFile(path.join(renderTo, thisRenderer.filePath(fpath)), docrendered, 'utf8');
+        await fs.outputFile(path.join(renderTo, this.filePath(fpath)), docrendered, 'utf8');
         // remove circular dependency
-        // await filez.writeFile(renderTo, thisRenderer.filePath(fpath), docrendered);
+        // await filez.writeFile(renderTo, this.filePath(fpath), docrendered);
     }
 
     /**
@@ -202,7 +203,13 @@ module.exports = class HTMLRenderer extends Renderer {
         }
         var text = await fs.readFile(path.join(basedir, fpath), 'utf8');
         // console.log(`frontmatter ${path.join(basedir, fpath)} ${text}`);
-        var fm = matter(text);
+        var fm;
+        try {
+            fm = matter(text);
+        } catch (e) {
+            console.log(`HTMLRenderer.frontmatter FAIL to read frontmatter in ${fpath} because ${e.stack}`);
+            fm = {};
+        }
         // console.log(`frontmatter ${path.join(basedir, fpath)} ${util.inspect(fm)}`);
         cache.set("htmlrenderer", cachekey, fm);
         // log(`frontmatter ${cachekey} ${util.inspect(fm)}`);
@@ -217,8 +224,7 @@ module.exports = class HTMLRenderer extends Renderer {
      * This metadata is solely the data stored in the file.
      */
     async metadata(basedir, fpath) {
-        var thisRenderer = this;
-        var fm = await thisRenderer.frontmatter(basedir, fpath);
+        var fm = await this.frontmatter(basedir, fpath);
         return fm.data;
     }
 
@@ -261,8 +267,8 @@ module.exports = class HTMLRenderer extends Renderer {
         metadata.document.renderTo = path.join(renderToPlus, renderer.filePath(fpath));
 
         metadata.config      = config;
-        metadata.partialSync = akasha.partialSync.bind(renderer, config);
-        metadata.partial     = akasha.partial.bind(renderer, config);
+        metadata.partialSync = this.akasha.partialSync.bind(renderer, config);
+        metadata.partial     = this.akasha.partial.bind(renderer, config);
 
         metadata.root_url = config.root_url;
 
@@ -276,7 +282,7 @@ module.exports = class HTMLRenderer extends Renderer {
 
         // console.log('initMetadata '+ basedir +' '+ fpath +' '+ util.inspect(metadata));
 
-        metadata.akasha = akasha;
+        metadata.akasha = this.akasha;
         metadata.plugin = config.plugin;
 
         // console.log(`HTMLRenderer before path.join ${path.join(basedir, fpath)}`);
