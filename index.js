@@ -687,9 +687,9 @@ module.exports.Configuration = class Configuration {
         if (!PluginObj || PluginObj instanceof module.exports.Plugin) {
             throw new Error("No plugin supplied");
         }
-        plugin.akasha = this.akasha;
         // console.log("Configuration #2 use PluginObj "+ typeof PluginObj +" "+ util.inspect(PluginObj));
         var plugin = new PluginObj();
+        plugin.akasha = this.akasha;
         this[_config_plugins].push(plugin);
         if (!options) options = {};
         plugin.configure(this, options);
