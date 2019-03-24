@@ -53,6 +53,22 @@ module.exports = class Renderer {
         return null;
     }
 
+    sourcePathMatchRenderPath(sourcePath, rendersTo) {
+        // console.log(`sourcePathMatchRenderPath sourcePath ${sourcePath} rendersTo ${rendersTo}`);
+        if (path.dirname(sourcePath) !== path.dirname(rendersTo)) {
+            // console.log(`sourcePathMatchRenderPath DIR sourcePath ${path.dirname(sourcePath)}  DID NOT MATCH DIR rendersTo ${path.dirname(rendersTo)}`);
+            return false;
+        }
+        let renderPath = this.filePath(sourcePath);
+        // console.log(`sourcePathMatchRenderPath renderPath ${renderPath} rendersTo ${rendersTo}`);
+        if (path.basename(renderPath) === path.basename(rendersTo)) {
+            // console.log(`sourcePathMatchRenderPath basename renderPath ${path.basename(renderPath)} MATCHES rendersTo ${path.basename(rendersTo)}`);
+            return true;
+        }
+        // console.log(`sourcePathMatchRenderPath basename renderPath ${path.basename(renderPath)} DOES NOT MATCH rendersTo ${path.basename(rendersTo)}`);
+        return false;
+    }
+
     fileExtension(fname) {
         var matches;
         for (var regex of this.regex) {
