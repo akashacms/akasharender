@@ -687,6 +687,7 @@ module.exports.Configuration = class Configuration {
         if (!PluginObj || PluginObj instanceof module.exports.Plugin) {
             throw new Error("No plugin supplied");
         }
+        plugin.akasha = this.akasha;
         // console.log("Configuration #2 use PluginObj "+ typeof PluginObj +" "+ util.inspect(PluginObj));
         var plugin = new PluginObj();
         this[_config_plugins].push(plugin);
@@ -813,7 +814,7 @@ module.exports.Configuration = class Configuration {
     }
 
     get renderers() { return this[_config_renderers]; }
-    
+
     /**
      * Find a Renderer by its extension.
      */

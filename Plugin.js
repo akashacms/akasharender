@@ -2,6 +2,7 @@
 
 const _plugin_name = Symbol('name');
 const _plugin_options = Symbol('options');
+const _plugin_akasha = Symbol('akasha');
 
 module.exports = class Plugin {
 
@@ -11,6 +12,8 @@ module.exports = class Plugin {
 
     set options(newOptions) { this[_plugin_options] = newOptions; }
     get options() { return this[_plugin_options]; }
+    get akasha() { return this[_plugin_akasha]; }
+    set akasha(_akasha) { this[_plugin_akasha] = _akasha; }
 
     /**
      * Add this plugin to the configuration object.
