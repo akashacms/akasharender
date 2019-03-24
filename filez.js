@@ -138,11 +138,11 @@ exports.findRendersTo = async function(config, rendersTo) {
     // renderToDir -- is the directory within config.renderDestination to which
     //          the file is to be rendered
     //          for rendersTo path/to/file.html ... renderToDir path/to
-    var renderToDir = path.dirname(rendersTo);
+    var renderToDir = path.dirname(rendersToNoSlash);
 
     for (let dir of config.documentDirs) {
 
-        // console.log(`filez.findRendersTo ${dir} ${rendersTo} ${found}`);
+        // console.log(`filez.findRendersTo ${util.inspect(dir)} ${rendersTo} ${found}`);
         if (!found) {
             // For cases of complex directory descriptions
             let pathMountedOn = "/";
@@ -182,13 +182,13 @@ exports.findRendersTo = async function(config, rendersTo) {
                         rendersToNoSlash = rendersTo.startsWith("/")
                             ? rendersTo.substring(1)
                             : rendersTo;
-                        renderToDir = path.dirname(rendersTo);
+                        renderToDir = path.dirname(rendersToNoSlash);
                         rendersToWithinDir = rendersTo;
                     }
                 } else {
                     // Otherwise it is a relative pathname within docroot
                     rendersToNoSlash = rendersTo;
-                    renderToDir = path.dirname(rendersTo);
+                    renderToDir = path.dirname(rendersToNoSlash);
                     rendersToWithinDir = rendersTo;
                 }
                 dirToRead = path.join(renderBaseDir, renderToDir);
@@ -311,9 +311,8 @@ exports.findRendersTo = async function(config, rendersTo) {
                     var fname2find = path.join(renderToDir, fname);
                     // console.log(`renderToDir ${renderToDir} ${fname} fname2find ${fname2find}`);
                     let renderer = config.findRendererPath(fname2find);
-                    // console.log(`renderers ${util.inspect(config.renderers)} renderer ${util.inspect(renderer)}`);
                     if (renderer) {
-                        if (renderer.sourcePathMatchRenderPath(fname2find, rendersTo)) {
+                        if (renderer.sourcePathMatchRenderPath(fname2find, rendersToNoSlash)) {
                             found = true;
                             foundDir = typeof dir === 'string' ? dir : dir.src;
                             foundPath = renderer.filePath(fname2find);
