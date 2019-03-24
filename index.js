@@ -812,6 +812,8 @@ module.exports.Configuration = class Configuration {
         this.registerRenderer(new module.exports.JSONRenderer());
     }
 
+    get renderers() { return this[_config_renderers]; }
+    
     /**
      * Find a Renderer by its extension.
      */
