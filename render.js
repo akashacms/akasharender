@@ -15,6 +15,14 @@ const data = require('./data');
 
 exports.partial = async function(config, fname, metadata) {
 
+    if (!fname || typeof fname !== 'string') {
+        throw new Error(`partial fname not a string ${util.inspect(fname)}`);
+    }
+
+    if (!metadata || typeof metadata !== 'object') {
+        throw new Error(`partial metadata not an object ${util.inspect(fname)}`);
+    }
+
     var partialFound = await globfs.findAsync(config.partialsDirs, fname);
     if (!partialFound) throw new Error(`No partial found for ${fname} in ${util.inspect(config.partialsDirs)}`);
     // Pick the first partial found
@@ -45,6 +53,14 @@ exports.partial = async function(config, fname, metadata) {
 };
 
 exports.partialSync = function(config, fname, metadata) {
+
+    if (!fname || typeof fname !== 'string') {
+        throw new Error(`partial fname not a string ${util.inspect(fname)}`);
+    }
+
+    if (!metadata || typeof metadata !== 'object') {
+        throw new Error(`partial metadata not an object ${util.inspect(fname)}`);
+    }
 
     var partialFound = globfs.findSync(config.partialsDirs, fname);
     if (!partialFound) throw new Error(`No partial directory found for ${fname}`);
