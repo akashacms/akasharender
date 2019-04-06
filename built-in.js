@@ -31,19 +31,26 @@ const mahabhuta = require('mahabhuta');
 const mahaMetadata = require('mahabhuta/maha/metadata');
 const mahaPartial = require('mahabhuta/maha/partial');
 
+const pluginName = "akashacms-builtin";
+
 module.exports = class BuiltInPlugin extends Plugin {
 	constructor() {
-		super("akashacms-builtin");
+		super(pluginName);
 	}
 
-	configure(config) {
+	configure(config, options) {
         this._config = config;
+        this._options = options;
         let moduleDirname = path.dirname(require.resolve('akasharender'));
         config.addPartialsDir(path.join(moduleDirname, 'partials'));
         // config.addPartialsDir(path.join(__dirname, 'partials'));
-        config.addMahabhuta(module.exports.mahabhuta);
-        config.addMahabhuta(mahaMetadata.mahabhuta);
-        config.addMahabhuta(mahaPartial.mahabhuta);
+        config.addMahabhuta(module.exports.mahabhutaArray(options));
+        config.addMahabhuta(mahaMetadata.mahabhutaArray({
+
+        }));
+        config.addMahabhuta(mahaPartial.mahabhutaArray({
+            renderPartial: options.renderPartial
+        }));
 
         if (!config.builtin) config.builtin = {};
         if (!config.builtin.suppress) config.builtin.suppress = {};
@@ -62,7 +69,19 @@ module.exports = class BuiltInPlugin extends Plugin {
     }
 }
 
-module.exports.mahabhuta = new mahabhuta.MahafuncArray("akasharender built-in", {});
+module.exports.mahabhutaArray = function(options) {
+    let ret = new mahabhuta.MahafuncArray(pluginName, options);
+    ret.addMahafunc(new StylesheetsElement());
+    ret.addMahafunc(new HeaderJavaScript());
+    ret.addMahafunc(new FooterJavaScript());
+    ret.addMahafunc(new InsertBodyContent());
+    ret.addMahafunc(new InsertTeaser());
+    ret.addMahafunc(new AkBodyClassAdd());
+    ret.addMahafunc(new FigureImage());
+    ret.addMahafunc(new ShowContent());
+    ret.addMahafunc(new AnchorCleanup());
+    return ret;
+};
 
 function _doStylesheets(metadata) {
     var scripts;
@@ -144,7 +163,6 @@ class StylesheetsElement extends mahabhuta.CustomElement {
 		return Promise.resolve(_doStylesheets(metadata));
 	}
 }
-module.exports.mahabhuta.addMahafunc(new StylesheetsElement());
 
 class HeaderJavaScript extends mahabhuta.CustomElement {
 	get elementName() { return "ak-headerJavaScript"; }
@@ -152,7 +170,6 @@ class HeaderJavaScript extends mahabhuta.CustomElement {
 		return Promise.resolve(_doHeaderJavaScript(metadata));
 	}
 }
-module.exports.mahabhuta.addMahafunc(new HeaderJavaScript());
 
 class FooterJavaScript extends mahabhuta.CustomElement {
 	get elementName() { return "ak-footerJavaScript"; }
@@ -160,7 +177,6 @@ class FooterJavaScript extends mahabhuta.CustomElement {
 		return Promise.resolve(_doFooterJavaScript(metadata));
 	}
 }
-module.exports.mahabhuta.addMahafunc(new FooterJavaScript());
 
 class InsertBodyContent extends mahabhuta.CustomElement {
 	get elementName() { return "ak-insert-body-content"; }
@@ -169,7 +185,6 @@ class InsertBodyContent extends mahabhuta.CustomElement {
 		return Promise.resolve(typeof metadata.content !== "undefined" ? metadata.content : "");
 	}
 }
-module.exports.mahabhuta.addMahafunc(new InsertBodyContent());
 
 class InsertTeaser extends mahabhuta.CustomElement {
 	get elementName() { return "ak-teaser"; }
@@ -181,7 +196,6 @@ class InsertTeaser extends mahabhuta.CustomElement {
 		.then(html => { return html; });
 	}
 }
-module.exports.mahabhuta.addMahafunc(new InsertTeaser());
 
 class AkBodyClassAdd extends mahabhuta.PageProcessor {
 	process($, metadata, dirty) {
@@ -197,7 +211,6 @@ class AkBodyClassAdd extends mahabhuta.PageProcessor {
 		} else return Promise.resolve();
 	}
 }
-module.exports.mahabhuta.addMahafunc(new AkBodyClassAdd());
 
 class FigureImage extends mahabhuta.CustomElement {
     get elementName() { return "fig-img"; }
@@ -218,7 +231,6 @@ class FigureImage extends mahabhuta.CustomElement {
         .then(html => { return html; });
     }
 }
-module.exports.mahabhuta.addMahafunc(new FigureImage());
 
 class ShowContent extends mahabhuta.CustomElement {
     get elementName() { return "show-content"; }
@@ -240,7 +252,6 @@ class ShowContent extends mahabhuta.CustomElement {
         });
     }
 }
-module.exports.mahabhuta.addMahafunc(new ShowContent());
 
 /*
 
@@ -357,4 +368,3 @@ class AnchorCleanup extends mahabhuta.Munger {
         }
     }
 }
-module.exports.mahabhuta.addMahafunc(new AnchorCleanup());

@@ -15,8 +15,6 @@ program
     .command('copy-assets <configFN>')
     .description('Copy assets into output directory')
     .action(async (configFN) => {
-        const akasha    = require('./index');
-
         try {
             const config = require(path.join(process.cwd(), configFN));
             await config.copyAssets();
@@ -105,9 +103,3 @@ program
 
 
 program.parse(process.argv);
-
-/* const CommandLineInterface = require('cmnd').CommandLineInterface;
-const CLI = new CommandLineInterface();
-
-CLI.load(__dirname, '../commands');
-CLI.run(process.argv.slice(2)); */

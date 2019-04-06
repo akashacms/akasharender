@@ -371,14 +371,15 @@ module.exports.Configuration = class Configuration {
         // its partials etc can be easily overridden.  This is the most convenient
         // place to declare that plugin.
         //
-        this.use(require('./built-in'));
-
-        // Set up the Mahabhuta partial tag so it renders through AkashaRender
 
         var config = this;
-        mahaPartial.configuration.renderPartial = function(fname, metadata) {
-            return render.partial(config, fname, metadata);
-        }
+        this.use(require('./built-in'), {
+            // built-in options if any
+            // Set up the Mahabhuta partial tag so it renders through AkashaRender
+            renderPartial: function(fname, metadata) {
+                return render.partial(config, fname, metadata);
+            }
+        });
 
         return this;
     }
@@ -497,6 +498,9 @@ module.exports.Configuration = class Configuration {
      * @returns {Configuration}
      */
     addMahabhuta(mahafuncs) {
+        if (typeof mahafuncs === 'undefined' || !mahafuncs) {
+            throw new Error(`undefined mahafuncs in ${this.configDir}`);
+        }
         if (!this[_config_mahafuncs]) { this[_config_mahafuncs] = []; }
         this[_config_mahafuncs].push(mahafuncs);
         return this;
