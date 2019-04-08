@@ -84,7 +84,7 @@ config.addDocumentsDir({
 });
 ```
 
-# The structure of the config.scripts.stylesheets/javaScriptTop/javaScriptBottom objects
+# Configuration object for `stylesheets`, `javaScriptTop`, and `javaScriptBottom` objects
 
 We've seen that `config.scripts.stylesheets/javaScriptTop/javaScriptBottom` is an array of objects, each of which is to have an `href` attribute.  It's the same object whether declared with the `addStylesheet`/`addFooterJavaScript`/`addHeaderJavaScript` function, or the two versions of the `headerStylesheetsAdd`/`headerJavaScriptAddTop`/`headerJavaScriptAddBottom` metadata object.
 

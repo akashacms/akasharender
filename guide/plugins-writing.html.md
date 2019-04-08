@@ -37,7 +37,6 @@ The `index.js` contains at the minimum the Plugin object, which it exports using
 const path  = require('path');
 const util  = require('util');
 const url   = require('url');
-const co    = require('co');
 const akasha = require('akasharender');
 const mahabhuta = akasha.mahabhuta;
 
@@ -87,16 +86,16 @@ See the Mahabhuta documentation to see how to write Mahafuncs: https://akashacms
 
 To see how Mahabhuta is used in AkashaCMS projects, it's useful to study some source code:
 
-* https://github.com/akashacms/akashacms-affiliates/blob/master/index.js
-* https://github.com/akashacms/akasharender/blob/master/built-in.js
-* https://github.com/akashacms/akashacms-base/blob/master/index.js
-* https://github.com/akashacms/akashacms-blog-podcast/blob/master/index.js
-* https://github.com/akashacms/akashacms-booknav/blob/master/index.js
-* https://github.com/akashacms/akashacms-breadcrumbs/blob/master/index.js
-* https://github.com/akashacms/akashacms-document-viewers/blob/master/index.js
-* https://github.com/akashacms/akashacms-embeddables/blob/master/index.js
-* https://github.com/akashacms/akashacms-footnotes/blob/master/index.js
-* https://github.com/akashacms/akashacms-tagged-content/blob/master/index.js
+* [akashacms/akashacms-affiliates](https://github.com/akashacms/akashacms-affiliates/blob/master/index.js)
+* [akashacms/akasharender](https://github.com/akashacms/akasharender/blob/master/built-in.js)
+* [akashacms/akashacms-base](https://github.com/akashacms/akashacms-base/blob/master/index.js)
+* [akashacms/akashacms-blog-podcast](https://github.com/akashacms/akashacms-blog-podcast/blob/master/index.js)
+* [akashacms/akashacms-booknav](https://github.com/akashacms/akashacms-booknav/blob/master/index.js)
+* [akashacms/akashacms-breadcrumbs](https://github.com/akashacms/akashacms-breadcrumbs/blob/master/index.js)
+* [akashacms/akashacms-document-viewers](https://github.com/akashacms/akashacms-document-viewers/blob/master/index.js)
+* [akashacms/akashacms-embeddables](https://github.com/akashacms/akashacms-embeddables/blob/master/index.js)
+* [akashacms/akashacms-footnotes](https://github.com/akashacms/akashacms-footnotes/blob/master/index.js)
+* [akashacms/akashacms-tagged-content](https://github.com/akashacms/akashacms-tagged-content/blob/master/index.js)
 
 In each case, the Plugin `configure` method contains a line of code similar to:
 

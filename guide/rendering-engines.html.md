@@ -12,13 +12,13 @@ On this page we will look at what that means, and how to use or implement a rend
 
 AkashaRender has several built-in rendering engines.  You don't need to do anything, just use them.
 
-Class | Type | Extension | Description
-------|-----|-----------|------------
-MarkdownRenderer | Markdown | `example.html.md` | A Markdown file, that produces HTML.
-AsciidocRenderer | AsciiDoc | `example.html.adoc` | An AsciiDoc file, that produces HTML.
-EJSRenderer | EJS | `example.html.ejs` or `example.php.ejs` | for HTML, or PHP, with EJS markup, that produces HTML or PHP.
-CSSLESSRenderer | LESS | `example.css.less` | A LESS file, that produces CSS.
-JSONRenderer | JSON | `example.html.json` | A JSON file, with metadata header, producing HTML
+Class | Type | Produces | Extension 
+------|------|----------|-----------
+MarkdownRenderer | Markdown | HTML | `example.html.md`
+AsciidocRenderer | AsciiDoc | HTML | `example.html.adoc`
+EJSRenderer | EJS | HTML or PHP | `example.html.ejs` or `example.php.ejs`
+CSSLESSRenderer | LESS | CSS | `example.css.less`
+JSONRenderer | JSON | HTML | `example.html.json` 
 
 Using one of these is very simple.  Just add a file into a _documents_ directory with a matching filename extension, and follow the format outlined in [](3-create-content.html).
 
@@ -51,13 +51,13 @@ akasha.registerRenderer(new FooBarHTMLRenderer());
 
 The Renderer class has a few simple methods for you to implement.  It may be useful to study the source code:
 
-* AsciidocRenderer: https://github.com/akashacms/akasharender/blob/master/render-asciidoc.js
-* CSSLESSRenderer: https://github.com/akashacms/akasharender/blob/master/render-cssless.js
-* EJSRenderer: https://github.com/akashacms/akasharender/blob/master/render-ejs.js
-* MarkdownRenderer: https://github.com/akashacms/akasharender/blob/master/render-md.js
-* JSONRenderer: https://github.com/akashacms/akasharender/blob/master/render-json.js
-* HTMLRenderer: https://github.com/akashacms/akasharender/blob/master/HTMLRenderer.js
-* Renderer: https://github.com/akashacms/akasharender/blob/master/Renderer.js
+* AsciidocRenderer: [akashacms/akasharender/render-asciidoc.js](https://github.com/akashacms/akasharender/blob/master/render-asciidoc.js)
+* CSSLESSRenderer: [akashacms/akasharender/render-cssless.js](https://github.com/akashacms/akasharender/blob/master/render-cssless.js)
+* EJSRenderer: [akashacms/akasharender/render-ejs.js](https://github.com/akashacms/akasharender/blob/master/render-ejs.js)
+* MarkdownRenderer: [akashacms/akasharender/render-md.js](https://github.com/akashacms/akasharender/blob/master/render-md.js)
+* JSONRenderer: [akashacms/akasharender/render-json.js](https://github.com/akashacms/akasharender/blob/master/render-json.js)
+* HTMLRenderer: [akashacms/akasharender/HTMLRenderer.js](https://github.com/akashacms/akasharender/blob/master/HTMLRenderer.js)
+* Renderer: [akashacms/akasharender/Renderer.js](https://github.com/akashacms/akasharender/blob/master/Renderer.js)
 
 The Renderer constructor identifies the _name_ of the Renderer, and the regular expression used to match filenames:
 
