@@ -33,14 +33,18 @@ const mahaPartial = require('mahabhuta/maha/partial');
 
 const pluginName = "akashacms-builtin";
 
+const _plugin_config = Symbol('config');
+const _plugin_options = Symbol('options');
+
 module.exports = class BuiltInPlugin extends Plugin {
 	constructor() {
 		super(pluginName);
 	}
 
 	configure(config, options) {
-        this._config = config;
-        this._options = options;
+        this[_plugin_config] = config;
+        this[_plugin_options] = options;
+        options.config = config;
         let moduleDirname = path.dirname(require.resolve('akasharender'));
         config.addPartialsDir(path.join(moduleDirname, 'partials'));
         // config.addPartialsDir(path.join(__dirname, 'partials'));
@@ -56,16 +60,19 @@ module.exports = class BuiltInPlugin extends Plugin {
         if (!config.builtin.suppress) config.builtin.suppress = {};
     }
 
+    get config() { return this[_plugin_config]; }
+    get options() { return this[_plugin_options]; }
+
     doStylesheets(metadata) {
-    	return _doStylesheets(metadata, this._config);
+    	return _doStylesheets(metadata, this.options);
     }
 
     doHeaderJavaScript(metadata) {
-    	return _doHeaderJavaScript(metadata);
+    	return _doHeaderJavaScript(metadata, this.options);
     }
 
     doFooterJavaScript(metadata) {
-    	return _doFooterJavaScript(metadata);
+    	return _doFooterJavaScript(metadata, this.options);
     }
 }
 
@@ -83,14 +90,14 @@ module.exports.mahabhutaArray = function(options) {
     return ret;
 };
 
-function _doStylesheets(metadata) {
+function _doStylesheets(metadata, options) {
     var scripts;
     if (typeof metadata.headerStylesheetsAdd !== "undefined") {
-        scripts = metadata.config.scripts.stylesheets.concat(metadata.headerStylesheetsAdd);
+        scripts = options.config.scripts.stylesheets.concat(metadata.headerStylesheetsAdd);
     } else {
-        scripts = metadata.config.scripts ? metadata.config.scripts.stylesheets : undefined;
+        scripts = options.config.scripts ? options.config.scripts.stylesheets : undefined;
     }
-    // console.log(`ak-stylesheets ${metadata.document.path} ${util.inspect(metadata.headerStylesheetsAdd)} ${util.inspect(metadata.config.scripts)} ${util.inspect(scripts)}`);
+    // console.log(`ak-stylesheets ${metadata.document.path} ${util.inspect(metadata.headerStylesheetsAdd)} ${util.inspect(options.config.scripts)} ${util.inspect(scripts)}`);
 
     var ret = '';
     if (typeof scripts !== 'undefined') {
@@ -109,7 +116,7 @@ function _doStylesheets(metadata) {
     return ret;
 }
 
-function _doJavaScripts(scripts) {
+function _doJavaScripts(scripts, options) {
 	var ret = '';
 	if (!scripts) return ret;
 
@@ -133,48 +140,48 @@ function _doJavaScripts(scripts) {
 	return ret;
 }
 
-function _doHeaderJavaScript(metadata) {
+function _doHeaderJavaScript(metadata, options) {
 	var scripts;
 	if (typeof metadata.headerJavaScriptAddTop !== "undefined") {
-		scripts = metadata.config.scripts.javaScriptTop.concat(metadata.headerJavaScriptAddTop);
+		scripts = options.config.scripts.javaScriptTop.concat(metadata.headerJavaScriptAddTop);
 	} else {
-		scripts = metadata.config.scripts ? metadata.config.scripts.javaScriptTop : undefined;
+		scripts = options.config.scripts ? options.config.scripts.javaScriptTop : undefined;
 	}
 	// console.log(`_doHeaderJavaScript ${util.inspect(scripts)}`);
-	// console.log(`_doHeaderJavaScript ${util.inspect(metadata.config.scripts)}`);
+	// console.log(`_doHeaderJavaScript ${util.inspect(options.config.scripts)}`);
 	return _doJavaScripts(scripts);
-	// return render.partialSync(metadata.config, "ak_javaScript.html.ejs", { javaScripts: scripts });
+	// return render.partialSync(options.config, "ak_javaScript.html.ejs", { javaScripts: scripts });
 }
 
-function _doFooterJavaScript(metadata) {
+function _doFooterJavaScript(metadata, options) {
 	var scripts;
 	if (typeof metadata.headerJavaScriptAddBottom !== "undefined") {
-		scripts = metadata.config.scripts.javaScriptBottom.concat(metadata.headerJavaScriptAddBottom);
+		scripts = options.config.scripts.javaScriptBottom.concat(metadata.headerJavaScriptAddBottom);
 	} else {
-		scripts = metadata.config.scripts ? metadata.config.scripts.javaScriptBottom : undefined;
+		scripts = options.config.scripts ? options.config.scripts.javaScriptBottom : undefined;
 	}
 	return _doJavaScripts(scripts);
-	// return render.partialSync(metadata.config, "ak_javaScript.html.ejs", { javaScripts: scripts });
+	// return render.partialSync(options.config, "ak_javaScript.html.ejs", { javaScripts: scripts });
 }
 
 class StylesheetsElement extends mahabhuta.CustomElement {
 	get elementName() { return "ak-stylesheets"; }
 	process($element, metadata, dirty) {
-		return Promise.resolve(_doStylesheets(metadata));
+		return Promise.resolve(_doStylesheets(metadata, this.array.options));
 	}
 }
 
 class HeaderJavaScript extends mahabhuta.CustomElement {
 	get elementName() { return "ak-headerJavaScript"; }
 	process($element, metadata, dirty) {
-		return Promise.resolve(_doHeaderJavaScript(metadata));
+		return Promise.resolve(_doHeaderJavaScript(metadata, this.array.options));
 	}
 }
 
 class FooterJavaScript extends mahabhuta.CustomElement {
 	get elementName() { return "ak-footerJavaScript"; }
 	process($element, metadata, dirty) {
-		return Promise.resolve(_doFooterJavaScript(metadata));
+		return Promise.resolve(_doFooterJavaScript(metadata, this.array.options));
 	}
 }
 
@@ -189,7 +196,7 @@ class InsertBodyContent extends mahabhuta.CustomElement {
 class InsertTeaser extends mahabhuta.CustomElement {
 	get elementName() { return "ak-teaser"; }
 	process($element, metadata, dirty) {
-		return render.partial(metadata.config, "ak_teaser.html.ejs", {
+		return render.partial(this.array.options.config, "ak_teaser.html.ejs", {
 			teaser: typeof metadata["ak-teaser"] !== "undefined"
 				? metadata["ak-teaser"] : metadata.teaser
 		})
@@ -225,7 +232,7 @@ class FigureImage extends mahabhuta.CustomElement {
         const width   = $element.attr('width');
         const style   = $element.attr('style');
         const dest    = $element.attr('dest');
-        return render.partial(metadata.config, template, {
+        return render.partial(this.array.options.config, template, {
             href, clazz, id, caption, width, style, dest
         })
         .then(html => { return html; });
@@ -245,8 +252,8 @@ class ShowContent extends mahabhuta.CustomElement {
         const width   = $element.attr('width');
         const style   = $element.attr('style');
         const dest    = $element.attr('dest');
-        const doc     = await documents.readDocument(metadata.config, href);
-        return render.partial(metadata.config, template, {
+        const doc     = await documents.readDocument(this.array.options.config, href);
+        return render.partial(this.array.options.config, template, {
             href, clazz, id, caption, width, style, dest,
             document: doc
         });
@@ -276,7 +283,7 @@ This was moved into Mahabhuta
 		for (var dprop in data) { d[dprop] = data[dprop]; }
 		d["partialBody"] = txt;
 		log('partial tag fname='+ fname +' attrs '+ util.inspect(data));
-		return render.partial(metadata.config, fname, d)
+		return render.partial(this.array.options.config, fname, d)
 		.then(html => { return html; })
 		.catch(err => {
 			error(new Error("FAIL partial file-name="+ fname +" because "+ err));
@@ -306,7 +313,7 @@ class AnchorCleanup extends mahabhuta.Munger {
             }
 
             // Look to see if it's an asset file
-            var foundAsset = await filez.findAsset(metadata.config.assetDirs, uHref.pathname);
+            var foundAsset = await filez.findAsset(this.array.options.config.assetDirs, uHref.pathname);
             if (foundAsset && foundAsset.length > 0) {
                 return "ok";
             }
@@ -314,7 +321,7 @@ class AnchorCleanup extends mahabhuta.Munger {
             // console.log(`AnchorCleanup ${metadata.document.path} ${href} findAsset ${(new Date() - startTime) / 1000} seconds`);
 
             // Ask plugins if the href is okay
-            if (metadata.config.askPluginsLegitLocalHref(uHref.pathname)) {
+            if (this.array.options.config.askPluginsLegitLocalHref(uHref.pathname)) {
                 return "ok";
             }
             // If this link has a body, then don't modify it
@@ -325,24 +332,24 @@ class AnchorCleanup extends mahabhuta.Munger {
             }
 
             // Does it exist in documents dir?
-            var found = await filez.findRendersTo(metadata.config, uHref.pathname);
+            var found = await filez.findRendersTo(this.array.options.config, uHref.pathname);
             // console.log(`AnchorCleanup findRendersTo ${uHref.pathname} ${util.inspect(found)}`);
             if (!found) {
-                throw new Error(`Did not find ${href} in ${util.inspect(metadata.config.documentDirs)} in ${metadata.document.path}`);
+                throw new Error(`Did not find ${href} in ${util.inspect(this.array.options.config.documentDirs)} in ${metadata.document.path}`);
             }
             // console.log(`AnchorCleanup ${metadata.document.path} ${href} findRendersTo ${(new Date() - startTime) / 1000} seconds`);
 
             // If this is a directory, there might be /path/to/index.html so we try for that.
-            // The problem is that metadata.config.findRendererPath would fail on just /path/to but succeed
+            // The problem is that this.array.options.config.findRendererPath would fail on just /path/to but succeed
             // on /path/to/index.html
             if (found.foundIsDirectory) {
-                found = await filez.findRendersTo(metadata.config, path.join(uHref.pathname, "index.html"));
+                found = await filez.findRendersTo(this.array.options.config, path.join(uHref.pathname, "index.html"));
                 if (!found) {
-                    throw new Error(`Did not find ${href} in ${util.inspect(metadata.config.documentDirs)} in ${metadata.document.path}`);
+                    throw new Error(`Did not find ${href} in ${util.inspect(this.array.options.config.documentDirs)} in ${metadata.document.path}`);
                 }
             }
             // Otherwise look into filling emptiness with title
-            var renderer = metadata.config.findRendererPath(found.foundFullPath);
+            var renderer = this.array.options.config.findRendererPath(found.foundFullPath);
             // console.log(`AnchorCleanup ${metadata.document.path} ${href} findRendererPath ${(new Date() - startTime) / 1000} seconds`);
             if (renderer && renderer.metadata) {
                 try {
