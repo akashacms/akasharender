@@ -19,7 +19,7 @@ module.exports = class JSONRenderer extends HTMLRenderer {
             var json = JSON.parse(text);
             // console.log(`JSONRenderer ${text} ==> ${util.inspect(json)}`);
             // console.log(`JSONRenderer JSONFormatter ${metadata.JSONFormatter}`);
-            await this.akasha.partial(metadata.config, metadata.JSONFormatter, { data: json });
+            return await this.akasha.partial(metadata.config, metadata.JSONFormatter, { data: json });
         } catch(e) {
             var docpath = metadata.document ? metadata.document.path : "unknown";
             var errstack = e.stack ? e.stack : e;
