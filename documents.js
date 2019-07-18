@@ -1,6 +1,6 @@
 
 /**
- * Copyright 2016, 2017, 2018 David Herron
+ * Copyright 2016, 2017, 2018, 2019 David Herron
  *
  * This file is part of AkashaRender (http://akashacms.com/).
  *
