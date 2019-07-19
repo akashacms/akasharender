@@ -1,6 +1,6 @@
 {
   "name": "akasharender",
-  "version": "0.6.24",
+  "version": "0.7.0",
   "description": "Rendering support for generating static HTML websites or EPUB eBooks",
   "keywords": [
     "content management system",
@@ -23,14 +23,14 @@
     "url": "git://github.com/akashacms/akasharender.git"
   },
   "engines": {
-    "node": ">=10.6.1"
+    "node": ">=12.2.1"
   },
   "main": "index.js",
   "bin": {
     "akasharender": "cli.js"
   },
   "dependencies": {
-    "mahabhuta": "akashacms/mahabhuta",
+    "mahabhuta": "0.7.1",
     "commander": "^2.17.1",
     "debug": "^4.1.0",
     "ejs": "^2.5.1",
