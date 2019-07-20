@@ -49,8 +49,8 @@ module.exports = class MarkdownRenderer extends HTMLRenderer {
         return this;
     }
   
-    use(mditPlugin) {
-        md.use(mditPlugin);
+    use(mditPlugin, options) {
+        md.use(mditPlugin, options);
         return this;
     }
   
