@@ -16,10 +16,11 @@ Inside AkashaRender the Plugin object is used to encapsulate information about e
 
 * `configure` is called when the Plugin is added to the Configuration by calling `config.use()`
 * `name` returns the name of the Plugin, and is used when searching for the Plugin instance
+* `options` returns the _options_ object passed when configuring the Plugin
 
 A given Plugin is free to implement other functions as well.  Those functions can be called by any code as so:
 
-```
+```js
   config.plugin("plugin-name").functionName(parameter, list);
 ```
 
@@ -33,7 +34,7 @@ The `package.json` declares information required for _npm_ such as the package n
 
 The `index.js` contains at the minimum the Plugin object, which it exports using the `module.exports` object.  A minimal `index.js` might be:
 
-```
+```js
 const path  = require('path');
 const util  = require('util');
 const url   = require('url');
@@ -42,29 +43,39 @@ const mahabhuta = akasha.mahabhuta;
 
 const pluginName = "akashacms-base";
 
+const _plugin_config = Symbol('config');
+const _plugin_options = Symbol('options');
+
 module.exports = class BasePlugin extends akasha.Plugin {
     constructor() {
         super(pluginName);
     }
 
-    configure(config) {
+    configure(config, options) {
+        this[_plugin_config] = config;
+        this[_plugin_options] = options;
+        options.config = config;
         config.addPartialsDir(path.join(__dirname, 'partials'));
         config.addLayoutsDir(path.join(__dirname, 'layout'));
         config.addAssetsDir(path.join(__dirname, 'assets'));
-        config.addMahabhuta(module.exports.mahabhuta);
-        // OR
-        // config.addMahabhuta(require('./mahafuncs'));
+        config.addMahabhuta(module.exports.mahabhutaArray(options));
     }
+
+    get config() { return this[_plugin_config]; }
+    get options() { return this[_plugin_options]; }
+
 }
 ```
 
-When `config.use(require("plugin-name"))` is called this sequence occurs:
+When `config.use(require("plugin-name"), { options })` is called this sequence occurs:
 1. the `use` function receives this object
 1. an instance of that object is instantiated (`new PluginObj()`)
 1. that instance is added to an internal array
 1. the `configure` function is called
 
 The `configure` function shown here is fairly typical.  It uses functions we've already seen to add Plugin-provided directories of assets or partials and an array of Mahabhuta functions.  It could call other functions to add JavaScript, CSS and other things.
+
+As shown here the `options` object is available from the Plugin, and is passed while constructing the MahafuncArray so that it is available to Mahafuncs.
 
 ### Partials
 
@@ -99,27 +110,34 @@ To see how Mahabhuta is used in AkashaCMS projects, it's useful to study some so
 
 In each case, the Plugin `configure` method contains a line of code similar to:
 
-```
-config.addMahabhuta(module.exports.mahabhuta);
-```
-
-Then elsewhere you assign a MahafuncArray array to that object as so:
-
-```
-module.exports.mahabhuta = new mahabhuta.MahafuncArray("akashacms-blog-podcast", {});
+```js
+config.addMahabhuta(... MahafuncArray ...);
 ```
 
-And from there start adding Mahafunc's to the MahafuncArray.
+As we showed earlier this MahafuncArray is initialized by calling a function, passing along the options object.  That function should look like so:
+
+```js
+
+module.exports.mahabhutaArray = function(options) {
+    let ret = new mahabhuta.MahafuncArray(pluginName, options);
+    ...
+    ret.addMahafunc(new MahafuncElementClass());
+    ...
+    return ret;
+};
+```
+
+And from there start adding Mahafunc instance's to the MahafuncArray.
 
 In a website `config.js` the steps are similar.  For example:
 
-```
+```js
 config.addMahabhuta(require('./mahafuncs'));
 ```
 
 Then in `mahafuncs.js` you create a MahafuncArray
 
-```
+```js
 module.exports = new mahabhuta.MahafuncArray("techsparx website", {});
 ```
 
@@ -127,14 +145,4 @@ And start filling it with Mahafunc's.
 
 ### Stashing data in the Configuration
 
-The Configuration object can store per-config-per-plugin data.
-
-For example, in `akashacms-base` we have this in the `configure` function:
-
-```
-const pluginName = "akashacms-base";
-...
-config.pluginData(pluginName).linkRelTags = [];
-```
-
-This data object corresponds to the `addLinkRelTag` function which provides data that ends up being `<link rel="...">` tags in the header.
+Store any data in the options object.

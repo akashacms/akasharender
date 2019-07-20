@@ -25,7 +25,7 @@ The layout template is interpreted by the template engine implied by the [file e
 
 We find templates by looking in directories specified in the configuration object:
 
-```
+```js
 config.addLayoutsDir('layouts');
 ```
 
@@ -70,7 +70,7 @@ The most important bit is where the `content` variable is substituted.  The idea
 
 Partials are little snippets of template, which can be rendered into any location of any template using the `partial` tag.  An example is
 
-```
+```html
 <partial file-name='helloworld.html'></partial>
 ```
 
@@ -84,7 +84,7 @@ This looks in the _partials_ directories (also specified in the Configuration), 
 
 Partials can receive data that is expanded in the template.  You can supply data in the `<partial>` tag as so:
 
-```
+```html
 <partial file-name="render-data.html.ejs"
         data-title="Some title text"
         data-some-long-attribute-name="attribute value"></partial>

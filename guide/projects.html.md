@@ -27,7 +27,7 @@ The `package.json` file is used by the Node.js platform to describe any package.
 
 In the Configuration we declare plugins as follows (see [](configuration.html))
 
-```
+```js
 config
     .use(require('akashacms-theme-bootstrap'))
     .use(require('akashacms-base'))
@@ -38,20 +38,17 @@ Since those are Node.js `require` statements it's necessary to have the named pa
 
 A minimal starting point for the dependencies is:
 
-```
+```json
 "dependencies": {
-    "akasharender": ">=0.6",
-    "debug": "^2.2.0",
-    "globfs": "*",
+    "akasharender": ">=0.7",
     "oembetter": "*",
-    "cheerio": "*",
     "hostr": "^2.x"
 }
 ```
 
 Then, for each of the plugins add a matching reference to install the corresponding package.  For the packages named above that would be:
 
-```
+```json
     "akashacms-base": "akashacms/akashacms-base#akasharender",
     "akashacms-breadcrumbs": "akashacms/akashacms-breadcrumbs#akasharender",
     "akashacms-theme-bootstrap": "akashacms/akashacms-theme-bootstrap#akasharender",
@@ -59,7 +56,7 @@ Then, for each of the plugins add a matching reference to install the correspond
 
 And then the `akashacms-theme-bootstrap` plugin has an additional dependency on having jQuery and Bootstrap installed, so these dependencies are useful:
 
-```
+```json
     "bootstrap": "^3.3.7",
     "jquery": "^3.1.1",
 ```
@@ -78,7 +75,7 @@ The `scripts` section of `package.json` provides a competent useful framework fo
 
 These five `scripts` entries are a great starting point:
 
-```
+```json
 "scripts": {
     "clean": "rm -rf out",
     "prebuild": "akasharender copy-assets config.js",
@@ -92,7 +89,7 @@ The `prebuild` command will automatically execute before `build` executes, so th
 
 The `clean` command assures a clean slate.  If you want this run for every build, do this:
 
-```
+```json
 "prebuild": "npm run clean && akasharender copy-assets config.js",
 ```
 
@@ -108,13 +105,13 @@ With `prebuild` and `build` we set up a two-stage build process.  You can easily
 
 Consider:
 
-```
+```json
 "build": "npm run render-site && npm run minify-site && npm run html-validation && npm run css-linter "
 ```
 
 This orchestrates execution of a series of scripts you must define in `package.json`.  For example, a useful `minify-site` script uses the Node.js `html-minifier` package as so:
 
-```
+```json
 "minify-site": "html-minifier --collapse-whitespace --conservative-collapse --html5 --keep-closing-slash --preserve-line-breaks --remove-comments --file-ext html  --input-dir out --output-dir out",
 ```
 

@@ -24,14 +24,14 @@ We've already gone over installing Bootstrap in an AkashaCMS project.
 
 In `package.json` add this to the `dependencies` section
 
-```
+```json
     "bootstrap": "^3.3.7",
     "jquery": "^3.1.1",
 ```
 
 Those bring in the distribution files for those projects that are meant to be used in the browser.  Simply mount the distribution directories into your AkashaRender configuration, and those files will be copied to the rendering destination.
 
-```
+```js
 config
     .addAssetsDir({
         src: 'node_modules/bootstrap/dist',
@@ -45,7 +45,7 @@ config
 
 Now declare the JavaScript and Stylesheets to be used on your pages.  The `style.css` file is meant to be where you customize things for your site.
 
-```
+```js
 config
     .addFooterJavaScript({ href: "/vendor/jquery/jquery.min.js" })
     .addFooterJavaScript({ href: "/vendor/bootstrap/js/bootstrap.min.js"  })
@@ -56,7 +56,7 @@ config
 
 The `akashacms-theme-bootstrap` plugin provides some nice Bootstrap-friendly overrides of various partials.
 
-```
+```js
 config
     .use(require('akashacms-theme-bootstrap'))
     .use(require('akashacms-base'))
@@ -92,7 +92,7 @@ https://github.com/h5bp/html5-boilerplate/blob/5.3.0/dist/doc/TOC.md
 
 The best way to use Boilerplate in your AkashaCMS project is to study the HTML, using it as the starting point for the HTML in your page layouts.  From this file https://github.com/h5bp/html5-boilerplate/blob/5.3.0/dist/index.html we can easily derive a base page template.
 
-```
+```html
 <!doctype html>
 <html class="no-js" lang="">
     <head>

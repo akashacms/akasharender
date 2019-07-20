@@ -10,7 +10,7 @@ Obviously CSS files are widely used to customize the look and structure of web p
 
 AkashaRender has a simple method to declare the same set of CSS files across the entire website.  In your Configuration file simply make declarations like this:
 
-```
+```js
 config
     .addFooterJavaScript({ href: "/vendor/jquery/jquery.min.js" })
     .addFooterJavaScript({ href: "/vendor/bootstrap/js/bootstrap.min.js"  })
@@ -60,7 +60,7 @@ Remember that AkashaRender supports multiple document directories, and that a gi
 
 Let's revisit an earlier example, adding more stylesheets to it:
 
-```
+```js
 config.addDocumentsDir('documents');
 config.addDocumentsDir({
     src: 'archive',
@@ -92,7 +92,7 @@ The stylesheet-related object supports a `media` attribute that can also show up
 
 Suppose you have a stylesheet for printed output:
 
-```
+```js
 config
     .addStylesheet({
         href: "/vendor/mythemedirectory/print.css",
@@ -104,7 +104,7 @@ The _media_ attribute can express a variety of conditions.  Whatever string you 
 
 For JavaScript declarations you use the `href` tag even though the resulting `script` tag uses the `src` attribute:
 
-```
+```html
 <script src="..."/>
 ```
 

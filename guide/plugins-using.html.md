@@ -22,7 +22,7 @@ With the plugin installed in the Node.js `node_modules` directory, you inform Ak
 
 Some plugins offer methods to configure their behavior.  You access them using this pattern:
 
-```
+```js
 config.plugin("plugin-name").generateSitemap(config, true);
 ```
 

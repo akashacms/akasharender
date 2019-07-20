@@ -23,7 +23,7 @@ One can of course have multiple configuration files for the same project.  For e
 
 We briefly touched on the Configuration object in [](2-setup.html), so let's go deeper.
 
-```
+```js
 'use strict';
 
 const akasha  = require('akasharender');
@@ -60,13 +60,13 @@ The `rootURL` method declares the base URL of the project.  This is necessary fo
 
 It's useful to inform the Configuration the directory containing the project.
 
-```
+```js
 config.configDir = __dirname;
 ```
 
 With this setting, when you add a directory (as shown below) the Configuration automatically converts it into an absolute path spec.  That is:
 
-```
+```js
 config.addAssetsDir('assets1')
 ```
 
@@ -78,7 +78,7 @@ AkashaRender's model is to take files and data from various input sources, and t
 
 The output directory is declared as so:
 
-```
+```js
 config.setRenderDestination('out-range-confidence');
 ```
 
@@ -98,7 +98,7 @@ $ akasharender copy-assets config.js
 
 Specifying multiple asset directories is simple:
 
-```
+```js
 config
     .addAssetsDir('assets1')
     .addAssetsDir('assets2')
@@ -107,7 +107,7 @@ config
 
 In addition to declaring the assets directory with a String, you can use an Object to declare where the asset files should land in the output directory.
 
-```
+```js
 config.addAssetsDir({
         src: '/path/to/shared/fonts/archive',
         dest: 'vendor/fonts'
@@ -116,7 +116,7 @@ config.addAssetsDir({
 
 Or
 
-```
+```js
 config
     .addAssetsDir({
         src: 'node_modules/bootstrap/dist',
@@ -138,13 +138,13 @@ Documents directories contain files which might be processed and rendered into t
 
 A single documents directory is declared as so:
 
-```
+```js
 config.addDocumentsDir('documents');
 ```
 
 As with assets directories, you call this method multiple times to specify multiple documents directories.
 
-```
+```js
 config.addDocumentsDir('documents1');
 config.addDocumentsDir('documents2');
 config.addDocumentsDir('documents3');
@@ -153,7 +153,7 @@ config.addDocumentsDir('documents3');
 In addition to declaring a documents directory using a String, you can pass an Object declaring where the documents are rendered in the output directory.
 
 
-```
+```js
 config.addDocumentsDir('documents');
 config.addDocumentsDir({
     src: 'archive',
@@ -171,7 +171,7 @@ Earlier we said it's possible to use a portion of your website either as website
 
 One method is to store the EPUB content in a separate directory and in in the website configuration file declare it as so:
 
-```
+```js
 config.addDocumentsDir({
     src: 'documents-epub',
     dest: 'path/to/epub'
@@ -180,7 +180,7 @@ config.addDocumentsDir({
 
 The other method is to store the EPUB content within the website.  In the EPUB configuration file, declare it as so:
 
-```
+```js
 config.addDocumentsDir('documents/path/to/epub');
 ```
 
@@ -205,7 +205,7 @@ content
 
 We find templates by looking in directories specified in the configuration object:
 
-```
+```js
 config.addLayoutsDir('layouts');
 ```
 
@@ -245,7 +245,7 @@ You can pass data to a partial as so:
 
 The named partial template is searched for in the directories named in the configuration object.
 
-```
+```js
 config.addPartialsDir('partials')
 ```
 
@@ -257,7 +257,7 @@ Websites and EPUB's usually have Stylesheets and JavaScript.  Well, JavaScript i
 
 An example is:
 
-```
+```js
 config
     .addFooterJavaScript({ href: "/vendor/jquery/jquery.min.js" })
     .addFooterJavaScript({ href: "/vendor/bootstrap/js/bootstrap.min.js"  })
@@ -274,13 +274,13 @@ The declarations shown here correspond to the asset directory declarations shown
 
 An AkashaCMS project might have its own Mahabhuta functions.  There are several ways to do this, the most straightforward being to declare this in the configuration file:
 
-```
+```js
 config.addMahabhuta(require('./mahafuncs'));
 ```
 
 Then in that module you have code like:
 
-```
+```js
 `use strict`
 ...
 const mahabhuta = require('mahabhuta');
@@ -300,7 +300,7 @@ To use a plugin requires two steps.  First, you declare the plugin in the `packa
 
 Second, in the configuration you declare the plugin as so:
 
-```
+```js
 config
     .use(require('akashacms-theme-bootstrap'))
     .use(require('akashacms-base'))
@@ -323,9 +323,19 @@ Plugins typically call the `addPartialsDir` and other similar methods we've just
 
 ## Plugin Configuration
 
-Some plugins offer methods to configure their behavior.  You access them using this pattern:
+Some plugins offer methods to configure their behavior.
 
+You can pass a configuration object while adding the plugin to the configuration.  That works like so:
+
+```js
+config.use(require('akashacms-base'), {
+    generateSitemapFlag: true
+})
 ```
+
+Some plugins also offer an API, that can be accessed using this pattern:
+
+```js
 config.plugin("akashacms-base").generateSitemap(config, true);
 ```
 
@@ -333,9 +343,42 @@ The `config.plugin("plugin-name")` method returns the Plugin object, and then yo
 
 ## Plugin data
 
-The Configuration object can be used to store data for a given plugin.  This data isn't stored in the Plugin object in case there are multiple Configuration objects being used.
+The options object that's passed when adding the plugin to the configuration is available via the `options` method.  That object should also be passed to any MahafuncArray associated to the plugin.
 
-The `config.pluginData("plugin-name")` method returns an Array that's maintained for each plugin.  The plugin will store whatever it needs in that array.
+In methods on the plugin object, the `options` object is accessed this way:
+
+```js
+this.options
+```
+
+In Mahafunc methods the `options` object is accessed this way:
+
+```js
+this.array.options
+```
+
+Outside of either it can be accessed this way:
+
+```js
+config.plugin("plugin-name").options
+```
+
+# Markdown plugins
+
+The _markdown-it_ engine used to render Markdown files supports plugins, and quite a long list of plugins are available via NPM.  It is fairly easy to add a Markdown plugin to the configuration.
+
+```js
+config.findRendererName('.html.md')
+    .use(require('markdown-it-plantuml'), {
+        imageFormat: 'svg'
+    });
+```
+
+With `config.findRendererName('.html.md')` we are looking up the Markdown renderer, by name.
+
+The Markdown renderer has a `use` function that is used as so.  The first argument is the module object for the Markdown plugin.  The second argument is any configuration object required by the Markdown plugin.  
+
+The example shown here shows how to implement the PlantUML so that AkashaCMS documents can have embedded UML diagrams.
 
 # The Overridability Principle
 
@@ -365,7 +408,7 @@ These things do not get overridden in the same way.  For Documents, Layouts or P
 
 We close off the configuration file this way:
 
-```
+```js
 config.prepare();
 module.exports = config;
 ```

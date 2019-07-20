@@ -10,7 +10,7 @@ We touched on this briefly in the previous chapter, [](2-setup.html).  Now it's 
 
 Given a configuration like so:
 
-```
+```js
 config
     .addDocumentsDir('documents')
     .addDocumentsDir('archive');
@@ -276,7 +276,7 @@ A few tags and partials and Mahabhuta tags are provided by AkashaRender.  Judici
 
 Mahabhuta can perform any DOM manipulation.  The most common usage is to define a custom tag, performing a custom DOM manipulation based on that tag.
 
-```
+```html
 <html>
 <head>
 ..
@@ -296,7 +296,7 @@ This shows three of the baked-in Mahabhuta custom tags, `ak-stylesheets`, `ak-he
 
 It might be common to specify these stylesheets:
 
-```
+```js
 config
     .addStylesheet({ href: "/vendor/bootstrap/css/bootstrap.min.css" })
     .addStylesheet({ href: "/vendor/bootstrap/css/bootstrap-theme.min.css" })
@@ -307,7 +307,7 @@ The first two lines utilize a local Bootstrap instance, while the last is a plac
 
 Then add this to complete the Bootstrap configuration:
 
-```
+```js
 config
     .addFooterJavaScript({ href: "/vendor/jquery/jquery.min.js" })
     .addFooterJavaScript({ href: "/vendor/bootstrap/js/bootstrap.min.js"  })
@@ -317,7 +317,7 @@ It's common for an article to have a _teaser_ that might be presented in a speci
 
 The `<partial>` tag lets us simplify the partial feature.
 
-```
+```html
 <partial file-name='disqus.html'/>
 ```
 
@@ -327,7 +327,7 @@ The final Mahabhuta processing that's baked into AkashaRender is not a custom ta
 
 What this means is - if your content has this:
 
-```
+```html
 <a href="/romania/vlad-tepes/history.html"></a>
 ```
 
@@ -335,7 +335,7 @@ Normally this would render as an empty tag, and the user would not know about th
 
 We have two pieces of required Mahabhuta configuration:
 
-```
+```js
 config.setMahabhutaConfig({
     recognizeSelfClosing: true,
     recognizeCDATA: true
@@ -344,7 +344,7 @@ config.setMahabhutaConfig({
 
 This configures the _Cheerio_ engine that Mahabhuta relies on under the covers.  This particular configuration works great for websites.
 
-```
+```js
 config.addMahabhuta(require('./mahafuncs'));
 ```
 
@@ -369,13 +369,13 @@ For example, in AkashaRender is a file `built-in.js` providing the Mahabhuta tag
 
 The `ak_teaser.html.ejs` in that directory contains this:
 
-```
+```html
 <p><strong><%= teaser %></strong></p>
 ```
 
 But what if you want teasers to be rendered in italics rather than bold text?  Your site can have an `ak_teaser.html.ejs` in its partials directory, containing this instead:
 
-```
+```html
 <p><em><%= teaser %></em></p>
 ```
 
@@ -405,7 +405,7 @@ The JSON Renderer triggers on file names ending in `.html.json`.  It parses the 
 
 The named partial used here is [json-format.html.ejs](https://github.com/akashacms/akashacms-example/blob/master/partials/json-format.html.ejs), or
 
-```
+```html
 <%
 var keys = Object.keys(data);
 for (var i = 0; i < keys.length; i++) {
@@ -420,7 +420,7 @@ for (var i = 0; i < keys.length; i++) {
 
 With this data it produces, live copy: https://example.akashacms.com/json-data.html
 
-```
+```html
 <p>
 Row1 :- value 1
 </p>

@@ -77,7 +77,7 @@ We'll go over this later, but AkashaRender automatically compiles LESS code to C
 
 Create a simple layout template as `layouts/page.html.ejs` containing
 
-```
+```html
 <!doctype html>
 <html>
 <head>
@@ -127,7 +127,7 @@ An AkashaRender configuration file is actually a Node.js script.  It contains Co
 
 A typical name for this file is `config.js`.
 
-```
+```js
 'use strict';
 
 const akasha  = require('akasharender');
@@ -166,7 +166,7 @@ The last line is required for AkashaRender to access the configuration data.
 
 The last thing is to set up the scripts section of the `package.json` with tasks used in building the project:
 
-```
+```json
 "scripts": {
   "clean": "rm -rf out",
   "prebuild": "akasharender copy-assets config.js",
