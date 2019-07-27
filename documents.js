@@ -185,9 +185,10 @@ exports.Document = class Document {
             document.data = matter.orig;
             document.metadata = await document.renderer.initMetadata(config, 
                 document.basedir, document.docpath, document.dirMountedOn,
-                document.mountedDirMetadatal, matter.data);
+                document.mountedDirMetadata, matter.data);
                 document.text = matter.content;
             document.text = matter.content;
+            // console.log(`readDocumentContent ${document.docpath} ${util.inspect(document.metadata)}`);
         } else {
             document.data = content;
         }
@@ -655,5 +656,6 @@ exports.readDocument = async function(config, documentPath) {
         // Save the document into the cache
         cache.set("documents-readDocument", documentPath);
     }
+    // console.log(`readDocument ${doc.docpath} ${util.inspect(doc.metadata)}`);
     return doc;
 };
