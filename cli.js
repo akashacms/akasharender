@@ -28,7 +28,7 @@ const filez     = require('./filez');
 const data      = require('./data');
 
 process.title = 'akasharender';
-program.version('0.4.0');
+program.version('0.7.0');
 
 program
     .command('copy-assets <configFN>')
@@ -87,7 +87,7 @@ program
                         found.foundPathWithinDir,
                         config.renderTo,
                         found.foundMountedOn,
-                        {});
+                        found.foundBaseMetadata);
             console.log(result);
         } catch (e) {
             console.error(`copy-assets command ERRORED ${e.stack}`);
