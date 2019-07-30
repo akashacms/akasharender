@@ -466,7 +466,8 @@ async function _documentSearch(config, options) {
         // This handles complex documentDirs entries
         return typeof docdir === 'string' ? docdir : docdir.src;
     }),
-    options.rootPath ? options.rootPath+"/**/*" : "**/*",
+    //options.rootPath ? options.rootPath+"/**/*" : "**/*",
+    "**/*",
     async (basedir, fpath, fini) => {
         let fullFilePath = path.join(basedir, fpath);
         var stat = await fs.stat(fullFilePath);
@@ -534,6 +535,16 @@ async function _documentSearch(config, options) {
         return ret;
     });
 
+    if (options.rootPath) {
+        documents = documents.filter(doc => {
+            if (doc.docdestpath.startsWith(options.rootPath)) {
+                return true;
+            } else {
+                return false;
+            }
+        });
+    }
+
     // Then filter the list, potentially removing some items if they
     // do not validate against the filters specified in the options object.
     // These are separate .then calls even though it's not truly necessary.
@@ -597,7 +608,7 @@ async function _documentSearch(config, options) {
             docpath: doc.docpath,
             stat: doc.stat
         }
-    }))}`); */
+    }))}`); /* */
     return documents;
 
 };
