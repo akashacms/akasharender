@@ -33,6 +33,7 @@ const RSS    = require('rss');
 const globfs = require('globfs');
 const mahabhuta = require('mahabhuta');
 exports.mahabhuta = mahabhuta;
+const cheerio = require('cheerio');
 const mahaPartial = require('mahabhuta/maha/partial');
 const documents = require('./documents');
 
@@ -63,6 +64,16 @@ exports.renderPath = async (config, path) => {
                 found.foundMountedOn,
                 found.foundBaseMetadata);
     return result;
+}
+
+exports.readRenderedFile = async(config, fpath) => {
+
+    let html = await fs.readFile(path.join(config.renderDestination, fpath), 'utf8');
+    let $ = config.mahabhutaConfig 
+            ? cheerio.load(html, config.mahabhutaConfig) 
+            : cheerio.load(html);
+
+    return { html, $ };
 }
 
 exports.findRendererPath = function(p) {
