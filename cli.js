@@ -73,6 +73,21 @@ text: ${doc.text}
     });
 
 program
+    .command('renderto <configFN> <documentFN>')
+    .description('Call renderTo for a document')
+    .action(async (configFN, documentFN) => {
+        const akasha    = require('./index');
+        try {
+            const config = require(path.join(process.cwd(), configFN));
+            data.init();
+            let found = await filez.findRendersTo(config, documentFN);
+            console.log(found);
+        } catch (e) {
+            console.error(`renderto command ERRORED ${e.stack}`);
+        }
+    });
+
+program
     .command('render-document <configFN> <documentFN>')
     .description('Render a document into output directory')
     .action(async (configFN, documentFN) => {
@@ -80,17 +95,10 @@ program
         try {
             const config = require(path.join(process.cwd(), configFN));
             data.init();
-            let found = await filez.findRendersTo(config, documentFN);
-            let result = await akasha.renderDocument(
-                        config,
-                        found.foundDir,
-                        found.foundPathWithinDir,
-                        config.renderTo,
-                        found.foundMountedOn,
-                        found.foundBaseMetadata);
+            let result = await akasha.renderPath(config, documentFN);
             console.log(result);
         } catch (e) {
-            console.error(`copy-assets command ERRORED ${e.stack}`);
+            console.error(`render-document command ERRORED ${e.stack}`);
         }
     });
 

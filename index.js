@@ -52,6 +52,19 @@ module.exports.CSSLESSRenderer = require('./render-cssless');
 exports.render = render.newrender;
 exports.renderDocument = render.renderDocument;
 
+exports.renderPath = async (config, path) => {
+
+    let found = await exports.findRendersTo(config, path);
+    let result = await exports.renderDocument(
+                config,
+                found.foundDir,
+                found.foundPathWithinDir,
+                config.renderTo,
+                found.foundMountedOn,
+                found.foundBaseMetadata);
+    return result;
+}
+
 exports.findRendererPath = function(p) {
     throw new Error(`akasha.findRendererPath deprecated use config.findRendererPath instead for ${p}`);
 }
