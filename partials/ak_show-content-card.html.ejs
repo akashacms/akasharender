@@ -16,7 +16,7 @@
     %> >
     <figure>
         <% if (typeof contentImage !== 'undefined') { %>
-        <a href="<%- href %>">
+        <a href="<%= dest ? dest : href %>">
             <img src="<%- contentImage %>" 
                  alt="<%= document.metadata.title %>" 
                  title="<%= document.metadata.title %>" 
@@ -24,7 +24,7 @@
         </a>
         <% } %>
         <figcaption style="text-align: center;">
-            <a href="<%- href %>"><strong><%= document.metadata.title %></strong></a><%
+            <a href="<%= dest ? dest : href %>"><strong><%= document.metadata.title %></strong></a><%
                 if (caption) { %>: <%- caption %><% } %>
         </figcaption>
     </figure>

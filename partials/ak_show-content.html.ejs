@@ -9,5 +9,5 @@
         %> style="<%= style %>" <%
     }
     %> >
-    <a href="<%= href %>"><strong><%= document.metadata.title %></strong></a>
+    <a href="<%= dest ? dest : href %>"><strong><%= document.metadata.title %></strong></a>
 </span>

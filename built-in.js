@@ -45,7 +45,12 @@ module.exports = class BuiltInPlugin extends Plugin {
         this[_plugin_config] = config;
         this[_plugin_options] = options;
         options.config = config;
-        let moduleDirname = path.dirname(require.resolve('akasharender'));
+        let moduleDirname;
+        try {
+            moduleDirname = path.dirname(require.resolve('akasharender'));
+        } catch (e) {
+            moduleDirname = __dirname;
+        }
         config.addPartialsDir(path.join(moduleDirname, 'partials'));
         // config.addPartialsDir(path.join(__dirname, 'partials'));
         config.addMahabhuta(module.exports.mahabhutaArray(options));
@@ -121,20 +126,18 @@ function _doJavaScripts(scripts, options) {
 	if (!scripts) return ret;
 
     for (var script of scripts) {
+        let lang = undefined;
+        let href = undefined;
     	/* var keys = Object.keys(scripts);
     	for (var i = 0; i < keys.length; i++) {
     	    var script = scripts[keys[i]]; */
-	    if (script.lang) {
-			var lang = `type="${script.lang}"`;
-		} else {
-			var lang = "";
-		}
-		if (script.href) { var href = `src="${script.href}"`; }
+	    if (script.lang) { lang = `type="${script.lang}"`; }
+		if (script.href) { href = `src="${script.href}"`; }
 		if (!script.href && !script.script) {
-			throw new Error("Must specify either href or script in ${util.inspect(script)}");
+			throw new Error(`Must specify either href or script in ${util.inspect(script)}`);
 		}
 		if (!script.script) script.script = '';
-		ret += `<script ${lang} ${href}>${script.script}</script>`;
+		ret += `<script ${lang ? lang : ""} ${href ? href : ""}>${script.script}</script>`;
 	}
 	// console.log('_doJavaScripts '+ ret);
 	return ret;
@@ -252,9 +255,10 @@ class ShowContent extends mahabhuta.CustomElement {
         const width   = $element.attr('width');
         const style   = $element.attr('style');
         const dest    = $element.attr('dest');
+        const contentImage = $element.attr('content-image');
         const doc     = await documents.readDocument(this.array.options.config, href);
         return render.partial(this.array.options.config, template, {
-            href, clazz, id, caption, width, style, dest,
+            href, clazz, id, caption, width, style, dest, contentImage,
             document: doc
         });
     }

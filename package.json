@@ -53,7 +53,8 @@
   },
   "scripts": {
     "gendocs": "cd guide && npm run build",
-    "gendocssetup": "cd guide && npm install"
+    "gendocssetup": "cd guide && npm install",
+    "dopublish": "npm publish --access public"
   },
   "author": {
     "name": "David Herron",

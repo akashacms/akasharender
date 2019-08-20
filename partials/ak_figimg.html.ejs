@@ -1,4 +1,7 @@
 <figure <%
+    if (typeof id !== 'undefined') {
+        %>id="<%= id %>" <%
+    }
     if (typeof clazz !== 'undefined') {
         %>class="<%= clazz %>" <%
     }
