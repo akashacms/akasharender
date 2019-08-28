@@ -270,6 +270,98 @@ describe('teaser, content', function() {
     });
 });
 
+describe('Index Chain', function() {
+    it('should generate correct index chain for /hier/dir1/dir2/sibling.html', async function() {
+        let chain = await akasha.indexChain(config, '/hier/dir1/dir2/sibling.html');
+
+        assert.equal(chain.length, 5);
+        assert.include(chain[0].foundPath, 'index.html');
+        assert.include(chain[0].filename, '/index.html');
+
+        assert.include(chain[1].foundPath, 'hier/index.html');
+        assert.include(chain[1].filename, '/hier/index.html');
+
+        assert.include(chain[2].foundPath, 'hier/dir1/index.html');
+        assert.include(chain[2].filename, '/hier/dir1/index.html');
+
+        assert.include(chain[3].foundPath, 'hier/dir1/dir2/index.html');
+        assert.include(chain[3].filename, '/hier/dir1/dir2/index.html');
+
+        assert.include(chain[4].foundPath, 'hier/dir1/dir2/sibling.html');
+        assert.include(chain[4].filename, '/hier/dir1/dir2/sibling.html');
+    });
+
+    it('should generate correct index chain for /hier/dir1/dir2/index.html', async function() {
+        let chain = await akasha.indexChain(config, '/hier/dir1/dir2/index.html');
+
+        assert.equal(chain.length, 4);
+        assert.include(chain[0].foundPath, 'index.html');
+        assert.include(chain[0].filename, '/index.html');
+
+        assert.include(chain[1].foundPath, 'hier/index.html');
+        assert.include(chain[1].filename, '/hier/index.html');
+
+        assert.include(chain[2].foundPath, 'hier/dir1/index.html');
+        assert.include(chain[2].filename, '/hier/dir1/index.html');
+
+        assert.include(chain[3].foundPath, 'hier/dir1/dir2/index.html');
+        assert.include(chain[3].filename, '/hier/dir1/dir2/index.html');
+
+    });
+
+    it('should generate correct index chain for /hier/dir1/sibling.html', async function() {
+        let chain = await akasha.indexChain(config, '/hier/dir1/sibling.html');
+
+        assert.equal(chain.length, 4);
+        assert.include(chain[0].foundPath, 'index.html');
+        assert.include(chain[0].filename, '/index.html');
+
+        assert.include(chain[1].foundPath, 'hier/index.html');
+        assert.include(chain[1].filename, '/hier/index.html');
+
+        assert.include(chain[2].foundPath, 'hier/dir1/index.html');
+        assert.include(chain[2].filename, '/hier/dir1/index.html');
+
+        assert.include(chain[3].foundPath, 'hier/dir1/sibling.html');
+        assert.include(chain[3].filename, '/hier/dir1/sibling.html');
+
+    });
+
+    it('should generate correct index chain for /hier/dir1/index.html', async function() {
+        let chain = await akasha.indexChain(config, '/hier/dir1/index.html');
+
+        assert.equal(chain.length, 3);
+        assert.include(chain[0].foundPath, 'index.html');
+        assert.include(chain[0].filename, '/index.html');
+
+        assert.include(chain[1].foundPath, 'hier/index.html');
+        assert.include(chain[1].filename, '/hier/index.html');
+
+        assert.include(chain[2].foundPath, 'hier/dir1/index.html');
+        assert.include(chain[2].filename, '/hier/dir1/index.html');
+
+    });
+
+    it('should generate correct index chain for /hier/index.html', async function() {
+        let chain = await akasha.indexChain(config, '/hier/index.html');
+
+        assert.equal(chain.length, 2);
+        assert.include(chain[0].foundPath, 'index.html');
+        assert.include(chain[0].filename, '/index.html');
+
+        assert.include(chain[1].foundPath, 'hier/index.html');
+        assert.include(chain[1].filename, '/hier/index.html');
+    });
+
+    it('should generate correct index chain for /index.html', async function() {
+        let chain = await akasha.indexChain(config, '/index.html');
+
+        assert.equal(chain.length, 1);
+        assert.include(chain[0].foundPath, 'index.html');
+        assert.include(chain[0].filename, '/index.html');
+    });
+});
+
 describe('Partials', function() {
     it('should render HTML and EJS partials', async function() {
         let result = await akasha.renderPath(config, '/partials.html');
