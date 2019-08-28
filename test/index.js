@@ -291,6 +291,20 @@ describe('Index Chain', function() {
         assert.include(chain[4].filename, '/hier/dir1/dir2/sibling.html');
     });
 
+    it('should generate correct index chain for /hier-broke/dir1/dir2/sibling.html', async function() {
+        let chain = await akasha.indexChain(config, '/hier-broke/dir1/dir2/sibling.html');
+
+        assert.equal(chain.length, 3);
+        assert.include(chain[0].foundPath, 'index.html');
+        assert.include(chain[0].filename, '/index.html');
+
+        assert.include(chain[1].foundPath, 'hier-broke/dir1/dir2/index.html');
+        assert.include(chain[1].filename, '/hier-broke/dir1/dir2/index.html');
+
+        assert.include(chain[2].foundPath, 'hier-broke/dir1/dir2/sibling.html');
+        assert.include(chain[2].filename, '/hier-broke/dir1/dir2/sibling.html');
+    });
+
     it('should generate correct index chain for /hier/dir1/dir2/index.html', async function() {
         let chain = await akasha.indexChain(config, '/hier/dir1/dir2/index.html');
 
@@ -324,6 +338,18 @@ describe('Index Chain', function() {
 
         assert.include(chain[3].foundPath, 'hier/dir1/sibling.html');
         assert.include(chain[3].filename, '/hier/dir1/sibling.html');
+
+    });
+
+    it('should generate correct index chain for /hier-broke/dir1/sibling.html', async function() {
+        let chain = await akasha.indexChain(config, '/hier-broke/dir1/sibling.html');
+
+        assert.equal(chain.length, 2);
+        assert.include(chain[0].foundPath, 'index.html');
+        assert.include(chain[0].filename, '/index.html');
+
+        assert.include(chain[1].foundPath, 'hier-broke/dir1/sibling.html');
+        assert.include(chain[1].filename, '/hier-broke/dir1/sibling.html');
 
     });
 
