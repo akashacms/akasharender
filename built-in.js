@@ -90,6 +90,7 @@ module.exports.mahabhutaArray = function(options) {
     ret.addMahafunc(new InsertTeaser());
     ret.addMahafunc(new AkBodyClassAdd());
     ret.addMahafunc(new FigureImage());
+    ret.addMahafunc(new img2figureImage());
     ret.addMahafunc(new ShowContent());
     ret.addMahafunc(new AnchorCleanup());
     return ret;
@@ -224,11 +225,11 @@ class AkBodyClassAdd extends mahabhuta.PageProcessor {
 
 class FigureImage extends mahabhuta.CustomElement {
     get elementName() { return "fig-img"; }
-    process($element, metadata, dirty) {
+    async process($element, metadata, dirty) {
         var template = $element.attr('template');
         if (!template) template = 'ak_figimg.html.ejs';
         const href    = $element.attr('href');
-        if (!href) return Promise.reject(new Error('fig-img must receive an href'));
+        if (!href) throw new Error('fig-img must receive an href');
         const clazz   = $element.attr('class');
         const id      = $element.attr('id');
         const caption = $element.html();
@@ -237,8 +238,31 @@ class FigureImage extends mahabhuta.CustomElement {
         const dest    = $element.attr('dest');
         return render.partial(this.array.options.config, template, {
             href, clazz, id, caption, width, style, dest
-        })
-        .then(html => { return html; });
+        });
+    }
+}
+
+class img2figureImage extends mahabhuta.CustomElement {
+    get elementName() { return 'html body img[figure]'; }
+    async process($element, metadata, dirty, done) {
+        // console.log($element);
+        const template = $element.attr('template') 
+                ? $element.attr('template')
+                :  "ak_figimg.html.ejs";
+        const id = $element.attr('id');
+        const clazz = $element.attr('class');
+        const style = $element.attr('style');
+        const width = $element.attr('width');
+        const src = $element.attr('src');
+        const dest    = $element.attr('dest');
+        const content = $element.attr('caption')
+                ? $element.attr('caption')
+                : "";
+        
+        return render.partial(this.array.options.config, template, {
+            id, clazz, style, width, href: src, dest,
+            caption: content
+        });
     }
 }
 

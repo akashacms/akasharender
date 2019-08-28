@@ -150,6 +150,44 @@ describe('teaser, content', function() {
         assert.equal($('article#original figure#dest img[src="/fig-img-dest.jpg"]').length, 1);
     });
 
+    it('should find figure/image pair for img', async function() {
+        let result = await akasha.renderPath(config, '/img2figimg.html');
+
+        assert.exists(result, 'result exists');
+        assert.isString(result, 'result isString');
+        assert.include(result, '.html.md');
+        assert.include(result, 'documents/img2figimg.html.md');
+        assert.include(result, 'out/img2figimg.html');
+
+        let { html, $ } = await akasha.readRenderedFile(config, 'img2figimg.html');
+
+        assert.exists(html, 'result exists');
+        assert.isString(html, 'result isString');
+
+        // console.log(html);
+
+        assert.equal($('body figure#change1').length, 1);
+        assert.equal($('body figure#change1 img[src="img/Human-Skeleton.jpg"]').length, 1);
+
+        assert.equal($('body figure.some-class').length, 1);
+        assert.equal($('body figure.some-class img[src="img/Human-Skeleton.jpg"]').length, 1);
+
+        assert.equal($('body figure#change-caption').length, 1);
+        assert.equal($('body figure#change-caption img[src="img/Human-Skeleton.jpg"]').length, 1);
+        assert.equal($('body figure#change-caption figcaption').length, 1);
+        assert.include($('body figure#change-caption figcaption').html(), 
+            "This is a caption");
+
+        assert.equal($('body figure#change-dest').length, 1);
+        assert.equal($('body figure#change-dest a[href="https://somewhere.else"]').length, 1);
+        assert.equal($('body figure#change-dest a[href="https://somewhere.else"] img[src="img/Human-Skeleton.jpg"]').length, 1);
+
+        // Do this in akashacms-base-test
+        // assert.equal($('head meta[name="og:image"]').length, 1);
+        // assert.include($('head meta[name="og:image"]').attr('content'), 
+        //      "https://example.akashacms.com/img/Human-Skeleton.jpg");
+    });
+
     it('should render show-content', async function() {
         let result = await akasha.renderPath(config, '/show-content.html');
 

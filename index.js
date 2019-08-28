@@ -124,13 +124,13 @@ exports.indexChain = async function(config, fname) {
     var ret = [];
     const parsed = path.parse(fname);
 
-    var findParents = function(config, fileName) {
+    var findParents = async function(config, fileName) {
         // var newFileName;
         var parentDir;
         // console.log(`findParents ${fileName}`);
         if (path.dirname(fileName) === '.'
          || path.dirname(fileName) === parsed.root) {
-            return Promise.resolve();
+            return;
         } else {
             if (path.basename(fileName) === "index.html") {
                 parentDir = path.dirname(path.dirname(fileName));
@@ -138,7 +138,7 @@ exports.indexChain = async function(config, fname) {
                 parentDir = path.dirname(fileName);
             }
             var lookFor = path.join(parentDir, "index.html");
-            return filez.findRendersTo(config, lookFor)
+            found = filez.findRendersTo(config, lookFor)
             .then(found => {
                 // console.log(util.inspect(found));
                 if (typeof found !== 'undefined') {
