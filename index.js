@@ -138,7 +138,7 @@ exports.indexChain = async function(config, fname) {
                 parentDir = path.dirname(fileName);
             }
             var lookFor = path.join(parentDir, "index.html");
-            found = filez.findRendersTo(config, lookFor)
+            return filez.findRendersTo(config, lookFor)
             .then(found => {
                 // console.log(util.inspect(found));
                 if (typeof found !== 'undefined') {
