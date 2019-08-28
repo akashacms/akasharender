@@ -40,7 +40,7 @@ A minimal starting point for the dependencies is:
 
 ```json
 "dependencies": {
-    "akasharender": ">=0.7",
+    "akasharender": ">=0.7.2",
     "oembetter": "*",
     "hostr": "^2.x"
 }
