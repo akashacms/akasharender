@@ -165,6 +165,9 @@ exports.renderDocument = async function(config, basedir, fpath, renderTo, render
 
 exports.newrender = async function(config) {
     data.init();
+    // console.log('CALLING config.hookBeforeSiteRendered');
+    await config.hookBeforeSiteRendered();
+
     var filez = [];
     for (let docdir of config.documentDirs) {
 
@@ -262,7 +265,7 @@ exports.newrender = async function(config) {
     });
 
     // console.log('CALLING config.hookSiteRendered');
-    var hookResults = await config.hookSiteRendered();
+    await config.hookSiteRendered();
 
     // data.print();
     return results;

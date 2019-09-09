@@ -699,6 +699,22 @@ module.exports.Configuration = class Configuration {
         }));
     }
 
+
+
+    /**
+     * Call the beforeSiteRendered function of any plugin which has that function.
+     */
+    async hookBeforeSiteRendered() {
+        // console.log('hookBeforeSiteRendered');
+        var config = this;
+        for (let plugin of config.plugins) {
+            if (typeof plugin.beforeSiteRendered !== 'undefined') {
+                // console.log(`CALLING plugin ${plugin.name} beforeSiteRendered`);
+                await plugin.beforeSiteRendered(config);
+            }
+        }
+    }
+
     /**
      * Call the onSiteRendered function of any plugin which has that function.
      */
