@@ -14,7 +14,13 @@
     }
     %> >
     <% if (typeof dest !== 'undefined') { %><a href="<%= dest %>"><% } %>
-    <img src="<%= href %>"/>
+    <img src="<%= href %>" <%
+    if (typeof resizewidth !== 'undefined') {
+        %>resize-width="<%= resizewidth %>" <%
+    }
+    if (typeof resizeto !== 'undefined') {
+        %>resize-to="<%= resizeto %>" <%
+    } %>/>
     <% if (typeof dest !== 'undefined') { %></a><% } %>
     <%
         if (typeof caption !== 'undefined' && caption) {

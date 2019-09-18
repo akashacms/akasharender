@@ -1,6 +1,9 @@
 
+const { promisify } = require('util');
 const akasha   = require('../index');
 const { assert } = require('chai');
+const sizeOf = promisify(require('image-size'));
+
 
 const config = new akasha.Configuration();
 config.rootURL("https://example.akashacms.com");
@@ -33,16 +36,23 @@ config
     .addStylesheet({       href: "/print.css", media: "print" });
 config.prepare();
 
+describe('build site', function() {
+    it('should build site', async function() {
+        this.timeout(25000);
+        let failed = false;
+        let results = await akasha.render(config);
+        for (let result of results) {
+            if (result.error) {
+                failed = true;
+                console.error(result.error);
+            }
+        }
+        assert.isFalse(failed);
+    });
+});
+
 describe('stylesheets, javascripts', function() {
     it('should find stylesheets, javascript values', async function() {
-        let result = await akasha.renderPath(config, '/simple-style-javascript.html');
-
-        assert.exists(result, 'result exists');
-        assert.isString(result, 'result isString');
-        assert.include(result, '.html.md');
-        assert.include(result, 'documents/simple-style-javascript.html.md');
-        assert.include(result, 'out/simple-style-javascript.html');
-
         let { html, $ } = await akasha.readRenderedFile(config, 'simple-style-javascript.html');
 
         assert.exists(html, 'result exists');
@@ -62,14 +72,6 @@ describe('stylesheets, javascripts', function() {
     });
     
     it('should find stylesheets, javascript from metadata values', async function() {
-        let result = await akasha.renderPath(config, '/metadata-style-javascript.html');
-
-        assert.exists(result, 'result exists');
-        assert.isString(result, 'result isString');
-        assert.include(result, '.html.md');
-        assert.include(result, 'documents/metadata-style-javascript.html.md');
-        assert.include(result, 'out/metadata-style-javascript.html');
-
         let { html, $ } = await akasha.readRenderedFile(config, 'metadata-style-javascript.html');
 
         assert.exists(html, 'result exists');
@@ -91,14 +93,6 @@ describe('stylesheets, javascripts', function() {
 
 describe('teaser, content', function() {
     it('should find teaser, content values', async function() {
-        let result = await akasha.renderPath(config, '/teaser-content.html');
-
-        assert.exists(result, 'result exists');
-        assert.isString(result, 'result isString');
-        assert.include(result, '.html.md');
-        assert.include(result, 'documents/teaser-content.html.md');
-        assert.include(result, 'out/teaser-content.html');
-
         let { html, $ } = await akasha.readRenderedFile(config, 'teaser-content.html');
 
         assert.exists(html, 'result exists');
@@ -110,14 +104,6 @@ describe('teaser, content', function() {
     });
 
     it('should find added body class values', async function() {
-        let result = await akasha.renderPath(config, '/body-class.html');
-
-        assert.exists(result, 'result exists');
-        assert.isString(result, 'result isString');
-        assert.include(result, '.html.md');
-        assert.include(result, 'documents/body-class.html.md');
-        assert.include(result, 'out/body-class.html');
-
         let { html, $ } = await akasha.readRenderedFile(config, 'body-class.html');
 
         assert.exists(html, 'result exists');
@@ -127,14 +113,6 @@ describe('teaser, content', function() {
     });
 
     it('should render fig-img', async function() {
-        let result = await akasha.renderPath(config, '/fig-img.html');
-
-        assert.exists(result, 'result exists');
-        assert.isString(result, 'result isString');
-        assert.include(result, '.html.md');
-        assert.include(result, 'documents/fig-img.html.md');
-        assert.include(result, 'out/fig-img.html');
-
         let { html, $ } = await akasha.readRenderedFile(config, 'fig-img.html');
 
         assert.exists(html, 'result exists');
@@ -151,14 +129,6 @@ describe('teaser, content', function() {
     });
 
     it('should find figure/image pair for img', async function() {
-        let result = await akasha.renderPath(config, '/img2figimg.html');
-
-        assert.exists(result, 'result exists');
-        assert.isString(result, 'result isString');
-        assert.include(result, '.html.md');
-        assert.include(result, 'documents/img2figimg.html.md');
-        assert.include(result, 'out/img2figimg.html');
-
         let { html, $ } = await akasha.readRenderedFile(config, 'img2figimg.html');
 
         assert.exists(html, 'result exists');
@@ -188,15 +158,59 @@ describe('teaser, content', function() {
         //      "https://example.akashacms.com/img/Human-Skeleton.jpg");
     });
 
+    it('should resize img', async function() {
+        let { html, $ } = await akasha.readRenderedFile(config, 'img2resize.html');
+
+        assert.exists(html, 'result exists');
+        assert.isString(html, 'result isString');
+
+        // console.log(html);
+
+        assert.equal($('body #resizeto50').length, 1);
+        assert.include($('body #resizeto50').attr('src'), "img/Human-Skeleton-50.jpg");
+        assert.notExists($('body #resizeto50').attr('resize-width'));
+
+        assert.equal($('body #resizeto150').length, 1);
+        assert.include($('body #resizeto150').attr('src'), "img/Human-Skeleton-150.jpg");
+        assert.notExists($('body #resizeto150').attr('resize-width'));
+        assert.notExists($('body #resizeto150').attr('resize-to'));
+
+        assert.equal($('body #resizeto250figure').length, 1);
+        assert.include($('body #resizeto250figure img').attr('src'), "img/Human-Skeleton-250-figure.jpg");
+        assert.notExists($('body #resizeto250figure img').attr('resize-width'));
+        assert.notExists($('body #resizeto250figure img').attr('resize-to'));
+
+        assert.equal(config.plugin('akashacms-builtin').resizequeue.length, 3);
+        assert.deepEqual(config.plugin('akashacms-builtin').resizequeue, [
+            {
+                src: 'img/Human-Skeleton.jpg',
+                resizewidth: '50',
+                resizeto: 'img/Human-Skeleton-50.jpg'
+            },
+            {
+                src: 'img/Human-Skeleton.jpg',
+                resizewidth: '150',
+                resizeto: 'img/Human-Skeleton-150.jpg'
+            },
+            {
+                src: 'img/Human-Skeleton.jpg',
+                resizewidth: '250',
+                resizeto: 'img/Human-Skeleton-250-figure.jpg'
+            }
+        ]);
+
+        let size50 = await sizeOf('out/img/Human-Skeleton-50.jpg');
+        assert.equal(size50.width, 50);
+
+        let size150 = await sizeOf('out/img/Human-Skeleton-150.jpg');
+        assert.equal(size150.width, 150);
+
+        let size250 = await sizeOf('out/img/Human-Skeleton-250-figure.jpg');
+        assert.equal(size250.width, 250);
+
+    });
+
     it('should render show-content', async function() {
-        let result = await akasha.renderPath(config, '/show-content.html');
-
-        assert.exists(result, 'result exists');
-        assert.isString(result, 'result isString');
-        assert.include(result, '.html.md');
-        assert.include(result, 'documents/show-content.html.md');
-        assert.include(result, 'out/show-content.html');
-
         let { html, $ } = await akasha.readRenderedFile(config, 'show-content.html');
 
         assert.exists(html, 'result exists');
@@ -232,14 +246,6 @@ describe('teaser, content', function() {
 
 
     it('should process anchor cleanups', async function() {
-        let result = await akasha.renderPath(config, '/anchor-cleanups.html');
-
-        assert.exists(result, 'result exists');
-        assert.isString(result, 'result isString');
-        assert.include(result, '.html.md');
-        assert.include(result, 'documents/anchor-cleanups.html.md');
-        assert.include(result, 'out/anchor-cleanups.html');
-
         let { html, $ } = await akasha.readRenderedFile(config, 'anchor-cleanups.html');
 
         assert.exists(html, 'result exists');
@@ -390,14 +396,6 @@ describe('Index Chain', function() {
 
 describe('Partials', function() {
     it('should render HTML and EJS partials', async function() {
-        let result = await akasha.renderPath(config, '/partials.html');
-
-        assert.exists(result, 'result exists');
-        assert.isString(result, 'result isString');
-        assert.include(result, '.html.md');
-        assert.include(result, 'documents/partials.html.md');
-        assert.include(result, 'out/partials.html');
-
         let { html, $ } = await akasha.readRenderedFile(config, 'partials.html');
 
         assert.exists(html, 'result exists');
@@ -418,14 +416,6 @@ describe('Partials', function() {
 
 describe('JSON document', function() {
     it('should render JSON document', async function() {
-        let result = await akasha.renderPath(config, '/json-data.html');
-
-        assert.exists(result, 'result exists');
-        assert.isString(result, 'result isString');
-        assert.include(result, '.html.json');
-        assert.include(result, 'documents/json-data.html.json');
-        assert.include(result, 'out/json-data.html');
-
         let { html, $ } = await akasha.readRenderedFile(config, 'json-data.html');
 
         assert.exists(html, 'result exists');
@@ -444,14 +434,6 @@ describe('JSON document', function() {
 
 describe('AsciiDoc document', function() {
     it('should render AsciiDoc document', async function() {
-        let result = await akasha.renderPath(config, '/asciidoctor.html');
-
-        assert.exists(result, 'result exists');
-        assert.isString(result, 'result isString');
-        assert.include(result, '.html.adoc');
-        assert.include(result, 'documents/asciidoctor.html.adoc');
-        assert.include(result, 'out/asciidoctor.html');
-
         let { html, $ } = await akasha.readRenderedFile(config, 'asciidoctor.html');
 
         assert.exists(html, 'result exists');

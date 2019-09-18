@@ -22,6 +22,7 @@
 const url   = require('url');
 const path  = require('path');
 const util  = require('util');
+const sharp = require('sharp');
 const documents = require('./documents');
 const filez = require('./filez');
 const render = require('./render');
@@ -35,6 +36,7 @@ const pluginName = "akashacms-builtin";
 
 const _plugin_config = Symbol('config');
 const _plugin_options = Symbol('options');
+const _plugin_resizequeue = Symbol('resizequeue');
 
 module.exports = class BuiltInPlugin extends Plugin {
 	constructor() {
@@ -63,10 +65,12 @@ module.exports = class BuiltInPlugin extends Plugin {
 
         if (!config.builtin) config.builtin = {};
         if (!config.builtin.suppress) config.builtin.suppress = {};
+        this[_plugin_resizequeue] = [];
     }
 
     get config() { return this[_plugin_config]; }
     get options() { return this[_plugin_options]; }
+    get resizequeue() { return this[_plugin_resizequeue]; }
 
     doStylesheets(metadata) {
     	return _doStylesheets(metadata, this.options);
@@ -79,6 +83,26 @@ module.exports = class BuiltInPlugin extends Plugin {
     doFooterJavaScript(metadata) {
     	return _doFooterJavaScript(metadata, this.options);
     }
+
+    addImageToResize(src, resizewidth, resizeto) {
+        this[_plugin_resizequeue].push({ src, resizewidth, resizeto });
+    }
+
+    async onSiteRendered(config) {
+
+        for (let toresize of this.resizequeue) {
+            // console.log(`resizing `, toresize);
+
+            let img = await sharp(path.join(
+                config.renderDestination, toresize.src));
+            let resized = await img.resize(Number.parseInt(toresize.resizewidth));
+            await resized
+                .toFile(path.join(
+                    config.renderDestination,
+                    toresize.resizeto ? toresize.resizeto : toresize.src));
+        }
+    }
+
 }
 
 module.exports.mahabhutaArray = function(options) {
@@ -91,6 +115,7 @@ module.exports.mahabhutaArray = function(options) {
     ret.addMahafunc(new AkBodyClassAdd());
     ret.addMahafunc(new FigureImage());
     ret.addMahafunc(new img2figureImage());
+    ret.addMahafunc(new ImageResize());
     ret.addMahafunc(new ShowContent());
     ret.addMahafunc(new AnchorCleanup());
     return ret;
@@ -255,16 +280,42 @@ class img2figureImage extends mahabhuta.CustomElement {
         const width = $element.attr('width');
         const src = $element.attr('src');
         const dest    = $element.attr('dest');
+        const resizewidth = $element.attr('resize-width');
+        const resizeto = $element.attr('resize-to');
         const content = $element.attr('caption')
                 ? $element.attr('caption')
                 : "";
         
         return render.partial(this.array.options.config, template, {
-            id, clazz, style, width, href: src, dest,
+            id, clazz, style, width, href: src, dest, resizewidth, resizeto,
             caption: content
         });
     }
 }
+
+class ImageResize extends mahabhuta.Munger {
+    get selector() { return "html body img[resize-width]"; }
+    async process($, $link, metadata, dirty) {
+        // console.log($element);
+        const resizewidth = $link.attr('resize-width');
+        const resizeto = $link.attr('resize-to');
+        const src = $link.attr('src');
+        
+        // Add to a queue that is run at the end 
+        this.array.options.config.plugin(pluginName).addImageToResize(src, resizewidth, resizeto);
+
+        if (resizeto) $link.attr('src', resizeto);
+
+        // These are no longer needed
+        $link.removeAttr('resize-width');
+        $link.removeAttr('resize-to');
+
+        return "ok";
+    }
+}
+
+
+
 
 class ShowContent extends mahabhuta.CustomElement {
     get elementName() { return "show-content"; }

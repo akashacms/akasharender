@@ -64,6 +64,40 @@ The recognized attributes are:
 
 This is processed through the `ak_figimg.html.ejs` template just as for `<fig-img>`.
 
+# Resizing images
+
+Sometimes you want to store a full-size image in the `documents` directory, but the deployed website will use a reasonable size image for web browsers.  For example a marketing department might provide highly detailed product images accompanying a press release, but of course it is useful to keep images to 100-300kb for delivery on a public website.  
+
+For this purpose a filter exists to resize images.  This feature may be extended in the future to include general image manipulation.
+
+It is triggered by adding a `resize-width` property to an `<img>`.  The value of this property declares the width of the resulting image in pixels.  The image height is automatically calculated to maintain the same width/height scale (e.g. a 600x400 image resized to 300 width would be 200 pixels high).
+
+
+The usage is as follows:
+
+```html
+<img id="resizeto150" 
+        src="img/Human-Skeleton.jpg"
+        resize-width="150"
+        resize-to="img/Human-Skeleton-150.jpg">
+```
+
+The recognized properties are:
+
+* `src` The file within the documents or assets directories that is copied into the render output
+* `resize-to` The file name used within the render output directory
+* `resize-width` The resulting image width as discussed above.
+
+Currently the `resize-to` option is required, meaning that we are required to copy from a given file to a different file as shown here.  In the rendered HTML the `src` attribute of the `<img>` will be rewritten to whatever is in the `resize-to` attribute.
+
+The rendered version of this tag will be:
+
+```html
+<img id="resizeto150" src="img/Human-Skeleton-150.jpg">
+```
+
+The `resize-width` and `resize-to` attributes are removed in the final output.
+
 # Stylesheets
 
 The `<ak-stylesheets>` tag generates links to CSS stylesheets, as declared in `config.js` or in the document metadata.
