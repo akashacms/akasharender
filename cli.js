@@ -28,7 +28,7 @@ const filez     = require('./filez');
 const data      = require('./data');
 
 process.title = 'akasharender';
-program.version('0.7.0');
+program.version('0.7.5');
 
 program
     .command('copy-assets <configFN>')

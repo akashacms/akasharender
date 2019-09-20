@@ -35,6 +35,7 @@ exports.findAsset = async function(assetdirs, filename) {
         return Promise.resolve(cached);
     }
     var results = [];
+    // console.log(`findAsset ${assetdirs} searching for ${filename}`);
     for (let assetdir of assetdirs) {
         let theAssetdir;
         if (typeof assetdir === 'object') {

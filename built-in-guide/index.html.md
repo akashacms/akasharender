@@ -88,7 +88,7 @@ The recognized properties are:
 * `resize-to` The file name used within the render output directory
 * `resize-width` The resulting image width as discussed above.
 
-Currently the `resize-to` option is required, meaning that we are required to copy from a given file to a different file as shown here.  In the rendered HTML the `src` attribute of the `<img>` will be rewritten to whatever is in the `resize-to` attribute.
+In the rendered HTML, if `resize-to` is given, the `src` attribute of the `<img>` will be rewritten to the value of the `resize-to` attribute.
 
 The rendered version of this tag will be:
 
@@ -97,6 +97,12 @@ The rendered version of this tag will be:
 ```
 
 The `resize-width` and `resize-to` attributes are removed in the final output.
+
+```html
+<img id="png2jpg"  src="rss_button.png" resize-width="50" resize-to="rss_button.jpg">
+```
+
+In this case the image type in `src` differs from `resize-to`.  In this case an image format conversion is performed.
 
 # Stylesheets
 

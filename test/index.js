@@ -167,7 +167,7 @@ describe('teaser, content', function() {
         // console.log(html);
 
         assert.equal($('body #resizeto50').length, 1);
-        assert.include($('body #resizeto50').attr('src'), "img/Human-Skeleton-50.jpg");
+        assert.include($('body #resizeto50').attr('src'), "img/Human-Skeleton.jpg");
         assert.notExists($('body #resizeto50').attr('resize-width'));
 
         assert.equal($('body #resizeto150').length, 1);
@@ -176,16 +176,28 @@ describe('teaser, content', function() {
         assert.notExists($('body #resizeto150').attr('resize-to'));
 
         assert.equal($('body #resizeto250figure').length, 1);
+        assert.equal($('body #resizeto250figure figcaption').length, 1);
         assert.include($('body #resizeto250figure img').attr('src'), "img/Human-Skeleton-250-figure.jpg");
         assert.notExists($('body #resizeto250figure img').attr('resize-width'));
         assert.notExists($('body #resizeto250figure img').attr('resize-to'));
+        assert.include($('body #resizeto250figure figcaption').html(), "Image caption");
 
-        assert.equal(config.plugin('akashacms-builtin').resizequeue.length, 3);
+        assert.equal($('body #resizerss').length, 1);
+        assert.include($('body #resizerss').attr('src'), "rss_button.png");
+        assert.notExists($('body #resizerss').attr('resize-width'));
+        assert.notExists($('body #resizerss').attr('resize-to'));
+
+        assert.equal($('body #png2jpg').length, 1);
+        assert.include($('body #png2jpg').attr('src'), "rss_button.jpg");
+        assert.notExists($('body #png2jpg').attr('resize-width'));
+        assert.notExists($('body #png2jpg').attr('resize-to'));
+
+        assert.equal(config.plugin('akashacms-builtin').resizequeue.length, 5);
         assert.deepEqual(config.plugin('akashacms-builtin').resizequeue, [
             {
                 src: 'img/Human-Skeleton.jpg',
                 resizewidth: '50',
-                resizeto: 'img/Human-Skeleton-50.jpg'
+                resizeto: undefined,
             },
             {
                 src: 'img/Human-Skeleton.jpg',
@@ -196,6 +208,16 @@ describe('teaser, content', function() {
                 src: 'img/Human-Skeleton.jpg',
                 resizewidth: '250',
                 resizeto: 'img/Human-Skeleton-250-figure.jpg'
+            },
+            {
+                resizeto: undefined,
+                resizewidth: "50",
+                src: "rss_button.png"
+            },
+            {
+                resizeto: "rss_button.jpg",
+                resizewidth: "50",
+                src: "rss_button.png"
             }
         ]);
 
@@ -207,6 +229,12 @@ describe('teaser, content', function() {
 
         let size250 = await sizeOf('out/img/Human-Skeleton-250-figure.jpg');
         assert.equal(size250.width, 250);
+
+        let sizerss = await sizeOf('out/rss_button.png');
+        assert.equal(sizerss.width, 50);
+
+        let sizerssjpg = await sizeOf('out/rss_button.jpg');
+        assert.equal(sizerssjpg.width, 50);
 
     });
 

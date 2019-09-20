@@ -550,7 +550,10 @@ async function _documentSearch(config, options) {
     // These are separate .then calls even though it's not truly necessary.
     // This is for ease of implementation so each phase can be eliminated
     // or new phases added easily.
-    // console.log(`documentSearch documents #1 ${util.inspect(documents)}`);
+
+    // for (let document of documents) {
+    //    console.log(`documentSearch documents #1 ${util.inspect(document)}`);
+    // }
 
     if (options.pathmatch) {
         documents = documents.filter(doc => {
@@ -588,7 +591,9 @@ async function _documentSearch(config, options) {
         });
     }
 
-    // console.log(`documentSearch documents #4 ${util.inspect(documents)}`);
+    // for (let document of documents) {
+    //    console.log(`documentSearch documents after layouts ${util.inspect(document)}`);
+    // }
 
     if (options.filterfunc) {
         documents = documents.filter(doc => {
@@ -601,6 +606,10 @@ async function _documentSearch(config, options) {
         else if (a.renderpath === b.renderpath) return 0;
         else return 1;
     });
+
+    // for (let document of documents) {
+    //    console.log(`documentSearch documents after sort ${util.inspect(document)}`);
+    // }
 
     /* console.log(`documentSearch final ${util.inspect(documents.map(doc => {
         return {

@@ -93,8 +93,24 @@ module.exports = class BuiltInPlugin extends Plugin {
         for (let toresize of this.resizequeue) {
             // console.log(`resizing `, toresize);
 
-            let img = await sharp(path.join(
-                config.renderDestination, toresize.src));
+            let srcfile = undefined;
+
+            let found = await filez.findAsset(config.assetDirs, toresize.src);
+            if (Array.isArray(found) && found.length >= 1) {
+                // console.log(`found ${toresize.src} as asset `, found);
+                srcfile = found[0].fullpath;
+            } else {
+                found = await filez.findRendersTo(config, toresize.src);
+                if (found) {
+                    // console.log(`found ${toresize.src} as document `, found);
+                    srcfile = path.join(found.foundDir, found.foundFullPath);
+                } else {
+                    // console.log(`did not find ${toresize.src}`);
+                }
+            }
+            if (!srcfile) throw new Error(`akashacms-builtin: Did not find source file for image to resize ${toresize.src}`);
+
+            let img = await sharp(srcfile);
             let resized = await img.resize(Number.parseInt(toresize.resizewidth));
             await resized
                 .toFile(path.join(
