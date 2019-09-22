@@ -216,7 +216,7 @@ exports.generateRSS = async function(config, configrss, feedData, items, renderT
         //}
     }
 
-    // console.log('rss '+ util.inspect(rss));
+    // console.log('generateRSS rss '+ util.inspect(rss));
 
     var rssfeed = new RSS(rss);
 

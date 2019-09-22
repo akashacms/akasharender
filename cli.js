@@ -128,5 +128,20 @@ program
         }
     });
 
+program
+    .command('config <configFN>')
+    .description('Print a site configuration')
+    .action(async (configFN) => {
+        const akasha    = require('./index');
+        // console.log(`render: akasha: ${util.inspect(akasha)}`);
+        try {
+            const config = require(path.join(process.cwd(), configFN));
+            console.log(config);
+        } catch (e) {
+            console.error(`config command ERRORED ${e.stack}`);
+        }
+    });
+
+
 
 program.parse(process.argv);

@@ -30,7 +30,7 @@
     "akasharender": "cli.js"
   },
   "dependencies": {
-    "mahabhuta": "0.7.1",
+    "mahabhuta": "0.7.2",
     "cheerio": ">=0.22.x",
     "commander": "^2.17.1",
     "debug": "^4.1.0",

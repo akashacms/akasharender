@@ -57,14 +57,17 @@ module.exports = class BuiltInPlugin extends Plugin {
         // config.addPartialsDir(path.join(__dirname, 'partials'));
         config.addMahabhuta(module.exports.mahabhutaArray(options));
         config.addMahabhuta(mahaMetadata.mahabhutaArray({
-
+            root_url: config.root_url
+            // TODO how to configure this
+            // sitemap_title: ....?
         }));
         config.addMahabhuta(mahaPartial.mahabhutaArray({
             renderPartial: options.renderPartial
         }));
 
-        if (!config.builtin) config.builtin = {};
-        if (!config.builtin.suppress) config.builtin.suppress = {};
+        // TODO These seem to not be used
+        // if (!config.builtin) config.builtin = {};
+        // if (!config.builtin.suppress) config.builtin.suppress = {};
         this[_plugin_resizequeue] = [];
     }
 
@@ -131,7 +134,7 @@ module.exports.mahabhutaArray = function(options) {
     ret.addMahafunc(new AkBodyClassAdd());
     ret.addMahafunc(new FigureImage());
     ret.addMahafunc(new img2figureImage());
-    ret.addMahafunc(new ImageResize());
+    ret.addMahafunc(new ImageRewriter());
     ret.addMahafunc(new ShowContent());
     ret.addMahafunc(new AnchorCleanup());
     return ret;
@@ -146,16 +149,31 @@ function _doStylesheets(metadata, options) {
     }
     // console.log(`ak-stylesheets ${metadata.document.path} ${util.inspect(metadata.headerStylesheetsAdd)} ${util.inspect(options.config.scripts)} ${util.inspect(scripts)}`);
 
+    if (!options) throw new Error('_doStylesheets no options');
+    if (!options.config) throw new Error('_doStylesheets no options.config');
+
     var ret = '';
     if (typeof scripts !== 'undefined') {
         for (var style of scripts) {
             /* var keys = Object.keys(scripts);
             for (var i = 0; i < keys.length; i++) {
             var style = scripts[keys[i]]; */
+
+            let stylehref = style.href;
+            let pHref = url.parse(style.href, true, true);
+            if (!pHref.protocol && !pHref.hostname && !pHref.slashes) {
+                // This is a local URL
+                if (options.config.root_url) {
+                    let pRootUrl = url.parse(options.config.root_url);
+                    stylehref = path.normalize(
+                            path.join(pRootUrl.pathname, pHref.pathname)
+                    );
+                }
+            }
             if (style.media) {
-                ret += `<link rel="stylesheet" type="text/css" href="${style.href}" media="${style.media}"/>`;
+                ret += `<link rel="stylesheet" type="text/css" href="${stylehref}" media="${style.media}"/>`;
             } else {
-                ret += `<link rel="stylesheet" type="text/css" href="${style.href}"/>`;
+                ret += `<link rel="stylesheet" type="text/css" href="${stylehref}"/>`;
             }
         }
         // console.log(`_doStylesheets ${ret}`);
@@ -167,6 +185,9 @@ function _doJavaScripts(scripts, options) {
 	var ret = '';
 	if (!scripts) return ret;
 
+    if (!options) throw new Error('_doJavaScripts no options');
+    if (!options.config) throw new Error('_doJavaScripts no options.config');
+
     for (var script of scripts) {
         let lang = undefined;
         let href = undefined;
@@ -174,7 +195,20 @@ function _doJavaScripts(scripts, options) {
     	for (var i = 0; i < keys.length; i++) {
     	    var script = scripts[keys[i]]; */
 	    if (script.lang) { lang = `type="${script.lang}"`; }
-		if (script.href) { href = `src="${script.href}"`; }
+		if (script.href) {
+            let scripthref = script.href;
+            let pHref = url.parse(script.href, true, true);
+            if (!pHref.protocol && !pHref.hostname && !pHref.slashes) {
+                // This is a local URL
+                if (options.config.root_url) {
+                    let pRootUrl = url.parse(options.config.root_url);
+                    scripthref = path.normalize(
+                            path.join(pRootUrl.pathname, pHref.pathname)
+                    );
+                }
+            }
+            href = `src="${scripthref}"`; 
+        }
 		if (!script.href && !script.script) {
 			throw new Error(`Must specify either href or script in ${util.inspect(script)}`);
 		}
@@ -194,7 +228,7 @@ function _doHeaderJavaScript(metadata, options) {
 	}
 	// console.log(`_doHeaderJavaScript ${util.inspect(scripts)}`);
 	// console.log(`_doHeaderJavaScript ${util.inspect(options.config.scripts)}`);
-	return _doJavaScripts(scripts);
+	return _doJavaScripts(scripts, options);
 	// return render.partialSync(options.config, "ak_javaScript.html.ejs", { javaScripts: scripts });
 }
 
@@ -205,7 +239,7 @@ function _doFooterJavaScript(metadata, options) {
 	} else {
 		scripts = options.config.scripts ? options.config.scripts.javaScriptBottom : undefined;
 	}
-	return _doJavaScripts(scripts);
+	return _doJavaScripts(scripts, options);
 	// return render.partialSync(options.config, "ak_javaScript.html.ejs", { javaScripts: scripts });
 }
 
@@ -309,29 +343,51 @@ class img2figureImage extends mahabhuta.CustomElement {
     }
 }
 
-class ImageResize extends mahabhuta.Munger {
-    get selector() { return "html body img[resize-width]"; }
+class ImageRewriter extends mahabhuta.Munger {
+    get selector() { return "html body img"; }
     async process($, $link, metadata, dirty) {
         // console.log($element);
+
+        // We only do rewrites for local images
+        let src = $link.attr('src');
+        const uSrc = url.parse(src, true, true);
+        if (uSrc.protocol || uSrc.slashes) return "ok";
+        
+        // Are we asked to resize the image?
         const resizewidth = $link.attr('resize-width');
         const resizeto = $link.attr('resize-to');
-        const src = $link.attr('src');
         
-        // Add to a queue that is run at the end 
-        this.array.options.config.plugin(pluginName).addImageToResize(src, resizewidth, resizeto);
+        if (resizewidth) {
+            // Add to a queue that is run at the end 
+            this.array.options.config.plugin(pluginName).addImageToResize(src, resizewidth, resizeto);
 
-        if (resizeto) $link.attr('src', resizeto);
+            if (resizeto) {
+                $link.attr('src', resizeto);
+                src = resizeto;
+            }
 
-        // These are no longer needed
-        $link.removeAttr('resize-width');
-        $link.removeAttr('resize-to');
+            // These are no longer needed
+            $link.removeAttr('resize-width');
+            $link.removeAttr('resize-to');
+        }
 
+        // Check to see if src must be updated for config.root_url
+        // This does not apply to relative image paths
+        // Therefore if it is an absolute local image path, and there is a root_url
+        // we must rewrite the src path to start with the root_url
+        if (path.isAbsolute(src) && this.array.options.config.root_url) {
+            let pRootUrl = url.parse(this.array.options.config.root_url);
+            // Check if the URL has already been rewritten
+            if (!src.startsWith(pRootUrl.pathname)) {
+                let newSrc = path.normalize(
+                    path.join(pRootUrl.pathname, src)
+                );
+                $link.attr('src', newSrc);
+            }
+        }
         return "ok";
     }
 }
-
-
-
 
 class ShowContent extends mahabhuta.CustomElement {
     get elementName() { return "show-content"; }
@@ -400,11 +456,29 @@ class AnchorCleanup extends mahabhuta.Munger {
             if (uHref.protocol || uHref.slashes) return "ok";
             if (!uHref.pathname) return "ok";
 
+            /* if (metadata.document.path === 'index.html.md') {
+                console.log(`AnchorCleanup metadata.document.path ${metadata.document.path} href ${href} uHref.pathname ${uHref.pathname} this.array.options.config.root_url ${this.array.options.config.root_url}`);
+                console.log($.html());
+            } */
+
             // let startTime = new Date();
 
             if (!path.isAbsolute(uHref.pathname)) {
                 uHref.pathname = path.join(path.dirname(metadata.document.path), uHref.pathname);
                 // console.log(`***** AnchorCleanup FIXED href to ${uHref.pathname}`);
+            }
+
+            // Check to see if href must be updated for config.root_url
+            if (this.array.options.config.root_url) {
+                let pRootUrl = url.parse(this.array.options.config.root_url);
+                // Check if the URL has already been rewritten
+                if (!href.startsWith(pRootUrl.pathname)) {
+                    let newHref = path.normalize(
+                        path.join(pRootUrl.pathname, uHref.pathname)
+                    );
+                    $link.attr('href', newHref);
+                    /* if (metadata.document.path === 'index.html.md') console.log(`AnchorCleanup metadata.document.path ${metadata.document.path} href ${href} uHref.pathname ${uHref.pathname} this.array.options.config.root_url ${this.array.options.config.root_url} newHref ${newHref}`); */
+                }
             }
 
             // Look to see if it's an asset file
@@ -419,6 +493,7 @@ class AnchorCleanup extends mahabhuta.Munger {
             if (this.array.options.config.askPluginsLegitLocalHref(uHref.pathname)) {
                 return "ok";
             }
+
             // If this link has a body, then don't modify it
             if ((linktext && linktext.length > 0 && linktext !== uHref.pathname)
                 || ($link.children().length > 0)) {

@@ -4,7 +4,7 @@
     "description": "Test suite for akashacms-built-in module",
     "main": "index.js",
     "scripts": {
-      "test": "mocha ./index",
+      "test": "mocha ./index ./rebased",
       "setup": "npm install && cd .. && npm install ",
       "clean": "rm -rf node_modules out"
     },

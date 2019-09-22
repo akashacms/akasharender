@@ -293,7 +293,9 @@ module.exports = class HTMLRenderer extends Renderer {
 
         if (config.root_url) {
             let pRootUrl = url.parse(config.root_url);
-            pRootUrl.pathname = metadata.document.renderTo;
+            pRootUrl.pathname = path.normalize(
+                    path.join(pRootUrl.pathname, metadata.document.renderTo)
+            );
             metadata.rendered_url = url.format(pRootUrl);
         } else {
             metadata.rendered_url = metadata.document.renderTo;
