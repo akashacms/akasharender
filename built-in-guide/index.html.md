@@ -189,3 +189,32 @@ It reads the metadata of the referenced document, and inserts that documents tit
 For example the code `<a href="/hello-world.html"></a>` might be rewritten to: `<a href="/hello-world.html">Hello, world!</a>`.  If you're using Markdown the equivalent works: `[](/hello-world.html)` because Markdown converts that to a normal `<a>` tag.
 
 The URL passed in the `href` attribute should of course be the URL of the rendered file.  You might have created a file `hello-world.html.md` which is then rendered to `hello-world.html`.  The link of course needs to reference the rendered file even though the metadata is in the source file.  AkashaRender figures out which is which under the covers.
+
+# Relative local URL's versus absolute local URL's
+
+It is encouraged to write your content using absolute local URL's like:
+
+```html
+<a href="/index.html"></a>
+<img src="/images/logo.jpg">
+<link rel="stylesheet" type="text/css" href="/vendor/bootstrap/css/bootstrap.min.css">
+<script src="/vendor/jquery/jquery.min.js">
+```
+
+But for deployment this has a couple issues:
+
+* If the content is to be rendered as an EPUB all URL's must be relative, and therefore we must rewrite the URL's 
+* If the content is deployed to a subdirectory .. that is, if `config.root_url` is something like `http://example.com/path/to/subdir/` .. the URL's must be rewritten either to include the subdirectory, or to be relative
+
+For the purpose of deployment to a subdirectory, rewriting the URL's to include the subdirectory made it difficult to preview the site using a local web server.  That is, if the above is rewritten to:
+
+```html
+<a href="/path/to/subdir/index.html"></a>
+<img src="/path/to/subdir/images/logo.jpg">
+<link rel="stylesheet" type="text/css" href="/path/to/subdir/vendor/bootstrap/css/bootstrap.min.css">
+<script src="/path/to/subdir/vendor/jquery/jquery.min.js">
+```
+
+And then we run a local webserver to preview the rendered site, none of these links will work.  The biggest problem is CSS and JavaScript for theming will not load.
+
+As a result the built-in plugin now rewrites those to use relative links instead of absolute links.

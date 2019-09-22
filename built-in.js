@@ -27,6 +27,7 @@ const documents = require('./documents');
 const filez = require('./filez');
 const render = require('./render');
 const Plugin = require('./Plugin');
+const relative = require('relative');
 // const akasha   = require('./index');
 const mahabhuta = require('mahabhuta');
 const mahaMetadata = require('mahabhuta/maha/metadata');
@@ -57,7 +58,9 @@ module.exports = class BuiltInPlugin extends Plugin {
         // config.addPartialsDir(path.join(__dirname, 'partials'));
         config.addMahabhuta(module.exports.mahabhutaArray(options));
         config.addMahabhuta(mahaMetadata.mahabhutaArray({
-            root_url: config.root_url
+            // Do not pass this through so that Mahabhuta will not
+            // make absolute links to subdirectories
+            // root_url: config.root_url
             // TODO how to configure this
             // sitemap_title: ....?
         }));
@@ -129,6 +132,8 @@ module.exports.mahabhutaArray = function(options) {
     ret.addMahafunc(new StylesheetsElement());
     ret.addMahafunc(new HeaderJavaScript());
     ret.addMahafunc(new FooterJavaScript());
+    ret.addMahafunc(new HeadLinkRelativizer());
+    ret.addMahafunc(new ScriptRelativizer());
     ret.addMahafunc(new InsertBodyContent());
     ret.addMahafunc(new InsertTeaser());
     ret.addMahafunc(new AkBodyClassAdd());
@@ -163,12 +168,17 @@ function _doStylesheets(metadata, options) {
             let pHref = url.parse(style.href, true, true);
             if (!pHref.protocol && !pHref.hostname && !pHref.slashes) {
                 // This is a local URL
-                if (options.config.root_url) {
+                if (path.isAbsolute(stylehref)) {
+                    let newHref = relative(`/${metadata.document.renderTo}`, stylehref);
+                    // console.log(`_doStylesheets absolute stylehref ${stylehref} in ${util.inspect(metadata.document)} rewrote to ${newHref}`);
+                    stylehref = newHref;
+                }
+                /* if (options.config.root_url) {
                     let pRootUrl = url.parse(options.config.root_url);
                     stylehref = path.normalize(
                             path.join(pRootUrl.pathname, pHref.pathname)
                     );
-                }
+                } */
             }
             if (style.media) {
                 ret += `<link rel="stylesheet" type="text/css" href="${stylehref}" media="${style.media}"/>`;
@@ -181,7 +191,7 @@ function _doStylesheets(metadata, options) {
     return ret;
 }
 
-function _doJavaScripts(scripts, options) {
+function _doJavaScripts(metadata, scripts, options) {
 	var ret = '';
 	if (!scripts) return ret;
 
@@ -200,12 +210,17 @@ function _doJavaScripts(scripts, options) {
             let pHref = url.parse(script.href, true, true);
             if (!pHref.protocol && !pHref.hostname && !pHref.slashes) {
                 // This is a local URL
-                if (options.config.root_url) {
+                if (path.isAbsolute(scripthref)) {
+                    let newHref = relative(`/${metadata.document.renderTo}`, scripthref);
+                    // console.log(`_doJavaScripts absolute scripthref ${scripthref} in ${util.inspect(metadata.document)} rewrote to ${newHref}`);
+                    scripthref = newHref;
+                }
+                /* if (options.config.root_url) {
                     let pRootUrl = url.parse(options.config.root_url);
                     scripthref = path.normalize(
                             path.join(pRootUrl.pathname, pHref.pathname)
                     );
-                }
+                } */
             }
             href = `src="${scripthref}"`; 
         }
@@ -228,7 +243,7 @@ function _doHeaderJavaScript(metadata, options) {
 	}
 	// console.log(`_doHeaderJavaScript ${util.inspect(scripts)}`);
 	// console.log(`_doHeaderJavaScript ${util.inspect(options.config.scripts)}`);
-	return _doJavaScripts(scripts, options);
+	return _doJavaScripts(metadata, scripts, options);
 	// return render.partialSync(options.config, "ak_javaScript.html.ejs", { javaScripts: scripts });
 }
 
@@ -239,7 +254,7 @@ function _doFooterJavaScript(metadata, options) {
 	} else {
 		scripts = options.config.scripts ? options.config.scripts.javaScriptBottom : undefined;
 	}
-	return _doJavaScripts(scripts, options);
+	return _doJavaScripts(metadata, scripts, options);
 	// return render.partialSync(options.config, "ak_javaScript.html.ejs", { javaScripts: scripts });
 }
 
@@ -262,6 +277,43 @@ class FooterJavaScript extends mahabhuta.CustomElement {
 	process($element, metadata, dirty) {
 		return Promise.resolve(_doFooterJavaScript(metadata, this.array.options));
 	}
+}
+
+class HeadLinkRelativizer extends mahabhuta.Munger {
+    get selector() { return "html head link"; }
+    async process($, $link, metadata, dirty) {
+        let href = $link.attr('href');
+
+        let pHref = url.parse(href, true, true);
+        if (!pHref.protocol && !pHref.hostname && !pHref.slashes) {
+            // It's a local link
+            if (path.isAbsolute(href)) {
+                // It's an absolute local link
+                let newHref = relative(`/${metadata.document.renderTo}`, href);
+                $link.attr('href', newHref);
+            }
+        }
+    }
+}
+
+class ScriptRelativizer extends mahabhuta.Munger {
+    get selector() { return "script"; }
+    async process($, $link, metadata, dirty) {
+        let href = $link.attr('src');
+
+        if (href) {
+            // There is a link
+            let pHref = url.parse(href, true, true);
+            if (!pHref.protocol && !pHref.hostname && !pHref.slashes) {
+                // It's a local link
+                if (path.isAbsolute(href)) {
+                    // It's an absolute local link
+                    let newHref = relative(`/${metadata.document.renderTo}`, href);
+                    $link.attr('src', newHref);
+                }
+            }
+        }
+    }
 }
 
 class InsertBodyContent extends mahabhuta.CustomElement {
@@ -371,6 +423,19 @@ class ImageRewriter extends mahabhuta.Munger {
             $link.removeAttr('resize-to');
         }
 
+        // The idea here is for every local image src to be a relative URL
+        if (path.isAbsolute(src)) {
+            let newSrc = relative(`/${metadata.document.renderTo}`, src);
+            $link.attr('src', newSrc);
+            // console.log(`ImageRewriter absolute image path ${src} rewrote to ${newSrc}`);
+            src = newSrc;
+        }
+
+        /*
+        // The idea here is for every local image src to be an absolute URL
+        // That then requires every local image src to be prefixed with any
+        // subdirectory contained in config.root_url
+        // 
         // Check to see if src must be updated for config.root_url
         // This does not apply to relative image paths
         // Therefore if it is an absolute local image path, and there is a root_url
@@ -385,6 +450,7 @@ class ImageRewriter extends mahabhuta.Munger {
                 $link.attr('src', newSrc);
             }
         }
+        */
         return "ok";
     }
 }
@@ -463,26 +529,63 @@ class AnchorCleanup extends mahabhuta.Munger {
 
             // let startTime = new Date();
 
+            // We have determined this is a local href.
+            // For reference we need the absolute pathname of the href within
+            // the project.  For example to retrieve the title when we're filling
+            // in for an empty <a> we need the absolute pathname.
+
+            let absolutePath;
+
             if (!path.isAbsolute(uHref.pathname)) {
-                uHref.pathname = path.join(path.dirname(metadata.document.path), uHref.pathname);
+                absolutePath = path.join(path.dirname(metadata.document.path), uHref.pathname);
                 // console.log(`***** AnchorCleanup FIXED href to ${uHref.pathname}`);
+            } else {
+                absolutePath = uHref.pathname;
             }
 
+            // The idea for this section is to ensure all local href's are 
+            // for a relative path rather than an absolute path
+            // Hence we use the relative module to compute the relative path
+            //
+            // Example:
+            //
+            // AnchorCleanup de-absolute href /index.html in {
+            //  basedir: '/Volumes/Extra/akasharender/akasharender/test/documents',
+            //  relpath: 'hier/dir1/dir2/nested-anchor.html.md',
+            //  relrender: 'hier/dir1/dir2/nested-anchor.html',
+            //  path: 'hier/dir1/dir2/nested-anchor.html.md',
+            //  renderTo: 'hier/dir1/dir2/nested-anchor.html'
+            // } to ../../../index.html
+            //
+            if (path.isAbsolute(href)) {
+                let newHref = relative(`/${metadata.document.renderTo}`, href);
+                $link.attr('href', newHref);
+                // console.log(`AnchorCleanup de-absolute href ${href} in ${util.inspect(metadata.document)} to ${newHref}`);
+            }
+
+            /*
+            // The idea for this section is to 
+            //     a) ensure all relative paths are made absolute
+            //     b) therefore all absolute paths when config.root_url
+            //        is for a nested subdirectory must have the path
+            //        prefixed with the subdirectory
+            //
             // Check to see if href must be updated for config.root_url
             if (this.array.options.config.root_url) {
                 let pRootUrl = url.parse(this.array.options.config.root_url);
                 // Check if the URL has already been rewritten
                 if (!href.startsWith(pRootUrl.pathname)) {
                     let newHref = path.normalize(
-                        path.join(pRootUrl.pathname, uHref.pathname)
+                        path.join(pRootUrl.pathname, absolutePath)
                     );
                     $link.attr('href', newHref);
-                    /* if (metadata.document.path === 'index.html.md') console.log(`AnchorCleanup metadata.document.path ${metadata.document.path} href ${href} uHref.pathname ${uHref.pathname} this.array.options.config.root_url ${this.array.options.config.root_url} newHref ${newHref}`); */
+                    /* if (metadata.document.path === 'index.html.md') console.log(`AnchorCleanup metadata.document.path ${metadata.document.path} href ${href} absolutePath ${absolutePath} this.array.options.config.root_url ${this.array.options.config.root_url} newHref ${newHref}`); * /
                 }
-            }
+            } 
+            */
 
             // Look to see if it's an asset file
-            var foundAsset = await filez.findAsset(this.array.options.config.assetDirs, uHref.pathname);
+            var foundAsset = await filez.findAsset(this.array.options.config.assetDirs, absolutePath);
             if (foundAsset && foundAsset.length > 0) {
                 return "ok";
             }
@@ -490,20 +593,20 @@ class AnchorCleanup extends mahabhuta.Munger {
             // console.log(`AnchorCleanup ${metadata.document.path} ${href} findAsset ${(new Date() - startTime) / 1000} seconds`);
 
             // Ask plugins if the href is okay
-            if (this.array.options.config.askPluginsLegitLocalHref(uHref.pathname)) {
+            if (this.array.options.config.askPluginsLegitLocalHref(absolutePath)) {
                 return "ok";
             }
 
             // If this link has a body, then don't modify it
-            if ((linktext && linktext.length > 0 && linktext !== uHref.pathname)
+            if ((linktext && linktext.length > 0 && linktext !== absolutePath)
                 || ($link.children().length > 0)) {
-                // console.log(`AnchorCleanup skipping ${uHref.pathname} w/ ${util.inspect(linktext)} children= ${$link.children}`);
+                // console.log(`AnchorCleanup skipping ${absolutePath} w/ ${util.inspect(linktext)} children= ${$link.children}`);
                 return "ok";
             }
 
             // Does it exist in documents dir?
-            var found = await filez.findRendersTo(this.array.options.config, uHref.pathname);
-            // console.log(`AnchorCleanup findRendersTo ${uHref.pathname} ${util.inspect(found)}`);
+            var found = await filez.findRendersTo(this.array.options.config, absolutePath);
+            // console.log(`AnchorCleanup findRendersTo ${absolutePath} ${util.inspect(found)}`);
             if (!found) {
                 throw new Error(`Did not find ${href} in ${util.inspect(this.array.options.config.documentDirs)} in ${metadata.document.path}`);
             }
@@ -513,7 +616,7 @@ class AnchorCleanup extends mahabhuta.Munger {
             // The problem is that this.array.options.config.findRendererPath would fail on just /path/to but succeed
             // on /path/to/index.html
             if (found.foundIsDirectory) {
-                found = await filez.findRendersTo(this.array.options.config, path.join(uHref.pathname, "index.html"));
+                found = await filez.findRendersTo(this.array.options.config, path.join(absolutePath, "index.html"));
                 if (!found) {
                     throw new Error(`Did not find ${href} in ${util.inspect(this.array.options.config.documentDirs)} in ${metadata.document.path}`);
                 }

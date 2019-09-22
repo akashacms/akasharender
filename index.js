@@ -165,6 +165,8 @@ exports.indexChain = async function(config, fname) {
     return ret.reverse();
 };
 
+exports.relative = require('relative');
+
 /**
  * Manipulate the rel= attributes on a link returned from Mahabhuta.
  *

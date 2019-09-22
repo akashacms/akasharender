@@ -52,99 +52,129 @@ describe('build site', function() {
 });
 
 describe('stylesheets, javascripts', function() {
-    it('should find stylesheets, javascript values', async function() {
-        let { html, $ } = await akasha.readRenderedFile(config, 'simple-style-javascript.html');
-
-        assert.exists(html, 'result exists');
-        assert.isString(html, 'result isString');
-
-        assert.equal($('head link[rel="stylesheet"][type="text/css"][href="/vendor/bootstrap/css/bootstrap.min.css"]').length, 1);
-        assert.equal($('head link[rel="stylesheet"][type="text/css"][href="/style.css"]').length, 1);
-        assert.equal($('head link[rel="stylesheet"][type="text/css"][media="print"][href="/print.css"]').length, 1);
-
-        assert.equal($('head script[src="/vendor/header-js.js"]').length, 1);
-        assert.equal($('head script[type="no-known-lang"][src="/vendor/popper.js/popper.min.js"]').length, 1);
-        assert.equal($('head script:contains("alert(\'in header with inline script\');")').length, 1);
-
-        assert.equal($('body script[src="/vendor/jquery/jquery.min.js"]').length, 1);
-        assert.equal($('body script[type="no-known-lang"][src="/vendor/popper.js/umd/popper.min.js"]').length, 1);
-        assert.equal($('body script[src="/vendor/bootstrap/js/bootstrap.min.js"]').length, 1);
+    describe('simple-style-javascript.html', function() {
+        it('should find stylesheets, javascript values', async function() {
+            let { html, $ } = await akasha.readRenderedFile(config, 'simple-style-javascript.html');
+    
+            assert.exists(html, 'result exists');
+            assert.isString(html, 'result isString');
+    
+            assert.equal($('head link[rel="stylesheet"][type="text/css"][href="vendor/bootstrap/css/bootstrap.min.css"]').length, 1);
+            assert.equal($('head link[rel="stylesheet"][type="text/css"][href="style.css"]').length, 1);
+            assert.equal($('head link[rel="stylesheet"][type="text/css"][media="print"][href="print.css"]').length, 1);
+    
+            assert.equal($('head script[src="vendor/header-js.js"]').length, 1);
+            assert.equal($('head script[type="no-known-lang"][src="vendor/popper.js/popper.min.js"]').length, 1);
+            assert.equal($('head script:contains("alert(\'in header with inline script\');")').length, 1);
+    
+            assert.equal($('body script[src="vendor/jquery/jquery.min.js"]').length, 1);
+            assert.equal($('body script[type="no-known-lang"][src="vendor/popper.js/umd/popper.min.js"]').length, 1);
+            assert.equal($('body script[src="vendor/bootstrap/js/bootstrap.min.js"]').length, 1);
+        });
     });
     
-    it('should find stylesheets, javascript from metadata values', async function() {
-        let { html, $ } = await akasha.readRenderedFile(config, 'metadata-style-javascript.html');
+    describe('metadata-style-javascript.html', function() {
+        it('should find stylesheets, javascript from metadata values', async function() {
+            let { html, $ } = await akasha.readRenderedFile(config, 'metadata-style-javascript.html');
 
-        assert.exists(html, 'result exists');
-        assert.isString(html, 'result isString');
+            assert.exists(html, 'result exists');
+            assert.isString(html, 'result isString');
 
-        assert.equal($('head link[rel="stylesheet"][type="text/css"][href="/vendor/metadata-css-added.css"]').length, 1);
-        assert.equal($('head link[rel="stylesheet"][type="text/css"][media="print"][href="/vendor/metadata-css-with-media-added.css"]').length, 1);
+            assert.equal($('head link[rel="stylesheet"][type="text/css"][href="vendor/metadata-css-added.css"]').length, 1);
+            assert.equal($('head link[rel="stylesheet"][type="text/css"][media="print"][href="vendor/metadata-css-with-media-added.css"]').length, 1);
 
-        assert.equal($('head script[src="/vender/metadata-js-add-top.js"]').length, 1);
-        assert.equal($('head script[type="no-known-lang"][src="/vender/metadata-js-with-lang-add-top.js"]').length, 1);
-        assert.equal($('head script:contains("alert(\'added to top from metadata\');")').length, 1);
+            assert.equal($('head script[src="vender/metadata-js-add-top.js"]').length, 1);
+            assert.equal($('head script[type="no-known-lang"][src="vender/metadata-js-with-lang-add-top.js"]').length, 1);
+            assert.equal($('head script:contains("alert(\'added to top from metadata\');")').length, 1);
 
 
-        assert.equal($('body script[src="/vender/metadata-js-add-bottom.js"]').length, 1);
-        assert.equal($('body script[type="no-known-lang"][src="/vender/metadata-js-with-lang-add-bottom.js"]').length, 1);
-        assert.equal($('body script:contains("alert(\'added to bottom from metadata\')")').length, 1);
+            assert.equal($('body script[src="vender/metadata-js-add-bottom.js"]').length, 1);
+            assert.equal($('body script[type="no-known-lang"][src="vender/metadata-js-with-lang-add-bottom.js"]').length, 1);
+            assert.equal($('body script:contains("alert(\'added to bottom from metadata\')")').length, 1);
+        });
     });
 });
 
 describe('header metadata', function() {
 
-    // TODO there needs to be a rewrite this for rebase, and a test in rebased.js
-    it('should find RSS header meta', async function() {
-        let { html, $ } = await akasha.readRenderedFile(config, 'index.html');
+    describe('/index.html', function() {
+        let html;
+        let $;
 
-        assert.exists(html, 'result exists');
-        assert.isString(html, 'result isString');
+        before(async function() {
+            let results = await akasha.readRenderedFile(config, 'index.html');
+            html = results.html;
+            $ = results.$;
+        });
 
-        assert.equal($('head link[rel="alternate"][type="application/rss+xml"][href="/rss-for-header.xml"]').length, 1);
+        it('should read in correctly', function() {
+            assert.exists(html, 'result exists');
+            assert.isString(html, 'result isString');
+        });
+
+        it('should find RSS header meta', async function() {
+            assert.equal($('head link[rel="alternate"][type="application/rss+xml"][href="rss-for-header.xml"]').length, 1);
+        });
+
+        it('should find external stylesheet', async function() {
+            assert.equal($('head link[rel="stylesheet"][type="text/css"][href="http://external.site/foo.css"]').length, 1);
+        });
+    
+        it('should find dns-prefetch values', async function() {
+            assert.equal($('head meta[http-equiv="x-dns-prefetch-control"][content="we must have control"]').length, 1);
+            assert.equal($('head link[rel="dns-prefetch"][href="foo1.com"]').length, 1);
+            assert.equal($('head link[rel="dns-prefetch"][href="foo2.com"]').length, 1);
+            assert.equal($('head link[rel="dns-prefetch"][href="foo3.com"]').length, 1);
+        });
+
+        it('should find site-verification values', async function() {
+            assert.equal($('head meta[name="google-site-verification"][content="We are good"]').length, 1);
+        });
+
+        it('should find xml-sitemap values', async function() {
+            assert.equal($('head link[rel="sitemap"][type="application/xml"][title="Sitemap"][href="sitemap.xml"]').length, 1);
+            assert.equal($('head link[rel="sitemap"][type="application/xml"][title="Foo Bar Sitemap"][href="foo-bar-sitemap.xml"]').length, 1);
+        });
     });
 
-    // TODO in rebased this should check it did not rewrite
-    it('should find external stylesheet', async function() {
-        let { html, $ } = await akasha.readRenderedFile(config, 'index.html');
+    describe('/hier/dir1/dir2/nested-anchor.html', function() {
+        let html;
+        let $;
 
-        assert.exists(html, 'result exists');
-        assert.isString(html, 'result isString');
+        before(async function() {
+            let results = await akasha.readRenderedFile(config, '/hier/dir1/dir2/nested-anchor.html');
+            html = results.html;
+            $ = results.$;
+        });
 
-        assert.equal($('head link[rel="stylesheet"][type="text/css"][href="http://external.site/foo.css"]').length, 1);
-    });
+        it('should read in correctly', function() {
+            assert.exists(html, 'result exists');
+            assert.isString(html, 'result isString');
+        });
 
-    // TODO in rebased this should check it did not rewrite
-    it('should find dns-prefetch values', async function() {
-        let { html, $ } = await akasha.readRenderedFile(config, 'index.html');
+        it('should find RSS header meta', async function() {
+            assert.equal($('head link[rel="alternate"][type="application/rss+xml"][href="../../../rss-for-header.xml"]').length, 1);
+        });
 
-        assert.exists(html, 'result exists');
-        assert.isString(html, 'result isString');
-        
-        assert.equal($('head meta[http-equiv="x-dns-prefetch-control"][content="we must have control"]').length, 1);
-        assert.equal($('head link[rel="dns-prefetch"][href="foo1.com"]').length, 1);
-        assert.equal($('head link[rel="dns-prefetch"][href="foo2.com"]').length, 1);
-        assert.equal($('head link[rel="dns-prefetch"][href="foo3.com"]').length, 1);
-    });
+        it('should find external stylesheet', async function() {
+            assert.equal($('head link[rel="stylesheet"][type="text/css"][href="http://external.site/foo.css"]').length, 1);
+        });
+    
+        it('should find dns-prefetch values', async function() {
+            assert.equal($('head meta[http-equiv="x-dns-prefetch-control"][content="we must have control"]').length, 1);
+            assert.equal($('head link[rel="dns-prefetch"][href="foo1.com"]').length, 1);
+            assert.equal($('head link[rel="dns-prefetch"][href="foo2.com"]').length, 1);
+            assert.equal($('head link[rel="dns-prefetch"][href="foo3.com"]').length, 1);
+        });
 
-    // TODO in rebased this should check it did not rewrite
-    it('should find site-verification values', async function() {
-        let { html, $ } = await akasha.readRenderedFile(config, 'index.html');
+        it('should find site-verification values', async function() {
+            assert.equal($('head meta[name="google-site-verification"][content="We are good"]').length, 1);
+        });
 
-        assert.exists(html, 'result exists');
-        assert.isString(html, 'result isString');
-        
-        assert.equal($('head meta[name="google-site-verification"][content="We are good"]').length, 1);
-    });
-
-    // TODO in rebased these should be rewritten
-    it('should find xml-sitemap values', async function() {
-        let { html, $ } = await akasha.readRenderedFile(config, 'index.html');
-
-        assert.exists(html, 'result exists');
-        assert.isString(html, 'result isString');
-        
-        assert.equal($('head link[rel="sitemap"][type="application/xml"][title="Sitemap"][href="/sitemap.xml"]').length, 1);
-        assert.equal($('head link[rel="sitemap"][type="application/xml"][title="Foo Bar Sitemap"][href="/foo-bar-sitemap.xml"]').length, 1);
+        it('should find xml-sitemap values', async function() {
+            assert.equal($('head link[rel="sitemap"][type="application/xml"][title="Sitemap"][href="../../../sitemap.xml"]').length, 1);
+            assert.equal($('head link[rel="sitemap"][type="application/xml"][title="Foo Bar Sitemap"][href="../../../foo-bar-sitemap.xml"]').length, 1);
+        });
     });
 });
 
@@ -175,14 +205,14 @@ describe('teaser, content', function() {
         assert.exists(html, 'result exists');
         assert.isString(html, 'result isString');
 
-        assert.equal($('article#original figure img[src="/simple-fig-img.jpg"]').length, 1);
-        assert.equal($('article#original figure#with-caption img[src="/fig-img-caption.jpg"]').length, 1);
+        assert.equal($('article#original figure img[src="simple-fig-img.jpg"]').length, 1);
+        assert.equal($('article#original figure#with-caption img[src="fig-img-caption.jpg"]').length, 1);
         assert.include($('article#original figure#with-caption figcaption').html(), 'Caption text');
-        assert.equal($('article#original figure.added-class#with-class img[src="/fig-img-class.jpg"]').length, 1);
-        assert.equal($('article#original figure#width[width="200px;"] img[src="/fig-img-width.jpg"]').length, 1);
-        assert.equal($('article#original figure#style[style="border: 200 solid black;"] img[src="/fig-img-style.jpg"]').length, 1);
+        assert.equal($('article#original figure.added-class#with-class img[src="fig-img-class.jpg"]').length, 1);
+        assert.equal($('article#original figure#width[width="200px;"] img[src="fig-img-width.jpg"]').length, 1);
+        assert.equal($('article#original figure#style[style="border: 200 solid black;"] img[src="fig-img-style.jpg"]').length, 1);
         assert.equal($('article#original figure#dest a[href="http://dest.url"]').length, 1);
-        assert.equal($('article#original figure#dest img[src="/fig-img-dest.jpg"]').length, 1);
+        assert.equal($('article#original figure#dest img[src="fig-img-dest.jpg"]').length, 1);
     });
 
     it('should find figure/image pair for img', async function() {
@@ -302,8 +332,8 @@ describe('teaser, content', function() {
         assert.isString(html, 'result isString');
 
         assert.equal($('article#original span#simple').length, 1);
-        assert.equal($('article#original span#simple a[href="/shown-content.html"]').length, 1);
-        assert.include($('article#original span#simple a[href="/shown-content.html"]').html(), 
+        assert.equal($('article#original span#simple a[href="shown-content.html"]').length, 1);
+        assert.include($('article#original span#simple a[href="shown-content.html"]').html(), 
                 "Shown Content - solely for use of show-content.html");
 
         assert.equal($('article#original span#dest').length, 1);
@@ -313,15 +343,15 @@ describe('teaser, content', function() {
 
         assert.equal($('article#original div#template').length, 1);
         assert.equal($('article#original div#template figure').length, 1);
-        assert.equal($('article#original div#template figure a[href="/shown-content.html"] img[src="/imgz/shown-content-image.jpg"]').length, 1);
+        assert.equal($('article#original div#template figure a[href="shown-content.html"] img[src="imgz/shown-content-image.jpg"]').length, 1);
         assert.equal($('article#original div#template figure figcaption').length, 1);
-        assert.equal($('article#original div#template figure figcaption a[href="/shown-content.html"]').length, 1);
-        assert.include($('article#original div#template figure figcaption a[href="/shown-content.html"]').html(), 
+        assert.equal($('article#original div#template figure figcaption a[href="shown-content.html"]').length, 1);
+        assert.include($('article#original div#template figure figcaption a[href="shown-content.html"]').html(), 
             "Shown Content - solely for use of show-content.html");
         
         assert.equal($('article#original div#template2').length, 1);
         assert.equal($('article#original div#template2 figure').length, 1);
-        assert.equal($('article#original div#template2 figure a[href="http://dest.url"] img[src="/imgz/shown-content-image.jpg"]').length, 1);
+        assert.equal($('article#original div#template2 figure a[href="http://dest.url"] img[src="imgz/shown-content-image.jpg"]').length, 1);
         assert.equal($('article#original div#template2 figure figcaption').length, 1);
         assert.equal($('article#original div#template2 figure figcaption a[href="http://dest.url"]').length, 1);
         assert.include($('article#original div#template2 figure figcaption a[href="http://dest.url"]').html(), 
@@ -343,22 +373,70 @@ describe('teaser, content', function() {
 
         // Actuallhy this does not get converted to an absolute path
         // The relative path is still correct
-        assert.equal($('article#original a#convert-to-absolute-path').attr('href'), '/shown-content.html');
+        assert.equal($('article#original a#convert-to-absolute-path').attr('href'), 'shown-content.html');
         assert.equal($('article#original a#convert-to-absolute-path').html(), 
             'Will be converted to absolute path, anchor text not affected');
 
         // Here the absolute path is left alone, and this is correct
-        assert.equal($('article#original a#insert-title-from-document').attr('href'), '/shown-content.html');
+        assert.equal($('article#original a#insert-title-from-document').attr('href'), 'shown-content.html');
         assert.include($('article#original a#insert-title-from-document').attr('title'), 
             'Shown Content - solely for use of show-content.html');
         assert.include($('article#original a#insert-title-from-document').html(), 
                 'Shown Content - solely for use of show-content.html');
         
-        assert.equal($('article#original a#img-causes-no-modify').attr('href'), '/shown-content.html');
+        assert.equal($('article#original a#img-causes-no-modify').attr('href'), 'shown-content.html');
 
         assert.equal($('article#original a#img-causes-no-modify').html(), '<img src="http://external.url/foo.jpg">');
         assert.equal($('article#original a#img-causes-no-modify img[src="http://external.url/foo.jpg"]').length, 1);
+
+        assert.equal($('article#original a#link-to-hier').attr('href'), 'hier/index.html');
+        assert.equal($('article#original a#link-to-hier').html(), 'Top index item');
+        assert.equal($('article#original a#link-to-hier-dir1').attr('href'), 'hier/dir1/index.html');
+        assert.equal($('article#original a#link-to-hier-dir1').html(), 'dir1 index item');
+
     });
+
+    describe('/hier/dir1/dir2/nested-anchor.html', function() {
+        let html;
+        let $;
+
+        before(async function() {
+            let result = await akasha.readRenderedFile(config, 'hier/dir1/dir2/nested-anchor.html');
+            html = result.html;
+            $ = result.$;
+        });
+
+        it('should correctly read nested file', function() {
+            assert.exists(html, 'result exists');
+            assert.isString(html, 'result isString');
+        });
+
+        it('should have correct hrefs', function() {
+            assert.equal($('article#original a#link-to-root').attr('href'), '../../../index.html');
+            assert.equal($('article#original a#link-to-root').html(), 'Home Page');
+            assert.equal($('article#original a#link-to-hier').attr('href'), '../../index.html');
+            assert.equal($('article#original a#link-to-hier').html(), 'Top index item');
+            assert.equal($('article#original a#link-to-hier-dir1').attr('href'), '../index.html');
+            assert.equal($('article#original a#link-to-hier-dir1').html(), 'dir1 index item');
+        });
+
+        it('should have correct img srcs', function() {
+            assert.equal($('article#original figure#change-img-url-figure img').attr('src'), '../../../img/Human-Skeleton.jpg');
+            assert.equal($('article#original img#change-img-url').attr('src'), '../../../img/Human-Skeleton.jpg');
+            assert.equal($('article#original figure#fig-img-url img').attr('src'), '../../../simple-fig-img.jpg');    
+        });
+
+        it('should have correct CSS and JS references', function() {
+            assert.equal($('head script[src="../../../vendor/header-js.js"]').length, 1);
+            assert.equal($('head script[type="no-known-lang"][src="../../../vendor/popper.js/popper.min.js"]').length, 1);
+            assert.equal($('head script:contains("alert(\'in header with inline script\');")').length, 1);
+    
+            assert.equal($('body script[src="../../../vendor/jquery/jquery.min.js"]').length, 1);
+            assert.equal($('body script[type="no-known-lang"][src="../../../vendor/popper.js/umd/popper.min.js"]').length, 1);
+            assert.equal($('body script[src="../../../vendor/bootstrap/js/bootstrap.min.js"]').length, 1);
+        });
+    });
+
 });
 
 describe('Index Chain', function() {
