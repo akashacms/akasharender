@@ -31,7 +31,6 @@
   },
   "dependencies": {
     "mahabhuta": "0.7.2",
-    "cheerio": ">=0.22.x",
     "commander": "^2.17.1",
     "debug": "^4.1.0",
     "ejs": "^2.5.1",
@@ -50,9 +49,7 @@
     "fast-memoize": ">=2.5.1",
     "relative": "^3.0.2"
   },
-  "devDependencies": {
-    "dox": "^0.9.0"
-  },
+  "devDependencies": {},
   "scripts": {
     "gendocs": "cd guide && npm run build",
     "gendocssetup": "cd guide && npm install",

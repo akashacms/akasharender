@@ -160,9 +160,6 @@ function _doStylesheets(metadata, options) {
     var ret = '';
     if (typeof scripts !== 'undefined') {
         for (var style of scripts) {
-            /* var keys = Object.keys(scripts);
-            for (var i = 0; i < keys.length; i++) {
-            var style = scripts[keys[i]]; */
 
             let stylehref = style.href;
             let pHref = url.parse(style.href, true, true);
@@ -173,18 +170,13 @@ function _doStylesheets(metadata, options) {
                     // console.log(`_doStylesheets absolute stylehref ${stylehref} in ${util.inspect(metadata.document)} rewrote to ${newHref}`);
                     stylehref = newHref;
                 }
-                /* if (options.config.root_url) {
-                    let pRootUrl = url.parse(options.config.root_url);
-                    stylehref = path.normalize(
-                            path.join(pRootUrl.pathname, pHref.pathname)
-                    );
-                } */
             }
+            let $ = mahabhuta.parse('<link rel="stylesheet" type="text/css" href=""/>');
+            $('link').attr('href', stylehref);
             if (style.media) {
-                ret += `<link rel="stylesheet" type="text/css" href="${stylehref}" media="${style.media}"/>`;
-            } else {
-                ret += `<link rel="stylesheet" type="text/css" href="${stylehref}"/>`;
+                $('link').attr('media', style.media);
             }
+            ret += $.html();
         }
         // console.log(`_doStylesheets ${ret}`);
     }
@@ -199,13 +191,13 @@ function _doJavaScripts(metadata, scripts, options) {
     if (!options.config) throw new Error('_doJavaScripts no options.config');
 
     for (var script of scripts) {
-        let lang = undefined;
-        let href = undefined;
-    	/* var keys = Object.keys(scripts);
-    	for (var i = 0; i < keys.length; i++) {
-    	    var script = scripts[keys[i]]; */
-	    if (script.lang) { lang = `type="${script.lang}"`; }
-		if (script.href) {
+		if (!script.href && !script.script) {
+			throw new Error(`Must specify either href or script in ${util.inspect(script)}`);
+		}
+        if (!script.script) script.script = '';
+        let $ = mahabhuta.parse('<script ></script>');
+        if (script.lang) $('script').attr('type', script.lang);
+        if (script.href) {
             let scripthref = script.href;
             let pHref = url.parse(script.href, true, true);
             if (!pHref.protocol && !pHref.hostname && !pHref.slashes) {
@@ -222,13 +214,12 @@ function _doJavaScripts(metadata, scripts, options) {
                     );
                 } */
             }
-            href = `src="${scripthref}"`; 
+            $('script').attr('src', scripthref);
         }
-		if (!script.href && !script.script) {
-			throw new Error(`Must specify either href or script in ${util.inspect(script)}`);
-		}
-		if (!script.script) script.script = '';
-		ret += `<script ${lang ? lang : ""} ${href ? href : ""}>${script.script}</script>`;
+        if (script.script) {
+            $('script').append(script.script);
+        }
+        ret += $.html();
 	}
 	// console.log('_doJavaScripts '+ ret);
 	return ret;

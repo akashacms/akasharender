@@ -13,7 +13,7 @@ There's nothing to do, the built-in plugin is, well, built-in to AkashaRender.
 
 This construct is recommended in the HTML5 world for its microformat goodness
 
-```
+```html
 <figure>
 <img src="an-image.jpg"/>
 <figcaption>Image caption</figcaption>
@@ -110,7 +110,7 @@ The `<ak-stylesheets>` tag generates links to CSS stylesheets, as declared in `c
 
 In `config.js` add something like this:
 
-```
+```js
 config
     .addStylesheet({ href: "/vendor/bootstrap/css/bootstrap.min.css" })
     .addStylesheet({ href: "/vendor/bootstrap/css/bootstrap-theme.min.css" })
@@ -120,7 +120,7 @@ config
 
 The options include the `href` option shown here, and `media` to declare the media type.  These correspond to these attributes
 
-```
+```html
 <link rel="stylesheet" type="text/css" href="${style.href}" media="${style.media}"/>
 ```
 
@@ -144,7 +144,7 @@ Place the `<ak-headerJavaScript>` tag where you want header JavaScript to appear
 
 In `config.js` add something like this:
 
-```
+```js
 config
     .addFooterJavaScript({ href: "/vendor/jquery/jquery.min.js" })
     .addFooterJavaScript({ href: "/vendor/bootstrap/js/bootstrap.min.js"  })
