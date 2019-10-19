@@ -90,8 +90,8 @@ module.exports = class BuiltInPlugin extends Plugin {
     	return _doFooterJavaScript(metadata, this.options);
     }
 
-    addImageToResize(src, resizewidth, resizeto) {
-        this[_plugin_resizequeue].push({ src, resizewidth, resizeto });
+    addImageToResize(src, resizewidth, resizeto, docPath) {
+        this[_plugin_resizequeue].push({ src, resizewidth, resizeto, docPath });
     }
 
     async onSiteRendered(config) {
@@ -99,29 +99,40 @@ module.exports = class BuiltInPlugin extends Plugin {
         for (let toresize of this.resizequeue) {
             // console.log(`resizing `, toresize);
 
+            let img2resize;
+            if (!path.isAbsolute(toresize.src)) {
+                img2resize = path.normalize(path.join(
+                    path.dirname(toresize.docPath),
+                    toresize.src
+                ));
+            } else {
+                img2resize = toresize.src;
+            }
+            // console.log(`img2resize ${img2resize}`);
+
             let srcfile = undefined;
 
-            let found = await filez.findAsset(config.assetDirs, toresize.src);
+            let found = await filez.findAsset(config.assetDirs, img2resize);
             if (Array.isArray(found) && found.length >= 1) {
-                // console.log(`found ${toresize.src} as asset `, found);
+                // console.log(`found ${img2resize} as asset `, found);
                 srcfile = found[0].fullpath;
             } else {
-                found = await filez.findRendersTo(config, toresize.src);
+                found = await filez.findRendersTo(config, img2resize);
                 if (found) {
-                    // console.log(`found ${toresize.src} as document `, found);
+                    // console.log(`found ${img2resize} as document `, found);
                     srcfile = path.join(found.foundDir, found.foundFullPath);
                 } else {
-                    // console.log(`did not find ${toresize.src}`);
+                    // console.log(`did not find ${img2resize}`);
                 }
             }
-            if (!srcfile) throw new Error(`akashacms-builtin: Did not find source file for image to resize ${toresize.src}`);
+            if (!srcfile) throw new Error(`akashacms-builtin: Did not find source file for image to resize ${img2resize}`);
 
             let img = await sharp(srcfile);
             let resized = await img.resize(Number.parseInt(toresize.resizewidth));
             await resized
                 .toFile(path.join(
                     config.renderDestination,
-                    toresize.resizeto ? toresize.resizeto : toresize.src));
+                    toresize.resizeto ? toresize.resizeto : img2resize));
         }
     }
 
@@ -402,7 +413,8 @@ class ImageRewriter extends mahabhuta.Munger {
         
         if (resizewidth) {
             // Add to a queue that is run at the end 
-            this.array.options.config.plugin(pluginName).addImageToResize(src, resizewidth, resizeto);
+            this.array.options.config.plugin(pluginName)
+                .addImageToResize(src, resizewidth, resizeto, metadata.document.renderTo);
 
             if (resizeto) {
                 $link.attr('src', resizeto);

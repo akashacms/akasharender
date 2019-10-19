@@ -185,6 +185,26 @@ describe('rebased header metadata', function() {
             assert.equal($('head link[rel="sitemap"][type="application/xml"][title="Foo Bar Sitemap"][href="../../../foo-bar-sitemap.xml"]').length, 1);
         });
     });
+
+    describe('/hier/dir1/dir2/nested-img-resize.html', function() {
+        let html;
+        let $;
+
+        before(async function() {
+            let results = await akasha.readRenderedFile(config_rebase, '/hier/dir1/dir2/nested-img-resize.html');
+            html = results.html;
+            $ = results.$;
+        });
+
+        it('should read in correctly', function() {
+            assert.exists(html, 'result exists');
+            assert.isString(html, 'result isString');
+        });
+
+        it('should have resized image', function() {
+            assert.equal($('img#nested-img-reference').attr('src'), 'img/tesla-nema.jpg');
+        })
+    });
 });
 
 
@@ -269,32 +289,49 @@ describe('rebased teaser, content', function() {
         assert.notExists($('body #png2jpg').attr('resize-width'));
         assert.notExists($('body #png2jpg').attr('resize-to'));
 
-        assert.equal(config_rebase.plugin('akashacms-builtin').resizequeue.length, 5);
+        assert.equal(config_rebase.plugin('akashacms-builtin').resizequeue.length, 7);
         assert.deepEqual(config_rebase.plugin('akashacms-builtin').resizequeue, [
+            {
+                src: '../../imgdir/img/tesla-nema.jpg',
+                resizewidth: '200',
+                resizeto: 'img/tesla-nema.jpg',
+                docPath: 'hier/dir1/dir2/nested-img-resize.html'
+            },
+            {
+                src: '../../imgdir/img/tesla-nema.jpg',
+                resizewidth: '200',
+                resizeto: 'img/tesla-nema.jpg',
+                docPath: 'hier/dir1/dir2/nested-img-resize.html'
+            },
             {
                 src: 'img/Human-Skeleton.jpg',
                 resizewidth: '50',
                 resizeto: undefined,
+                docPath: "img2resize.html"
             },
             {
                 src: 'img/Human-Skeleton.jpg',
                 resizewidth: '150',
-                resizeto: 'img/Human-Skeleton-150.jpg'
+                resizeto: 'img/Human-Skeleton-150.jpg',
+                docPath: "img2resize.html"
             },
             {
                 src: 'img/Human-Skeleton.jpg',
                 resizewidth: '250',
-                resizeto: 'img/Human-Skeleton-250-figure.jpg'
+                resizeto: 'img/Human-Skeleton-250-figure.jpg',
+                docPath: "img2resize.html"
             },
             {
                 resizeto: undefined,
                 resizewidth: "50",
-                src: "rss_button.png"
+                src: "rss_button.png",
+                docPath: "img2resize.html"
             },
             {
                 resizeto: "rss_button.jpg",
                 resizewidth: "50",
-                src: "rss_button.png"
+                src: "rss_button.png",
+                docPath: "img2resize.html"
             }
         ]);
 
