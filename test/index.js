@@ -10,6 +10,10 @@ config.rootURL("https://example.akashacms.com");
 config.configDir = __dirname;
 config.addLayoutsDir('layouts')
       .addDocumentsDir('documents')
+      .addDocumentsDir({
+          src: 'mounted',
+          dest: 'mounted'
+      })
       .addPartialsDir('partials');
 config.setMahabhutaConfig({
     recognizeSelfClosing: true,
@@ -300,7 +304,7 @@ describe('teaser, content', function() {
         assert.notExists($('body #png2jpg').attr('resize-to'));
 
         // console.log(config.plugin('akashacms-builtin').resizequeue);
-        assert.equal(config.plugin('akashacms-builtin').resizequeue.length, 7);
+        assert.equal(config.plugin('akashacms-builtin').resizequeue.length, 8);
         assert.deepEqual(config.plugin('akashacms-builtin').resizequeue, [
             {
                 src: '../../imgdir/img/tesla-nema.jpg',
@@ -343,6 +347,12 @@ describe('teaser, content', function() {
                 resizewidth: "50",
                 src: "rss_button.png",
                 docPath: "img2resize.html"
+            },
+            {
+              docPath: "img2resize.html",
+              resizeto: "/img/Human-Skeleton-mounted-100.jpg",
+              resizewidth: "100",
+              src: "/mounted/img/Human-Skeleton.jpg"
             }
         ]);
 

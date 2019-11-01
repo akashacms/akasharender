@@ -16,6 +16,10 @@ config_rebase.rootURL("https://example.akashacms.com/rebase/to/");
 config_rebase.configDir = __dirname;
 config_rebase.addLayoutsDir('layouts')
     .addDocumentsDir('documents')
+    .addDocumentsDir({
+        src: 'mounted',
+        dest: 'mounted'
+    })
     .addPartialsDir('partials')
     .setRenderDestination('out-rebased');
     config_rebase.setMahabhutaConfig({
@@ -289,7 +293,7 @@ describe('rebased teaser, content', function() {
         assert.notExists($('body #png2jpg').attr('resize-width'));
         assert.notExists($('body #png2jpg').attr('resize-to'));
 
-        assert.equal(config_rebase.plugin('akashacms-builtin').resizequeue.length, 7);
+        assert.equal(config_rebase.plugin('akashacms-builtin').resizequeue.length, 8);
         assert.deepEqual(config_rebase.plugin('akashacms-builtin').resizequeue, [
             {
                 src: '../../imgdir/img/tesla-nema.jpg',
@@ -332,6 +336,12 @@ describe('rebased teaser, content', function() {
                 resizewidth: "50",
                 src: "rss_button.png",
                 docPath: "img2resize.html"
+            },
+            {
+              docPath: "img2resize.html",
+              resizeto: "/img/Human-Skeleton-mounted-100.jpg",
+              resizewidth: "100",
+              src: "/mounted/img/Human-Skeleton.jpg"
             }
         ]);
 

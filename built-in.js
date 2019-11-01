@@ -118,21 +118,27 @@ module.exports = class BuiltInPlugin extends Plugin {
                 srcfile = found[0].fullpath;
             } else {
                 found = await filez.findRendersTo(config, img2resize);
-                if (found) {
+                if (found && found.foundMountedOn === '/') {
                     // console.log(`found ${img2resize} as document `, found);
                     srcfile = path.join(found.foundDir, found.foundFullPath);
+                } else if (found && found.foundMountedOn !== '/') {
+                    srcfile = path.join(found.foundDir, found.foundPathWithinDir);
                 } else {
                     // console.log(`did not find ${img2resize}`);
                 }
             }
             if (!srcfile) throw new Error(`akashacms-builtin: Did not find source file for image to resize ${img2resize}`);
 
-            let img = await sharp(srcfile);
-            let resized = await img.resize(Number.parseInt(toresize.resizewidth));
-            await resized
-                .toFile(path.join(
-                    config.renderDestination,
-                    toresize.resizeto ? toresize.resizeto : img2resize));
+            try {
+                let img = await sharp(srcfile);
+                let resized = await img.resize(Number.parseInt(toresize.resizewidth));
+                await resized
+                    .toFile(path.join(
+                        config.renderDestination,
+                        toresize.resizeto ? toresize.resizeto : img2resize));
+            } catch (e) {
+                throw new Error(`built-in: Image resize failed for ${srcfile} (toresize ${util.inspect(toresize)} found ${util.inspect(found)}) because ${e}`);
+            }
         }
     }
 

@@ -265,7 +265,12 @@ exports.newrender = async function(config) {
     });
 
     // console.log('CALLING config.hookSiteRendered');
-    await config.hookSiteRendered();
+    try {
+        await config.hookSiteRendered();
+    } catch (e) {
+        throw new Error(`hookSiteRendered failed because ${e}`);
+    }
+
 
     // data.print();
     return results;
@@ -326,7 +331,12 @@ exports.render = async function(config) {
         }));
 
         // console.log('CALLING config.hookSiteRendered');
-        var hookResults = await config.hookSiteRendered();
+        var hookResults = undefined;
+        try {
+            hookResults = await config.hookSiteRendered();
+        } catch (e) {
+            throw new Error(`hookSiteRendered failed because ${e}`);
+        }
 
         // The array resulting from the above has two levels, when we
         // want to return one level.  The two levels are due to globfs.operate

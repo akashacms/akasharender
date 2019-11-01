@@ -34,3 +34,8 @@ This tests an image in an assets directory
 This tests converting an image from PNG to JPEG
 
 <img id="png2jpg"  src="rss_button.png" resize-width="50" resize-to="rss_button.jpg">
+
+This tests resizing an image from a mounted directory
+
+<img id="mountedimg" src="/mounted/img/Human-Skeleton.jpg" 
+    resize-width="100" resize-to="/img/Human-Skeleton-mounted-100.jpg">
