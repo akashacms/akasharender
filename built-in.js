@@ -19,6 +19,7 @@
 
 'use strict';
 
+const fs    = require('fs-extra');
 const url   = require('url');
 const path  = require('path');
 const util  = require('util');
@@ -97,7 +98,7 @@ module.exports = class BuiltInPlugin extends Plugin {
     async onSiteRendered(config) {
 
         for (let toresize of this.resizequeue) {
-            // console.log(`resizing `, toresize);
+            // if (toresize.docPath === 'mounted/img2resize.html') console.log(`resizing `, toresize);
 
             let img2resize;
             if (!path.isAbsolute(toresize.src)) {
@@ -108,23 +109,23 @@ module.exports = class BuiltInPlugin extends Plugin {
             } else {
                 img2resize = toresize.src;
             }
-            // console.log(`img2resize ${img2resize}`);
+            // if (toresize.docPath === 'mounted/img2resize.html') console.log(`img2resize ${img2resize}`);
 
             let srcfile = undefined;
 
             let found = await filez.findAsset(config.assetDirs, img2resize);
             if (Array.isArray(found) && found.length >= 1) {
-                // console.log(`found ${img2resize} as asset `, found);
+                // if (toresize.docPath === 'mounted/img2resize.html') console.log(`found ${img2resize} as asset `, found);
                 srcfile = found[0].fullpath;
             } else {
                 found = await filez.findRendersTo(config, img2resize);
                 if (found && found.foundMountedOn === '/') {
-                    // console.log(`found ${img2resize} as document `, found);
+                    // if (toresize.docPath === 'mounted/img2resize.html') console.log(`found ${img2resize} as document `, found);
                     srcfile = path.join(found.foundDir, found.foundFullPath);
                 } else if (found && found.foundMountedOn !== '/') {
                     srcfile = path.join(found.foundDir, found.foundPathWithinDir);
                 } else {
-                    // console.log(`did not find ${img2resize}`);
+                    // if (toresize.docPath === 'mounted/img2resize.html') console.log(`did not find ${img2resize}`);
                 }
             }
             if (!srcfile) throw new Error(`akashacms-builtin: Did not find source file for image to resize ${img2resize}`);
@@ -132,10 +133,25 @@ module.exports = class BuiltInPlugin extends Plugin {
             try {
                 let img = await sharp(srcfile);
                 let resized = await img.resize(Number.parseInt(toresize.resizewidth));
-                await resized
-                    .toFile(path.join(
-                        config.renderDestination,
-                        toresize.resizeto ? toresize.resizeto : img2resize));
+                // We need to compute the correct destination path
+                // for the resized image
+                let imgtoresize = toresize.resizeto ? toresize.resizeto : img2resize;
+                let resizedest;
+                if (path.isAbsolute(imgtoresize)) {
+                    resizedest = path.join(config.renderDestination, imgtoresize);
+                } else {
+                    // This is for relative image paths, hence it needs to be
+                    // relative to the docPath
+                    resizedest = path.join(config.renderDestination,
+                            path.dirname(toresize.docPath),
+                            imgtoresize);
+                }
+
+                // Make sure the destination directory exists
+                await fs.mkdir(path.dirname(resizedest), { recursive: true });
+                
+                // if (toresize.docPath === 'mounted/img2resize.html') console.log(`resizing ${srcfile} to ${resizedest}`);
+                await resized.toFile(resizedest);
             } catch (e) {
                 throw new Error(`built-in: Image resize failed for ${srcfile} (toresize ${util.inspect(toresize)} found ${util.inspect(found)}) because ${e}`);
             }

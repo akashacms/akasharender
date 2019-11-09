@@ -293,7 +293,7 @@ describe('rebased teaser, content', function() {
         assert.notExists($('body #png2jpg').attr('resize-width'));
         assert.notExists($('body #png2jpg').attr('resize-to'));
 
-        assert.equal(config_rebase.plugin('akashacms-builtin').resizequeue.length, 8);
+        assert.equal(config_rebase.plugin('akashacms-builtin').resizequeue.length, 12);
         assert.deepEqual(config_rebase.plugin('akashacms-builtin').resizequeue, [
             {
                 src: '../../imgdir/img/tesla-nema.jpg',
@@ -342,6 +342,30 @@ describe('rebased teaser, content', function() {
               resizeto: "/img/Human-Skeleton-mounted-100.jpg",
               resizewidth: "100",
               src: "/mounted/img/Human-Skeleton.jpg"
+            },
+            {
+              docPath: "mounted/img2resize.html",
+              resizeto: "img/Human-Skeleton-150.jpg",
+              resizewidth: "150",
+              src: "img/Human-Skeleton.jpg",
+            },
+            {
+              docPath: "mounted/img2resize.html",
+              resizeto: "img/Human-Skeleton-250-figure.jpg",
+              resizewidth: "250",
+              src: "img/Human-Skeleton.jpg",
+            },
+            {
+              docPath: "mounted/img2resize.html",
+              resizeto: "img/Human-Skeleton-mounted-100.jpg",
+              resizewidth: "100",
+              src: "/mounted/img/Human-Skeleton.jpg",
+            },
+            {
+              docPath: "mounted/img2resize.html",
+              resizeto: "/img/Human-Skeleton-from-mounted-to-img-100.jpg",
+              resizewidth: "100",
+              src: "/mounted/img/Human-Skeleton.jpg",
             }
         ]);
 
@@ -433,6 +457,58 @@ describe('rebased teaser, content', function() {
         assert.equal($('article#original a#link-to-hier').html(), 'Top index item');
         assert.equal($('article#original a#link-to-hier-dir1').attr('href'), 'hier/dir1/index.html');
         assert.equal($('article#original a#link-to-hier-dir1').html(), 'dir1 index item');
+
+    });
+
+    describe('/mounted/img2resize.html', function() {
+        let html;
+        let $;
+
+        before(async function() {
+            let result = await akasha.readRenderedFile(config_rebase, 'mounted/img2resize.html');
+            html = result.html;
+            $ = result.$;
+        });
+
+        it('should correctly read mounted file', function() {
+            assert.exists(html, 'result exists');
+            assert.isString(html, 'result isString');
+        });
+
+        it('should have correctly processed images', function() {
+            assert.equal($('body #resizeto150').length, 1);
+            assert.include($('body #resizeto150').attr('src'), "img/Human-Skeleton-150.jpg");
+            assert.notExists($('body #resizeto150').attr('resize-width'));
+
+            assert.equal($('body #resizeto250figure').length, 1);
+            assert.equal($('body #resizeto250figure figcaption').length, 1);
+            assert.include($('body #resizeto250figure img').attr('src'), "img/Human-Skeleton-250-figure.jpg");
+            assert.notExists($('body #resizeto250figure img').attr('resize-width'));
+            assert.notExists($('body #resizeto250figure img').attr('resize-to'));
+            assert.include($('body #resizeto250figure figcaption').html(), "Image caption");
+
+            assert.equal($('body #mountedimg').length, 1);
+            assert.include($('body #mountedimg').attr('src'), "img/Human-Skeleton-mounted-100.jpg");
+            assert.notExists($('body #mountedimg').attr('resize-width'));
+
+            assert.equal($('body #mountedimg2nonmounted').length, 1);
+            assert.include($('body #mountedimg2nonmounted').attr('src'), "/img/Human-Skeleton-from-mounted-to-img-100.jpg");
+            assert.notExists($('body #mountedimg2nonmounted').attr('resize-width'));
+        });
+
+        it('should have correctly sized images', async function() {
+            let size150 = await sizeOf('out-rebased/mounted/img/Human-Skeleton-150.jpg');
+            assert.equal(size150.width, 150);
+
+            let size250 = await sizeOf('out-rebased/mounted/img/Human-Skeleton-250-figure.jpg');
+            assert.equal(size250.width, 250);
+
+            let size100 = await sizeOf('out-rebased/mounted/img/Human-Skeleton-mounted-100.jpg');
+            assert.equal(size100.width, 100);
+
+            let size100tononmounted = await sizeOf('out-rebased/img/Human-Skeleton-from-mounted-to-img-100.jpg');
+            assert.equal(size100tononmounted.width, 100);
+        });
 
     });
 
