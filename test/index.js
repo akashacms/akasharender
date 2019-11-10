@@ -380,7 +380,7 @@ describe('teaser, content', function() {
             }
         ]);
 
-        let size50 = await sizeOf('out/img/Human-Skeleton-50.jpg');
+        let size50 = await sizeOf('out/img/Human-Skeleton.jpg');
         assert.equal(size50.width, 50);
 
         let size150 = await sizeOf('out/img/Human-Skeleton-150.jpg');
@@ -505,16 +505,16 @@ describe('teaser, content', function() {
         });
 
         it('should have correctly sized images', async function() {
-            let size150 = await sizeOf('out-rebased/mounted/img/Human-Skeleton-150.jpg');
+            let size150 = await sizeOf('out/mounted/img/Human-Skeleton-150.jpg');
             assert.equal(size150.width, 150);
 
-            let size250 = await sizeOf('out-rebased/mounted/img/Human-Skeleton-250-figure.jpg');
+            let size250 = await sizeOf('out/mounted/img/Human-Skeleton-250-figure.jpg');
             assert.equal(size250.width, 250);
 
-            let size100 = await sizeOf('out-rebased/mounted/img/Human-Skeleton-mounted-100.jpg');
+            let size100 = await sizeOf('out/mounted/img/Human-Skeleton-mounted-100.jpg');
             assert.equal(size100.width, 100);
 
-            let size100tononmounted = await sizeOf('out-rebased/img/Human-Skeleton-from-mounted-to-img-100.jpg');
+            let size100tononmounted = await sizeOf('out/img/Human-Skeleton-from-mounted-to-img-100.jpg');
             assert.equal(size100tononmounted.width, 100);
         });
 
