@@ -24,6 +24,7 @@ const url   = require('url');
 const path  = require('path');
 const util  = require('util');
 const sharp = require('sharp');
+const uuidv1 = require('uuid/v1');
 const documents = require('./documents');
 const filez = require('./filez');
 const render = require('./render');
@@ -174,6 +175,7 @@ module.exports.mahabhutaArray = function(options) {
     ret.addMahafunc(new img2figureImage());
     ret.addMahafunc(new ImageRewriter());
     ret.addMahafunc(new ShowContent());
+    ret.addMahafunc(new SelectElements());
     ret.addMahafunc(new AnchorCleanup());
     return ret;
 };
@@ -534,6 +536,52 @@ This was moved into Mahabhuta
 	}
 }
 module.exports.mahabhuta.addMahafunc(new Partial()); */
+
+//
+// <select-elements class=".." id=".." count="N">
+//     <element></element>
+//     <element></element>
+// </select-elements>
+//
+class SelectElements extends mahabhuta.Munger {
+    get selector() { return "select-elements"; }
+
+    async process($, $link, metadata, dirty) {
+        let count = $link.attr('count')
+                    ? Number.parseInt($link.attr('count'))
+                    : 1;
+        const clazz = $link.attr('class');
+        const id    = $link.attr('id');
+        const tn    = $link.attr('tag-name')
+                    ? $link.attr('tag-name')
+                    : 'div';
+
+        const children = $link.children();
+        const selected = [];
+
+        for (; count >= 1 && children.length >= 1; count--) {
+            // console.log(`SelectElements `, children.length);
+            const _n = Math.floor(Math.random() * children.length);
+            // console.log(_n);
+            const chosen = $(children[_n]).html();
+            selected.push(chosen);
+            // console.log(`SelectElements `, chosen);
+            delete children[_n];
+
+        }
+
+        const _uuid = uuidv1();
+        $link.replaceWith(`<${tn} id='${_uuid}'></${tn}>`);
+        const $newItem = $(`${tn}#${_uuid}`);
+        if (id) $newItem.attr('id', id);
+        else $newItem.removeAttr('id');
+        if (clazz) $newItem.addClass(clazz);
+        for (let chosen of selected) {
+            $newItem.append(chosen);
+        }
+
+    }
+}
 
 class AnchorCleanup extends mahabhuta.Munger {
     get selector() { return "html body a"; }

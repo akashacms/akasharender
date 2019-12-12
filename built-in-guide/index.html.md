@@ -180,6 +180,33 @@ Some writers swear by creating a _teaser_ for every document.  The idea is a sma
 
 The `<ak-teaser>` tag supports inserting the content of a `teaser` metadata object.  It uses the `ak_teaser.html.ejs` partial to do so.
 
+# Select N elements from a group
+
+Sometimes you want to randomly select one or more elements from a group of items.  Consider:
+
+```html
+<select-elements id='advert-group'>
+    <div><div id='advert1'>... HTML for advert 1</div></div>
+    <div><div id='advert2'>... HTML for advert 2</div></div>
+    <div><div id='advert3'>... HTML for advert 3</div></div>
+    <div><div id='advert4'>... HTML for advert 4</div></div>
+</select-elements>
+```
+
+The idea is to support displaying only one of them, selecting at random the child to display.
+
+It selects among the direct children which element or elements to display.  The outer element for the child is discarded, and only its contents are displayed in the output HTML.  For example the result of the above example might be:
+
+```html
+<div id='advert-group'><div id='advert3'>... HTML for advert 3</div></div>
+```
+
+The attributes accepted by `select-elements` are:
+
+* `id` - The ID value to use on the outputted HTML element
+* `class` - The class value to use on the outputted HTML element
+* `count` - The number of child elements to display - defaults to 1
+
 # Anchor tag cleanups
 
 This feature automagically fixes `<a>` tags, referencing a local document, and which lack text or an image.  Normally an empty tag would show up as nothing in the web browser.  AkashaRender makes it into something useful.

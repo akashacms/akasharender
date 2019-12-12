@@ -1,6 +1,6 @@
 {
   "name": "akasharender",
-  "version": "0.7.10",
+  "version": "0.7.11",
   "description": "Rendering support for generating static HTML websites or EPUB eBooks",
   "keywords": [
     "content management system",
@@ -47,7 +47,8 @@
     "cachd": "*",
     "run-parallel-limit": ">=1.x",
     "fast-memoize": ">=2.5.1",
-    "relative": "^3.0.2"
+    "relative": "^3.0.2",
+    "uuid": "^3.3.3"
   },
   "devDependencies": {},
   "scripts": {

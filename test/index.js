@@ -563,6 +563,48 @@ describe('teaser, content', function() {
 
 });
 
+describe('Select Elements', function() {
+    let html;
+    let $;
+
+    before(async function() {
+        let result = await akasha.readRenderedFile(config, 'select-elements.html');
+        html = result.html;
+        $ = result.$;
+    });
+
+    it('should correctly read selected elements file', function() {
+        assert.exists(html, 'result exists');
+        assert.isString(html, 'result isString');
+    });
+
+    it('should have correct first-selected-elements', function() {
+        assert.equal($('article div#first-select-elements').length, 1);
+        assert.isTrue($('article div#first-select-elements').hasClass('foobar'));
+        assert.include($('article div#first-select-elements').html(), 'Element');
+        assert.include($('article div#first-select-elements').html(), 'Inner content');
+    });
+
+    it('should have correct second-selected-elements', function() {
+        assert.equal($('article div#second-select-elements').length, 1);
+        assert.include($('article div#second-select-elements').html(), 'Element');
+        assert.include($('article div#second-select-elements').html(), 'Inner content');
+    });
+
+    it('should have correct third-selected-elements', function() {
+        assert.equal($('article span#third-select-elements').length, 1);
+        assert.include($('article span#third-select-elements').html(), 'Element');
+        assert.include($('article span#third-select-elements').html(), 'Inner content');
+    });
+
+    it('should have correct fourth-selected-elements', function() {
+        assert.equal($('article foo#fourth-select-elements').length, 1);
+        assert.equal($('article foo#fourth-select-elements').children().length, 3);
+        assert.include($('article foo#fourth-select-elements').html(), 'Element');
+        assert.include($('article foo#fourth-select-elements').html(), 'Inner content');
+    });
+});
+
 describe('Index Chain', function() {
     it('should generate correct index chain for /hier/dir1/dir2/sibling.html', async function() {
         let chain = await akasha.indexChain(config, '/hier/dir1/dir2/sibling.html');
