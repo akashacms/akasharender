@@ -180,6 +180,36 @@ Some writers swear by creating a _teaser_ for every document.  The idea is a sma
 
 The `<ak-teaser>` tag supports inserting the content of a `teaser` metadata object.  It uses the `ak_teaser.html.ejs` partial to do so.
 
+# Embedding code snippets from files in the document directory
+
+Sometimes we want to embed code snippets.  While Markdown makes this easy, we could also have code in files and then embed the files.  To do that:
+
+```html
+<code-embed file-name='path/to/file.ext' lang='lang-code'></code-embed>
+```
+
+The `file-name` argument must be either a relative path, or absolute path, within a documents directory.  Relative path's are computed relative to the file this is within.
+
+The `lang` argument is refers to what language code is to be used with this file.  For example `css` for a CSS file.
+
+Not shown is the `id` argument that creates an `id` in the output code.
+
+This element is meant to be used with the [Highlight.js library](https://www.npmjs.com/package/highlight.js) and therefore the `lang` codes should be from their list of supported programming languages.
+
+The contents of the file must be textual for this to work.  That's because the file contents will be inserted into the output wrapped within this structure:
+
+```html
+<pre id='id'>
+<code lang='lang'>
+... CONTENTS OF FILE
+</code>
+</pre>
+```
+
+Clearly for this to work correctly the file must have textual content.
+
+While this is meant to be used with Highlight.js, we do not arrange to include it automatically with an AkashaRender installation.
+
 # Select N elements from a group
 
 Sometimes you want to randomly select one or more elements from a group of items.  Consider:

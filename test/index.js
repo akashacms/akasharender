@@ -777,6 +777,37 @@ describe('AsciiDoc document', function() {
     });
 });
 
+describe('code-embed element', function() {
+
+    it('should render code-embed document', async function() {
+        let { html, $ } = await akasha.readRenderedFile(config, 'code-embed.html');
+
+        assert.exists(html, 'result exists');
+        assert.isString(html, 'result isString');
+
+        assert.equal($('article#original pre#relative-fn-css').length, 1);
+        assert.include($('article#original pre#relative-fn-css code').html(), 'header');
+
+        assert.equal($('article#original pre#relative-fn-js').length, 1);
+        assert.include($('article#original pre#relative-fn-js code').html(), 'foo');
+        
+        assert.equal($('article#original pre#absolute-fn-css').length, 1);
+        assert.include($('article#original pre#absolute-fn-css code').html(), 'header');
+
+        assert.equal($('article#original pre#absolute-fn-js').length, 1);
+        assert.include($('article#original pre#absolute-fn-js code').html(), 'foo');
+        
+        assert.equal($('article#original pre#relative-fn-lang-css').length, 1);
+        assert.include($('article#original pre#relative-fn-lang-css code').html(), 'header');
+        assert.equal($('article#original pre#relative-fn-lang-css code').attr('lang'), 'css');
+
+        assert.equal($('article#original pre#relative-fn-lang-js').length, 1);
+        assert.include($('article#original pre#relative-fn-lang-js code').html(), 'foo');
+        assert.equal($('article#original pre#relative-fn-lang-js code').attr('lang'), 'js');
+        
+    });
+});
+
 
 // TODO HBS support does not exist
 // Layout using HBS

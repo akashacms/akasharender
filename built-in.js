@@ -170,6 +170,7 @@ module.exports.mahabhutaArray = function(options) {
     ret.addMahafunc(new ScriptRelativizer());
     ret.addMahafunc(new InsertBodyContent());
     ret.addMahafunc(new InsertTeaser());
+    ret.addMahafunc(new CodeEmbed());
     ret.addMahafunc(new AkBodyClassAdd());
     ret.addMahafunc(new FigureImage());
     ret.addMahafunc(new img2figureImage());
@@ -374,6 +375,45 @@ class AkBodyClassAdd extends mahabhuta.PageProcessor {
 			});
 		} else return Promise.resolve();
 	}
+}
+
+class CodeEmbed extends mahabhuta.CustomElement {
+    get elementName() { return "code-embed"; }
+    async process($element, metadata, dirty) {
+        const fn = $element.attr('file-name');
+        const lang = $element.attr('lang');
+        const id = $element.attr('id');
+
+        if (!fn || fn === '') {
+            throw new Error(`code-embed must have file-name argument, got ${fn}`);
+        }
+
+        let txtpath;
+        if (path.isAbsolute(fn)) {
+            txtpath = fn;
+        } else {
+            txtpath = path.join(path.dirname(metadata.document.renderTo), fn);
+        }
+
+        const document = await documents.readDocument(this.array.options.config, txtpath);
+
+        if (!document) {
+            throw new Error(`code-embed file-name ${fn} does not refer to usable file`);
+        }
+
+        const readFrom = path.join(document.basedir, document.docpath);
+
+        const txt = await fs.readFile(readFrom, 'utf8');
+        let $ = mahabhuta.parse(`<pre> <code> </code> </pre>`);
+        if (lang && lang !== '') {
+            $('code').attr('lang', lang);
+        }
+        if (id && id !== '') {
+            $('pre').attr('id', id);
+        }
+        $('code').append(txt);
+        return $.html();
+    }
 }
 
 class FigureImage extends mahabhuta.CustomElement {
