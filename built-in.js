@@ -404,10 +404,11 @@ class CodeEmbed extends mahabhuta.CustomElement {
         const readFrom = path.join(document.basedir, document.docpath);
 
         const txt = await fs.readFile(readFrom, 'utf8');
-        let $ = mahabhuta.parse(`<pre> <code> </code> </pre>`);
+        let $ = mahabhuta.parse(`<pre><code></code></pre>`);
         if (lang && lang !== '') {
             $('code').addClass(lang);
         }
+        $('code').addClass('hljs');
         if (id && id !== '') {
             $('pre').attr('id', id);
         }
