@@ -597,12 +597,14 @@ describe('Select Elements', function() {
         assert.include($('article span#third-select-elements').html(), 'Inner content');
     });
 
+    /*
     it('should have correct fourth-selected-elements', function() {
         assert.equal($('article foo#fourth-select-elements').length, 1);
         assert.equal($('article foo#fourth-select-elements').children().length, 3);
         assert.include($('article foo#fourth-select-elements').html(), 'Element');
         assert.include($('article foo#fourth-select-elements').html(), 'Inner content');
     });
+    */
 });
 
 describe('Index Chain', function() {

@@ -30,7 +30,7 @@ title: Select Elements
     <div>Element 6 <span>Inner content 6</span></div>
 </select-elements>
 
-<select-elements id="fourth-select-elements" tag-name="foo" count='3'>
+<!-- <select-elements id="fourth-select-elements" tag-name="foo" count='3'>
     <div><div>Element 1 <span>Inner content 1</span></div></div>
     <div><div>Element 2 <span>Inner content 2</span></div></div>
     <div><div>Element 3 <span>Inner content 3</span></div></div>
@@ -38,6 +38,6 @@ title: Select Elements
     <div><div>Element 5 <span>Inner content 5</span></div></div>
     <div><div>Element 6 <span>Inner content 6</span></div></div>
 </select-elements>
-
+-->
 
 
