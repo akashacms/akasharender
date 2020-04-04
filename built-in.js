@@ -406,7 +406,7 @@ class CodeEmbed extends mahabhuta.CustomElement {
         const txt = await fs.readFile(readFrom, 'utf8');
         let $ = mahabhuta.parse(`<pre> <code> </code> </pre>`);
         if (lang && lang !== '') {
-            $('code').attr('lang', lang);
+            $('code').addClass(lang);
         }
         if (id && id !== '') {
             $('pre').attr('id', id);

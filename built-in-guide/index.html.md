@@ -200,7 +200,7 @@ The contents of the file must be textual for this to work.  That's because the f
 
 ```html
 <pre id='id'>
-<code lang='lang'>
+<code class='lang'>
 ... CONTENTS OF FILE
 </code>
 </pre>
