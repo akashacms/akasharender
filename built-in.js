@@ -30,6 +30,7 @@ const filez = require('./filez');
 const render = require('./render');
 const Plugin = require('./Plugin');
 const relative = require('relative');
+const hljs = require('highlight.js');
 // const akasha   = require('./index');
 const mahabhuta = require('mahabhuta');
 const mahaMetadata = require('mahabhuta/maha/metadata');
@@ -412,7 +413,11 @@ class CodeEmbed extends mahabhuta.CustomElement {
         if (id && id !== '') {
             $('pre').attr('id', id);
         }
-        $('code').append(txt);
+        if (lang && lang !== '') {
+            $('code').append(hljs.highlight(lang, txt).value);
+        } else {
+            $('code').append(hljs.highlightAuto(txt).value);
+        }
         return $.html();
     }
 }
