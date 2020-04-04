@@ -799,11 +799,11 @@ describe('code-embed element', function() {
         
         assert.equal($('article#original pre#relative-fn-lang-css').length, 1);
         assert.include($('article#original pre#relative-fn-lang-css code').html(), 'header');
-        assert.equal($('article#original pre#relative-fn-lang-css code').hasClass('css'));
+        assert.isTrue($('article#original pre#relative-fn-lang-css code').hasClass('css'));
 
         assert.equal($('article#original pre#relative-fn-lang-js').length, 1);
         assert.include($('article#original pre#relative-fn-lang-js code').html(), 'foo');
-        assert.equal($('article#original pre#relative-fn-lang-js code').hasClass('js'));
+        assert.isTrue($('article#original pre#relative-fn-lang-js code').hasClass('js'));
         
     });
 });
