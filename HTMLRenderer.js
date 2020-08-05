@@ -65,6 +65,79 @@ module.exports = class HTMLRenderer extends Renderer {
     /**
      * If the document metadata says to render into a template, do so.
      */
+    async renderForLayoutNew(rendered, metadata, config) {
+        // console.log('renderForLayout '+ util.inspect(metadata));
+        if (metadata.layout) {
+            // find layout
+            // read layout
+            // split out frontmatter & content
+            // find renderer
+            // renderer.render
+            // mahabhuta
+
+            // const layoutStart = new Date();
+
+            var fnLayout;
+            var layouttext;
+            var layoutcontent;
+            var layoutdata;
+            var layoutrendered;
+            var metadocpath = metadata.document ? metadata.document.path : "unknown";
+
+            // console.log(`renderForLayout find ${util.inspect(config.layoutDirs)} ${metadata.layout}`);
+            var foundDir = await globfs.findAsync(config.layoutDirs, metadata.layout);
+            if (!foundDir) throw new Error(`No layout directory found in ${util.inspect(config.layoutDirs)} ${metadata.layout} in file ${metadata.document.path}`);
+            foundDir = foundDir[0];
+            if (!foundDir) throw new Error(`No layout directory found in ${util.inspect(config.layoutDirs)} ${metadata.layout} in file ${metadata.document.path}`);
+            var layoutFname = path.join(foundDir.basedir, foundDir.path);
+            var layout = await fs.readFile(layoutFname, 'utf8');
+            layouttext = layout;
+            var fm = matter(layout);
+            layoutcontent = fm.content;
+            layoutdata    = this.copyMetadataProperties(metadata, fm.data);
+            layoutdata.content = rendered;
+            // if (!fm.data.layout) layoutdata.layout = undefined;
+            const renderer = config.findRendererPath(metadata.layout);
+            /* if (!renderer && metadata.layout.match(/\.html$/) != null) {
+                return filez.readFile(partialDir, partial);
+            } */
+            if (!renderer) throw new Error(`No renderer for ${metadata.layout}`);
+            // log(`renderForLayout rendering ${metadocpath} with ${metadata.layout}`);
+            // console.log(`HTMLRenderer before render plugin=${util.inspect(metadata.plugin)}`);
+            // const layoutPrepared = new Date();
+            // console.log(`renderForLayout PREPARED ${metadocpath} ${layoutFname} ${(layoutPrepared - layoutStart) / 1000} seconds`);
+            try {
+                layoutrendered = await renderer.render(layoutcontent, layoutdata);
+            } catch (e) {
+                let ee = new Error(`Error rendering ${metadocpath} with ${metadata.layout} ${e.stack ? e.stack : e}`);
+                console.error(ee);
+                throw ee;
+            }
+            // const layoutFirstRender = new Date();
+            // console.log(`renderForLayout FIRST RENDER ${metadocpath} ${layoutFname} ${(layoutFirstRender - layoutStart) / 1000} seconds`);
+            // log('maharun '+ metadata.layout +' '+ util.inspect(layoutdata.config.headerScripts));
+            // log(`renderForLayout maharun ${metadocpath} with ${metadata.layout}`);
+            if (false && this.doMahabhuta(metadocpath)) {
+                try {
+                    layoutrendered = await this.maharun(layoutrendered, layoutdata, config.mahafuncs);
+                } catch (e2) {
+                    let eee = new Error(`Error with Mahabhuta ${metadocpath} with ${metadata.layout} ${e2.stack ? e2.stack : e2}`);
+                    console.error(eee);
+                    throw eee;
+                }
+            } else {
+                // console.log(`renderForLayout mahabhuta not allowed ${layoutrendered}`);
+            }
+            // const layoutFinishMahabhuta = new Date();
+            // console.log(`renderForLayout FINISH MAHABHUTA ${metadocpath} ${layoutFname} ${(layoutFinishMahabhuta - layoutStart) / 1000} seconds`);
+            // log(`renderForLayout FINI ${metadocpath} with ${metadata.layout}`);
+            return layoutrendered;
+        } else return rendered;
+    }
+
+    /**
+     * If the document metadata says to render into a template, do so.
+     */
     async renderForLayout(rendered, metadata, config) {
         // console.log('renderForLayout '+ util.inspect(metadata));
         if (metadata.layout) {
@@ -135,11 +208,65 @@ module.exports = class HTMLRenderer extends Renderer {
         } else return rendered;
     }
 
+    async renderToFile(basedir, fpath, renderTo, renderToPlus, metadata, config) {
+
+        const renderStart = new Date();
+
+        // console.log(`renderToFile ${basedir} ${fpath} ${renderTo} ${renderToPlus} ${util.inspect(metadata)}`);
+        // var doctext;
+        var doccontent;
+        var docdata = metadata;
+        var docrendered;
+
+        var fm = await this.frontmatter(basedir, fpath);
+        doccontent = fm.content;
+        // const renderFrontmatter = new Date();
+        // console.log(`renderToFile FRONTMATTER ${basedir} ${fpath} ${renderTo} ${(renderFrontmatter - renderStart) / 1000} seconds`);
+        // console.log(`renderToFile ${basedir} ${fpath} ${renderTo} ${renderToPlus} ${doccontent}`);
+        data.report(basedir, fpath, renderTo, "FRONTMATTER", renderStart);
+
+        var metadata = await this.initMetadata(config, basedir, fpath, renderToPlus, docdata, fm.data);
+        docdata = metadata;
+        // console.log('about to render '+ fpath);
+        // console.log(`metadata before render ${util.inspect(docdata)}`);
+        try {
+            docrendered = await this.render(doccontent, docdata);
+        } catch (err) {
+            console.error("Error rendering "+ fpath +" "+ (err.stack ? err.stack : err));
+            throw new Error("Error rendering "+ fpath +" "+ (err.stack ? err.stack : err));
+        }
+        // const renderFirstRender = new Date();
+        // console.log(`renderToFile FIRST RENDER ${basedir} ${fpath} ${renderTo} ${(renderFirstRender - renderStart) / 1000} seconds`);
+        data.report(basedir, fpath, renderTo, "FIRST RENDER", renderStart);
+
+        docrendered = await this.renderForLayoutNew(docrendered, docdata, config);
+        const renderSecondRender = new Date();
+        // console.log(`renderToFile SECOND RENDER ${basedir} ${fpath} ${renderTo} ${(renderSecondRender - renderStart) / 1000} seconds`);
+        data.report(basedir, fpath, renderTo, "SECOND RENDER", renderStart);
+
+        // log('maharun '+ metadata.layout +' '+ util.inspect(layoutdata.config.headerScripts));
+        // log(`renderForLayout maharun ${metadocpath} with ${metadata.layout}`);
+        if (this.doMahabhuta(fpath)) {
+            try {
+                docrendered = await this.maharun(docrendered, docdata, config.mahafuncs);
+            } catch (e2) {
+                let eee = new Error(`Error with Mahabhuta ${fpath} with ${metadata.layout} ${e2.stack ? e2.stack : e2}`);
+                console.error(eee);
+                throw eee;
+            }
+        } else {
+            // console.log(`renderForLayout mahabhuta not allowed ${layoutrendered}`);
+        }
+        data.report(basedir, fpath, renderTo, "MAHABHUTA", renderStart);
+        await fs.outputFile(path.join(renderTo, this.filePath(fpath)), docrendered, 'utf8');
+    }
+
     /**
      * Render the document file, through a template if necessary, producing
      * an output file.
      */
-    async renderToFile(basedir, fpath, renderTo, renderToPlus, metadata, config) {
+    /*
+    async renderToFileOld(basedir, fpath, renderTo, renderToPlus, metadata, config) {
 
         const renderStart = new Date();
 
@@ -192,6 +319,7 @@ module.exports = class HTMLRenderer extends Renderer {
         // remove circular dependency
         // await filez.writeFile(renderTo, this.filePath(fpath), docrendered);
     }
+    */
 
     /**
      * Determine whether it's allowed to run Mahabhuta.  Some rendering types
