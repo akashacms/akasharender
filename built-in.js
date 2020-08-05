@@ -58,8 +58,17 @@ module.exports = class BuiltInPlugin extends Plugin {
             moduleDirname = __dirname;
         }
         config.addPartialsDir(path.join(moduleDirname, 'partials'));
-        // config.addPartialsDir(path.join(__dirname, 'partials'));
-        config.addMahabhuta(module.exports.mahabhutaArray(options));
+        // Do not need this here any longer because it is handled
+        // in the Configuration constructor.  The idea is to put
+        // mahaPartial as the very first Mahafunc so that all
+        // Partial's are handled before anything else.  The issue causing
+        // this change is the OpenGraphPromoteImages Mahafunc in
+        // akashachs-base and processing any images brought in by partials.
+        // Ensuring the partial tag is processed before OpenGraphPromoteImages
+        // meant such images were properly promoted.
+        // config.addMahabhuta(mahaPartial.mahabhutaArray({
+        //     renderPartial: options.renderPartial
+        // }));
         config.addMahabhuta(mahaMetadata.mahabhutaArray({
             // Do not pass this through so that Mahabhuta will not
             // make absolute links to subdirectories
@@ -67,9 +76,7 @@ module.exports = class BuiltInPlugin extends Plugin {
             // TODO how to configure this
             // sitemap_title: ....?
         }));
-        config.addMahabhuta(mahaPartial.mahabhutaArray({
-            renderPartial: options.renderPartial
-        }));
+        config.addMahabhuta(module.exports.mahabhutaArray(options));
 
         // TODO These seem to not be used
         // if (!config.builtin) config.builtin = {};

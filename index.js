@@ -314,6 +314,14 @@ module.exports.Configuration = class Configuration {
             this.configDir = path.dirname(modulepath);
         }
 
+        // Very carefully add the <partial> support from Mahabhuta as the
+        // very first thing so that it executes before anything else.
+        let config = this;
+        this.addMahabhuta(mahaPartial.mahabhutaArray({
+            renderPartial: function(fname, metadata) {
+                return render.partial(config, fname, metadata);
+            }
+        }));
     }
 
     get akasha() { return this[_config_akasha]; }
@@ -419,10 +427,12 @@ module.exports.Configuration = class Configuration {
         var config = this;
         this.use(require('./built-in'), {
             // built-in options if any
+            // Do not need this here any longer because it is handled
+            // in the constructor.
             // Set up the Mahabhuta partial tag so it renders through AkashaRender
-            renderPartial: function(fname, metadata) {
-                return render.partial(config, fname, metadata);
-            }
+            // renderPartial: function(fname, metadata) {
+            //     return render.partial(config, fname, metadata);
+            // }
         });
 
         return this;
