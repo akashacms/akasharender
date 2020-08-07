@@ -214,17 +214,25 @@ describe('teaser, content', function() {
         assert.include($('body article#duplicate').html(), 'This is content text');
     });
 
-    it('should find added body class values', async function() {
-        let { html, $ } = await akasha.readRenderedFile(config, 'body-class.html');
+    const checkBodyClass = (html, $) => {
 
         assert.exists(html, 'result exists');
         assert.isString(html, 'result isString');
 
         assert.equal($('body.addedClass').length, 1);
+    };
+
+    it('should find added body class values', async function() {
+        let { html, $ } = await akasha.readRenderedFile(config, 'body-class.html');
+        checkBodyClass(html, $);
     });
 
-    it('should render fig-img', async function() {
-        let { html, $ } = await akasha.readRenderedFile(config, 'fig-img.html');
+    it('should find added body class values with Liquid', async function() {
+        let { html, $ } = await akasha.readRenderedFile(config, 'body-class-liquid.html');
+        checkBodyClass(html, $);
+    });
+
+    const checkFigImg = (html, $) => {
 
         assert.exists(html, 'result exists');
         assert.isString(html, 'result isString');
@@ -237,11 +245,19 @@ describe('teaser, content', function() {
         assert.equal($('article#original figure#style[style="border: 200 solid black;"] img[src="fig-img-style.jpg"]').length, 1);
         assert.equal($('article#original figure#dest a[href="http://dest.url"]').length, 1);
         assert.equal($('article#original figure#dest img[src="fig-img-dest.jpg"]').length, 1);
+    };
+
+    it('should render fig-img', async function() {
+        let { html, $ } = await akasha.readRenderedFile(config, 'fig-img.html');
+        checkFigImg(html, $);
     });
 
-    it('should find figure/image pair for img', async function() {
-        let { html, $ } = await akasha.readRenderedFile(config, 'img2figimg.html');
+    it('should render fig-img with Liquid', async function() {
+        let { html, $ } = await akasha.readRenderedFile(config, 'fig-img-liquid.html');
+        checkFigImg(html, $);
+    });
 
+    const checkIMG2FigIMG = (html, $) => {
         assert.exists(html, 'result exists');
         assert.isString(html, 'result isString');
 
@@ -267,11 +283,19 @@ describe('teaser, content', function() {
         // assert.equal($('head meta[name="og:image"]').length, 1);
         // assert.include($('head meta[name="og:image"]').attr('content'), 
         //      "https://example.akashacms.com/img/Human-Skeleton.jpg");
+    };
+
+    it('should find figure/image pair for img', async function() {
+        let { html, $ } = await akasha.readRenderedFile(config, 'img2figimg.html');
+        checkIMG2FigIMG(html, $);
     });
 
-    it('should resize img', async function() {
-        let { html, $ } = await akasha.readRenderedFile(config, 'img2resize.html');
+    it('should find figure/image pair for img with Liquid', async function() {
+        let { html, $ } = await akasha.readRenderedFile(config, 'img2figimg-liquid.html');
+        checkIMG2FigIMG(html, $);
+    });
 
+    const checkImg2Resize = async (html, $, config) => {
         assert.exists(html, 'result exists');
         assert.isString(html, 'result isString');
 
@@ -304,7 +328,7 @@ describe('teaser, content', function() {
         assert.notExists($('body #png2jpg').attr('resize-to'));
 
         // console.log(config.plugin('akashacms-builtin').resizequeue);
-        assert.equal(config.plugin('akashacms-builtin').resizequeue.length, 12);
+        assert.equal(config.plugin('akashacms-builtin').resizequeue.length, 18);
         assert.deepEqual(config.plugin('akashacms-builtin').resizequeue, [
             {
                 src: '../../imgdir/img/tesla-nema.jpg',
@@ -317,6 +341,42 @@ describe('teaser, content', function() {
                 resizewidth: '200',
                 resizeto: 'img/tesla-nema.jpg',
                 docPath: 'hier/dir1/dir2/nested-img-resize.html'
+            },
+            {
+                "docPath": "img2resize-liquid.html",
+                "resizeto": undefined,
+                "resizewidth": "50",
+                "src": "img/Human-Skeleton.jpg",
+            },
+            {
+                "docPath": "img2resize-liquid.html",
+                "resizeto": "img/Human-Skeleton-150.jpg",
+                "resizewidth": "150",
+                "src": "img/Human-Skeleton.jpg"
+            },
+            {
+                "docPath": "img2resize-liquid.html",
+                "resizeto": "img/Human-Skeleton-250-figure.jpg",
+                "resizewidth": "250",
+                "src": "img/Human-Skeleton.jpg"
+            },
+            {
+                "docPath": "img2resize-liquid.html",
+                "resizeto": undefined,
+                "resizewidth": "50",
+                "src": "rss_button.png"
+            },
+            {
+                "docPath": "img2resize-liquid.html",
+                "resizeto": "rss_button.jpg",
+                "resizewidth": "50",
+                "src": "rss_button.png"
+            },
+            {
+                "docPath": "img2resize-liquid.html",
+                "resizeto": "/img/Human-Skeleton-mounted-100.jpg",
+                "resizewidth": "100",
+                "src": "/mounted/img/Human-Skeleton.jpg"
             },
             {
                 src: 'img/Human-Skeleton.jpg',
@@ -355,10 +415,10 @@ describe('teaser, content', function() {
               src: "/mounted/img/Human-Skeleton.jpg"
             },
             {
-              "docPath": "mounted/img2resize.html",
-              "resizeto": "img/Human-Skeleton-150.jpg",
-              "resizewidth": "150",
-              "src": "img/Human-Skeleton.jpg",
+              docPath: "mounted/img2resize.html",
+              resizeto: "img/Human-Skeleton-150.jpg",
+              resizewidth: "150",
+              src: "img/Human-Skeleton.jpg",
             },
             {
               "docPath": "mounted/img2resize.html",
@@ -394,12 +454,19 @@ describe('teaser, content', function() {
 
         let sizerssjpg = await sizeOf('out/rss_button.jpg');
         assert.equal(sizerssjpg.width, 50);
+    };
 
+    it('should resize img', async function() {
+        let { html, $ } = await akasha.readRenderedFile(config, 'img2resize.html');
+        await checkImg2Resize(html, $, config);
     });
 
-    it('should render show-content', async function() {
-        let { html, $ } = await akasha.readRenderedFile(config, 'show-content.html');
+    it('should resize img with Liquid', async function() {
+        let { html, $ } = await akasha.readRenderedFile(config, 'img2resize-liquid.html');
+        await checkImg2Resize(html, $, config);
+    });
 
+    const checkShowContent = (html, $) => {
         assert.exists(html, 'result exists');
         assert.isString(html, 'result isString');
 
@@ -415,7 +482,8 @@ describe('teaser, content', function() {
 
         assert.equal($('article#original div#template').length, 1);
         assert.equal($('article#original div#template figure').length, 1);
-        assert.equal($('article#original div#template figure a[href="shown-content.html"] img[src="imgz/shown-content-image.jpg"]').length, 1);
+        assert.equal($('article#original div#template figure a[href="shown-content.html"]').length, 2);
+        assert.equal($('article#original div#template figure a[href="shown-content.html"] img').length, 1);
         assert.equal($('article#original div#template figure figcaption').length, 1);
         assert.equal($('article#original div#template figure figcaption a[href="shown-content.html"]').length, 1);
         assert.include($('article#original div#template figure figcaption a[href="shown-content.html"]').html(), 
@@ -423,17 +491,25 @@ describe('teaser, content', function() {
         
         assert.equal($('article#original div#template2').length, 1);
         assert.equal($('article#original div#template2 figure').length, 1);
-        assert.equal($('article#original div#template2 figure a[href="http://dest.url"] img[src="imgz/shown-content-image.jpg"]').length, 1);
+        assert.equal($('article#original div#template2 figure a[href="http://dest.url"]').length, 2);
+        assert.equal($('article#original div#template2 figure a[href="http://dest.url"] img').length, 1);
         assert.equal($('article#original div#template2 figure figcaption').length, 1);
         assert.equal($('article#original div#template2 figure figcaption a[href="http://dest.url"]').length, 1);
         assert.include($('article#original div#template2 figure figcaption a[href="http://dest.url"]').html(), 
             "Shown Content - solely for use of show-content.html");
-            
+    };
+
+    it('should render show-content', async function() {
+        let { html, $ } = await akasha.readRenderedFile(config, 'show-content.html');
+        checkShowContent(html, $);
     });
 
+    it('should render show-content with Liquid', async function() {
+        let { html, $ } = await akasha.readRenderedFile(config, 'show-content-liquid.html');
+        checkShowContent(html, $);
+    });
 
-    it('should process anchor cleanups', async function() {
-        let { html, $ } = await akasha.readRenderedFile(config, 'anchor-cleanups.html');
+    const checkAnchorCleanups = (html, $) => {
 
         assert.exists(html, 'result exists');
         assert.isString(html, 'result isString');
@@ -466,6 +542,16 @@ describe('teaser, content', function() {
         assert.equal($('article#original a#link-to-hier-dir1').attr('href'), 'hier/dir1/index.html');
         assert.equal($('article#original a#link-to-hier-dir1').html(), 'dir1 index item');
 
+    };
+
+    it('should process anchor cleanups', async function() {
+        let { html, $ } = await akasha.readRenderedFile(config, 'anchor-cleanups.html');
+        checkAnchorCleanups(html, $);
+    });
+
+    it('should process anchor cleanups with Liquid', async function() {
+        let { html, $ } = await akasha.readRenderedFile(config, 'anchor-cleanups-liquid.html');
+        checkAnchorCleanups(html, $);
     });
 
     describe('/mounted/img2resize.html', function() {
@@ -746,9 +832,7 @@ describe('Partials', function() {
 });
 
 describe('JSON document', function() {
-    it('should render JSON document', async function() {
-        let { html, $ } = await akasha.readRenderedFile(config, 'json-data.html');
-
+    const checkJSONdata = (html, $) => {
         assert.exists(html, 'result exists');
         assert.isString(html, 'result isString');
 
@@ -760,12 +844,21 @@ describe('JSON document', function() {
         assert.include($('article#original ul.json-data li:nth-child(2)').html(), 'value 2');
         assert.include($('article#original ul.json-data li:nth-child(3)').html(), 'Row3');
         assert.include($('article#original ul.json-data li:nth-child(3)').html(), 'value 3');
+    };
+
+    it('should render JSON document', async function() {
+        let { html, $ } = await akasha.readRenderedFile(config, 'json-data.html');
+        checkJSONdata(html, $);
+    });
+
+    it('should render JSON document with Liquid', async function() {
+        let { html, $ } = await akasha.readRenderedFile(config, 'json-data-liquid.html');
+        checkJSONdata(html, $);
     });
 });
 
 describe('AsciiDoc document', function() {
-    it('should render AsciiDoc document', async function() {
-        let { html, $ } = await akasha.readRenderedFile(config, 'asciidoctor.html');
+    const checkAsciidoc = (html, $) => {
 
         assert.exists(html, 'result exists');
         assert.isString(html, 'result isString');
@@ -775,15 +868,22 @@ describe('AsciiDoc document', function() {
         assert.equal($('article#original div[class="title"]:contains("AsciiDoc history")').length, 1);
         assert.equal($('article#original div[class="paragraph"] a[href="http://asciidoctor.org"]:contains("Asciidoctor")').length, 1);
         assert.equal($('article#original div[class="paragraph"] a[href="https://github.com/asciidoctor"]:contains("Asciidoctor")').length, 1);
+    };
 
+    it('should render AsciiDoc document', async function() {
+        let { html, $ } = await akasha.readRenderedFile(config, 'asciidoctor.html');
+        checkAsciidoc(html, $);
+    });
+
+    it('should render AsciiDoc document with Liquid', async function() {
+        let { html, $ } = await akasha.readRenderedFile(config, 'asciidoctor-liquid.html');
+        checkAsciidoc(html, $);
     });
 });
 
 describe('code-embed element', function() {
 
-    it('should render code-embed document', async function() {
-        let { html, $ } = await akasha.readRenderedFile(config, 'code-embed.html');
-
+    const checkCodeEmbed = (html, $) => {
         assert.exists(html, 'result exists');
         assert.isString(html, 'result isString');
 
@@ -806,7 +906,18 @@ describe('code-embed element', function() {
         assert.equal($('article#original pre#relative-fn-lang-js').length, 1);
         assert.include($('article#original pre#relative-fn-lang-js code').html(), 'foo');
         assert.isTrue($('article#original pre#relative-fn-lang-js code').hasClass('js'));
-        
+    };
+
+    it('should render code-embed document', async function() {
+        let { html, $ } = await akasha.readRenderedFile(config, 'code-embed.html');
+
+        checkCodeEmbed(html, $);
+    });
+
+    it('should render code-embed document rendered with Liquid', async function() {
+        let { html, $ } = await akasha.readRenderedFile(config, 'code-embed-liquid.html');
+
+        checkCodeEmbed(html, $);
     });
 });
 

@@ -25,8 +25,9 @@ We've already gone over installing Bootstrap in an AkashaCMS project.
 In `package.json` add this to the `dependencies` section
 
 ```json
-    "bootstrap": "^3.3.7",
-    "jquery": "^3.1.1",
+    "bootstrap": "^4.5.x",
+    "jquery": "^3.5.x",
+    "popper.js": "^1.16.x"
 ```
 
 Those bring in the distribution files for those projects that are meant to be used in the browser.  Simply mount the distribution directories into your AkashaRender configuration, and those files will be copied to the rendering destination.

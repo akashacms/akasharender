@@ -213,8 +213,8 @@ describe('rebased header metadata', function() {
 
 
 describe('rebased teaser, content', function() {
-    it('should render fig-img', async function() {
-        let { html, $ } = await akasha.readRenderedFile(config_rebase, 'fig-img.html');
+
+    const checkFigImg = (html, $) => {
 
         assert.exists(html, 'result exists');
         assert.isString(html, 'result isString');
@@ -227,11 +227,19 @@ describe('rebased teaser, content', function() {
         assert.equal($('article#original figure#style[style="border: 200 solid black;"] img[src="fig-img-style.jpg"]').length, 1);
         assert.equal($('article#original figure#dest a[href="http://dest.url"]').length, 1);
         assert.equal($('article#original figure#dest img[src="fig-img-dest.jpg"]').length, 1);
+    };
+
+    it('should render fig-img', async function() {
+        let { html, $ } = await akasha.readRenderedFile(config_rebase, 'fig-img.html');
+        checkFigImg(html, $);
     });
 
-    it('should find figure/image pair for img', async function() {
-        let { html, $ } = await akasha.readRenderedFile(config_rebase, 'img2figimg.html');
+    it('should render fig-img with Liquid', async function() {
+        let { html, $ } = await akasha.readRenderedFile(config_rebase, 'fig-img-liquid.html');
+        checkFigImg(html, $);
+    });
 
+    const checkIMG2FigIMG = (html, $) => {
         assert.exists(html, 'result exists');
         assert.isString(html, 'result isString');
 
@@ -257,11 +265,19 @@ describe('rebased teaser, content', function() {
         // assert.equal($('head meta[name="og:image"]').length, 1);
         // assert.include($('head meta[name="og:image"]').attr('content'), 
         //      "https://example.akashacms.com/img/Human-Skeleton.jpg");
+    };
+
+    it('should find figure/image pair for img', async function() {
+        let { html, $ } = await akasha.readRenderedFile(config_rebase, 'img2figimg.html');
+        checkIMG2FigIMG(html, $);
     });
 
-    it('should resize img', async function() {
-        let { html, $ } = await akasha.readRenderedFile(config_rebase, 'img2resize.html');
+    it('should find figure/image pair for img with Liquid', async function() {
+        let { html, $ } = await akasha.readRenderedFile(config_rebase, 'img2figimg-liquid.html');
+        checkIMG2FigIMG(html, $);
+    });
 
+    const checkImg2Resize = async (html, $, config) => {
         assert.exists(html, 'result exists');
         assert.isString(html, 'result isString');
 
@@ -293,8 +309,9 @@ describe('rebased teaser, content', function() {
         assert.notExists($('body #png2jpg').attr('resize-width'));
         assert.notExists($('body #png2jpg').attr('resize-to'));
 
-        assert.equal(config_rebase.plugin('akashacms-builtin').resizequeue.length, 12);
-        assert.deepEqual(config_rebase.plugin('akashacms-builtin').resizequeue, [
+        // console.log(config.plugin('akashacms-builtin').resizequeue);
+        assert.equal(config.plugin('akashacms-builtin').resizequeue.length, 18);
+        assert.deepEqual(config.plugin('akashacms-builtin').resizequeue, [
             {
                 src: '../../imgdir/img/tesla-nema.jpg',
                 resizewidth: '200',
@@ -306,6 +323,42 @@ describe('rebased teaser, content', function() {
                 resizewidth: '200',
                 resizeto: 'img/tesla-nema.jpg',
                 docPath: 'hier/dir1/dir2/nested-img-resize.html'
+            },
+            {
+                "docPath": "img2resize-liquid.html",
+                "resizeto": undefined,
+                "resizewidth": "50",
+                "src": "img/Human-Skeleton.jpg",
+            },
+            {
+                "docPath": "img2resize-liquid.html",
+                "resizeto": "img/Human-Skeleton-150.jpg",
+                "resizewidth": "150",
+                "src": "img/Human-Skeleton.jpg"
+            },
+            {
+                "docPath": "img2resize-liquid.html",
+                "resizeto": "img/Human-Skeleton-250-figure.jpg",
+                "resizewidth": "250",
+                "src": "img/Human-Skeleton.jpg"
+            },
+            {
+                "docPath": "img2resize-liquid.html",
+                "resizeto": undefined,
+                "resizewidth": "50",
+                "src": "rss_button.png"
+            },
+            {
+                "docPath": "img2resize-liquid.html",
+                "resizeto": "rss_button.jpg",
+                "resizewidth": "50",
+                "src": "rss_button.png"
+            },
+            {
+                "docPath": "img2resize-liquid.html",
+                "resizeto": "/img/Human-Skeleton-mounted-100.jpg",
+                "resizewidth": "100",
+                "src": "/mounted/img/Human-Skeleton.jpg"
             },
             {
                 src: 'img/Human-Skeleton.jpg',
@@ -344,28 +397,28 @@ describe('rebased teaser, content', function() {
               src: "/mounted/img/Human-Skeleton.jpg"
             },
             {
-              docPath: "mounted/img2resize.html",
-              resizeto: "img/Human-Skeleton-150.jpg",
-              resizewidth: "150",
-              src: "img/Human-Skeleton.jpg",
+              "docPath": "mounted/img2resize.html",
+              "resizeto": "img/Human-Skeleton-150.jpg",
+              "resizewidth": "150",
+              "src": "img/Human-Skeleton.jpg",
             },
             {
-              docPath: "mounted/img2resize.html",
-              resizeto: "img/Human-Skeleton-250-figure.jpg",
-              resizewidth: "250",
-              src: "img/Human-Skeleton.jpg",
+              "docPath": "mounted/img2resize.html",
+              "resizeto": "img/Human-Skeleton-250-figure.jpg",
+              "resizewidth": "250",
+              "src": "img/Human-Skeleton.jpg",
             },
             {
-              docPath: "mounted/img2resize.html",
-              resizeto: "img/Human-Skeleton-mounted-100.jpg",
-              resizewidth: "100",
-              src: "/mounted/img/Human-Skeleton.jpg",
+              "docPath": "mounted/img2resize.html",
+              "resizeto": "img/Human-Skeleton-mounted-100.jpg",
+              "resizewidth": "100",
+              "src": "/mounted/img/Human-Skeleton.jpg",
             },
             {
-              docPath: "mounted/img2resize.html",
-              resizeto: "/img/Human-Skeleton-from-mounted-to-img-100.jpg",
-              resizewidth: "100",
-              src: "/mounted/img/Human-Skeleton.jpg",
+              "docPath": "mounted/img2resize.html",
+              "resizeto": "/img/Human-Skeleton-from-mounted-to-img-100.jpg",
+              "resizewidth": "100",
+              "src": "/mounted/img/Human-Skeleton.jpg",
             }
         ]);
 
@@ -383,12 +436,19 @@ describe('rebased teaser, content', function() {
 
         let sizerssjpg = await sizeOf('out-rebased/rss_button.jpg');
         assert.equal(sizerssjpg.width, 50);
+    };
 
+    it('should resize img', async function() {
+        let { html, $ } = await akasha.readRenderedFile(config_rebase, 'img2resize.html');
+        await checkImg2Resize(html, $, config_rebase);
     });
 
-    it('should render show-content', async function() {
-        let { html, $ } = await akasha.readRenderedFile(config_rebase, 'show-content.html');
+    it('should resize img with Liquid', async function() {
+        let { html, $ } = await akasha.readRenderedFile(config_rebase, 'img2resize-liquid.html');
+        await checkImg2Resize(html, $, config_rebase);
+    });
 
+    const checkShowContent = (html, $) => {
         assert.exists(html, 'result exists');
         assert.isString(html, 'result isString');
 
@@ -404,7 +464,8 @@ describe('rebased teaser, content', function() {
 
         assert.equal($('article#original div#template').length, 1);
         assert.equal($('article#original div#template figure').length, 1);
-        assert.equal($('article#original div#template figure a[href="shown-content.html"] img[src="imgz/shown-content-image.jpg"]').length, 1);
+        assert.equal($('article#original div#template figure a[href="shown-content.html"]').length, 2);
+        assert.equal($('article#original div#template figure a[href="shown-content.html"] img').length, 1);
         assert.equal($('article#original div#template figure figcaption').length, 1);
         assert.equal($('article#original div#template figure figcaption a[href="shown-content.html"]').length, 1);
         assert.include($('article#original div#template figure figcaption a[href="shown-content.html"]').html(), 
@@ -412,17 +473,25 @@ describe('rebased teaser, content', function() {
         
         assert.equal($('article#original div#template2').length, 1);
         assert.equal($('article#original div#template2 figure').length, 1);
-        assert.equal($('article#original div#template2 figure a[href="http://dest.url"] img[src="imgz/shown-content-image.jpg"]').length, 1);
+        assert.equal($('article#original div#template2 figure a[href="http://dest.url"]').length, 2);
+        assert.equal($('article#original div#template2 figure a[href="http://dest.url"] img').length, 1);
         assert.equal($('article#original div#template2 figure figcaption').length, 1);
         assert.equal($('article#original div#template2 figure figcaption a[href="http://dest.url"]').length, 1);
         assert.include($('article#original div#template2 figure figcaption a[href="http://dest.url"]').html(), 
             "Shown Content - solely for use of show-content.html");
-            
+    };
+
+    it('should render show-content', async function() {
+        let { html, $ } = await akasha.readRenderedFile(config_rebase, 'show-content.html');
+        checkShowContent(html, $);
     });
 
+    it('should render show-content with Liquid', async function() {
+        let { html, $ } = await akasha.readRenderedFile(config_rebase, 'show-content-liquid.html');
+        checkShowContent(html, $);
+    });
 
-    it('should process anchor cleanups', async function() {
-        let { html, $ } = await akasha.readRenderedFile(config_rebase, 'anchor-cleanups.html');
+    const checkAnchorCleanups = (html, $) => {
 
         assert.exists(html, 'result exists');
         assert.isString(html, 'result isString');
@@ -450,14 +519,21 @@ describe('rebased teaser, content', function() {
         assert.equal($('article#original a#img-causes-no-modify').html(), '<img src="http://external.url/foo.jpg">');
         assert.equal($('article#original a#img-causes-no-modify img[src="http://external.url/foo.jpg"]').length, 1);
 
-        assert.equal($('article#original a#img-causes-no-modify').html(), '<img src="http://external.url/foo.jpg">');
-        assert.equal($('article#original a#img-causes-no-modify img[src="http://external.url/foo.jpg"]').length, 1);
-
         assert.equal($('article#original a#link-to-hier').attr('href'), 'hier/index.html');
         assert.equal($('article#original a#link-to-hier').html(), 'Top index item');
         assert.equal($('article#original a#link-to-hier-dir1').attr('href'), 'hier/dir1/index.html');
         assert.equal($('article#original a#link-to-hier-dir1').html(), 'dir1 index item');
 
+    };
+
+    it('should process anchor cleanups', async function() {
+        let { html, $ } = await akasha.readRenderedFile(config_rebase, 'anchor-cleanups.html');
+        checkAnchorCleanups(html, $);
+    });
+
+    it('should process anchor cleanups with Liquid', async function() {
+        let { html, $ } = await akasha.readRenderedFile(config_rebase, 'anchor-cleanups-liquid.html');
+        checkAnchorCleanups(html, $);
     });
 
     describe('/mounted/img2resize.html', function() {

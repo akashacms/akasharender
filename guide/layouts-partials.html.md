@@ -64,6 +64,15 @@ Substitution type | Description
 
 The choice between the two depends on the variable you're substituting, and your purpose with that variable.  In the case of `content`, we have HTML that we want to appear as it is with no encoding.  For other variables shown in this template, it's expected they'll be simple text values and that HTML were in the variable would be an accident.
 
+With Liquid there is one kind of substitution, and you get the difference between encoded and unencoded like so:
+
+Substitution type | Description
+------------------|------------------
+`{{ value | escape }}` | Substitutes the content of the named variable, encoding any HTML as HTML entities
+`{{ value }}` | Substitutes the content of the named variable, with no encoding
+
+The difference is in using the `escape` filter.  Liquid has a large number of available filters for various purposes.
+
 The most important bit is where the `content` variable is substituted.  The idea is to surround the `content` with the desired page layout, navigational widgets, etc.
 
 # Partials in AkashaCMS

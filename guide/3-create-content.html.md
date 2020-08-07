@@ -42,6 +42,7 @@ Type | Extension | Description
 Markdown | `example.html.md` | A Markdown file, that produces HTML.
 AsciiDoc | `example.html.adoc` | An AsciiDoc file, that produces HTML.
 EJS | `example.html.ejs` or `example.php.ejs` | for HTML, or PHP, with EJS markup, that produces HTML or PHP.
+Liquid | `example.html.liquid` | For HTML, with Liquid markup, produces HTML
 LESS | `example.css.less` | A LESS file, that produces CSS.
 JSON | `example.html.json` | A JSON file, with metadata header, producing HTML
 Fallback | any unmatched file | copied with no processing.
@@ -54,7 +55,7 @@ Renderers are organized with a classification hierarchy.  That let's a Renderer 
 
 ## HTMLRenderer capabilities
 
-The HTMLRenderer handles rendering to HTML, as the name implies, and is used for `example.html.md` and `example.html.adoc` and `example.html.ejs` and `example.php.ejs`.  This Renderer class adds extensive capabilities in formatting content with page layouts, using partials (content snippets), and a custom tag processing engine called Mahabhuta.  With HTMLRenderer, complete control over page layout and structure is possible.
+The HTMLRenderer handles rendering to HTML, as the name implies, and is used for `example.html.md` and `example.html.adoc` and `example.html.ejs` and `example.php.ejs` and `example.html.liquid`.  This Renderer class adds extensive capabilities in formatting content with page layouts, using partials (content snippets), and a custom tag processing engine called Mahabhuta.  With HTMLRenderer, complete control over page layout and structure is possible.
 
 ### Special considerations for PHP
 
@@ -186,6 +187,7 @@ Support for metadata variables in renderer
 
 * MarkdownRenderer: No
 * EJSRenderer: Can substitute variables into rendered output
+* LiquidRenderer: Can substitute variables into rendered output
 
 ### Page Layouts
 
@@ -205,6 +207,19 @@ content
 ```
 
 The template filename uses the same sort of file extension we use for content files.  The same Renderer objects are used to render the template.  As it currently stands it's expected content authors will write files in Markdown, while the website designer will design page layouts in HTML using EJS layout templates.
+
+If you want to use Liquid templates:
+
+```
+---
+..
+layout: page.html.liquid
+..
+---
+content
+```
+
+This lets you use both EJS and Liquid templates.  At this time Liquid templates are not supported in Partials.
 
 Markdown is easy to create and edit, making it suitable for the writer.  But it doesn't support the HTML details required by the website designer.  Hence the designer needs precise control over the HTML, while the writer simply needs support for their writing.
 
