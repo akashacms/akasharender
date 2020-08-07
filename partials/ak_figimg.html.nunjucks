@@ -1,0 +1,13 @@
+<figure {% if id %}id="{{ id | escape }}"{% endif %}
+    {% if clazz %}class="{{ clazz | escape }}"{% endif %}
+    {% if width %}width="{{ width | escape }}"{% endif %}
+    {% if style %}style="{{ style | escape }}"{% endif %}>
+        {% if dest %}<a href="{{ dest | escape }}">{% endif %}
+        <img src="{{ href | escape }}"
+            {% if resizewidth %}resize-width="{{ resizewidth | escape }}"{% endif %}
+            {% if resizeto %}resize-to="{{ resizeto | escape }}"{% endif %} />
+        {% if dest %}</a>{% endif %}
+        {% if caption %}
+            <figcaption>{{ caption }}</figcaption>
+        {% endif %}
+</figure>

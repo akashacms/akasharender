@@ -1,0 +1,6 @@
+<span  {% if id %}id="{{ id | escape }}"{% endif %}
+    {% if clazz %}class="{{ clazz | escape }}"{% endif %}
+    {% if style %}style="{{ style | escape }}"{% endif %}>
+    <a href="{% if dest %}{{ dest | escape }}{% else %}{{ href | escape }}{% endif %}">
+        <strong>{{ document.metadata.title | escape }}</strong></a>
+</span>
