@@ -1,6 +1,6 @@
 {
   "name": "akasharender",
-  "version": "0.7.20",
+  "version": "0.7.21",
   "description": "Rendering support for generating static HTML websites or EPUB eBooks",
   "keywords": [
     "content management system",
@@ -45,6 +45,7 @@
     "liquid": "^4.1.0",
     "mahabhuta": "0.7.2",
     "markdown-it": "^8.4.0",
+    "nunjucks": "^3.2.2",
     "oembetter": "^0.1.20",
     "relative": "^3.0.2",
     "rss": "^1.2.2",

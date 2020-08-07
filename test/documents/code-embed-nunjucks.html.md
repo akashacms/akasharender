@@ -1,5 +1,5 @@
 ---
-layout: default-once.html.liquid
+layout: default-once.html.nunjucks
 title: Code embed
 ---
 

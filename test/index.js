@@ -232,6 +232,11 @@ describe('teaser, content', function() {
         checkBodyClass(html, $);
     });
 
+    it('should find added body class values with Nunjucks', async function() {
+        let { html, $ } = await akasha.readRenderedFile(config, 'body-class-nunjucks.html');
+        checkBodyClass(html, $);
+    });
+
     const checkFigImg = (html, $) => {
 
         assert.exists(html, 'result exists');
@@ -254,6 +259,11 @@ describe('teaser, content', function() {
 
     it('should render fig-img with Liquid', async function() {
         let { html, $ } = await akasha.readRenderedFile(config, 'fig-img-liquid.html');
+        checkFigImg(html, $);
+    });
+
+    it('should render fig-img with Nunjucks', async function() {
+        let { html, $ } = await akasha.readRenderedFile(config, 'fig-img-nunjucks.html');
         checkFigImg(html, $);
     });
 
@@ -295,6 +305,11 @@ describe('teaser, content', function() {
         checkIMG2FigIMG(html, $);
     });
 
+    it('should find figure/image pair for img with Nunjucks', async function() {
+        let { html, $ } = await akasha.readRenderedFile(config, 'img2figimg-nunjucks.html');
+        checkIMG2FigIMG(html, $);
+    });
+
     const checkImg2Resize = async (html, $, config) => {
         assert.exists(html, 'result exists');
         assert.isString(html, 'result isString');
@@ -328,7 +343,7 @@ describe('teaser, content', function() {
         assert.notExists($('body #png2jpg').attr('resize-to'));
 
         // console.log(config.plugin('akashacms-builtin').resizequeue);
-        assert.equal(config.plugin('akashacms-builtin').resizequeue.length, 18);
+        assert.equal(config.plugin('akashacms-builtin').resizequeue.length, 24);
         assert.deepEqual(config.plugin('akashacms-builtin').resizequeue, [
             {
                 src: '../../imgdir/img/tesla-nema.jpg',
@@ -346,7 +361,7 @@ describe('teaser, content', function() {
                 "docPath": "img2resize-liquid.html",
                 "resizeto": undefined,
                 "resizewidth": "50",
-                "src": "img/Human-Skeleton.jpg",
+                "src": "img/Human-Skeleton.jpg"
             },
             {
                 "docPath": "img2resize-liquid.html",
@@ -374,6 +389,42 @@ describe('teaser, content', function() {
             },
             {
                 "docPath": "img2resize-liquid.html",
+                "resizeto": "/img/Human-Skeleton-mounted-100.jpg",
+                "resizewidth": "100",
+                "src": "/mounted/img/Human-Skeleton.jpg"
+            },
+            {
+                "docPath": "img2resize-nunjucks.html",
+                "resizeto": undefined,
+                "resizewidth": "50",
+                "src": "img/Human-Skeleton.jpg",
+            },
+            {
+                "docPath": "img2resize-nunjucks.html",
+                "resizeto": "img/Human-Skeleton-150.jpg",
+                "resizewidth": "150",
+                "src": "img/Human-Skeleton.jpg"
+            },
+            {
+                "docPath": "img2resize-nunjucks.html",
+                "resizeto": "img/Human-Skeleton-250-figure.jpg",
+                "resizewidth": "250",
+                "src": "img/Human-Skeleton.jpg"
+            },
+            {
+                "docPath": "img2resize-nunjucks.html",
+                "resizeto": undefined,
+                "resizewidth": "50",
+                "src": "rss_button.png"
+            },
+            {
+                "docPath": "img2resize-nunjucks.html",
+                "resizeto": "rss_button.jpg",
+                "resizewidth": "50",
+                "src": "rss_button.png"
+            },
+            {
+                "docPath": "img2resize-nunjucks.html",
                 "resizeto": "/img/Human-Skeleton-mounted-100.jpg",
                 "resizewidth": "100",
                 "src": "/mounted/img/Human-Skeleton.jpg"
@@ -466,6 +517,11 @@ describe('teaser, content', function() {
         await checkImg2Resize(html, $, config);
     });
 
+    it('should resize img with Nunjucks', async function() {
+        let { html, $ } = await akasha.readRenderedFile(config, 'img2resize-nunjucks.html');
+        await checkImg2Resize(html, $, config);
+    });
+
     const checkShowContent = (html, $) => {
         assert.exists(html, 'result exists');
         assert.isString(html, 'result isString');
@@ -551,6 +607,11 @@ describe('teaser, content', function() {
 
     it('should process anchor cleanups with Liquid', async function() {
         let { html, $ } = await akasha.readRenderedFile(config, 'anchor-cleanups-liquid.html');
+        checkAnchorCleanups(html, $);
+    });
+
+    it('should process anchor cleanups with Nunjucks', async function() {
+        let { html, $ } = await akasha.readRenderedFile(config, 'anchor-cleanups-nunjucks.html');
         checkAnchorCleanups(html, $);
     });
 
@@ -855,6 +916,11 @@ describe('JSON document', function() {
         let { html, $ } = await akasha.readRenderedFile(config, 'json-data-liquid.html');
         checkJSONdata(html, $);
     });
+
+    it('should render JSON document with Nunjucks', async function() {
+        let { html, $ } = await akasha.readRenderedFile(config, 'json-data-nunjucks.html');
+        checkJSONdata(html, $);
+    });
 });
 
 describe('AsciiDoc document', function() {
@@ -877,6 +943,11 @@ describe('AsciiDoc document', function() {
 
     it('should render AsciiDoc document with Liquid', async function() {
         let { html, $ } = await akasha.readRenderedFile(config, 'asciidoctor-liquid.html');
+        checkAsciidoc(html, $);
+    });
+
+    it('should render AsciiDoc document with Nunjucks', async function() {
+        let { html, $ } = await akasha.readRenderedFile(config, 'asciidoctor-nunjucks.html');
         checkAsciidoc(html, $);
     });
 });
@@ -910,13 +981,16 @@ describe('code-embed element', function() {
 
     it('should render code-embed document', async function() {
         let { html, $ } = await akasha.readRenderedFile(config, 'code-embed.html');
-
         checkCodeEmbed(html, $);
     });
 
     it('should render code-embed document rendered with Liquid', async function() {
         let { html, $ } = await akasha.readRenderedFile(config, 'code-embed-liquid.html');
+        checkCodeEmbed(html, $);
+    });
 
+    it('should render code-embed document rendered with Nunjucks', async function() {
+        let { html, $ } = await akasha.readRenderedFile(config, 'code-embed-nunjucks.html');
         checkCodeEmbed(html, $);
     });
 });

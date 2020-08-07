@@ -30,6 +30,7 @@ const globfs = require('globfs');
 const render = require('./render');
 // const akasha = require('./index');
 const cache  = require('./caching');
+const mahabhuta = require('mahabhuta');
 
 const _document_basedir = Symbol('basedir');
 const _document_mountedOn = Symbol('mountedOn');
@@ -204,9 +205,14 @@ exports.Document = class Document {
         );
         // console.log(`before maharun `);
         if (document.renderer.doMahabhuta(document.fullpath)) {
-            docrendered = await document.renderer.maharun(
-                docrendered, document.metadata, config.mahafuncs
-            );
+
+            if (document.metadata.config.mahabhutaConfig) {
+                mahabhuta.config(document.metadata.config.mahabhutaConfig);
+            }
+            docrendered = await mahabhuta.processAsync(docrendered, document.metadata, config.mahafuncs);
+            // docrendered = await document.renderer.maharun(
+            //     docrendered, document.metadata, config.mahafuncs
+            // );
         }
         // console.log(`before renderForLayout `);
         docrendered = await document.renderer.renderForLayout(
