@@ -321,152 +321,162 @@ describe('rebased teaser, content', function() {
 
         // console.log(config.plugin('akashacms-builtin').resizequeue);
         assert.equal(config.plugin('akashacms-builtin').resizequeue.length, 24);
-        assert.deepEqual(config.plugin('akashacms-builtin').resizequeue, [
-            {
-                src: '../../imgdir/img/tesla-nema.jpg',
-                resizewidth: '200',
-                resizeto: 'img/tesla-nema.jpg',
-                docPath: 'hier/dir1/dir2/nested-img-resize.html'
-            },
-            {
-                src: '../../imgdir/img/tesla-nema.jpg',
-                resizewidth: '200',
-                resizeto: 'img/tesla-nema.jpg',
-                docPath: 'hier/dir1/dir2/nested-img-resize.html'
-            },
-            {
-                "docPath": "img2resize-liquid.html",
-                "resizeto": undefined,
-                "resizewidth": "50",
-                "src": "img/Human-Skeleton.jpg"
-            },
-            {
-                "docPath": "img2resize-liquid.html",
-                "resizeto": "img/Human-Skeleton-150.jpg",
-                "resizewidth": "150",
-                "src": "img/Human-Skeleton.jpg"
-            },
-            {
-                "docPath": "img2resize-liquid.html",
-                "resizeto": "img/Human-Skeleton-250-figure.jpg",
-                "resizewidth": "250",
-                "src": "img/Human-Skeleton.jpg"
-            },
-            {
-                "docPath": "img2resize-liquid.html",
-                "resizeto": undefined,
-                "resizewidth": "50",
-                "src": "rss_button.png"
-            },
-            {
-                "docPath": "img2resize-liquid.html",
-                "resizeto": "rss_button.jpg",
-                "resizewidth": "50",
-                "src": "rss_button.png"
-            },
-            {
-                "docPath": "img2resize-liquid.html",
-                "resizeto": "/img/Human-Skeleton-mounted-100.jpg",
-                "resizewidth": "100",
-                "src": "/mounted/img/Human-Skeleton.jpg"
-            },
-            {
-                "docPath": "img2resize-nunjucks.html",
-                "resizeto": undefined,
-                "resizewidth": "50",
-                "src": "img/Human-Skeleton.jpg",
-            },
-            {
-                "docPath": "img2resize-nunjucks.html",
-                "resizeto": "img/Human-Skeleton-150.jpg",
-                "resizewidth": "150",
-                "src": "img/Human-Skeleton.jpg"
-            },
-            {
-                "docPath": "img2resize-nunjucks.html",
-                "resizeto": "img/Human-Skeleton-250-figure.jpg",
-                "resizewidth": "250",
-                "src": "img/Human-Skeleton.jpg"
-            },
-            {
-                "docPath": "img2resize-nunjucks.html",
-                "resizeto": undefined,
-                "resizewidth": "50",
-                "src": "rss_button.png"
-            },
-            {
-                "docPath": "img2resize-nunjucks.html",
-                "resizeto": "rss_button.jpg",
-                "resizewidth": "50",
-                "src": "rss_button.png"
-            },
-            {
-                "docPath": "img2resize-nunjucks.html",
-                "resizeto": "/img/Human-Skeleton-mounted-100.jpg",
-                "resizewidth": "100",
-                "src": "/mounted/img/Human-Skeleton.jpg"
-            },
-            {
-                src: 'img/Human-Skeleton.jpg',
-                resizewidth: '50',
-                resizeto: undefined,
-                docPath: "img2resize.html"
-            },
-            {
-                src: 'img/Human-Skeleton.jpg',
-                resizewidth: '150',
-                resizeto: 'img/Human-Skeleton-150.jpg',
-                docPath: "img2resize.html"
-            },
-            {
-                src: 'img/Human-Skeleton.jpg',
-                resizewidth: '250',
-                resizeto: 'img/Human-Skeleton-250-figure.jpg',
-                docPath: "img2resize.html"
-            },
-            {
-                resizeto: undefined,
-                resizewidth: "50",
-                src: "rss_button.png",
-                docPath: "img2resize.html"
-            },
-            {
-                resizeto: "rss_button.jpg",
-                resizewidth: "50",
-                src: "rss_button.png",
-                docPath: "img2resize.html"
-            },
-            {
-              docPath: "img2resize.html",
-              resizeto: "/img/Human-Skeleton-mounted-100.jpg",
-              resizewidth: "100",
-              src: "/mounted/img/Human-Skeleton.jpg"
-            },
-            {
-              "docPath": "mounted/img2resize.html",
-              "resizeto": "img/Human-Skeleton-150.jpg",
-              "resizewidth": "150",
-              "src": "img/Human-Skeleton.jpg",
-            },
-            {
-              "docPath": "mounted/img2resize.html",
-              "resizeto": "img/Human-Skeleton-250-figure.jpg",
-              "resizewidth": "250",
-              "src": "img/Human-Skeleton.jpg",
-            },
-            {
-              "docPath": "mounted/img2resize.html",
-              "resizeto": "img/Human-Skeleton-mounted-100.jpg",
-              "resizewidth": "100",
-              "src": "/mounted/img/Human-Skeleton.jpg",
-            },
-            {
-              "docPath": "mounted/img2resize.html",
-              "resizeto": "/img/Human-Skeleton-from-mounted-to-img-100.jpg",
-              "resizewidth": "100",
-              "src": "/mounted/img/Human-Skeleton.jpg",
+        const queueContains = (queue, item) => {
+            let found = false;
+            for (let _item of queue) {
+                if (_item.src === item.src
+                 && _item.resizewidth === item.resizewidth
+                 && _item.resizeto === item.resizeto
+                 && _item.docPath === item.docPath) {
+                    found = true;
+                }
             }
-        ]);
+            return found;
+        };
+        assert.isTrue(queueContains(config.plugin('akashacms-builtin').resizequeue, {
+            src: '../../imgdir/img/tesla-nema.jpg',
+            resizewidth: '200',
+            resizeto: 'img/tesla-nema.jpg',
+            docPath: 'hier/dir1/dir2/nested-img-resize.html'
+        }));
+        assert.isTrue(queueContains(config.plugin('akashacms-builtin').resizequeue, {
+            src: '../../imgdir/img/tesla-nema.jpg',
+            resizewidth: '200',
+            resizeto: 'img/tesla-nema.jpg',
+            docPath: 'hier/dir1/dir2/nested-img-resize.html'
+        }));
+        assert.isTrue(queueContains(config.plugin('akashacms-builtin').resizequeue, {
+            "docPath": "img2resize-liquid.html",
+            "resizeto": undefined,
+            "resizewidth": "50",
+            "src": "img/Human-Skeleton.jpg"
+        }));
+        assert.isTrue(queueContains(config.plugin('akashacms-builtin').resizequeue, {
+            "docPath": "img2resize-liquid.html",
+            "resizeto": "img/Human-Skeleton-150.jpg",
+            "resizewidth": "150",
+            "src": "img/Human-Skeleton.jpg"
+        }));
+        assert.isTrue(queueContains(config.plugin('akashacms-builtin').resizequeue, {
+            "docPath": "img2resize-liquid.html",
+            "resizeto": "img/Human-Skeleton-250-figure.jpg",
+            "resizewidth": "250",
+            "src": "img/Human-Skeleton.jpg"
+        }));
+        assert.isTrue(queueContains(config.plugin('akashacms-builtin').resizequeue, {
+            "docPath": "img2resize-liquid.html",
+            "resizeto": undefined,
+            "resizewidth": "50",
+            "src": "rss_button.png"
+        }));
+        assert.isTrue(queueContains(config.plugin('akashacms-builtin').resizequeue, {
+            "docPath": "img2resize-liquid.html",
+            "resizeto": "rss_button.jpg",
+            "resizewidth": "50",
+            "src": "rss_button.png"
+        }));
+        assert.isTrue(queueContains(config.plugin('akashacms-builtin').resizequeue, {
+            "docPath": "img2resize-liquid.html",
+            "resizeto": "/img/Human-Skeleton-mounted-100.jpg",
+            "resizewidth": "100",
+            "src": "/mounted/img/Human-Skeleton.jpg"
+        }));
+        assert.isTrue(queueContains(config.plugin('akashacms-builtin').resizequeue, {
+            "docPath": "img2resize-nunjucks.html",
+            "resizeto": undefined,
+            "resizewidth": "50",
+            "src": "img/Human-Skeleton.jpg",
+        }));
+        assert.isTrue(queueContains(config.plugin('akashacms-builtin').resizequeue, {
+            "docPath": "img2resize-nunjucks.html",
+            "resizeto": "img/Human-Skeleton-150.jpg",
+            "resizewidth": "150",
+            "src": "img/Human-Skeleton.jpg"
+        }));
+        assert.isTrue(queueContains(config.plugin('akashacms-builtin').resizequeue, {
+            "docPath": "img2resize-nunjucks.html",
+            "resizeto": "img/Human-Skeleton-250-figure.jpg",
+            "resizewidth": "250",
+            "src": "img/Human-Skeleton.jpg"
+        }));
+        assert.isTrue(queueContains(config.plugin('akashacms-builtin').resizequeue, {
+            "docPath": "img2resize-nunjucks.html",
+            "resizeto": undefined,
+            "resizewidth": "50",
+            "src": "rss_button.png"
+        }));
+        assert.isTrue(queueContains(config.plugin('akashacms-builtin').resizequeue, {
+            "docPath": "img2resize-nunjucks.html",
+            "resizeto": "rss_button.jpg",
+            "resizewidth": "50",
+            "src": "rss_button.png"
+        }));
+        assert.isTrue(queueContains(config.plugin('akashacms-builtin').resizequeue, {
+            "docPath": "img2resize-nunjucks.html",
+            "resizeto": "/img/Human-Skeleton-mounted-100.jpg",
+            "resizewidth": "100",
+            "src": "/mounted/img/Human-Skeleton.jpg"
+        }));
+        assert.isTrue(queueContains(config.plugin('akashacms-builtin').resizequeue, {
+            src: 'img/Human-Skeleton.jpg',
+            resizewidth: '50',
+            resizeto: undefined,
+            docPath: "img2resize.html"
+        }));
+        assert.isTrue(queueContains(config.plugin('akashacms-builtin').resizequeue, {
+            src: 'img/Human-Skeleton.jpg',
+            resizewidth: '150',
+            resizeto: 'img/Human-Skeleton-150.jpg',
+            docPath: "img2resize.html"
+        }));
+        assert.isTrue(queueContains(config.plugin('akashacms-builtin').resizequeue, {
+            src: 'img/Human-Skeleton.jpg',
+            resizewidth: '250',
+            resizeto: 'img/Human-Skeleton-250-figure.jpg',
+            docPath: "img2resize.html"
+        }));
+        assert.isTrue(queueContains(config.plugin('akashacms-builtin').resizequeue, {
+            resizeto: undefined,
+            resizewidth: "50",
+            src: "rss_button.png",
+            docPath: "img2resize.html"
+        }));
+        assert.isTrue(queueContains(config.plugin('akashacms-builtin').resizequeue, {
+            resizeto: "rss_button.jpg",
+            resizewidth: "50",
+            src: "rss_button.png",
+            docPath: "img2resize.html"
+        }));
+        assert.isTrue(queueContains(config.plugin('akashacms-builtin').resizequeue, {
+            docPath: "img2resize.html",
+            resizeto: "/img/Human-Skeleton-mounted-100.jpg",
+            resizewidth: "100",
+            src: "/mounted/img/Human-Skeleton.jpg"
+        }));
+        assert.isTrue(queueContains(config.plugin('akashacms-builtin').resizequeue, {
+            docPath: "mounted/img2resize.html",
+            resizeto: "img/Human-Skeleton-150.jpg",
+            resizewidth: "150",
+            src: "img/Human-Skeleton.jpg",
+        }));
+        assert.isTrue(queueContains(config.plugin('akashacms-builtin').resizequeue, {
+            "docPath": "mounted/img2resize.html",
+            "resizeto": "img/Human-Skeleton-250-figure.jpg",
+            "resizewidth": "250",
+            "src": "img/Human-Skeleton.jpg",
+        }));
+        assert.isTrue(queueContains(config.plugin('akashacms-builtin').resizequeue, {
+            "docPath": "mounted/img2resize.html",
+            "resizeto": "img/Human-Skeleton-mounted-100.jpg",
+            "resizewidth": "100",
+            "src": "/mounted/img/Human-Skeleton.jpg",
+        }));
+        assert.isTrue(queueContains(config.plugin('akashacms-builtin').resizequeue, {
+            "docPath": "mounted/img2resize.html",
+            "resizeto": "/img/Human-Skeleton-from-mounted-to-img-100.jpg",
+            "resizewidth": "100",
+            "src": "/mounted/img/Human-Skeleton.jpg",
+        }));
 
         let size50 = await sizeOf('out-rebased/img/Human-Skeleton.jpg');
         assert.equal(size50.width, 50);
