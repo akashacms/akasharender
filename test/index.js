@@ -237,6 +237,11 @@ describe('teaser, content', function() {
         checkBodyClass(html, $);
     });
 
+    it('should find added body class values with Handlebars', async function() {
+        let { html, $ } = await akasha.readRenderedFile(config, 'body-class-handlebars.html');
+        checkBodyClass(html, $);
+    });
+
     const checkFigImg = (html, $) => {
 
         assert.exists(html, 'result exists');
@@ -264,6 +269,11 @@ describe('teaser, content', function() {
 
     it('should render fig-img with Nunjucks', async function() {
         let { html, $ } = await akasha.readRenderedFile(config, 'fig-img-nunjucks.html');
+        checkFigImg(html, $);
+    });
+
+    it('should render fig-img with Handlebars', async function() {
+        let { html, $ } = await akasha.readRenderedFile(config, 'fig-img-handlebars.html');
         checkFigImg(html, $);
     });
 
@@ -310,6 +320,11 @@ describe('teaser, content', function() {
         checkIMG2FigIMG(html, $);
     });
 
+    it('should find figure/image pair for img with Handlebars', async function() {
+        let { html, $ } = await akasha.readRenderedFile(config, 'img2figimg-handlebars.html');
+        checkIMG2FigIMG(html, $);
+    });
+
     const checkImg2Resize = async (html, $, config) => {
         assert.exists(html, 'result exists');
         assert.isString(html, 'result isString');
@@ -343,7 +358,7 @@ describe('teaser, content', function() {
         assert.notExists($('body #png2jpg').attr('resize-to'));
 
         // console.log(config.plugin('akashacms-builtin').resizequeue);
-        assert.equal(config.plugin('akashacms-builtin').resizequeue.length, 24);
+        assert.equal(config.plugin('akashacms-builtin').resizequeue.length, 30);
         const queueContains = (queue, item) => {
             let found = false;
             for (let _item of queue) {
@@ -368,6 +383,46 @@ describe('teaser, content', function() {
             resizeto: 'img/tesla-nema.jpg',
             docPath: 'hier/dir1/dir2/nested-img-resize.html'
         }));
+
+
+        assert.isTrue(queueContains(config.plugin('akashacms-builtin').resizequeue, {
+            "docPath": "img2resize-handlebars.html",
+            "resizeto": undefined,
+            "resizewidth": "50",
+            "src": "img/Human-Skeleton.jpg"
+        }));
+        assert.isTrue(queueContains(config.plugin('akashacms-builtin').resizequeue, {
+            "docPath": "img2resize-handlebars.html",
+            "resizeto": "img/Human-Skeleton-150.jpg",
+            "resizewidth": "150",
+            "src": "img/Human-Skeleton.jpg"
+        }));
+        assert.isTrue(queueContains(config.plugin('akashacms-builtin').resizequeue, {
+            "docPath": "img2resize-handlebars.html",
+            "resizeto": "img/Human-Skeleton-250-figure.jpg",
+            "resizewidth": "250",
+            "src": "img/Human-Skeleton.jpg"
+        }));
+        assert.isTrue(queueContains(config.plugin('akashacms-builtin').resizequeue, {
+            "docPath": "img2resize-handlebars.html",
+            "resizeto": undefined,
+            "resizewidth": "50",
+            "src": "rss_button.png"
+        }));
+        assert.isTrue(queueContains(config.plugin('akashacms-builtin').resizequeue, {
+            "docPath": "img2resize-handlebars.html",
+            "resizeto": "rss_button.jpg",
+            "resizewidth": "50",
+            "src": "rss_button.png"
+        }));
+        assert.isTrue(queueContains(config.plugin('akashacms-builtin').resizequeue, {
+            "docPath": "img2resize-handlebars.html",
+            "resizeto": "/img/Human-Skeleton-mounted-100.jpg",
+            "resizewidth": "100",
+            "src": "/mounted/img/Human-Skeleton.jpg"
+        }));
+
+
         assert.isTrue(queueContains(config.plugin('akashacms-builtin').resizequeue, {
             "docPath": "img2resize-liquid.html",
             "resizeto": undefined,
@@ -532,6 +587,11 @@ describe('teaser, content', function() {
         await checkImg2Resize(html, $, config);
     });
 
+    it('should resize img with Handlebars', async function() {
+        let { html, $ } = await akasha.readRenderedFile(config, 'img2resize-handlebars.html');
+        await checkImg2Resize(html, $, config);
+    });
+
     const checkShowContent = (html, $) => {
         assert.exists(html, 'result exists');
         assert.isString(html, 'result isString');
@@ -572,6 +632,16 @@ describe('teaser, content', function() {
 
     it('should render show-content with Liquid', async function() {
         let { html, $ } = await akasha.readRenderedFile(config, 'show-content-liquid.html');
+        checkShowContent(html, $);
+    });
+
+    it('should render show-content with Nunjucks', async function() {
+        let { html, $ } = await akasha.readRenderedFile(config, 'show-content-nunjucks.html');
+        checkShowContent(html, $);
+    });
+
+    it('should render show-content with Handlebars', async function() {
+        let { html, $ } = await akasha.readRenderedFile(config, 'show-content-handlebars.html');
         checkShowContent(html, $);
     });
 
@@ -622,6 +692,11 @@ describe('teaser, content', function() {
 
     it('should process anchor cleanups with Nunjucks', async function() {
         let { html, $ } = await akasha.readRenderedFile(config, 'anchor-cleanups-nunjucks.html');
+        checkAnchorCleanups(html, $);
+    });
+
+    it('should process anchor cleanups with Handlebars', async function() {
+        let { html, $ } = await akasha.readRenderedFile(config, 'anchor-cleanups-handlebars.html');
         checkAnchorCleanups(html, $);
     });
 
@@ -914,6 +989,11 @@ describe('Partials', function() {
         let { html, $ } = await akasha.readRenderedFile(config, 'partials-nunjucks.html');
         checkPartials(html, $);
     });
+
+    it('should render HTML and EJS partials with Handlebars', async function() {
+        let { html, $ } = await akasha.readRenderedFile(config, 'partials-handlebars.html');
+        checkPartials(html, $);
+    });
 });
 
 describe('JSON document', function() {
@@ -945,6 +1025,11 @@ describe('JSON document', function() {
         let { html, $ } = await akasha.readRenderedFile(config, 'json-data-nunjucks.html');
         checkJSONdata(html, $);
     });
+
+    it('should render JSON document with Handlebars', async function() {
+        let { html, $ } = await akasha.readRenderedFile(config, 'json-data-handlebars.html');
+        checkJSONdata(html, $);
+    });
 });
 
 describe('AsciiDoc document', function() {
@@ -972,6 +1057,11 @@ describe('AsciiDoc document', function() {
 
     it('should render AsciiDoc document with Nunjucks', async function() {
         let { html, $ } = await akasha.readRenderedFile(config, 'asciidoctor-nunjucks.html');
+        checkAsciidoc(html, $);
+    });
+
+    it('should render AsciiDoc document with Handlebars', async function() {
+        let { html, $ } = await akasha.readRenderedFile(config, 'asciidoctor-handlebars.html');
         checkAsciidoc(html, $);
     });
 });
@@ -1015,6 +1105,11 @@ describe('code-embed element', function() {
 
     it('should render code-embed document rendered with Nunjucks', async function() {
         let { html, $ } = await akasha.readRenderedFile(config, 'code-embed-nunjucks.html');
+        checkCodeEmbed(html, $);
+    });
+
+    it('should render code-embed document rendered with Handlebars', async function() {
+        let { html, $ } = await akasha.readRenderedFile(config, 'code-embed-handlebars.html');
         checkCodeEmbed(html, $);
     });
 });

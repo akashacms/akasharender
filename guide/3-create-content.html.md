@@ -44,6 +44,7 @@ AsciiDoc | `example.html.adoc` | An AsciiDoc file, that produces HTML.
 EJS | `example.html.ejs` or `example.php.ejs` | for HTML, or PHP, with EJS markup, that produces HTML or PHP.
 Liquid | `example.html.liquid` | For HTML, with Liquid markup, produces HTML
 Nunjucks | `example.html.njk` | For HTML, with Nunjucks markup, produces HTML
+Handlebars | `example.html.handlebars` | For HTML, with Handlebars markup, produces HTML
 LESS | `example.css.less` | A LESS file, that produces CSS.
 JSON | `example.html.json` | A JSON file, with metadata header, producing HTML
 Fallback | any unmatched file | copied with no processing.
@@ -190,6 +191,7 @@ Support for metadata variables in renderer
 * EJSRenderer: Can substitute variables into rendered output
 * LiquidRenderer: Can substitute variables into rendered output
 * NunjucksRenderer: Can substitute variables into rendered output
+* HandlebarsRenderer: Can substitute variables into rendered output
 
 ### Page Layouts
 
@@ -221,7 +223,7 @@ layout: page.html.liquid .. or page.html.njk .. etc
 content
 ```
 
-This lets you use both any supported template engine.  At this time Liquid and Nunjucks templates are not supported in Partials.
+This lets you use both any supported template engine.  
 
 Markdown is easy to create and edit, making it suitable for the writer.  But it doesn't support the HTML details required by the website designer.  Hence the designer needs precise control over the HTML, while the writer simply needs support for their writing.
 

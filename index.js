@@ -48,6 +48,7 @@ module.exports.AsciidocRenderer = require('./render-asciidoc');
 module.exports.EJSRenderer = require('./render-ejs');
 module.exports.LiquidRenderer = require('./render-liquid');
 module.exports.NunjucksRenderer = require('./render-nunjucks');
+module.exports.HandlebarsRenderer = require('./render-handlebars');
 module.exports.MarkdownRenderer = require('./render-md');
 module.exports.JSONRenderer = require('./render-json');
 module.exports.CSSLESSRenderer = require('./render-cssless');
@@ -887,6 +888,7 @@ module.exports.Configuration = class Configuration {
         this.registerRenderer(new module.exports.EJSRenderer());
         this.registerRenderer(new module.exports.LiquidRenderer());
         this.registerRenderer(new module.exports.NunjucksRenderer());
+        this.registerRenderer(new module.exports.HandlebarsRenderer());
         this.registerRenderer(new module.exports.CSSLESSRenderer());
         this.registerRenderer(new module.exports.JSONRenderer());
     }

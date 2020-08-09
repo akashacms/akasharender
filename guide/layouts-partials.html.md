@@ -73,6 +73,15 @@ Substitution type | Description
 
 The difference is in using the `escape` filter.  Liquid and Nunjucks both have a large number of available filters for various purposes.
 
+In Handlebars templates this happens a little differently:
+
+Substitution type | Description
+------------------|------------------
+`{{ value }}` | Substitutes the content of the named variable, encoding any HTML as HTML entities
+`{{{ value }}}` | Substitutes the content of the named variable, with no encoding
+
+To get raw output use three curly braces, otherwise you're encouraged to use two for the safety of encoded output.
+
 The most important bit is where the `content` variable is substituted.  The idea is to surround the `content` with the desired page layout, navigational widgets, etc.
 
 # Partials in AkashaCMS

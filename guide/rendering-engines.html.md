@@ -19,6 +19,7 @@ AsciidocRenderer | AsciiDoc | HTML | `example.html.adoc`
 EJSRenderer | EJS | HTML or PHP | `example.html.ejs` or `example.php.ejs`
 LiquidRenderer | Liquid | HTML | `example.html.liquid`
 NunjucksRenderer | Nunjucks | HTML | `example.html.njk`
+HandlebarsRenderer | Handlebars | HTML | `example.html.handlemars`
 CSSLESSRenderer | LESS | CSS | `example.css.less`
 JSONRenderer | JSON | HTML | `example.html.json` 
 
@@ -58,6 +59,7 @@ The Renderer class has a few simple methods for you to implement.  It may be use
 * EJSRenderer: [akashacms/akasharender/render-ejs.js](https://github.com/akashacms/akasharender/blob/master/render-ejs.js)
 * LiquidRenderer: [akashacms/akasharender/render-liquid.js](https://github.com/akashacms/akasharender/blob/master/render-liquid.js)
 * NunjucksRenderer: [akashacms/akasharender/render-nunjucks.js](https://github.com/akashacms/akasharender/blob/master/render-nunjucks.js)
+* HandlebarsRenderer: [akashacms/akasharender/render-handlebars.js](https://github.com/akashacms/akasharender/blob/master/render-handlebars.js)
 * MarkdownRenderer: [akashacms/akasharender/render-md.js](https://github.com/akashacms/akasharender/blob/master/render-md.js)
 * JSONRenderer: [akashacms/akasharender/render-json.js](https://github.com/akashacms/akasharender/blob/master/render-json.js)
 * HTMLRenderer: [akashacms/akasharender/HTMLRenderer.js](https://github.com/akashacms/akasharender/blob/master/HTMLRenderer.js)
