@@ -43,7 +43,7 @@ Markdown | `example.html.md` | A Markdown file, that produces HTML.
 AsciiDoc | `example.html.adoc` | An AsciiDoc file, that produces HTML.
 EJS | `example.html.ejs` or `example.php.ejs` | for HTML, or PHP, with EJS markup, that produces HTML or PHP.
 Liquid | `example.html.liquid` | For HTML, with Liquid markup, produces HTML
-Nunjucks | `example.html.nunjucks` | For HTML, with Nunjucks markup, produces HTML
+Nunjucks | `example.html.njk` | For HTML, with Nunjucks markup, produces HTML
 LESS | `example.css.less` | A LESS file, that produces CSS.
 JSON | `example.html.json` | A JSON file, with metadata header, producing HTML
 Fallback | any unmatched file | copied with no processing.
@@ -56,7 +56,7 @@ Renderers are organized with a classification hierarchy.  That let's a Renderer 
 
 ## HTMLRenderer capabilities
 
-The HTMLRenderer handles rendering to HTML, as the name implies, and is used for `example.html.md` and `example.html.adoc` and `example.html.ejs` and `example.php.ejs` and `example.html.liquid` and `example.html.nunjucks`.  This Renderer class adds extensive capabilities in formatting content with page layouts, using partials (content snippets), and a custom tag processing engine called Mahabhuta.  With HTMLRenderer, complete control over page layout and structure is possible.
+The HTMLRenderer handles rendering to HTML, as the name implies, and is used for `example.html.md` and `example.html.adoc` and `example.html.ejs` and `example.php.ejs` and `example.html.liquid` and `example.html.njk`.  This Renderer class adds extensive capabilities in formatting content with page layouts, using partials (content snippets), and a custom tag processing engine called Mahabhuta.  With HTMLRenderer, complete control over page layout and structure is possible.
 
 ### Special considerations for PHP
 
@@ -215,7 +215,7 @@ If you want to use other template engines:
 ```
 ---
 ..
-layout: page.html.liquid .. or page.html.nunjucks .. etc
+layout: page.html.liquid .. or page.html.njk .. etc
 ..
 ---
 content

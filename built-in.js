@@ -433,7 +433,7 @@ class FigureImage extends mahabhuta.CustomElement {
     get elementName() { return "fig-img"; }
     async process($element, metadata, dirty) {
         var template = $element.attr('template');
-        if (!template) template = 'ak_figimg.html.nunjucks';
+        if (!template) template = 'ak_figimg.html.njk';
         const href    = $element.attr('href');
         if (!href) throw new Error('fig-img must receive an href');
         const clazz   = $element.attr('class');
@@ -454,7 +454,7 @@ class img2figureImage extends mahabhuta.CustomElement {
         // console.log($element);
         const template = $element.attr('template') 
                 ? $element.attr('template')
-                :  "ak_figimg.html.nunjucks";
+                :  "ak_figimg.html.njk";
         const id = $element.attr('id');
         const clazz = $element.attr('class');
         const style = $element.attr('style');
@@ -539,7 +539,7 @@ class ShowContent extends mahabhuta.CustomElement {
     get elementName() { return "show-content"; }
     async process($element, metadata, dirty) {
         var template = $element.attr('template');
-        if (!template) template = 'ak_show-content.html.nunjucks';
+        if (!template) template = 'ak_show-content.html.njk';
         const href    = $element.attr('href');
         if (!href) return Promise.reject(new Error('show-content must receive an href'));
         const clazz   = $element.attr('class');

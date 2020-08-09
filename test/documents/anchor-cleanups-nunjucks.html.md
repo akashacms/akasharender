@@ -1,5 +1,5 @@
 ---
-layout: default-once.html.nunjucks
+layout: default-once.html.njk
 title: Anchor cleanups
 ---
 

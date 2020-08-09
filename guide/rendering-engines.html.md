@@ -18,7 +18,7 @@ MarkdownRenderer | Markdown | HTML | `example.html.md`
 AsciidocRenderer | AsciiDoc | HTML | `example.html.adoc`
 EJSRenderer | EJS | HTML or PHP | `example.html.ejs` or `example.php.ejs`
 LiquidRenderer | Liquid | HTML | `example.html.liquid`
-NunjucksRenderer | Nunjucks | HTML | `example.html.nunjucks`
+NunjucksRenderer | Nunjucks | HTML | `example.html.njk`
 CSSLESSRenderer | LESS | CSS | `example.css.less`
 JSONRenderer | JSON | HTML | `example.html.json` 
 

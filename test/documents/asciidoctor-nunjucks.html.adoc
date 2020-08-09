@@ -1,5 +1,5 @@
 ---
-layout: default-once.html.nunjucks
+layout: default-once.html.njk
 title: Asciidoctor Test
 note: Cobbled together from See http://asciidoctor.org documentation
 attributeName:  attribute Value From metaData LiNe

@@ -1,6 +1,6 @@
 ---
 title: Converting image to figure/image test
-layout: default-once.html.nunjucks
+layout: default-once.html.njk
 ---
 
 This image should be left alone
