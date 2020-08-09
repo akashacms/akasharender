@@ -1,0 +1,6 @@
+<span  {{#if id }}id="{{ id }}"{{/if}}
+    {{#if clazz }}class="{{ clazz }}"{{/if}}
+    {{#if style }}style="{{ style }}"{{/if}}>
+    <a href="{{#if dest }}{{ dest }}{{ else }}{{ href }}{{/if}}">
+        <strong>{{ document.metadata.title }}</strong></a>
+</span>

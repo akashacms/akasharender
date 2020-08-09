@@ -1,0 +1,13 @@
+<figure {{#if id }}id="{{ id }}"{{/if}}
+    {{#if clazz }}class="{{ clazz }}"{{/if}}
+    {{#if style }}style="{{ style }}"{{/if}}
+    {{#if width }}width="{{ width }}"{{/if}}>
+        {{#if dest }}<a href="{{ dest }}">{{/if}}
+        <img src="{{ href }}"
+            {{#if resizewidth }}resize-width="{{ resizewidth }}"{{/if}}
+            {{#if resizeto }}resize-to="{{ resizeto }}"{{/if}} />
+        {{#if dest }}</a>{{/if}}
+        {{#if caption }}
+            <figcaption>{{{ caption }}}</figcaption>
+        {{/if}}
+</figure>
