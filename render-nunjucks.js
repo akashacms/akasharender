@@ -40,6 +40,17 @@ module.exports = class NunjucksRenderer extends HTMLRenderer {
         }
     }
 
+    renderSync(text, metadata) {
+        try {
+            nunjucks.configure({ autoescape: false });
+            return nunjucks.renderString(text, metadata);
+        } catch(e) { 
+            var docpath = metadata.document ? metadata.document.path : "unknown";
+            var errstack = e.stack ? e.stack : e;
+            throw new Error(`Error with Nunjucks in file ${docpath} ${errstack}`);
+        }
+    }
+
     /**
      * We cannot allow PHP code to run through Mahabhuta.
      */
