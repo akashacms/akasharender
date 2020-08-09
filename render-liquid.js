@@ -27,7 +27,7 @@ const engine = new Liquid.Engine();
 
 module.exports = class LiquidRenderer extends HTMLRenderer {
     constructor() {
-        super(".html.liquid", /^.*\.html\.(liquid)$/);
+        super(".html.liquid", /^(.*\.html)\.(liquid)$/);
     }
 
     async render(text, metadata) {

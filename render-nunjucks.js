@@ -26,7 +26,7 @@ const nunjucks = require('nunjucks');
 
 module.exports = class NunjucksRenderer extends HTMLRenderer {
     constructor() {
-        super(".html.njk", /^.*\.html\.(njk)$/);
+        super(".html.njk", /^(.*\.html)\.(njk)$/);
     }
 
     async render(text, metadata) {

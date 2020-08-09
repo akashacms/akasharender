@@ -883,9 +883,8 @@ describe('Index Chain', function() {
 });
 
 describe('Partials', function() {
-    it('should render HTML and EJS partials', async function() {
-        let { html, $ } = await akasha.readRenderedFile(config, 'partials.html');
 
+    const checkPartials = (html, $) => {
         assert.exists(html, 'result exists');
         assert.isString(html, 'result isString');
 
@@ -899,6 +898,21 @@ describe('Partials', function() {
             'Hello, world!');
         assert.include($('article#original strong').html(), 
             'And some other');
+    };
+
+    it('should render HTML and EJS partials', async function() {
+        let { html, $ } = await akasha.readRenderedFile(config, 'partials.html');
+        checkPartials(html, $);
+    });
+
+    it('should render HTML and EJS partials with Liquid', async function() {
+        let { html, $ } = await akasha.readRenderedFile(config, 'partials-liquid.html');
+        checkPartials(html, $);
+    });
+
+    it('should render HTML and EJS partials with Nunjucks', async function() {
+        let { html, $ } = await akasha.readRenderedFile(config, 'partials-nunjucks.html');
+        checkPartials(html, $);
     });
 });
 
