@@ -105,22 +105,25 @@ program
 program
     .command('render <configFN>')
     .description('Render a site into output directory')
-    .action(async (configFN) => {
+    .option('--quiet', 'Do not print the rendering report')
+    .action(async (configFN, cmdObj) => {
         const akasha    = require('./index');
         // console.log(`render: akasha: ${util.inspect(akasha)}`);
         try {
             const config = require(path.join(process.cwd(), configFN));
             let results = await akasha.render(config);
-            for (let result of results) {
+            if (!cmdObj.quiet) {
+                for (let result of results) {
 
-                // TODO --- if AKASHARENDER_TRACE_RENDER then output tracing data
-                // TODO --- also set process.env.GLOBFS_TRACE=1
+                    // TODO --- if AKASHARENDER_TRACE_RENDER then output tracing data
+                    // TODO --- also set process.env.GLOBFS_TRACE=1
 
-                if (result.error) {
-                    console.error(result.error);
-                } else {
-                    console.log(result.result);
-                    // console.log(util.inspect(result.result));
+                    if (result.error) {
+                        console.error(result.error);
+                    } else {
+                        console.log(result.result);
+                        // console.log(util.inspect(result.result));
+                    }
                 }
             }
         } catch (e) {
