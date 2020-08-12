@@ -22,6 +22,7 @@
 'use strict';
 
 const program   = require('commander');
+const ghpages   = require('gh-pages');
 const path      = require('path');
 const util      = require('util');
 const filez     = require('./filez');
@@ -130,6 +131,67 @@ program
             console.error(`render command ERRORED ${e.stack}`);
         }
     });
+
+program
+    .command('gh-pages-publish <configFN>')
+    .description('Publish a site using Github Pages.  Takes the rendering destination, adds it into a branch, and pushes that to Github')
+    .option('-b, --branch <branchName>', 'The branch to use for publishing to Github')
+    .option('-r, --repo <repoURL>', 'The repository URL to use if it must differ from the URL of the local directory')
+    .option('--remote <remoteName>', 'The Git remote name to use if it must differ from "origin"')
+    .option('--tag <tag>', 'Any tag to add when pushing to Github')
+    .option('--message <message>', 'Any Git commit message')
+    .option('--name <name>', 'Github user name to use')
+    .option('--email <email>', 'Github user email to use')
+    .option('--nopush', 'Do not push to Github, only commit')
+    .action(async (configFN, cmdObj) => {
+        const akasha    = require('./index');
+        // console.log(`render: akasha: ${util.inspect(akasha)}`);
+        try {
+            const config = require(path.join(process.cwd(), configFN));
+
+            let options = {
+                dotfiles: true
+            };
+            if (cmdObj.branch) {
+                options.branch = cmdObj.branch;
+            }
+            if (cmdObj.repoURL) {
+                options.repo = cmdObj.repoURL;
+            }
+            if (cmdObj.remote) {
+                options.remote = cmdObj.remote;
+            }
+            if (cmdObj.tag) {
+                options.tag = cmdObj.tag;
+            }
+            if (cmdObj.message) {
+                options.message = cmdObj.message;
+            }
+            if (cmdObj.name || cmdObj.email) {
+                options.user = {};
+            }
+            if (cmdObj.name) {
+                options.user.name = cmdObj.name;
+            }
+            if (cmdObj.email) {
+                options.user.email = cmdObj.email;
+            }
+            if (cmdObj.nopush) {
+                options.push = false;
+            }
+
+            // console.log(`gh-pages-publish options ${config.renderDestination} cmdObj ${util.inspect(cmdObj)} options ${util.inspect(options)}`);
+
+            ghpages.publish(config.renderDestination, options, function(err) {
+
+                if (err) console.error(err);
+                else console.log('OK');
+            });
+        } catch (e) {
+            console.error(`gh-pages-publish command ERRORED ${e.stack}`);
+        }
+    });
+
 
 program
     .command('config <configFN>')

@@ -458,21 +458,3 @@ This example shows the steps.
 * JSON data
 * Format that data using a partial into HTML
 * That HTML used as input to the AkashaCMS rendering to produce the final page
-
-# The akasharender command
-
-When AkashaRender is installed, a new command is available:  `akasharender`
-
-```
-$ akasharender help
-copy-assets [config_file]
-	Copy assets into output directory
-	
-document [config_file] [document]
-	Show information about a document
-	
-render [config_file]
-	Render a site into output directory
-	
-
-```

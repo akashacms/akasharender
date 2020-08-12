@@ -34,6 +34,7 @@ noLogoImage: "true"
                 <li><a href="theming.html" id="theming"></a></li>
         </ol>
     </li>
+    <li><a href="command-line.html" id="command-line"></a></li>
     <li><a href="plugins-using.html" id="plugins-using"></a></li>
     <li><a href="plugins-writing.html" id="plugins-writing"></a></li>
     <li><a href="rendering-engines.html" id="rendering-engines"></a></li>
