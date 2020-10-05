@@ -19,20 +19,40 @@
 
  'use strict';
 
+// const util      = require('util');
 const path      = require('path');
 const HTMLRenderer = require('./HTMLRenderer');
 
 const nunjucks = require('nunjucks');
 
+const _nunjuck_env = Symbol('id');
+
 module.exports = class NunjucksRenderer extends HTMLRenderer {
     constructor() {
         super(".html.njk", /^(.*\.html)\.(njk)$/);
+        this[_nunjuck_env] = undefined;
+    }
+
+    njkenv(config) {
+        if (this[_nunjuck_env]) return this[_nunjuck_env];
+        // console.log(`njkenv layoutDirs ${util.inspect(config.layoutDirs)}`);
+        this[_nunjuck_env] = new nunjucks.Environment(
+            // Using watch=true requires installing chokidar
+            new nunjucks.FileSystemLoader(config.layoutDirs, { watch: false }),
+            {
+                autoescape: false
+            }
+        );
+        // console.log(`njkenv`, this[_nunjuck_env]);
+        return this[_nunjuck_env];
     }
 
     async render(text, metadata) {
         try {
-            nunjucks.configure({ autoescape: false });
-            return nunjucks.renderString(text, metadata);
+            let env = this.njkenv(metadata.config);
+            return env.renderString(text, metadata);
+            // nunjucks.configure({ autoescape: false });
+            // return nunjucks.renderString(text, metadata);
         } catch(e) { 
             var docpath = metadata.document ? metadata.document.path : "unknown";
             var errstack = e.stack ? e.stack : e;
@@ -42,8 +62,10 @@ module.exports = class NunjucksRenderer extends HTMLRenderer {
 
     renderSync(text, metadata) {
         try {
-            nunjucks.configure({ autoescape: false });
-            return nunjucks.renderString(text, metadata);
+            let env = this.njkenv(metadata.config);
+            return env.renderString(text, metadata);
+            // nunjucks.configure({ autoescape: false });
+            // return nunjucks.renderString(text, metadata);
         } catch(e) { 
             var docpath = metadata.document ? metadata.document.path : "unknown";
             var errstack = e.stack ? e.stack : e;

@@ -9,6 +9,7 @@ const config = new akasha.Configuration();
 config.rootURL("https://example.akashacms.com");
 config.configDir = __dirname;
 config.addLayoutsDir('layouts')
+      .addLayoutsDir('layouts-extra')
       .addDocumentsDir('documents')
       .addDocumentsDir({
           src: 'mounted',
@@ -954,6 +955,25 @@ describe('Index Chain', function() {
         assert.equal(chain.length, 1);
         assert.include(chain[0].foundPath, 'index.html');
         assert.include(chain[0].filename, '/index.html');
+    });
+});
+
+describe('Nunjucks Include', function() {
+    it('should render local Nunjucks include', async function() {
+        let { html, $ } = await akasha.readRenderedFile(config, 'inclnjk.html');
+
+        assert.equal($('#p1').length, 1);
+        assert.equal($('#p2').length, 1);
+    });
+
+    it('should render secondary Nunjucks include', async function() {
+        let { html, $ } = await akasha.readRenderedFile(config, 'inclnjk.html');
+
+        assert.equal($('#inclusion2').length, 1);
+        assert.equal($('#p3').length, 1);
+        assert.equal($('#p4').length, 1);
+        assert.equal($('#inclusion2 #p3').length, 1);
+        assert.equal($('#inclusion2 #p4').length, 1);
     });
 });
 
