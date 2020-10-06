@@ -57,6 +57,8 @@ module.exports = class BuiltInPlugin extends Plugin {
         } catch (e) {
             moduleDirname = __dirname;
         }
+        // Need this as the place to store Nunjucks macros and templates
+        config.addLayoutsDir(path.join(moduleDirname, 'layouts'));
         config.addPartialsDir(path.join(moduleDirname, 'partials'));
         // Do not need this here any longer because it is handled
         // in the Configuration constructor.  The idea is to put
@@ -207,9 +209,19 @@ function _doStylesheets(metadata, options) {
 
             let stylehref = style.href;
             let pHref = url.parse(style.href, true, true);
+            // console.log(`_doStylesheets process ${stylehref}`);
             if (!pHref.protocol && !pHref.hostname && !pHref.slashes) {
                 // This is a local URL
                 if (path.isAbsolute(stylehref)) {
+                    /* if (!metadata) {
+                        console.log(`_doStylesheets NO METADATA`);
+                    } else if (!metadata.document) {
+                        console.log(`_doStylesheets NO METADATA DOCUMENT`);
+                    } else if (!metadata.document.renderTo) {
+                        console.log(`_doStylesheets NO METADATA DOCUMENT RENDERTO`);
+                    } else {
+                        console.log(`_doStylesheets relative(/${metadata.document.renderTo}, ${stylehref}) = ${relative('/'+metadata.document.renderTo, stylehref)}`)
+                    } */
                     let newHref = relative(`/${metadata.document.renderTo}`, stylehref);
                     // console.log(`_doStylesheets absolute stylehref ${stylehref} in ${util.inspect(metadata.document)} rewrote to ${newHref}`);
                     stylehref = newHref;

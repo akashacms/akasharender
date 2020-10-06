@@ -58,9 +58,9 @@ describe('build site', function() {
 
 describe('stylesheets, javascripts', function() {
     describe('simple-style-javascript.html', function() {
-        it('should find stylesheets, javascript values', async function() {
-            let { html, $ } = await akasha.readRenderedFile(config, 'simple-style-javascript.html');
-    
+
+        checkStyleJS = (html, $) => {
+
             assert.exists(html, 'result exists');
             assert.isString(html, 'result isString');
     
@@ -75,12 +75,22 @@ describe('stylesheets, javascripts', function() {
             assert.equal($('body script[src="vendor/jquery/jquery.min.js"]').length, 1);
             assert.equal($('body script[type="no-known-lang"][src="vendor/popper.js/umd/popper.min.js"]').length, 1);
             assert.equal($('body script[src="vendor/bootstrap/js/bootstrap.min.js"]').length, 1);
+        };
+
+        it('should find stylesheets, javascript values', async function() {
+            let { html, $ } = await akasha.readRenderedFile(config, 'simple-style-javascript.html');
+            checkStyleJS(html, $);
+        });
+
+        it('should find stylesheets, javascript values IN njk-func', async function() {
+            let { html, $ } = await akasha.readRenderedFile(config, 'njk-func.html');
+            checkStyleJS(html, $);
         });
     });
     
     describe('metadata-style-javascript.html', function() {
-        it('should find stylesheets, javascript from metadata values', async function() {
-            let { html, $ } = await akasha.readRenderedFile(config, 'metadata-style-javascript.html');
+
+        checkMetadataStyleJS = (html, $) => {
 
             assert.exists(html, 'result exists');
             assert.isString(html, 'result isString');
@@ -96,11 +106,45 @@ describe('stylesheets, javascripts', function() {
             assert.equal($('body script[src="vender/metadata-js-add-bottom.js"]').length, 1);
             assert.equal($('body script[type="no-known-lang"][src="vender/metadata-js-with-lang-add-bottom.js"]').length, 1);
             assert.equal($('body script:contains("alert(\'added to bottom from metadata\')")').length, 1);
+        };
+
+        it('should find stylesheets, javascript from metadata values', async function() {
+            let { html, $ } = await akasha.readRenderedFile(config, 'metadata-style-javascript.html');
+            checkMetadataStyleJS(html, $);
+        });
+
+        it('should find stylesheets, javascript from metadata values IN njk-func.html', async function() {
+            let { html, $ } = await akasha.readRenderedFile(config, 'njk-func.html');
+            checkMetadataStyleJS(html, $);
         });
     });
 });
 
 describe('header metadata', function() {
+
+    let checkRSSHeaderMeta = (html, $) => {
+        assert.equal($('head link[rel="alternate"][type="application/rss+xml"][href="rss-for-header.xml"]').length, 1);
+    };
+
+    let checkExternalStylesheet = (html, $) => {
+        assert.equal($('head link[rel="stylesheet"][type="text/css"][href="http://external.site/foo.css"]').length, 1);
+    };
+
+    let checkDNSPrefetch = (html, $) => {
+        assert.equal($('head meta[http-equiv="x-dns-prefetch-control"][content="we must have control"]').length, 1);
+        assert.equal($('head link[rel="dns-prefetch"][href="foo1.com"]').length, 1);
+        assert.equal($('head link[rel="dns-prefetch"][href="foo2.com"]').length, 1);
+        assert.equal($('head link[rel="dns-prefetch"][href="foo3.com"]').length, 1);
+    };
+
+    let checkSiteVerification = (html, $) => {
+        assert.equal($('head meta[name="google-site-verification"][content="We are good"]').length, 1);;
+    };
+
+    let checkXMLSitemap = (html, $) => {
+        assert.equal($('head link[rel="sitemap"][type="application/xml"][title="Sitemap"][href="sitemap.xml"]').length, 1);
+        assert.equal($('head link[rel="sitemap"][type="application/xml"][title="Foo Bar Sitemap"][href="foo-bar-sitemap.xml"]').length, 1);
+    };
 
     describe('/index.html', function() {
         let html;
@@ -118,28 +162,61 @@ describe('header metadata', function() {
         });
 
         it('should find RSS header meta', async function() {
-            assert.equal($('head link[rel="alternate"][type="application/rss+xml"][href="rss-for-header.xml"]').length, 1);
+            checkRSSHeaderMeta(html, $);
         });
 
         it('should find external stylesheet', async function() {
-            assert.equal($('head link[rel="stylesheet"][type="text/css"][href="http://external.site/foo.css"]').length, 1);
+            checkExternalStylesheet(html, $);
         });
     
         it('should find dns-prefetch values', async function() {
-            assert.equal($('head meta[http-equiv="x-dns-prefetch-control"][content="we must have control"]').length, 1);
-            assert.equal($('head link[rel="dns-prefetch"][href="foo1.com"]').length, 1);
-            assert.equal($('head link[rel="dns-prefetch"][href="foo2.com"]').length, 1);
-            assert.equal($('head link[rel="dns-prefetch"][href="foo3.com"]').length, 1);
+            checkDNSPrefetch(html, $);
         });
 
         it('should find site-verification values', async function() {
-            assert.equal($('head meta[name="google-site-verification"][content="We are good"]').length, 1);
+            checkSiteVerification(html, $);
         });
 
         it('should find xml-sitemap values', async function() {
-            assert.equal($('head link[rel="sitemap"][type="application/xml"][title="Sitemap"][href="sitemap.xml"]').length, 1);
-            assert.equal($('head link[rel="sitemap"][type="application/xml"][title="Foo Bar Sitemap"][href="foo-bar-sitemap.xml"]').length, 1);
+            checkXMLSitemap(html, $);
         });
+    });
+
+    describe('/njk-func.html', function() {
+        let html;
+        let $;
+
+        before(async function() {
+            let results = await akasha.readRenderedFile(config, 'njk-func.html');
+            html = results.html;
+            $ = results.$;
+        });
+
+        it('should read in correctly', function() {
+            assert.exists(html, 'result exists');
+            assert.isString(html, 'result isString');
+        });
+
+        it('should find RSS header meta', async function() {
+            checkRSSHeaderMeta(html, $);
+        });
+
+        it('should find external stylesheet', async function() {
+            checkExternalStylesheet(html, $);
+        });
+    
+        it('should find dns-prefetch values', async function() {
+            checkDNSPrefetch(html, $);
+        });
+
+        it('should find site-verification values', async function() {
+            checkSiteVerification(html, $);
+        });
+
+        it('should find xml-sitemap values', async function() {
+            checkXMLSitemap(html, $);
+        });
+
     });
 
     describe('/hier/dir1/dir2/nested-anchor.html', function() {
@@ -960,14 +1037,14 @@ describe('Index Chain', function() {
 
 describe('Nunjucks Include', function() {
     it('should render local Nunjucks include', async function() {
-        let { html, $ } = await akasha.readRenderedFile(config, 'inclnjk.html');
+        let { html, $ } = await akasha.readRenderedFile(config, 'njk-incl.html');
 
         assert.equal($('#p1').length, 1);
         assert.equal($('#p2').length, 1);
     });
 
     it('should render secondary Nunjucks include', async function() {
-        let { html, $ } = await akasha.readRenderedFile(config, 'inclnjk.html');
+        let { html, $ } = await akasha.readRenderedFile(config, 'njk-incl.html');
 
         assert.equal($('#inclusion2').length, 1);
         assert.equal($('#p3').length, 1);

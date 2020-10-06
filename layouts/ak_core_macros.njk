@@ -1,0 +1,36 @@
+{% macro stylesheets() -%}
+{{ config.plugin("akashacms-builtin").doStylesheets({ document: document, headerStylesheetsAdd: headerStylesheetsAdd }) }}
+{%- endmacro %}
+
+{% macro headerJavaScript() -%}
+{{ config.plugin("akashacms-builtin").doHeaderJavaScript({ document: document, headerJavaScriptAddTop: headerJavaScriptAddTop }) }}
+{%- endmacro %}
+
+{% macro footerJavaScript() -%}
+{{ config.plugin("akashacms-builtin").doFooterJavaScript({ document: document, headerJavaScriptAddBottom: headerJavaScriptAddBottom }) }}
+{%- endmacro %}
+
+{% macro rssHeaderMeta(href) -%}
+<link rel="alternate" type="application/rss+xml" href="{{ href }}"/>
+{%- endmacro %}
+
+{% macro externalStylesheet(href) -%}
+<link rel="stylesheet" type="text/css" href="{{ href }}"/>
+{%- endmacro %}
+
+{% macro DNSPrefetch(control, dnslist) %}
+<meta http-equiv="x-dns-prefetch-control" content="{{ control }}"/>
+{% for dns in dnslist -%}
+<link rel="dns-prefetch" href="{{ dns }}"/>
+{%- endfor %}
+{% endmacro %}
+
+{% macro googleSiteVerification(code) -%}
+<site-verification google="{{ code }}"></site-verification>
+{%- endmacro %}
+
+{% macro XMLSitemap(href, title) -%}
+<link rel="sitemap" type="application/xml" 
+        href="{{ href }}"
+        {% if title %} title="{{ title }}"{% else %} title="Sitemap"{% endif %}/>
+{%- endmacro %}

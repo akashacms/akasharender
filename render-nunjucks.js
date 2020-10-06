@@ -53,7 +53,7 @@ module.exports = class NunjucksRenderer extends HTMLRenderer {
             return env.renderString(text, metadata);
             // nunjucks.configure({ autoescape: false });
             // return nunjucks.renderString(text, metadata);
-        } catch(e) { 
+        } catch(e) {
             var docpath = metadata.document ? metadata.document.path : "unknown";
             var errstack = e.stack ? e.stack : e;
             throw new Error(`Error with Nunjucks in file ${docpath} ${errstack}`);

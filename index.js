@@ -803,7 +803,6 @@ module.exports.Configuration = class Configuration {
         }
         for (var pluginKey in this.plugins) {
             var plugin = this.plugins[pluginKey];
-            // console.log(`FOUND ${util.inspect(plugin)}`);
             if (plugin.name === name) return plugin;
         }
         console.log(`WARNING: Did not find plugin ${name}`);
