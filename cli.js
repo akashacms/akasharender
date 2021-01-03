@@ -140,7 +140,7 @@ program
     .option('--remote <remoteName>', 'The Git remote name to use if it must differ from "origin"')
     .option('--tag <tag>', 'Any tag to add when pushing to Github')
     .option('--message <message>', 'Any Git commit message')
-    .option('--name <name>', 'Github user name to use')
+    .option('--username <username>', 'Github user name to use')
     .option('--email <email>', 'Github user email to use')
     .option('--nopush', 'Do not push to Github, only commit')
     .action(async (configFN, cmdObj) => {
@@ -167,11 +167,11 @@ program
             if (cmdObj.message) {
                 options.message = cmdObj.message;
             }
-            if (cmdObj.name || cmdObj.email) {
+            if (cmdObj.username || cmdObj.email) {
                 options.user = {};
             }
-            if (cmdObj.name) {
-                options.user.name = cmdObj.name;
+            if (cmdObj.username) {
+                options.user.name = cmdObj.username;
             }
             if (cmdObj.email) {
                 options.user.email = cmdObj.email;
