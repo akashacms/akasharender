@@ -38,14 +38,20 @@ exports.findAsset = async function(assetdirs, filename) {
     // console.log(`findAsset ${assetdirs} searching for ${filename}`);
     for (let assetdir of assetdirs) {
         let theAssetdir;
+        let fn2find;
         if (typeof assetdir === 'object') {
+            let destdir = assetdir.dest.startsWith("/")
+                        ? assetdir.dest.substring(1)
+                        : assetdir.dest;
+            if (!filename.startsWith(destdir)) continue;
             theAssetdir = assetdir.src;
+            fn2find = path.join(theAssetdir, filename.substring(destdir.length+1));
         } else if (typeof assetdir === 'string') {
             theAssetdir = assetdir;
+            fn2find = path.join(theAssetdir, filename);
         } else {
             throw new Error(`findAsset unknown assetdir ${util.inspect(assetdir)}`);
         }
-        var fn2find = path.join(theAssetdir, filename);
         try {
             if (await !fs.exists(fn2find)) continue;
             var stats = await fs.stat(fn2find);
