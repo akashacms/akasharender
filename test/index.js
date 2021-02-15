@@ -1085,6 +1085,11 @@ describe('Partials', function() {
     it('should render HTML and EJS partials with Nunjucks', async function() {
         let { html, $ } = await akasha.readRenderedFile(config, 'partials-nunjucks.html');
         checkPartials(html, $);
+
+        // Checking that a call to partialSync from a Nunjuks
+        // template works, and also passes data to partial.
+        assert.include($('article#original').html(), 'This is a Nunjuks test partial');
+        assert.include($('article#original').html(), 'Hello, World from xyzzy');
     });
 
     it('should render HTML and EJS partials with Handlebars', async function() {

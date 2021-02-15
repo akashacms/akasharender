@@ -96,7 +96,18 @@ exports.partialSync = function(config, fname, metadata) {
 
     var renderer = config.findRendererPath(partialFname);
     if (renderer) {
-        return renderer.renderSync(partialText, metadata);
+        // Some renderers (Nunjuks) require that metadata.config
+        // point to the config object.  This block of code
+        // duplicates the metadata object, then sets the
+        // config field in the duplicate, passing that to the partial.
+        let mdata = {};
+        let prop;
+
+        for (prop in metadata) {
+            mdata[prop] = metadata[prop];
+        }
+        mdata.config = config;
+        return renderer.renderSync(partialText, mdata);
     } else if (partialFname.endsWith('.html') || partialFname.endsWith('.xhtml')) {
         return fs.readFileSync(partialFname, 'utf8');
     } else {

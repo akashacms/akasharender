@@ -36,6 +36,8 @@ module.exports = class NunjucksRenderer extends HTMLRenderer {
     njkenv(config) {
         if (this[_nunjuck_env]) return this[_nunjuck_env];
         // console.log(`njkenv layoutDirs ${util.inspect(config.layoutDirs)}`);
+        // Detect if config is not set
+        if (!config) throw new Error(`render-nunjucks no config`);
         this[_nunjuck_env] = new nunjucks.Environment(
             // Using watch=true requires installing chokidar
             new nunjucks.FileSystemLoader(config.layoutDirs, { watch: false }),
@@ -62,6 +64,10 @@ module.exports = class NunjucksRenderer extends HTMLRenderer {
 
     renderSync(text, metadata) {
         try {
+            if (!metadata.config) {
+                // This condition can cause a problem in this.njkenv
+                throw new Error(`render-nunjucks renderSync no config`);
+            }
             let env = this.njkenv(metadata.config);
             return env.renderString(text, metadata);
             // nunjucks.configure({ autoescape: false });
