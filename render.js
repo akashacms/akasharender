@@ -60,7 +60,19 @@ exports.partial = async function(config, fname, metadata) {
     if (renderer) {
         // console.log(`partial about to render ${util.inspect(partialFname)}`);
         var partialText = await fs.readFile(partialFname, 'utf8');
-        return renderer.render(partialText, metadata);
+
+        // Some renderers (Nunjuks) require that metadata.config
+        // point to the config object.  This block of code
+        // duplicates the metadata object, then sets the
+        // config field in the duplicate, passing that to the partial.
+        let mdata = {};
+        let prop;
+
+        for (prop in metadata) {
+            mdata[prop] = metadata[prop];
+        }
+        mdata.config = config;
+        return renderer.render(partialText, mdata);
     } else if (partialFname.endsWith('.html') || partialFname.endsWith('.xhtml')) {
         // console.log(`partial reading file ${partialFname}`);
         return fs.readFile(partialFname, 'utf8');
