@@ -240,6 +240,10 @@ exports.generateRSS = async function(config, configrss, feedData, items, renderT
 // https://www.npmjs.com/package/embedable
 // https://www.npmjs.com/package/media-parser
 // https://www.npmjs.com/package/oembetter
+//
+// DEPRECATED -- We should no longer need this because
+//    of the akashacms-embeddables plugin
+//
 module.exports.oEmbedData = function(url) {
     return new Promise((resolve, reject) => {
         oembetter.fetch(url,
