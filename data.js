@@ -39,6 +39,23 @@ module.exports.report = function(basedir, fpath, renderTo, stage, start) {
     });
 };
 
+/**
+ * Support removing items from the saved data.  This is useful
+ * when we're rendering the same file multiple times.
+ *
+ * @param {*} basedir
+ * @param {*} fpath
+ */
+module.exports.remove = function(basedir, fpath) {
+    traces = traces.filter(item => {
+        if (item.file.basedir !== basedir || item.file.fpath !== fpath) {
+            return true;
+        } else {
+            return false;
+        }
+    });
+};
+
 module.exports.print = function() {
     if (!traces) return;
     let traces2 = traces.sort((a, b) => {
