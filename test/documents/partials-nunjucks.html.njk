@@ -5,6 +5,14 @@ title: Partials
 
 <partial file-name='helloworld.html'></partial>
 
+<p>Include a file in the partials directory</p>
+
+{% include "helloworld2.html" %}
+
+<p>Include a file in the layouts directory</p>
+
+{% include "inclusion.html" %}
+
 <partial file-name="strong.html.ejs">
 <i>Hello, world!</i>
 

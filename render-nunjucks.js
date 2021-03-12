@@ -40,7 +40,8 @@ module.exports = class NunjucksRenderer extends HTMLRenderer {
         if (!config) throw new Error(`render-nunjucks no config`);
         this[_nunjuck_env] = new nunjucks.Environment(
             // Using watch=true requires installing chokidar
-            new nunjucks.FileSystemLoader(config.layoutDirs, { watch: false }),
+            new nunjucks.FileSystemLoader(
+                config.layoutDirs.concat(config.partialsDirs), { watch: false }),
             {
                 autoescape: false
             }

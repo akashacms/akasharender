@@ -568,10 +568,12 @@ class ShowContent extends mahabhuta.CustomElement {
         }
         // console.log(`ShowContent ${util.inspect(metadata.document)} ${href}`);
         const doc     = await documents.readDocument(this.array.options.config, href);
-        return render.partial(this.array.options.config, template, {
+        let ret = await render.partial(this.array.options.config, template, {
             href, clazz, id, caption, width, style, dest, contentImage,
             document: doc
         });
+        // console.log(`ShowContent ${href} ==> ${ret}`);
+        return ret;
     }
 }
 

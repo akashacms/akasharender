@@ -1124,8 +1124,12 @@ describe('Partials', function() {
 
         // Checking that a call to partialSync from a Nunjuks
         // template works, and also passes data to partial.
-        assert.include($('article#original').html(), 'This is a Nunjuks test partial');
-        assert.include($('article#original').html(), 'Hello, World from xyzzy');
+        assert.include($('article#original').html(),
+                'This is a Nunjuks test partial');
+        assert.include($('article#original #html-partial2').html(),
+                'This is the second tiny partial');
+        assert.include($('article#original #p1').html(),
+                'This is to be included');
     });
 
     it('should render HTML and EJS partials with Handlebars', async function() {
