@@ -553,7 +553,7 @@ class ShowContent extends mahabhuta.CustomElement {
     async process($element, metadata, dirty) {
         var template = $element.attr('template');
         if (!template) template = 'ak_show-content.html.njk';
-        const href    = $element.attr('href');
+        let href    = $element.attr('href');
         if (!href) return Promise.reject(new Error('show-content must receive an href'));
         const clazz   = $element.attr('class');
         const id      = $element.attr('id');
@@ -562,11 +562,18 @@ class ShowContent extends mahabhuta.CustomElement {
         const style   = $element.attr('style');
         const dest    = $element.attr('dest');
         const contentImage = $element.attr('content-image');
+        if (! href.startsWith('/')) {
+            let dir = path.dirname(metadata.document.path);
+            href = path.join('/', dir, href);
+        }
+        // console.log(`ShowContent ${util.inspect(metadata.document)} ${href}`);
         const doc     = await documents.readDocument(this.array.options.config, href);
-        return render.partial(this.array.options.config, template, {
+        let ret = await render.partial(this.array.options.config, template, {
             href, clazz, id, caption, width, style, dest, contentImage,
             document: doc
         });
+        // console.log(`ShowContent ${href} ==> ${ret}`);
+        return ret;
     }
 }
 

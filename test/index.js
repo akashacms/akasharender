@@ -723,6 +723,42 @@ describe('teaser, content', function() {
         checkShowContent(html, $);
     });
 
+    it('should render show-content w/ local reference', async function() {
+        let { html, $ } = await akasha.readRenderedFile(config, 'subdir/show-content-local.html');
+
+        assert.exists(html, 'result exists');
+        assert.isString(html, 'result isString');
+
+        assert.equal($('article#original span#simple').length, 1);
+        assert.equal($('article#original span#simple a[href="shown-content-local.html"]').length, 1);
+        assert.include($('article#original span#simple a[href="shown-content-local.html"]').html(),
+                "Shown LOCAL Content - solely for use of show-content-local.html");
+
+        assert.equal($('article#original span#dest').length, 1);
+        assert.equal($('article#original span#dest a[href="http://dest.url"]').length, 1);
+        assert.include($('article#original span#dest a[href="http://dest.url"]').html(),
+                "Shown LOCAL Content - solely for use of show-content-local.html");
+
+        assert.equal($('article#original div#template').length, 1);
+        assert.equal($('article#original div#template figure').length, 1);
+        assert.equal($('article#original div#template figure a[href="shown-content-local.html"]').length, 2);
+        assert.equal($('article#original div#template figure a[href="shown-content-local.html"] img').length, 1);
+        assert.equal($('article#original div#template figure figcaption').length, 1);
+        assert.equal($('article#original div#template figure figcaption a[href="shown-content-local.html"]').length, 1);
+        assert.include($('article#original div#template figure figcaption a[href="shown-content-local.html"]').html(),
+            "Shown LOCAL Content - solely for use of show-content-local.html");
+
+        assert.equal($('article#original div#template2').length, 1);
+        assert.equal($('article#original div#template2 figure').length, 1);
+        assert.equal($('article#original div#template2 figure a[href="http://dest.url"]').length, 2);
+        assert.equal($('article#original div#template2 figure a[href="http://dest.url"] img').length, 1);
+        assert.equal($('article#original div#template2 figure figcaption').length, 1);
+        assert.equal($('article#original div#template2 figure figcaption a[href="http://dest.url"]').length, 1);
+        assert.include($('article#original div#template2 figure figcaption a[href="http://dest.url"]').html(),
+            "Shown LOCAL Content - solely for use of show-content-local.html");
+
+    });
+
     const checkAnchorCleanups = (html, $) => {
 
         assert.exists(html, 'result exists');
@@ -1088,8 +1124,12 @@ describe('Partials', function() {
 
         // Checking that a call to partialSync from a Nunjuks
         // template works, and also passes data to partial.
-        assert.include($('article#original').html(), 'This is a Nunjuks test partial');
-        assert.include($('article#original').html(), 'Hello, World from xyzzy');
+        assert.include($('article#original').html(),
+                'This is a Nunjuks test partial');
+        assert.include($('article#original #html-partial2').html(),
+                'This is the second tiny partial');
+        assert.include($('article#original #p1').html(),
+                'This is to be included');
     });
 
     it('should render HTML and EJS partials with Handlebars', async function() {
