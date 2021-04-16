@@ -4,46 +4,50 @@ const akasha   = require('../index');
 const { assert } = require('chai');
 const sizeOf = promisify(require('image-size'));
 
-
-const config = new akasha.Configuration();
-config.rootURL("https://example.akashacms.com");
-config.configDir = __dirname;
-config.addLayoutsDir('layouts')
-      .addLayoutsDir('layouts-extra')
-      .addDocumentsDir('documents')
-      .addDocumentsDir({
-          src: 'mounted',
-          dest: 'mounted'
-      })
-      .addPartialsDir('partials');
-config.setMahabhutaConfig({
-    recognizeSelfClosing: true,
-    recognizeCDATA: true,
-    decodeEntities: true
-});
-config
-    .addFooterJavaScript({ href: "/vendor/jquery/jquery.min.js" })
-    .addFooterJavaScript({ 
-        href: "/vendor/popper.js/umd/popper.min.js",
-        lang: 'no-known-lang'
-    })
-    .addFooterJavaScript({ href: "/vendor/bootstrap/js/bootstrap.min.js" })
-    .addHeaderJavaScript({ href: "/vendor/header-js.js"})
-    .addHeaderJavaScript({ 
-        href: "/vendor/popper.js/popper.min.js",
-        lang: 'no-known-lang'
-    })
-    .addHeaderJavaScript({
-        script: "alert('in header with inline script');"
-    })
-    .addStylesheet({ href: "/vendor/bootstrap/css/bootstrap.min.css" })
-    .addStylesheet({       href: "/style.css" })
-    .addStylesheet({       href: "/print.css", media: "print" });
-config.prepare();
+let config;
 
 describe('build site', function() {
+    it('should construct configuration', async function() {
+        this.timeout(75000);
+        config = new akasha.Configuration();
+        config.rootURL("https://example.akashacms.com");
+        config.configDir = __dirname;
+        config.addLayoutsDir('layouts')
+            .addLayoutsDir('layouts-extra')
+            .addDocumentsDir('documents')
+            .addDocumentsDir({
+                src: 'mounted',
+                dest: 'mounted'
+            })
+            .addPartialsDir('partials');
+        config.setMahabhutaConfig({
+            recognizeSelfClosing: true,
+            recognizeCDATA: true,
+            decodeEntities: true
+        });
+        config
+            .addFooterJavaScript({ href: "/vendor/jquery/jquery.min.js" })
+            .addFooterJavaScript({ 
+                href: "/vendor/popper.js/umd/popper.min.js",
+                lang: 'no-known-lang'
+            })
+            .addFooterJavaScript({ href: "/vendor/bootstrap/js/bootstrap.min.js" })
+            .addHeaderJavaScript({ href: "/vendor/header-js.js"})
+            .addHeaderJavaScript({ 
+                href: "/vendor/popper.js/popper.min.js",
+                lang: 'no-known-lang'
+            })
+            .addHeaderJavaScript({
+                script: "alert('in header with inline script');"
+            })
+            .addStylesheet({ href: "/vendor/bootstrap/css/bootstrap.min.css" })
+            .addStylesheet({       href: "/style.css" })
+            .addStylesheet({       href: "/print.css", media: "print" });
+        config.prepare();
+    });
+
     it('should build site', async function() {
-        this.timeout(25000);
+        this.timeout(75000);
         let failed = false;
         let results = await akasha.render(config);
         for (let result of results) {
@@ -410,23 +414,26 @@ describe('teaser, content', function() {
         // console.log(html);
 
         assert.equal($('body #resizeto50').length, 1);
-        assert.include($('body #resizeto50').attr('src'), "img/Human-Skeleton.jpg");
+        assert.include([
+            "img/Human-Skeleton-50.jpg",
+            "img/Human-Skeleton.jpg"
+        ], $('body #resizeto50').attr('src'));
         assert.notExists($('body #resizeto50').attr('resize-width'));
 
         assert.equal($('body #resizeto150').length, 1);
-        assert.include($('body #resizeto150').attr('src'), "img/Human-Skeleton-150.jpg");
+        assert.include("img/Human-Skeleton-150.jpg", $('body #resizeto150').attr('src'));
         assert.notExists($('body #resizeto150').attr('resize-width'));
         assert.notExists($('body #resizeto150').attr('resize-to'));
 
         assert.equal($('body #resizeto250figure').length, 1);
         assert.equal($('body #resizeto250figure figcaption').length, 1);
-        assert.include($('body #resizeto250figure img').attr('src'), "img/Human-Skeleton-250-figure.jpg");
+        assert.include("img/Human-Skeleton-250-figure.jpg", $('body #resizeto250figure img').attr('src'));
         assert.notExists($('body #resizeto250figure img').attr('resize-width'));
         assert.notExists($('body #resizeto250figure img').attr('resize-to'));
-        assert.include($('body #resizeto250figure figcaption').html(), "Image caption");
+        assert.include("Image caption", $('body #resizeto250figure figcaption').html());
 
         assert.equal($('body #resizerss').length, 1);
-        assert.include($('body #resizerss').attr('src'), "rss_button.png");
+        assert.include("rss_button.png", $('body #resizerss').attr('src'));
         assert.notExists($('body #resizerss').attr('resize-width'));
         assert.notExists($('body #resizerss').attr('resize-to'));
 
@@ -437,14 +444,30 @@ describe('teaser, content', function() {
 
         // console.log(config.plugin('akashacms-builtin').resizequeue);
         assert.equal(config.plugin('akashacms-builtin').resizequeue.length, 30);
+        const checkItem = (item, _item) => {
+            if (_item.src === item.src
+             && _item.resizewidth === item.resizewidth
+             && _item.resizeto === item.resizeto
+             && _item.docPath === item.docPath) {
+                return true;
+            } else {
+                return false;
+            }
+        }
         const queueContains = (queue, item) => {
             let found = false;
             for (let _item of queue) {
-                if (_item.src === item.src
-                 && _item.resizewidth === item.resizewidth
-                 && _item.resizeto === item.resizeto
-                 && _item.docPath === item.docPath) {
-                    found = true;
+                if (Array.isArray(item)) {
+                    let found = false;
+                    for (let i of item) {
+                        if (checkItem(i, _item)) {
+                            found = true;
+                            break;
+                        }
+                    }
+                } else {
+                    found = checkItem(item, _item);
+                    if (found) break;
                 }
             }
             return found;
@@ -573,12 +596,23 @@ describe('teaser, content', function() {
             "resizewidth": "100",
             "src": "/mounted/img/Human-Skeleton.jpg"
         }));
-        assert.isTrue(queueContains(config.plugin('akashacms-builtin').resizequeue, {
+        // console.log(config.plugin('akashacms-builtin').resizequeue);
+        assert.isTrue(queueContains(config.plugin('akashacms-builtin').resizequeue, /* [ {
+            src: 'img/Human-Skeleton-50.jpg',
+            resizewidth: '50',
+            resizeto: undefined,
+            docPath: "img2resize.html"
+        }, {
             src: 'img/Human-Skeleton.jpg',
             resizewidth: '50',
             resizeto: undefined,
             docPath: "img2resize.html"
-        }));
+        }, */ {
+            src: 'img/Human-Skeleton.jpg',
+            resizewidth: '50',
+            resizeto: 'img/Human-Skeleton-50.jpg',
+            docPath: "img2resize.html"
+        }/*  ] */));
         assert.isTrue(queueContains(config.plugin('akashacms-builtin').resizequeue, {
             src: 'img/Human-Skeleton.jpg',
             resizewidth: '150',
@@ -634,7 +668,7 @@ describe('teaser, content', function() {
             "src": "/mounted/img/Human-Skeleton.jpg",
         }));
 
-        let size50 = await sizeOf('out/img/Human-Skeleton.jpg');
+        let size50 = await sizeOf('out/img/Human-Skeleton-50.jpg');
         assert.equal(size50.width, 50);
 
         let size150 = await sizeOf('out/img/Human-Skeleton-150.jpg');

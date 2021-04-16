@@ -11,47 +11,53 @@ const sizeOf = promisify(require('image-size'));
 // start with /rebase/to/ ... 
 // Hence /index.html would become /rebase/to/index.html
 
-const config_rebase = new akasha.Configuration();
-config_rebase.rootURL("https://example.akashacms.com/rebase/to/");
-config_rebase.configDir = __dirname;
-config_rebase.addLayoutsDir('layouts')
-    .addLayoutsDir('layouts-extra')
-    .addDocumentsDir('documents')
-    .addDocumentsDir({
-        src: 'mounted',
-        dest: 'mounted'
-    })
-    .addPartialsDir('partials')
-    .setRenderDestination('out-rebased');
-    config_rebase.setMahabhutaConfig({
-    recognizeSelfClosing: true,
-    recognizeCDATA: true,
-    decodeEntities: true
-});
-config_rebase
-    .addFooterJavaScript({ href: "/vendor/jquery/jquery.min.js" })
-    .addFooterJavaScript({ 
-        href: "/vendor/popper.js/umd/popper.min.js",
-        lang: 'no-known-lang'
-    })
-    .addFooterJavaScript({ href: "/vendor/bootstrap/js/bootstrap.min.js" })
-    .addHeaderJavaScript({ href: "/vendor/header-js.js"})
-    .addHeaderJavaScript({ 
-        href: "/vendor/popper.js/popper.min.js",
-        lang: 'no-known-lang'
-    })
-    .addHeaderJavaScript({
-        script: "alert('in header with inline script');"
-    })
-    .addStylesheet({ href: "/vendor/bootstrap/css/bootstrap.min.css" })
-    .addStylesheet({       href: "/style.css" })
-    .addStylesheet({       href: "/print.css", media: "print" });
-    config_rebase.prepare();
+let config_rebase;
 
 describe('build rebased site', function() {
+    it('should create configuration', async function() {
+
+        this.timeout(75000);
+        config_rebase = new akasha.Configuration();
+        config_rebase.rootURL("https://example.akashacms.com/rebase/to/");
+        config_rebase.configDir = __dirname;
+        config_rebase.addLayoutsDir('layouts')
+            .addLayoutsDir('layouts-extra')
+            .addDocumentsDir('documents')
+            .addDocumentsDir({
+                src: 'mounted',
+                dest: 'mounted'
+            })
+            .addPartialsDir('partials')
+            .setRenderDestination('out-rebased');
+            config_rebase.setMahabhutaConfig({
+            recognizeSelfClosing: true,
+            recognizeCDATA: true,
+            decodeEntities: true
+        });
+        config_rebase
+            .addFooterJavaScript({ href: "/vendor/jquery/jquery.min.js" })
+            .addFooterJavaScript({ 
+                href: "/vendor/popper.js/umd/popper.min.js",
+                lang: 'no-known-lang'
+            })
+            .addFooterJavaScript({ href: "/vendor/bootstrap/js/bootstrap.min.js" })
+            .addHeaderJavaScript({ href: "/vendor/header-js.js"})
+            .addHeaderJavaScript({ 
+                href: "/vendor/popper.js/popper.min.js",
+                lang: 'no-known-lang'
+            })
+            .addHeaderJavaScript({
+                script: "alert('in header with inline script');"
+            })
+            .addStylesheet({ href: "/vendor/bootstrap/css/bootstrap.min.css" })
+            .addStylesheet({       href: "/style.css" })
+            .addStylesheet({       href: "/print.css", media: "print" });
+        config_rebase.prepare();
+    });
+
     it('should render rebased website', async function() {
 
-        this.timeout(25000);
+        this.timeout(75000);
         let failed = false;
         let results = await akasha.render(config_rebase);
         for (let result of results) {
@@ -60,6 +66,7 @@ describe('build rebased site', function() {
                 console.error(result.error);
             }
         }
+        // console.log(`site finished failed = ${failed}`);
         assert.isFalse(failed);
 
     });
@@ -385,28 +392,31 @@ describe('rebased teaser, content', function() {
         // console.log(html);
 
         assert.equal($('body #resizeto50').length, 1);
-        assert.include($('body #resizeto50').attr('src'), "img/Human-Skeleton.jpg");
+        assert.include([
+            "img/Human-Skeleton-50.jpg",
+            "img/Human-Skeleton.jpg"
+        ], $('body #resizeto50').attr('src'));
         assert.notExists($('body #resizeto50').attr('resize-width'));
 
         assert.equal($('body #resizeto150').length, 1);
-        assert.include($('body #resizeto150').attr('src'), "img/Human-Skeleton-150.jpg");
+        assert.include("img/Human-Skeleton-150.jpg", $('body #resizeto150').attr('src'));
         assert.notExists($('body #resizeto150').attr('resize-width'));
         assert.notExists($('body #resizeto150').attr('resize-to'));
 
         assert.equal($('body #resizeto250figure').length, 1);
         assert.equal($('body #resizeto250figure figcaption').length, 1);
-        assert.include($('body #resizeto250figure img').attr('src'), "img/Human-Skeleton-250-figure.jpg");
+        assert.include("img/Human-Skeleton-250-figure.jpg", $('body #resizeto250figure img').attr('src'));
         assert.notExists($('body #resizeto250figure img').attr('resize-width'));
         assert.notExists($('body #resizeto250figure img').attr('resize-to'));
-        assert.include($('body #resizeto250figure figcaption').html(), "Image caption");
+        assert.include("Image caption", $('body #resizeto250figure figcaption').html());
 
         assert.equal($('body #resizerss').length, 1);
-        assert.include($('body #resizerss').attr('src'), "rss_button.png");
+        assert.include("rss_button.png", $('body #resizerss').attr('src'));
         assert.notExists($('body #resizerss').attr('resize-width'));
         assert.notExists($('body #resizerss').attr('resize-to'));
 
         assert.equal($('body #png2jpg').length, 1);
-        assert.include($('body #png2jpg').attr('src'), "rss_button.jpg");
+        assert.include("rss_button.jpg", $('body #png2jpg').attr('src'));
         assert.notExists($('body #png2jpg').attr('resize-width'));
         assert.notExists($('body #png2jpg').attr('resize-to'));
 
@@ -552,7 +562,7 @@ describe('rebased teaser, content', function() {
         assert.isTrue(queueContains(config.plugin('akashacms-builtin').resizequeue, {
             src: 'img/Human-Skeleton.jpg',
             resizewidth: '50',
-            resizeto: undefined,
+            resizeto: 'img/Human-Skeleton-50.jpg',
             docPath: "img2resize.html"
         }));
         assert.isTrue(queueContains(config.plugin('akashacms-builtin').resizequeue, {
