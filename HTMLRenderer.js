@@ -27,9 +27,17 @@ const path      = require('path');
 const util      = require('util');
 const matter    = require('gray-matter');
 const mahabhuta = require('mahabhuta');
-const cache     = require('./caching');
 const globfs    = require('globfs');
 const data = require('./data');
+
+let _cache;
+const cache = async () => {
+    if (_cache) return _cache;
+    _cache = await import('./cache-forerunner.mjs');
+    await _cache.addCache('frontmatter');
+    await _cache.save();
+    return _cache;
+}
 
 /**
  * Rendering support for any file that produces HTML when rendered.
@@ -338,15 +346,16 @@ module.exports = class HTMLRenderer extends Renderer {
      * Extract the frontmatter for the given file.
      */
     async frontmatter(basedir, fpath) {
-        var cachekey = `fm-${basedir}-${fpath}`;
-        var cachedFrontmatter = cache.get("htmlrenderer", cachekey);
-        if (cachedFrontmatter) {
+        let cached = (await cache()).find('frontmatter', {
+            basedir, fpath
+        });
+        if (cached && cached.frontmatter) {
             // TODO
             // Add check here that stat's file, if file is newer
             // than the cache'd version then delete the cach entry
             // and proceed to the rest of the function, otherwise
             // return the cached data
-            return cachedFrontmatter;
+            return cached.frontmatter;
         }
         var text = await fs.readFile(path.join(basedir, fpath), 'utf8');
         // console.log(`frontmatter ${path.join(basedir, fpath)} ${text}`);
@@ -358,7 +367,10 @@ module.exports = class HTMLRenderer extends Renderer {
             fm = {};
         }
         // console.log(`frontmatter ${path.join(basedir, fpath)} ${util.inspect(fm)}`);
-        cache.set("htmlrenderer", cachekey, fm);
+        (await cache()).upsert('frontmatter', {
+            basedir, fpath, frontmatter: fm
+        });
+        await (await cache()).save();
         // log(`frontmatter ${cachekey} ${util.inspect(fm)}`);
         return fm;
     }
