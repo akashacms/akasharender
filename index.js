@@ -37,10 +37,18 @@ const cheerio = require('cheerio');
 const mahaPartial = require('mahabhuta/maha/partial');
 const documents = require('./documents');
 
-exports.cache = require('./caching');
+let _cache;
+exports.cache = async () => {
+    if (_cache) return _cache;
+    _cache = await import('./cache-forerunner.mjs');
+    return _cache;
+}
+
+// exports.cache = require('./caching');
 exports.Plugin = require('./Plugin');
 
 const render = require('./render');
+// ?? What is this ?? const { cache } = require('ejs');
 
 module.exports.Renderer = require('./Renderer');
 module.exports.HTMLRenderer = require('./HTMLRenderer');
@@ -275,6 +283,7 @@ const _config_scripts = Symbol('scripts');
 const _config_plugins = Symbol('plugins');
 const _config_cheerio = Symbol('cheerio');
 const _config_configdir = Symbol('configdir');
+const _config_cachedir  = Symbol('cachedir');
 const _config_concurrency = Symbol('concurrency');
 const _config_akasha = Symbol('akasha');
 const _config_renderers = Symbol('renderers');
@@ -359,7 +368,25 @@ module.exports.Configuration = class Configuration {
             return configPath;
         }
 
-        var stat;
+        let stat;
+
+        const cacheDirsPath = configDirPath('cache');
+        if (!this[_config_cachedir]) {
+            if (fs.existsSync(cacheDirsPath)
+             && (stat = fs.statSync(cacheDirsPath))) {
+                if (stat.isDirectory()) {
+                    this.cacheDir = 'cache';
+                } else {
+                    throw new Error("'cache' is not a directory");
+                }
+            } else {
+                fs.mkdirsSync(cacheDirsPath);
+                this.cacheDir = 'cache';
+            }
+        } else if (this[_config_cachedir] && !fs.existsSync(this[_config_cachedir])) {
+            fs.mkdirsSync(this[_config_cachedir]);
+        }
+
         const assetsDirsPath = configDirPath('assets');
         if (!this[_config_assetsDirs]) {
             if (fs.existsSync(assetsDirsPath) && (stat = fs.statSync(assetsDirsPath))) {
@@ -442,6 +469,16 @@ module.exports.Configuration = class Configuration {
             // }
         });
 
+        (async () => {
+            try {
+                (await exports.cache()).setup(this);
+                // await (await exports.cache()).save();
+            } catch (err) {
+                console.error(`INITIALIZATION FAILURE COULD NOT INITIALIZE CACHE `, err);
+                process.exit(1);
+            }
+        })();
+
         return this;
     }
 
@@ -451,6 +488,9 @@ module.exports.Configuration = class Configuration {
      */
     set configDir(cfgdir) { this[_config_configdir] = cfgdir; }
     get configDir() { return this[_config_configdir]; }
+
+    set cacheDir(dirnm) { this[_config_cachedir] = dirnm; }
+    get cacheDir() { return this[_config_cachedir]; }
 
     set akasha(_akasha)  { this[_config_akasha] = _akasha; }
     get akasha() { return this[_config_akasha]; }
