@@ -258,9 +258,45 @@ exports.newrender = async function(config) {
     // TODO implement that loop
     // TODO in mahabhuta, have each mahafunc execute under a nextTick
 
+    // console.log(filez2);
+
+    let results = [];
+
+    for (let entry of filez2) {
+
+        // console.log(`newrender RENDER ${path.basename(entry.result.basedir)} ${entry.result.fpath}`);
+
+        await new Promise((resolve, reject) => {
+            exports.renderDocument(
+                entry.result.config,
+                entry.result.basedir,
+                entry.result.fpath,
+                entry.result.renderTo,
+                entry.result.renderToPlus,
+                entry.result.renderBaseMetadata
+            )
+            .then((result) => {
+                // console.log(`render renderDocument ${result}`);
+                results.push({ result });
+                resolve();
+            })
+            .catch(err => {
+                // console.error(`render renderDocument ${err} ${err.stack}`);
+                results.push({ error: err });
+                resolve();
+            });
+        });
+    }
+
+    /*
+     * For some reason this hangs.
+     * It's preferable to do this since we get parallel
+     * rendering happening, and it should be shorter time.
+     * 
     var results = await new Promise((resolve, reject) => {
         parallelLimit(filez2.map(entry => {
             return function(cb) {
+                console.log(`newrender RENDER ${path.basename(entry.result.basedir)} ${entry.result.fpath}`);
                 exports.renderDocument(
                     entry.result.config,
                     entry.result.basedir,
@@ -270,24 +306,26 @@ exports.newrender = async function(config) {
                     entry.result.renderBaseMetadata
                 )
                 .then((result) => {
-                    // log(`render renderDocument ${result}`);
+                    console.log(`render renderDocument ${result}`);
                     cb(undefined, { result });
                 })
                 .catch(err => {
-                    // console.error(`render renderDocument ${err} ${err.stack}`);
+                    console.error(`render renderDocument ${err} ${err.stack}`);
                     cb(undefined, { error: err });
                 });
             };
         }), 
         config.concurrency, // Concurrency count
         function(err, results) {
+            console.log(`render END parallelLimit`);
             // gets here on final results
             if (err) reject(err);
             else resolve(results);
         });
     });
+    */
 
-    // console.log('CALLING config.hookSiteRendered');
+    // console.log('newrender CALLING config.hookSiteRendered');
     try {
         await config.hookSiteRendered();
     } catch (e) {
@@ -295,6 +333,7 @@ exports.newrender = async function(config) {
     }
 
 
+    // console.log('newrender END');
     // data.print();
     return results;
 };
