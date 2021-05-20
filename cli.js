@@ -28,6 +28,10 @@ const util      = require('util');
 const filez     = require('./filez');
 const data      = require('./data');
 
+// Note this is an ES6 module and to use it we must 
+// use an async function along with the await keyword
+const _filecache = import('./cache/file-cache.mjs');
+
 process.title = 'akasharender';
 program.version('0.7.5');
 
@@ -204,6 +208,142 @@ program
             console.log(config);
         } catch (e) {
             console.error(`config command ERRORED ${e.stack}`);
+        }
+    });
+
+program
+    .command('docdirs <configFN>')
+    .description('List the documents directories in a site configuration')
+    .action(async (configFN) => {
+        const akasha    = require('./index');
+        // console.log(`render: akasha: ${util.inspect(akasha)}`);
+        try {
+            const config = require(path.join(process.cwd(), configFN));
+            await config.setup();
+            console.log(config.documentDirs);
+        } catch (e) {
+            console.error(`docdirs command ERRORED ${e.stack}`);
+        }
+    });
+
+program
+    .command('assetdirs <configFN>')
+    .description('List the assets directories in a site configuration')
+    .action(async (configFN) => {
+        const akasha    = require('./index');
+        // console.log(`render: akasha: ${util.inspect(akasha)}`);
+        try {
+            const config = require(path.join(process.cwd(), configFN));
+            await config.setup();
+            console.log(config.assetDirs);
+        } catch (e) {
+            console.error(`assetdirs command ERRORED ${e.stack}`);
+        }
+    });
+
+program
+    .command('partialdirs <configFN>')
+    .description('List the partials directories in a site configuration')
+    .action(async (configFN) => {
+        const akasha    = require('./index');
+        // console.log(`render: akasha: ${util.inspect(akasha)}`);
+        try {
+            const config = require(path.join(process.cwd(), configFN));
+            console.log(config.partialsDirs);
+        } catch (e) {
+            console.error(`partialdirs command ERRORED ${e.stack}`);
+        }
+    });
+
+program
+    .command('layoutsdirs <configFN>')
+    .description('List the layouts directories in a site configuration')
+    .action(async (configFN) => {
+        const akasha    = require('./index');
+        // console.log(`render: akasha: ${util.inspect(akasha)}`);
+        try {
+            const config = require(path.join(process.cwd(), configFN));
+            await config.setup();
+            console.log(config.layoutDirs);
+        } catch (e) {
+            console.error(`layoutsdirs command ERRORED ${e.stack}`);
+        }
+    });
+
+
+program
+    .command('documents <configFN>')
+    .description('List the documents in a site configuration')
+    .action(async (configFN) => {
+        const akasha    = require('./index');
+        // console.log(`render: akasha: ${util.inspect(akasha)}`);
+        try {
+            const config = require(path.join(process.cwd(), configFN));
+            await config.setup();
+            let filecache = await _filecache;
+            // console.log(filecache.documents);
+            await filecache.documents.isReady();
+            console.log(filecache.documents.paths());
+            await config.close();
+        } catch (e) {
+            console.error(`documents command ERRORED ${e.stack}`);
+        }
+    });
+
+program
+    .command('assets <configFN>')
+    .description('List the assets in a site configuration')
+    .action(async (configFN) => {
+        const akasha    = require('./index');
+        // console.log(`render: akasha: ${util.inspect(akasha)}`);
+        try {
+            const config = require(path.join(process.cwd(), configFN));
+            await config.setup();
+            let filecache = await _filecache;
+            // console.log(filecache.documents);
+            await filecache.assets.isReady();
+            console.log(filecache.assets.paths());
+            await config.close();
+        } catch (e) {
+            console.error(`assets command ERRORED ${e.stack}`);
+        }
+    });
+
+program
+    .command('layouts <configFN>')
+    .description('List the layouts in a site configuration')
+    .action(async (configFN) => {
+        const akasha    = require('./index');
+        // console.log(`render: akasha: ${util.inspect(akasha)}`);
+        try {
+            const config = require(path.join(process.cwd(), configFN));
+            await config.setup();
+            let filecache = await _filecache;
+            // console.log(filecache.documents);
+            await filecache.layouts.isReady();
+            console.log(filecache.layouts.paths());
+            await config.close();
+        } catch (e) {
+            console.error(`layouts command ERRORED ${e.stack}`);
+        }
+    });
+
+program
+    .command('partials <configFN>')
+    .description('List the partials in a site configuration')
+    .action(async (configFN) => {
+        const akasha    = require('./index');
+        // console.log(`render: akasha: ${util.inspect(akasha)}`);
+        try {
+            const config = require(path.join(process.cwd(), configFN));
+            await config.setup();
+            let filecache = await _filecache;
+            // console.log(filecache.documents);
+            await filecache.partials.isReady();
+            console.log(filecache.partials.paths());
+            await config.close();
+        } catch (e) {
+            console.error(`partials command ERRORED ${e.stack}`);
         }
     });
 

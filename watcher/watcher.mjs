@@ -1,76 +1,38 @@
 
 import { default as chokidar } from 'chokidar';
-import { default as ForerunnerDB } from 'forerunnerdb';
 import { default as mime } from 'mime';
 import * as util from 'util';
 import * as path from 'path';
 import EventEmitter from 'events';
 
-// There doesn't seem to be an official registration
-// per: https://asciidoctor.org/docs/faq/
-// per: https://github.com/asciidoctor/asciidoctor/issues/2502
-mime.define({'text/x-asciidoc': ['adoc', 'asciidoc']});
-
-const fdb = new ForerunnerDB();
-
 const _symb_dirs = Symbol('dirs');
 const _symb_watcher = Symbol('watcher');
-const _symb_db = Symbol('db');
-const _symb_collection = Symbol('collection');
-const _symb_persistPath = Symbol('persist');
-
-// dirs -- must be an array of:
-//
-//      { path, mountPoint }
-
-
-/**
- * TODO
- *
- *   method to extract metadata from files
- *
- *      this probably requires external implementation of metadata extractor?
- *
- *      like-- per file extension, or per mime type, register an extractor function
- *
- *   select function that uses any matcher to return a collection of all
- *   files matching the matcher .. e.g. metadata.layout: blog.html.ejs
- *
- *      needs to account for directory stack in case multiple instances
- *      of the same pathname match the matcher
- *
- *   sanitize function to remove database entrails
- */
+const _symb_collnm = Symbol('collection-name');
 
 export class DirsWatcher extends EventEmitter {
+
     /**
-     * 
      * @param dirs array of directories and mount points to watch
      * @param collection string giving the name for this watcher collection
-     * @param persistPath string giving the location to persist this collection
      */
-    constructor(dirs, collection, persistPath) {
+    constructor(dirs, collection) {
         super();
-        // console.log('constructor dirs=', dirs);
+        // console.log(`DirsWatcher ${collection} constructor dirs=${util.inspect(dirs)}`);
         this[_symb_dirs] = dirs;
-        this[_symb_collection] = collection;
-        this[_symb_persistPath] = persistPath;
+        this[_symb_collnm] = collection;
     }
 
-    async dbinit() {
-        this[_symb_db] = fdb.db(this[_symb_collection]);
-        this[_symb_db].persist.dataDir(this[_symb_persistPath]);
-        await new Promise((resolve, reject) => {
-            this[_symb_db].collection('filez').load(function (err) {
-                if (!err) resolve();
-                else reject(`Failed to load ${this[_symb_collection]} because ${err}`);
-            });
-        });
-    }
+    get dirs() { return this[_symb_dirs]; }
+    get collection() { return this[_symb_collnm]; }
 
+    /**
+     * Convert data we gather about a file in the file system into a descriptor object.
+     * @param fspath 
+     * @param stats 
+     */
     fileInfo(fspath, stats) {
         let e;
-        for (let entry of this[_symb_dirs]) {
+        for (let entry of this.dirs) {
             if (fspath.indexOf(entry.path) === 0) {
                 e = entry;
                 break;
@@ -91,72 +53,57 @@ export class DirsWatcher extends EventEmitter {
             mountPoint: e.mountPoint,
             pathInSource: fnInSourceDir,
             path: docpath,
+            stats
         };
     }
 
-    async find(fpath) {
-        let mounts = [];
-        for (let entry of this[_symb_dirs]) {
-            if (entry.mountPoint === '/') mounts.push(entry);
-            else if (fpath.indexOf(entry.mountPoint) === 0) mounts.push(entry);
-        }
-        // console.log(`find ${fpath} mounts ==> `, mounts);
-        if (mounts.length === 0) {
-            throw new Error(`No mountPoint found for ${fpath}`);
-        }
-        let ret;
-        for (let mount of mounts) {
-            let results = this[_symb_db].collection('filez').find({
-                sourcePath: mount.path,
-                path: fpath
-            });
-            if (results.length > 0) {
-                ret = results[0];
-                break;
-            }
-        }
-        // console.log(`find ${fpath} found ==> `, ret);
-        return ret;
-    }
+    // TODO Does it make sense to store any file data here?
+    // Such as, maintain a Map indexed by e.path to contain the object above
+    // A <em>find</em> function could search that Map to retrieve data
+    // There might be some more useful functions
 
     start() {
         if (this[_symb_watcher]) {
             throw new Error(`Watcher already started for ${this[_symb_watcher]}`);
         }
-        // console.log('start symb_dirs ', this[_symb_dirs]);
+        // console.log(`start ${this[_symb_collnm]} symb_dirs ${util.inspect(this[_symb_dirs])}`);
         let towatch = this[_symb_dirs].map(item => {
             return item.path;
         })
+        // console.log(`DirsWatcher ${this.collection} watching ${util.inspect(towatch)}`);
         this[_symb_watcher] = chokidar.watch(towatch, {
-            persistent: true, ignoreInitial: false
+            persistent: true, ignoreInitial: false, awaitWriteFinish: true, alwaysStat: true
         });
 
         this[_symb_watcher]
             .on('change', async (fpath, stats) => { 
                 let info = this.fileInfo(fpath, stats);
-                this.emit('change', info);
+                this.emit('change', this.collection, info);
                 // console.log(`DirsWatcher change ${fpath}`, info);
             })
             .on('add', async (fpath, stats) => {
                 let info = this.fileInfo(fpath, stats);
-                this[_symb_db].collection('filez').insert(info);
-                this.emit('add', info);
+                this.emit('add', this.collection, info);
                 // console.log(`DirsWatcher add`, info);
             })
             .on('addDir', async (fpath, stats) => { 
-                let info = this.fileInfo(fpath, stats);
-                this[_symb_db].collection('filez').insert(info);
-                // console.log(`DirsWatcher addDir`, info);
+                // ?? let info = this.fileInfo(fpath, stats);
+                // ?? console.log(`DirsWatcher addDir`, info);
+                // ?? this.emit('addDir', info);
             })
             .on('unlink', async fpath => { 
+                let info = this.fileInfo(fpath, stats);
                 // console.log(`DirsWatcher unlink ${fpath}`);
+                this.emit('unlink', this.collection, info);
             })
             .on('unlinkDir', async fpath => { 
-                // console.log(`DirsWatcher unlinkDir ${fpath}`);
+                // ?? let info = this.fileInfo(fpath, stats);
+                // ?? console.log(`DirsWatcher unlinkDir ${fpath}`);
+                // ?? this.emit('unlinkDir', info);
             })
             .on('ready', () => {
                 // console.log('DirsWatcher: Initial scan complete. Ready for changes');
-                this.emit('ready');
+                this.emit('ready', this.collection);
             });
     }
 
@@ -166,5 +113,4 @@ export class DirsWatcher extends EventEmitter {
             this[_symb_watcher] = undefined;
         }
     }
-
 }

@@ -2,7 +2,8 @@ import util   from 'util';
 import path   from 'path';
 import fse    from 'fs-extra';
 import akasha from '../index.js';
-import * as cache from '../cache-forerunner.mjs';
+import * as filecache from '../cache/file-cache.mjs';
+import * as cache from '../cache/cache-forerunner.mjs';
 import Chai   from 'chai';
 const assert = Chai.assert;
 
@@ -11,7 +12,6 @@ const moduleURL = new URL(import.meta.url);
 const __dirname = path.dirname(moduleURL.pathname);
 
 let config;
-const cachenm = 'test';
 
 describe('Initialize cache test configuration', function() {
     it('should successfully configure test site', async function() {
@@ -71,26 +71,33 @@ describe('Setup cache', function() {
 
     it('should successfully setup cache database', async function() {
         try {
-            await cache.setup(config);
-            // await cache.save();
+            await config.setup();
         } catch (e) {
             console.error(e);
             throw e;
         }
     });
 
-    it('should have cache dir', async function() {
+    it('should successfully setup file caches', async function() {
         try {
-            assert.isTrue(await fse.pathExists(config.cacheDir));
+            await Promise.all([
+                filecache.documents.isReady(),
+                filecache.assets.isReady(),
+                filecache.layouts.isReady(),
+                filecache.partials.isReady()
+            ]);
         } catch (e) {
             console.error(e);
             throw e;
         }
     });
+
 });
 
 describe('Test cache', function() {
 
+    const cachenm = 'test';
+    
     it('should not have test cache', async function() {
         try {
             assert.isFalse(await cache.cacheExists(cachenm));
@@ -129,7 +136,7 @@ describe('Test cache', function() {
             throw e;
         }
     });
-
+    
     it('should find item in cache', async function() {
         try {
             const c = await cache.getCache(cachenm);
@@ -287,145 +294,281 @@ describe('Test cache', function() {
         }
     });
 
+    describe('Unknown cache', function() {
+
+        it('shound not find unknown cache', async function() {
+            try {
+                assert.isFalse(await cache.cacheExists('unknown'));
+            } catch (e) {
+                console.error(e);
+                throw e;
+            }
+        });
+
+        it('should not find item in unknown cache', async function() {
+            try {
+                let notfound = cache.find('unknown', {
+                    meaning: 42
+                });
+                assert.isArray(notfound);
+                assert.equal(notfound.length, 0);
+            } catch (e) {
+                console.error(e);
+                throw e;
+            }
+        });
+
+    });
+
+    describe('Close cache', function() {
+        it('should close cache', function() {
+            cache.close();
+        });
+    });
+
+    describe('Reopen cache', function() {
+
+        it('should successfully reopen cache database', async function() {
+            try {
+                await cache.setup(config);
+            } catch (e) {
+                console.error(e);
+                throw e;
+            }
+        });
+
+        it('should have cache dir', async function() {
+            try {
+                assert.isTrue(await fse.pathExists(config.cacheDir));
+            } catch (e) {
+                console.error(e);
+                throw e;
+            }
+        });
+
+        it('should find item in cache', async function() {
+            try {
+                const c = await cache.getCache(cachenm);
+                assert.isDefined(c);
+                let found = c.find({ meaning: 42 });
+                assert.isArray(found);
+                assert.equal(found.length, 1);
+                assert.deepEqual({
+                        meaning: found[0].meaning,
+                        something: found[0].something
+                    }, {
+                        meaning: 42,
+                        something: 'completely different'
+                    });
+                found = c.find({ something: 'completely different' });
+                assert.isArray(found);
+                assert.equal(found.length, 1);
+                assert.deepEqual({
+                        meaning: found[0].meaning,
+                        something: found[0].something
+                    }, {
+                        meaning: 42,
+                        something: 'completely different'
+                    });
+                found = cache.find(cachenm, { meaning: 42 });
+                assert.isArray(found);
+                assert.equal(found.length, 1);
+                assert.deepEqual({
+                        meaning: found[0].meaning,
+                        something: found[0].something
+                    }, {
+                        meaning: 42,
+                        something: 'completely different'
+                    });
+                found = cache.find(cachenm,
+                    { something: 'completely different' });
+                assert.isArray(found);
+                assert.equal(found.length, 1);
+                assert.deepEqual({
+                        meaning: found[0].meaning,
+                        something: found[0].something
+                    }, {
+                        meaning: 42,
+                        something: 'completely different'
+                    });
+            } catch (e) {
+                console.error(`FAIL should find item in cache ${e}`);
+                throw e;
+            }
+        });
+
+        it('should not find bad item', async function() {
+            try {
+                const notfound = cache.find(cachenm, {
+                    doesnotexist: true
+                });
+                assert.isArray(notfound);
+                assert.equal(notfound.length, 0);
+            } catch (e) {
+                console.error(e);
+                throw e;
+            }
+        });
+
+        it('should not find removed item', async function() {
+            try {
+                const c = await cache.getCache(cachenm);
+                assert.isDefined(c);
+                let found = c.find({ meaning: 55 });
+                assert.isArray(found);
+                assert.equal(found.length, 0);
+                found = c.find({ upsert: 'rocks' });
+                assert.isArray(found);
+                assert.equal(found.length, 0);
+                found = cache.find(cachenm, { meaning: 55 });
+                assert.isArray(found);
+                assert.equal(found.length, 0);
+                found = cache.find(cachenm, { upsert: 'rocks' });
+                assert.isArray(found);
+                assert.equal(found.length, 0);
+            } catch (e) {
+                console.error(e);
+                throw e;
+            }
+        });
+
+    });
 });
 
-describe('Unknown cache', function() {
+describe('Documents cache', function() {
+    it('should find /index.html.md', function() {
+        let found = filecache.documents.find('/index.html.md');
 
-    it('shound not find unknown cache', async function() {
-        try {
-            assert.isFalse(await cache.cacheExists('unknown'));
-        } catch (e) {
-            console.error(e);
-            throw e;
-        }
+        assert.isDefined(found);
+        assert.equal(found.mime, 'text/markdown');
+        assert.equal(found.mountPoint, '/');
+        assert.equal(found.pathInSource, 'index.html.md');
+        assert.equal(found.path, 'index.html.md');
+        assert.equal(found.renderPath, 'index.html');
     });
 
-    it('should not find item in unknown cache', async function() {
-        try {
-            let notfound = cache.find('unknown', {
-                meaning: 42
-            });
-            assert.isArray(notfound);
-            assert.equal(notfound.length, 0);
-        } catch (e) {
-            console.error(e);
-            throw e;
-        }
+    it('should find index.html.md', function() {
+        let found = filecache.documents.find('index.html.md');
+
+        assert.isDefined(found);
+        assert.equal(found.mime, 'text/markdown');
+        assert.equal(found.mountPoint, '/');
+        assert.equal(found.pathInSource, 'index.html.md');
+        assert.equal(found.path, 'index.html.md');
+        assert.equal(found.renderPath, 'index.html');
     });
 
-});
+    it('should find index.html', function() {
+        let found = filecache.documents.find('index.html');
 
-describe('Close cache', function() {
-    it('should close cache', function() {
-        cache.close();
+        assert.isDefined(found);
+        assert.equal(found.mime, 'text/markdown');
+        assert.equal(found.mountPoint, '/');
+        assert.equal(found.pathInSource, 'index.html.md');
+        assert.equal(found.path, 'index.html.md');
+        assert.equal(found.renderPath, 'index.html');
     });
-});
+    
+    it('should find /subdir/show-content-local.html', function() {
+        let found = filecache.documents.find('/subdir/show-content-local.html');
 
-describe('Reopen cache', function() {
-
-    it('should successfully reopen cache database', async function() {
-        try {
-            await cache.setup(config);
-        } catch (e) {
-            console.error(e);
-            throw e;
-        }
+        assert.isDefined(found);
+        assert.equal(found.mime, 'text/markdown');
+        assert.equal(found.mountPoint, '/');
+        assert.equal(found.pathInSource, 'subdir/show-content-local.html.md');
+        assert.equal(found.path, 'subdir/show-content-local.html.md');
+        assert.equal(found.renderPath, 'subdir/show-content-local.html');
     });
+    
+    it('should find subdir/show-content-local.html.md', function() {
+        let found = filecache.documents.find('/subdir/show-content-local.html.md');
 
-    it('should have cache dir', async function() {
-        try {
-            assert.isTrue(await fse.pathExists(config.cacheDir));
-        } catch (e) {
-            console.error(e);
-            throw e;
-        }
+        assert.isDefined(found);
+        assert.equal(found.mime, 'text/markdown');
+        assert.equal(found.mountPoint, '/');
+        assert.equal(found.pathInSource, 'subdir/show-content-local.html.md');
+        assert.equal(found.path, 'subdir/show-content-local.html.md');
+        assert.equal(found.renderPath, 'subdir/show-content-local.html');
     });
+    
+    it('should find /mounted/img2resize.html.md', function() {
+        let found = filecache.documents.find('/mounted/img2resize.html.md');
 
-    it('should find item in cache', async function() {
-        try {
-            const c = await cache.getCache(cachenm);
-            assert.isDefined(c);
-            let found = c.find({ meaning: 42 });
-            assert.isArray(found);
-            assert.equal(found.length, 1);
-            assert.deepEqual({
-                    meaning: found[0].meaning,
-                    something: found[0].something
-                }, {
-                    meaning: 42,
-                    something: 'completely different'
-                });
-            found = c.find({ something: 'completely different' });
-            assert.isArray(found);
-            assert.equal(found.length, 1);
-            assert.deepEqual({
-                    meaning: found[0].meaning,
-                    something: found[0].something
-                }, {
-                    meaning: 42,
-                    something: 'completely different'
-                });
-            found = cache.find(cachenm, { meaning: 42 });
-            assert.isArray(found);
-            assert.equal(found.length, 1);
-            assert.deepEqual({
-                    meaning: found[0].meaning,
-                    something: found[0].something
-                }, {
-                    meaning: 42,
-                    something: 'completely different'
-                });
-            found = cache.find(cachenm,
-                { something: 'completely different' });
-            assert.isArray(found);
-            assert.equal(found.length, 1);
-            assert.deepEqual({
-                    meaning: found[0].meaning,
-                    something: found[0].something
-                }, {
-                    meaning: 42,
-                    something: 'completely different'
-                });
-        } catch (e) {
-            console.error(`FAIL should find item in cache ${e}`);
-            throw e;
-        }
+        assert.isDefined(found);
+        assert.equal(found.mime, 'text/markdown');
+        assert.equal(found.mountPoint, 'mounted');
+        assert.equal(found.pathInSource, 'img2resize.html.md');
+        assert.equal(found.path, 'mounted/img2resize.html.md');
+        assert.equal(found.renderPath, 'mounted/img2resize.html');
     });
+    
+    it('should find mounted/img2resize.html', function() {
+        let found = filecache.documents.find('mounted/img2resize.html');
 
-    it('should not find bad item', async function() {
-        try {
-            const notfound = cache.find(cachenm, {
-                doesnotexist: true
-            });
-            assert.isArray(notfound);
-            assert.equal(notfound.length, 0);
-        } catch (e) {
-            console.error(e);
-            throw e;
-        }
+        assert.isDefined(found);
+        assert.equal(found.mime, 'text/markdown');
+        assert.equal(found.mountPoint, 'mounted');
+        assert.equal(found.pathInSource, 'img2resize.html.md');
+        assert.equal(found.path, 'mounted/img2resize.html.md');
+        assert.equal(found.renderPath, 'mounted/img2resize.html');
+    });
+    
+    it('should find /mounted/img/Human-Skeleton.jpg', function() {
+        let found = filecache.documents.find('/mounted/img/Human-Skeleton.jpg');
+
+        assert.isDefined(found);
+        assert.equal(found.mime, 'image/jpeg');
+        assert.equal(found.mountPoint, 'mounted');
+        assert.equal(found.pathInSource, 'img/Human-Skeleton.jpg');
+        assert.equal(found.path, 'mounted/img/Human-Skeleton.jpg');
+        assert.equal(found.renderPath, 'mounted/img/Human-Skeleton.jpg');
+    });
+    
+    it('should find mounted/img/Human-Skeleton.jpg', function() {
+        let found = filecache.documents.find('mounted/img/Human-Skeleton.jpg');
+
+        assert.isDefined(found);
+        assert.equal(found.mime, 'image/jpeg');
+        assert.equal(found.mountPoint, 'mounted');
+        assert.equal(found.pathInSource, 'img/Human-Skeleton.jpg');
+        assert.equal(found.path, 'mounted/img/Human-Skeleton.jpg');
+        assert.equal(found.renderPath, 'mounted/img/Human-Skeleton.jpg');
+    });
+    
+    it('should not find mounted/unknown-Skeleton.jpg', function() {
+        let found = filecache.documents.find('mounted/unknown-Skeleton.jpg');
+
+        assert.isUndefined(found);
     });
 
-    it('should not find removed item', async function() {
-        try {
-            const c = await cache.getCache(cachenm);
-            assert.isDefined(c);
-            let found = c.find({ meaning: 55 });
-            assert.isArray(found);
-            assert.equal(found.length, 0);
-            found = c.find({ upsert: 'rocks' });
-            assert.isArray(found);
-            assert.equal(found.length, 0);
-            found = cache.find(cachenm, { meaning: 55 });
-            assert.isArray(found);
-            assert.equal(found.length, 0);
-            found = cache.find(cachenm, { upsert: 'rocks' });
-            assert.isArray(found);
-            assert.equal(found.length, 0);
-        } catch (e) {
-            console.error(e);
-            throw e;
-        }
+    it('should not find /mounted/unknown-Skeleton.jpg', function() {
+        let found = filecache.documents.find('/mounted/unknown-Skeleton.jpg');
+
+        assert.isUndefined(found);
+    });
+    
+    it('should not find unknown-Skeleton.jpg', function() {
+        let found = filecache.documents.find('unknown-Skeleton.jpg');
+
+        assert.isUndefined(found);
+    });
+
+    it('should not find /unknown-Skeleton.jpg', function() {
+        let found = filecache.documents.find('/unknown-Skeleton.jpg');
+
+        assert.isUndefined(found);
     });
 
 });
 
+describe('Close caches', function() {
+
+    it('should close caches', async function() {
+        try {
+            await config.close();
+        } catch (e) {
+            console.error(e);
+            throw e;
+        }
+    });
+});

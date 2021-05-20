@@ -37,11 +37,25 @@ const cheerio = require('cheerio');
 const mahaPartial = require('mahabhuta/maha/partial');
 const documents = require('./documents');
 
+const mime = require('mime');
+
+// There doesn't seem to be an official registration
+// per: https://asciidoctor.org/docs/faq/
+// per: https://github.com/asciidoctor/asciidoctor/issues/2502
+mime.define({'text/x-asciidoc': ['adoc', 'asciidoc']});
+
 let _cache;
 exports.cache = async () => {
     if (_cache) return _cache;
-    _cache = await import('./cache-forerunner.mjs');
+    _cache = await import('./cache/cache-forerunner.mjs');
     return _cache;
+}
+
+let _filecache;
+exports.filecache = async () => {
+    if (_filecache) return _filecache;
+    _filecache = await import('./cache/file-cache.mjs');
+    return _filecache;
 }
 
 // exports.cache = require('./caching');
@@ -285,7 +299,6 @@ const _config_cheerio = Symbol('cheerio');
 const _config_configdir = Symbol('configdir');
 const _config_cachedir  = Symbol('cachedir');
 const _config_concurrency = Symbol('concurrency');
-const _config_akasha = Symbol('akasha');
 const _config_renderers = Symbol('renderers');
 
 /**
@@ -301,7 +314,6 @@ module.exports.Configuration = class Configuration {
     constructor(modulepath) {
 
         this[_config_renderers] = [];
-        this[_config_akasha] = module.exports;
 
         /*
          * Is this the best place for this?  It is necessary to
@@ -340,7 +352,6 @@ module.exports.Configuration = class Configuration {
         }));
     }
 
-    get akasha() { return this[_config_akasha]; }
 
     /**
      * Initialize default configuration values for anything which has not
@@ -469,17 +480,25 @@ module.exports.Configuration = class Configuration {
             // }
         });
 
-        (async () => {
-            try {
-                (await exports.cache()).setup(this);
-                // await (await exports.cache()).save();
-            } catch (err) {
-                console.error(`INITIALIZATION FAILURE COULD NOT INITIALIZE CACHE `, err);
-                process.exit(1);
-            }
-        })();
-
         return this;
+    }
+
+    async setup() {
+        try {
+            // console.log(`before cache`);
+            await (await exports.cache()).setup(this);
+            // await (await exports.cache()).save();
+            console.log(`before filecache`);
+            await (await exports.filecache()).setup(this);
+        } catch (err) {
+            console.error(`INITIALIZATION FAILURE COULD NOT INITIALIZE CACHE `, err);
+            process.exit(1);
+        }
+    }
+
+    async close() {
+        await (await exports.filecache()).close();
+        await (await exports.cache()).close();
     }
 
     /**
@@ -492,8 +511,8 @@ module.exports.Configuration = class Configuration {
     set cacheDir(dirnm) { this[_config_cachedir] = dirnm; }
     get cacheDir() { return this[_config_cachedir]; }
 
-    set akasha(_akasha)  { this[_config_akasha] = _akasha; }
-    get akasha() { return this[_config_akasha]; }
+    // set akasha(_akasha)  { this[_config_akasha] = _akasha; }
+    get akasha() { return module.exports }
 
     /**
      * Add a directory to the documentDirs configuration array
@@ -511,10 +530,13 @@ module.exports.Configuration = class Configuration {
             }
         }
         this[_config_documentDirs].push(dir);
+        // console.log(`addDocumentsDir ${util.inspect(dir)} ==> ${util.inspect(this[_config_documentDirs])}`);
         return this;
     }
 
-    get documentDirs() { return this[_config_documentDirs] ? this[_config_documentDirs] : []; }
+    get documentDirs() {
+        return this[_config_documentDirs] ? this[_config_documentDirs] : [];
+    }
 
     /**
      * Look up the document directory information for a given document directory.

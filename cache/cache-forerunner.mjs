@@ -20,8 +20,10 @@ TODO - rewrite HTMLFormatter.frontmatter to use the file cache
 */
 
 export async function setup(config) {
+    // console.log(`cache setup ${config.cacheDir}`);
     db = fdb.db('akasharender' /* path.basename(config.configDir) */);
     db.persist.dataDir(config.cacheDir);
+    // console.log(`cache setup finished`);
 }
 
 export function close() {
@@ -64,9 +66,13 @@ export async function addCache(cachenm) {
     });
 }
 
-export function getCache(cachenm) {
+export function getCache(cachenm, options) {
     if (!caches.has(cachenm)) {
-        throw new Error(`Cache ${cachenm} does not exist`);
+        if (!options || !options.create) {
+            throw new Error(`Cache ${cachenm} does not exist`);
+        } else {
+            addCache(cachenm);
+        }
     }
     return caches.get(cachenm);
 }

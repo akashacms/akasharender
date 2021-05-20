@@ -33,7 +33,7 @@ const data = require('./data');
 let _cache;
 const cache = async () => {
     if (_cache) return _cache;
-    _cache = await import('./cache-forerunner.mjs');
+    _cache = await import('./cache/cache-forerunner.mjs');
     await _cache.addCache('frontmatter');
     await _cache.save();
     return _cache;
