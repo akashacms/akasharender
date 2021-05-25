@@ -35,6 +35,7 @@
     "commander": "^7.1.x",
     "debug": "^4.3.x",
     "ejs": "^3.1.x",
+    "fastq": "^1.11.0",
     "flat-cache": "^3.0.x",
     "forerunnerdb": "^2.0.22",
     "fs-extra": ">=7.0.x",
