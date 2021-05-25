@@ -49,6 +49,7 @@ export class DirsWatcher extends EventEmitter {
         return {
             fspath: fspath,
             mime: mime.getType(fspath),
+            baseMetadata: e.baseMetadata,
             sourcePath: e.path,
             mountPoint: e.mountPoint,
             pathInSource: fnInSourceDir,
