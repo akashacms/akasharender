@@ -20,10 +20,15 @@ TODO - rewrite HTMLFormatter.frontmatter to use the file cache
 */
 
 export async function setup(config) {
-    // console.log(`cache setup ${config.cacheDir}`);
-    db = fdb.db('akasharender' /* path.basename(config.configDir) */);
-    db.persist.dataDir(config.cacheDir);
-    // console.log(`cache setup finished`);
+    try {
+        // console.log(`cache setup ${config.cacheDir}`);
+        db = fdb.db('akasharender' /* path.basename(config.configDir) */);
+        db.persist.dataDir(config.cacheDir);
+        // console.log(`cache setup finished`);
+    } catch (err) {
+        console.error(`cache-forerunner setup FAIL TO INITIALIZE `, err);
+        throw err;
+    }
 }
 
 export function close() {
