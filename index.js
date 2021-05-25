@@ -44,19 +44,8 @@ const mime = require('mime');
 // per: https://github.com/asciidoctor/asciidoctor/issues/2502
 mime.define({'text/x-asciidoc': ['adoc', 'asciidoc']});
 
-let _cache;
-exports.cache = async () => {
-    if (_cache) return _cache;
-    _cache = await import('./cache/cache-forerunner.mjs');
-    return _cache;
-}
-
-let _filecache;
-exports.filecache = async () => {
-    if (_filecache) return _filecache;
-    _filecache = await import('./cache/file-cache.mjs');
-    return _filecache;
-}
+exports.cache = import('./cache/cache-forerunner.mjs');
+exports.filecache = import('./cache/file-cache.mjs');
 
 // exports.cache = require('./caching');
 exports.Plugin = require('./Plugin');
@@ -79,6 +68,16 @@ exports.render = render.newrender;
 exports.renderDocument = render.renderDocument;
 
 exports.renderPath = async (config, path) => {
+    const documents = (await exports.filecache).documents;
+    let found = await documents.find(path);
+    if (!found) {
+        throw new Error(`Did not find document for ${path}`);
+    }
+    let result = await render.newRenderDocument(config, found);
+    return result;
+}
+
+exports.renderPathOLD = async (config, path) => {
 
     let found = await exports.findRendersTo(config, path);
     let result = await exports.renderDocument(
@@ -486,10 +485,11 @@ module.exports.Configuration = class Configuration {
     async setup() {
         try {
             // console.log(`before cache`);
-            await (await exports.cache()).setup(this);
+            await (await exports.cache).setup(this);
             // await (await exports.cache()).save();
-            console.log(`before filecache`);
-            await (await exports.filecache()).setup(this);
+            // console.log(`before filecache`);
+            await (await exports.filecache).setup(this);
+            // console.log(`after filecache`);
         } catch (err) {
             console.error(`INITIALIZATION FAILURE COULD NOT INITIALIZE CACHE `, err);
             process.exit(1);
@@ -497,8 +497,8 @@ module.exports.Configuration = class Configuration {
     }
 
     async close() {
-        await (await exports.filecache()).close();
-        await (await exports.cache()).close();
+        await (await exports.filecache).close();
+        await (await exports.cache).close();
     }
 
     /**

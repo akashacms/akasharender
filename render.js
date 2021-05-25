@@ -131,6 +131,51 @@ exports.partialSync = function(config, fname, metadata) {
 
 //////////////////////////////////////////////////////////
 
+exports.newRenderDocument = async function(config, docInfo) {
+    const renderStart = new Date();
+    const renderBaseMetadata = docInfo.baseMetadata;
+    const stats = await fs.stat(docInfo.fspath);
+    let renderToDir;
+    if (stats && stats.isFile()) {
+        renderToDir = path.dirname(docInfo.path);
+        // console.log(`renderDocument ${basedir} ${fpath} ${renderToDir} ${renderToFpath}`);
+        await fs.ensureDir(renderToDir);
+    } else { return `SKIP DIRECTORY ${docInfo.path}`; }
+
+    const renderToFpath = path.join(config.renderTo, docInfo.renderPath);
+
+    const renderer = config.findRendererPath(docInfo.path);
+    if (renderer) {
+
+        // console.log(`ABOUT TO RENDER ${renderer.name} ${docInfo.path} ==> ${renderToFpath}`);
+        try {
+            /*  OLD VERSION
+            await renderer.renderToFile(basedir, fpath, path.join(renderTo, renderToPlus), renderToPlus, renderBaseMetadata, config);
+            */
+            await renderer.newRenderToFile(config, docInfo);
+
+            // console.log(`RENDERED ${renderer.name} ${docInfo.path} ==> ${renderToFpath}`);
+            const renderEndRendered = new Date();
+            data.report(docInfo.mountPoint, docInfo.path, config.renderTo, "RENDERED", renderStart);
+            return `${renderer.name} ${docInfo.path} ==> ${renderToFpath} (${(renderEndRendered - renderStart) / 1000} seconds)\n${data.data4file(docInfo.mountPoint, docInfo.path)}`;
+        } catch (err) {
+            console.error(`in renderer branch for ${docInfo.path} to ${renderToFpath} error=${err.stack ? err.stack : err}`);
+            throw new Error(`in renderer branch for ${docInfo.path} to ${renderToFpath} error=${err.stack ? err.stack : err}`);
+        }
+    } else {
+        // console.log(`COPYING ${docInfo.path} ==> ${renderToFpath}`);
+        try {
+            await fs.copy(docInfo.fspath, renderToFpath);
+            // console.log(`COPIED ${docInfo.path} ==> ${renderToFpath}`);
+            const renderEndCopied = new Date();
+            return `COPY ${docInfo.path} ==> ${renderToFpath} (${(renderEndCopied - renderStart) / 1000} seconds)`;
+        } catch(err) {
+            console.error(`in copy branch for ${docInfo.path} to ${renderToFpath} error=${err.stack ? err.stack : err}`);
+            throw new Error(`in copy branch for ${docInfo.path} to ${renderToFpath} error=${err.stack ? err.stack : err}`);
+        }
+    }
+}
+
 /**
  * Render a single document
  *

@@ -99,9 +99,15 @@ program
         const akasha    = require('./index');
         try {
             const config = require(path.join(process.cwd(), configFN));
+            await config.setup();
+            let filecache = await _filecache;
+            // console.log(filecache.documents);
+            await filecache.documents.isReady();
             data.init();
+            console.log(`render-document before renderPath ${documentFN}`);
             let result = await akasha.renderPath(config, documentFN);
             console.log(result);
+            await config.close();
         } catch (e) {
             console.error(`render-document command ERRORED ${e.stack}`);
         }
@@ -291,6 +297,25 @@ program
     });
 
 program
+    .command('docinfo <configFN> <docFN>')
+    .description('Show information about a document in a site configuration')
+    .action(async (configFN, docFN) => {
+        const akasha    = require('./index');
+        // console.log(`render: akasha: ${util.inspect(akasha)}`);
+        try {
+            const config = require(path.join(process.cwd(), configFN));
+            await config.setup();
+            let filecache = await _filecache;
+            // console.log(filecache.documents);
+            await filecache.documents.isReady();
+            console.log(`docFN ${docFN} `, filecache.documents.find(docFN));
+            await config.close();
+        } catch (e) {
+            console.error(`docinfo command ERRORED ${e.stack}`);
+        }
+    });
+
+program
     .command('assets <configFN>')
     .description('List the assets in a site configuration')
     .action(async (configFN) => {
@@ -306,6 +331,25 @@ program
             await config.close();
         } catch (e) {
             console.error(`assets command ERRORED ${e.stack}`);
+        }
+    });
+
+program
+    .command('assetinfo <configFN> <docFN>')
+    .description('Show information about an asset in a site configuration')
+    .action(async (configFN, assetFN) => {
+        const akasha    = require('./index');
+        // console.log(`render: akasha: ${util.inspect(akasha)}`);
+        try {
+            const config = require(path.join(process.cwd(), configFN));
+            await config.setup();
+            let filecache = await _filecache;
+            // console.log(filecache.documents);
+            await filecache.assets.isReady();
+            console.log(filecache.assets.find(assetFN));
+            await config.close();
+        } catch (e) {
+            console.error(`assetinfo command ERRORED ${e.stack}`);
         }
     });
 
@@ -328,6 +372,30 @@ program
         }
     });
 
+// TODO both test.html and test.html.njk match
+//      This is probably incorrect, since we do not render these files
+//      The partials directory has the same problem
+//      Some kind of flag on creating the FileCache to change the behavior
+
+program
+    .command('layoutinfo <configFN> <docFN>')
+    .description('Show information about a layout in a site configuration')
+    .action(async (configFN, layoutFN) => {
+        const akasha    = require('./index');
+        // console.log(`render: akasha: ${util.inspect(akasha)}`);
+        try {
+            const config = require(path.join(process.cwd(), configFN));
+            await config.setup();
+            let filecache = await _filecache;
+            // console.log(filecache.documents);
+            await filecache.layouts.isReady();
+            console.log(filecache.layouts.find(layoutFN));
+            await config.close();
+        } catch (e) {
+            console.error(`layoutinfo command ERRORED ${e.stack}`);
+        }
+    });
+
 program
     .command('partials <configFN>')
     .description('List the partials in a site configuration')
@@ -344,6 +412,28 @@ program
             await config.close();
         } catch (e) {
             console.error(`partials command ERRORED ${e.stack}`);
+        }
+    });
+
+// TODO both test.html and test.html.njk match
+//      This is probably incorrect, since we do not render these files
+
+program
+    .command('partialinfo <configFN> <docFN>')
+    .description('Show information about a partial in a site configuration')
+    .action(async (configFN, partialFN) => {
+        const akasha    = require('./index');
+        // console.log(`render: akasha: ${util.inspect(akasha)}`);
+        try {
+            const config = require(path.join(process.cwd(), configFN));
+            await config.setup();
+            let filecache = await _filecache;
+            // console.log(filecache.documents);
+            await filecache.partials.isReady();
+            console.log(filecache.partials.find(partialFN));
+            await config.close();
+        } catch (e) {
+            console.error(`partialinfo command ERRORED ${e.stack}`);
         }
     });
 
