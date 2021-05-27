@@ -122,6 +122,8 @@ program
         // console.log(`render: akasha: ${util.inspect(akasha)}`);
         try {
             const config = require(path.join(process.cwd(), configFN));
+            await config.setup();
+            data.init();
             let results = await akasha.render(config);
             if (!cmdObj.quiet) {
                 for (let result of results) {
@@ -137,6 +139,7 @@ program
                     }
                 }
             }
+            await config.close();
         } catch (e) {
             console.error(`render command ERRORED ${e.stack}`);
         }

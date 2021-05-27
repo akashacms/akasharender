@@ -274,7 +274,7 @@ export class FileCache extends EventEmitter {
             if (entry.mountPoint === '/') mounts.push(entry);
             else if (fpath.indexOf(entry.mountPoint) === 0) mounts.push(entry);
         }
-        console.log(`find ${fpath} mounts ==> `, mounts);
+        // console.log(`find ${fpath} mounts ==> `, mounts);
         if (mounts.length === 0) {
             throw new Error(`No mountPoint found for ${fpath}`);
         }
@@ -293,25 +293,27 @@ export class FileCache extends EventEmitter {
                     /* }
                 ] */
             });
-            console.log(`${this.collection} find mountPoint ${mount.path} AND path $eq ${fpath} || renderPath $eq ${fpath}  length=${results.length}`);
+            // console.log(`${this.collection} find mountPoint ${mount.path} AND path $eq ${fpath} || renderPath $eq ${fpath}  length=${results.length}`);
             if (results.length > 0) {
                 ret = results[0];
                 break;
             }
         }
-        console.log(`find ${fpath} found ==> `, ret);
+        // console.log(`find ${fpath} found ==> `, ret);
         return ret;
     }
 
     paths() {
         console.log(`paths ${this.collection}`);
         let coll = getCache(this.collection, { create: true });
-        let ret = coll.find({}, { renderPath: 1, path: 1 });
+        let ret = coll.find({}, {
+            renderPath: 1, path: 1, fspath: 1
+        });
         return ret.map(item => {
             return {
                 fspath: item.fspath,
                 renderPath: item.renderPath,
-                path: item.path 
+                path: item.path
             };
         });
     }

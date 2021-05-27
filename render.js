@@ -30,6 +30,11 @@ const util      = require('util');
 const parallelLimit = require('run-parallel-limit');
 const data = require('./data');
 
+const cache = import('./cache/cache-forerunner.mjs');
+const filecache = import('./cache/file-cache.mjs');
+
+const fastq = require('fastq');
+
 //////////////////////////////////////////////////////////
 
 exports.partial = async function(config, fname, metadata) {
@@ -229,6 +234,75 @@ exports.renderDocument = async function(config, basedir, fpath, renderTo, render
             throw new Error(`in copy branch for ${docPathname} to ${renderToFpath} error=${err.stack ? err.stack : err}`);
         }
     }
+};
+
+exports.newerrender = async function(config) {
+
+    const results = [];
+
+    const documents = (await filecache).documents;
+    await documents.isReady();
+    // 1. Gather list of files from RenderFileCache
+    const filez = documents.paths();
+
+    // 2. Exclude any that we want to ignore
+    const filez2 = [];
+    for (let entry of filez) {
+        let include = true;
+        console.log(entry);
+        let stats = await fs.stat(entry.fspath);
+        if (!entry) include = false;
+        else if (stats.isDirectory()) include = false;
+        else if (path.basename(entry.path) === '.DS_Store') include = false;
+        else if (path.basename(entry.path) === '.placeholder') include = false;
+
+        if (include) {
+            filez2.push({
+                config: config,
+                info: documents.find(entry.path)
+            });
+        }
+    }
+    
+
+    // 3. Make a fastq to process using renderDocument, pushing results
+    //    to the results array
+
+    async function renderDocumentInQueue(entry) {
+        // console.log(`renderDocumentInQueue ${entry.info.path}`);
+        try {
+            let result = await exports.newRenderDocument(entry.config, entry.info);
+            // console.log(result);
+            results.push({ result });
+        } catch (error) {
+            results.push({ error });
+        }
+        // console.log(`DONE renderDocumentInQueue ${entry.info.path}`);
+    }
+
+    const queue = fastq.promise(renderDocumentInQueue,
+            1); // TODO allow setting concurrency here from config.concurrency
+
+    // queue.push returns a Promise that's fulfilled when the task finishes
+    // Hence we can use Promise.all to wait for all tasks to finish
+    // The fastq API doesn't seem to offer a method to wait on
+    // all tasks to finish
+    const waitFor = [];
+    for (let entry of filez2) {
+        waitFor.push(queue.push(entry));
+    }
+    await Promise.all(waitFor);
+
+    // 4. Invoke hookSiteRendered
+
+    try {
+        await config.hookSiteRendered();
+    } catch (e) {
+        throw new Error(`hookSiteRendered failed because ${e}`);
+    }
+
+    // 5. return results
+    return results;
 };
 
 exports.newrender = async function(config) {

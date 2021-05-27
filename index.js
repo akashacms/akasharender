@@ -64,7 +64,7 @@ module.exports.MarkdownRenderer = require('./render-md');
 module.exports.JSONRenderer = require('./render-json');
 module.exports.CSSLESSRenderer = require('./render-cssless');
 
-exports.render = render.newrender;
+exports.render = render.newerrender; //  render.newrender;
 exports.renderDocument = render.renderDocument;
 
 exports.renderPath = async (config, path) => {
