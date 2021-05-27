@@ -249,7 +249,7 @@ exports.newerrender = async function(config) {
     const filez2 = [];
     for (let entry of filez) {
         let include = true;
-        console.log(entry);
+        // console.log(entry);
         let stats = await fs.stat(entry.fspath);
         if (!entry) include = false;
         else if (stats.isDirectory()) include = false;
@@ -257,6 +257,8 @@ exports.newerrender = async function(config) {
         else if (path.basename(entry.path) === '.placeholder') include = false;
 
         if (include) {
+            // The queue is an array of tuples containing the
+            // config object and the path string
             filez2.push({
                 config: config,
                 info: documents.find(entry.path)
@@ -268,6 +270,10 @@ exports.newerrender = async function(config) {
     // 3. Make a fastq to process using renderDocument, pushing results
     //    to the results array
 
+    // This function is invoked for each entry in the queue.
+    // It handles rendering the queue
+    // The queue has config objects and path strings which is
+    // exactly what's required by newRenderDocument
     async function renderDocumentInQueue(entry) {
         // console.log(`renderDocumentInQueue ${entry.info.path}`);
         try {
@@ -280,8 +286,11 @@ exports.newerrender = async function(config) {
         // console.log(`DONE renderDocumentInQueue ${entry.info.path}`);
     }
 
+    // This sets up the queue processor, using the function just above
+    // The concurrency setting lets us process documents in parallel
+    // Possibly this will speed things up.
     const queue = fastq.promise(renderDocumentInQueue,
-            1); // TODO allow setting concurrency here from config.concurrency
+                                config.concurrency);
 
     // queue.push returns a Promise that's fulfilled when the task finishes
     // Hence we can use Promise.all to wait for all tasks to finish
@@ -291,7 +300,16 @@ exports.newerrender = async function(config) {
     for (let entry of filez2) {
         waitFor.push(queue.push(entry));
     }
+    // Because we've pushed Promise objects into waitFor, this
+    // automatically waits until all tasks are finished
     await Promise.all(waitFor);
+
+    // This appears to be another way to wait until all tasks are finished
+    // await new Promise((resolve, reject) => {
+    //    queue.drain = function() {
+    //        resolve();
+    //    }
+    // });
 
     // 4. Invoke hookSiteRendered
 

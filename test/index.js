@@ -43,12 +43,14 @@ describe('build site', function() {
             .addStylesheet({ href: "/vendor/bootstrap/css/bootstrap.min.css" })
             .addStylesheet({       href: "/style.css" })
             .addStylesheet({       href: "/print.css", media: "print" });
+        config.concurrency = 5;
         config.prepare();
     });
 
     it('should build site', async function() {
         this.timeout(75000);
         let failed = false;
+        await config.setup();
         let results = await akasha.render(config);
         for (let result of results) {
             if (result.error) {
@@ -57,6 +59,7 @@ describe('build site', function() {
             }
         }
         assert.isFalse(failed);
+        await config.close();
     });
 });
 

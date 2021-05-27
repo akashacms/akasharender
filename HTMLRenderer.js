@@ -417,7 +417,7 @@ module.exports = class HTMLRenderer extends Renderer {
      * Extract the frontmatter for the given file.
      */
     async frontmatter(basedir, fpath) {
-        console.log(`HTMLRenderer frontmatter ${basedir} ${fpath}`);
+        // console.log(`HTMLRenderer frontmatter ${basedir} ${fpath}`);
         let coll = (await cache).getCache('frontmatter', { create: true });
         let cached = coll.find({
             basedir: { $eq: basedir },
@@ -429,7 +429,7 @@ module.exports = class HTMLRenderer extends Renderer {
             // than the cache'd version then delete the cach entry
             // and proceed to the rest of the function, otherwise
             // return the cached data
-            console.log(`HTMLRenderer frontmatter found cached ${basedir} ${fpath}`);
+            // console.log(`HTMLRenderer frontmatter found cached ${basedir} ${fpath}`);
             return cached.frontmatter;
         }
         const text = await fs.readFile(path.join(basedir, fpath), 'utf8');
@@ -437,7 +437,7 @@ module.exports = class HTMLRenderer extends Renderer {
         let fm;
         try {
             fm = matter(text);
-            console.log(`HTMLRenderer frontmatter parsed frontmatter ${basedir} ${fpath}`);
+            // console.log(`HTMLRenderer frontmatter parsed frontmatter ${basedir} ${fpath}`);
         } catch (e) {
             console.log(`HTMLRenderer.frontmatter FAIL to read frontmatter in ${fpath} because ${e.stack}`);
             fm = {};
@@ -447,7 +447,7 @@ module.exports = class HTMLRenderer extends Renderer {
             basedir, fpath, frontmatter: fm
         });
         await coll.save();
-        console.log(`HTMLRenderer frontmatter FINI ${basedir} ${fpath}`);
+        // console.log(`HTMLRenderer frontmatter FINI ${basedir} ${fpath}`);
         return fm;
     }
 

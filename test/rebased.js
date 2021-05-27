@@ -52,6 +52,7 @@ describe('build rebased site', function() {
             .addStylesheet({ href: "/vendor/bootstrap/css/bootstrap.min.css" })
             .addStylesheet({       href: "/style.css" })
             .addStylesheet({       href: "/print.css", media: "print" });
+        config_rebase.concurrency = 5;
         config_rebase.prepare();
     });
 
@@ -59,6 +60,7 @@ describe('build rebased site', function() {
 
         this.timeout(75000);
         let failed = false;
+        await config_rebase.setup();
         let results = await akasha.render(config_rebase);
         for (let result of results) {
             if (result.error) {
@@ -68,6 +70,7 @@ describe('build rebased site', function() {
         }
         // console.log(`site finished failed = ${failed}`);
         assert.isFalse(failed);
+        await config_rebase.close();
 
     });
 });
@@ -421,7 +424,7 @@ describe('rebased teaser, content', function() {
         assert.notExists($('body #png2jpg').attr('resize-to'));
 
         // console.log(config.plugin('akashacms-builtin').resizequeue);
-        assert.equal(config.plugin('akashacms-builtin').resizequeue.length, 30);
+        assert.equal(config.plugin('akashacms-builtin').resizequeue.length, 60);
         const queueContains = (queue, item) => {
             let found = false;
             for (let _item of queue) {
