@@ -52,7 +52,7 @@ describe('build rebased site', function() {
             .addStylesheet({ href: "/vendor/bootstrap/css/bootstrap.min.css" })
             .addStylesheet({       href: "/style.css" })
             .addStylesheet({       href: "/print.css", media: "print" });
-        config_rebase.concurrency = 5;
+            config.setConcurrency(5);
         config_rebase.prepare();
     });
 

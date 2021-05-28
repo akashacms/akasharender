@@ -35,7 +35,7 @@ config
     .addStylesheet({ href: "/vendor/bootstrap/css/bootstrap.min.css" })
     .addStylesheet({       href: "/style.css" })
     .addStylesheet({       href: "/print.css", media: "print" });
-config.concurrency = 5;
+config.setConcurrency(5);
 config.prepare();
 
 module.exports = config;
