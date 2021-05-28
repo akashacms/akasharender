@@ -238,8 +238,6 @@ exports.renderDocument = async function(config, basedir, fpath, renderTo, render
 
 exports.newerrender = async function(config) {
 
-    const results = [];
-
     const documents = (await filecache).documents;
     await documents.isReady();
     // 1. Gather list of files from RenderFileCache
@@ -279,9 +277,9 @@ exports.newerrender = async function(config) {
         try {
             let result = await exports.newRenderDocument(entry.config, entry.info);
             // console.log(result);
-            results.push({ result });
+            return { result };
         } catch (error) {
-            results.push({ error });
+            return { error };
         }
         // console.log(`DONE renderDocumentInQueue ${entry.info.path}`);
     }
@@ -300,9 +298,14 @@ exports.newerrender = async function(config) {
     for (let entry of filez2) {
         waitFor.push(queue.push(entry));
     }
+
     // Because we've pushed Promise objects into waitFor, this
     // automatically waits until all tasks are finished
-    await Promise.all(waitFor);
+    const results = [];
+    for (let result of waitFor) {
+        results.push(await result);
+    }
+    // await Promise.all(waitFor);
 
     // This appears to be another way to wait until all tasks are finished
     // await new Promise((resolve, reject) => {
