@@ -991,6 +991,13 @@ describe('Select Elements', function() {
 });
 
 describe('Index Chain', function() {
+    before(async function() {
+        await config.setup();
+        const documents = (await akasha.filecache).documents;
+        // console.log(`before documents.isReady`);
+        // await documents.isReady();
+    });
+
     it('should generate correct index chain for /hier/dir1/dir2/sibling.html', async function() {
         let chain = await akasha.indexChain(config, '/hier/dir1/dir2/sibling.html');
 
@@ -1106,6 +1113,11 @@ describe('Index Chain', function() {
         assert.include(chain[0].foundPath, 'index.html');
         assert.include(chain[0].filename, '/index.html');
     });
+
+    after(async function() {
+        await config.close();
+    });
+
 });
 
 describe('Nunjucks Include', function() {

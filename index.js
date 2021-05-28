@@ -141,9 +141,53 @@ exports.readDocument   = documents.readDocument;
 
 exports.partial = render.partial;
 
-exports.partialSync = render.partialSync; 
+exports.partialSync = render.partialSync;
 
 exports.indexChain = async function(config, fname) {
+
+    var ret = [];
+    const parsed = path.parse(fname);
+
+    const documents = (await exports.filecache).documents;
+    let found = await documents.find(fname);
+    if (found) {
+        ret.push({
+            foundDir: found.mountPoint,
+            foundPath: found.renderPath,
+            filename: fname
+        });
+    }
+
+    let fileName = fname;
+    let parentDir;
+    let dn = path.dirname(fileName);
+    let done = false;
+    while (!(dn === '.' || dn === parsed.root)) {
+        if (path.basename(fileName) === "index.html") {
+            parentDir = path.dirname(path.dirname(fileName));
+        } else {
+            parentDir = path.dirname(fileName);
+        }
+        let lookFor = path.join(parentDir, "index.html");
+
+        let found = await documents.find(lookFor);
+        if (found) {
+            ret.push({
+                foundDir: found.mountPoint,
+                foundPath: found.renderPath,
+                filename: lookFor
+            });
+        }
+    
+        // Loop control
+        fileName = lookFor;
+        dn = path.dirname(lookFor);
+    }
+
+    return ret.reverse();
+}
+
+/* exports.indexChainOLD = async function(config, fname) {
 
     var ret = [];
     const parsed = path.parse(fname);
@@ -187,7 +231,7 @@ exports.indexChain = async function(config, fname) {
 
     // console.log(`indexChain FINI ${util.inspect(ret.reverse)}`);
     return ret.reverse();
-};
+}; */
 
 exports.relative = require('relative');
 

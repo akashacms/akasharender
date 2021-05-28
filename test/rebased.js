@@ -52,7 +52,7 @@ describe('build rebased site', function() {
             .addStylesheet({ href: "/vendor/bootstrap/css/bootstrap.min.css" })
             .addStylesheet({       href: "/style.css" })
             .addStylesheet({       href: "/print.css", media: "print" });
-            config.setConcurrency(5);
+        config_rebase.setConcurrency(5);
         config_rebase.prepare();
     });
 
@@ -863,6 +863,13 @@ describe('rebased teaser, content', function() {
 
 
 describe('Rebased index Chain', function() {
+    before(async function() {
+        await config_rebase.setup();
+        const documents = (await akasha.filecache).documents;
+        // console.log(`before documents.isReady`);
+        // await documents.isReady();
+    });
+
     it('should generate correct index chain for /hier/dir1/dir2/sibling.html', async function() {
         let chain = await akasha.indexChain(config_rebase, '/hier/dir1/dir2/sibling.html');
 
@@ -978,6 +985,11 @@ describe('Rebased index Chain', function() {
         assert.include(chain[0].foundPath, 'index.html');
         assert.include(chain[0].filename, '/index.html');
     });
+
+    after(async function() {
+        await config_rebase.close();
+    });
+
 });
 
 describe('Rebased Nunjucks Include', function() {
