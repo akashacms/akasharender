@@ -2,6 +2,7 @@
 const { promisify } = require('util');
 const akasha   = require('../index');
 const { assert } = require('chai');
+const { after } = require('oembetter/filters');
 const sizeOf = promisify(require('image-size'));
 
 let config;
@@ -12,7 +13,10 @@ describe('build site', function() {
         config = new akasha.Configuration();
         config.rootURL("https://example.akashacms.com");
         config.configDir = __dirname;
-        config.addLayoutsDir('layouts')
+        config
+            .addAssetsDir('assets')
+            .addAssetsDir('assets2')
+            .addLayoutsDir('layouts')
             .addLayoutsDir('layouts-extra')
             .addDocumentsDir('documents')
             .addDocumentsDir({
@@ -47,10 +51,22 @@ describe('build site', function() {
         config.prepare();
     });
 
+    it('should run setup', async function() {
+        await config.setup();
+    });
+
+    it('should copy assets', async function() {
+        await config.copyAssets();
+    });
+
+    it('should overwrite file from stacked directory', async function() {
+        let { html, $ } = await akasha.readRenderedFile(config, 'file.txt');
+        assert.include(html, 'overriding');
+    });
+
     it('should build site', async function() {
         this.timeout(75000);
         let failed = false;
-        await config.setup();
         let results = await akasha.render(config);
         for (let result of results) {
             if (result.error) {
@@ -59,6 +75,9 @@ describe('build site', function() {
             }
         }
         assert.isFalse(failed);
+    });
+
+    it('should close the configuration', async function() {
         await config.close();
     });
 });
@@ -1114,7 +1133,7 @@ describe('Index Chain', function() {
         assert.include(chain[0].filename, '/index.html');
     });
 
-    after(async function() {
+    it('should close configuration', async function() {
         await config.close();
     });
 

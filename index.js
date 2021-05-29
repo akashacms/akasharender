@@ -30,6 +30,7 @@ const fs     = require('fs-extra');
 const path   = require('path');
 const oembetter = require('oembetter')();
 const RSS    = require('rss');
+const fastq = require('fastq');
 const globfs = require('globfs');
 const mahabhuta = require('mahabhuta');
 exports.mahabhuta = mahabhuta;
@@ -130,7 +131,7 @@ exports.findRendersTo = filez.findRendersTo;
  * @param dir
  * @param fpath
  */
-exports.readFile = filez.readFile;
+// NO LONGER USED exports.readFile = filez.readFile;
 exports.createNewFile = filez.createNewFile;
 
 exports.Document = documents.Document;
@@ -803,9 +804,49 @@ module.exports.Configuration = class Configuration {
     /**
      * Copy the contents of all directories in assetDirs to the render destination.
      */
-    copyAssets() {
+    async copyAssets() {
         // console.log('copyAssets START');
 
+        const config = this;
+        const assets = (await exports.filecache).assets;
+        await assets.isReady();
+        // Fetch the list of all assets files
+        const paths = assets.paths();
+
+        // The work task is to copy each file
+        const queue = fastq.promise(async function(item) {
+            try {
+                let destFN = path.join(config.renderTo, item.renderPath);
+                // Make sure the destination directory exists
+                await fs.ensureDir(path.dirname(destFN));
+                // Copy from the absolute pathname, to the computed 
+                // location within the destination directory
+                await fs.copy(item.fspath, destFN, {
+                    overwrite: true,
+                    preserveTimestamps: true
+                });
+                return "ok";
+            } catch (err) {
+                throw new Error(`copyAssets FAIL to copy ${item.fspath} because ${err.stack}`);
+            }
+        }, 10);
+
+        // Push the list of asset files into the queue
+        // Because queue.push returns Promise's we end up with
+        // an array of Promise objects
+        const waitFor = [];
+        for (let entry of paths) {
+            waitFor.push(queue.push(entry));
+        }
+        // This waits for all Promise's to finish
+        await Promise.all(waitFor);
+        // There are no results in this case to care about
+        // const results = [];
+        // for (let result of waitFor) {
+        //    results.push(await result);
+        // }
+
+        /* OLD code uses globfs
         return Promise.all(this.assetDirs.map(assetsdir => {
             var copyTo;
             var copyFrom;
@@ -816,12 +857,13 @@ module.exports.Configuration = class Configuration {
                 copyFrom = assetsdir.src;
                 copyTo = path.join(this.renderTo, assetsdir.dest);
             }
-            return globfs.copyAsync(copyFrom, [ "**/*", '**/.*/*', '**/.*' ], copyTo,
+            return globfs.copyAsync(copyFrom, [ "** /*", '** /.* /*', '** /.*' ], copyTo,
                     err => {
                         if (err) reject(err);
                         else resolve();
                     });
         }));
+        */
     }
 
 

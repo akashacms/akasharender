@@ -25,10 +25,6 @@ const util       = require('util');
 const path       = require('path');
 const cache      = require('./caching');
 
-exports.copyAssets = function(assetdirs, renderTo) {
-    return globfs.copyAsync(assetdirs, '**/*', renderTo);
-};
-
 exports.findAsset = async function(assetdirs, filename) {
     var cached = cache.get("filez-findAsset", filename);
     if (cached) {

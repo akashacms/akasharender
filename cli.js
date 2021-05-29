@@ -41,6 +41,9 @@ program
     .action(async (configFN) => {
         try {
             const config = require(path.join(process.cwd(), configFN));
+            await config.setup();
+            let filecache = await _filecache;
+            await filecache.assets.isReady();
             await config.copyAssets();
         } catch (e) {
             console.error(`copy-assets command ERRORED ${e.stack}`);
