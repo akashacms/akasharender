@@ -14,8 +14,8 @@ describe('build site', function() {
         config.rootURL("https://example.akashacms.com");
         config.configDir = __dirname;
         config
-            .addAssetsDir('assets')
             .addAssetsDir('assets2')
+            .addAssetsDir('assets')
             .addLayoutsDir('layouts')
             .addLayoutsDir('layouts-extra')
             .addDocumentsDir('documents')

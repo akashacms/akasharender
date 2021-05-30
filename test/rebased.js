@@ -424,7 +424,7 @@ describe('rebased teaser, content', function() {
         assert.notExists($('body #png2jpg').attr('resize-to'));
 
         // console.log(config.plugin('akashacms-builtin').resizequeue);
-        assert.equal(config.plugin('akashacms-builtin').resizequeue.length, 60);
+        assert.equal(config.plugin('akashacms-builtin').resizequeue.length, 30);
         const queueContains = (queue, item) => {
             let found = false;
             for (let _item of queue) {

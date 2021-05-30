@@ -4,14 +4,56 @@ const akasha   = require('../index');
 config = new akasha.Configuration();
 config.rootURL("https://example.akashacms.com");
 config.configDir = __dirname;
-config.addLayoutsDir('layouts')
-    .addLayoutsDir('layouts-extra')
-    .addDocumentsDir('documents')
+config
+    .addAssetsDir({
+        src: 'assets2',
+        dest: '/',
+        ignore: [
+            '**/.placeholder'
+        ]
+    })
+    .addAssetsDir({
+        src: 'assets',
+        dest: '/',
+        ignore: [
+            '**/.placeholder'
+        ]
+    })
+    .addLayoutsDir({
+        src: 'layouts',
+        dest: '/',
+        ignore: [
+            '**/.placeholder'
+        ]
+    })
+    .addLayoutsDir({
+        src: 'layouts-extra',
+        dest: '/',
+        ignore: [
+            '**/.placeholder'
+        ]
+    })
+    .addDocumentsDir({
+        src: 'documents',
+        dest: '/',
+        ignore: [
+            '**/.placeholder'
+        ]
+    })
     .addDocumentsDir({
         src: 'mounted',
-        dest: 'mounted'
+        dest: 'mounted',
+        ignore: [
+            '**/.placeholder'
+        ]
     })
-    .addPartialsDir('partials');
+    .addPartialsDir({
+        src: 'partials',
+        dest: '/',
+        ignore: [
+            '**/.placeholder'
+        ]
+    });
 config.setMahabhutaConfig({
     recognizeSelfClosing: true,
     recognizeCDATA: true,
