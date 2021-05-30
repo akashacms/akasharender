@@ -91,6 +91,7 @@ export class DirsWatcher extends EventEmitter {
                 mountPoint: e.mountPoint,
                 pathInSource: fnInSourceDir,
                 path: docpath,
+                isDirectory: stats.isDirectory(),
                 stats
             };
         }

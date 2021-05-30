@@ -319,6 +319,7 @@ exports.newerrender = async function(config) {
     try {
         await config.hookSiteRendered();
     } catch (e) {
+        console.error(e.stack);
         throw new Error(`hookSiteRendered failed because ${e}`);
     }
 

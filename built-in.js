@@ -33,6 +33,8 @@ const Plugin = require('./Plugin');
 const relative = require('relative');
 const hljs = require('highlight.js');
 // const akasha   = require('./index');
+const cache = import('./cache/cache-forerunner.mjs');
+const filecache = import('./cache/file-cache.mjs');
 const mahabhuta = require('mahabhuta');
 const mahaMetadata = require('mahabhuta/maha/metadata');
 const mahaPartial = require('mahabhuta/maha/partial');
@@ -109,8 +111,13 @@ module.exports = class BuiltInPlugin extends Plugin {
 
     async onSiteRendered(config) {
 
-        for (let toresize of this.resizequeue) {
-            // if (toresize.docPath === 'mounted/img2resize.html') console.log(`resizing `, toresize);
+        const documents = (await filecache).documents;
+        await documents.isReady();
+        const assets = (await filecache).assets;
+        await assets.isReady();
+        while (this.resizequeue.length > 0) {
+
+            let toresize = this.resizequeue.pop();
 
             let img2resize;
             if (!path.isAbsolute(toresize.src)) {
@@ -121,24 +128,15 @@ module.exports = class BuiltInPlugin extends Plugin {
             } else {
                 img2resize = toresize.src;
             }
-            // if (toresize.docPath === 'mounted/img2resize.html') console.log(`img2resize ${img2resize}`);
 
             let srcfile = undefined;
 
-            let found = await filez.findAsset(config.assetDirs, img2resize);
-            if (Array.isArray(found) && found.length >= 1) {
-                // if (toresize.docPath === 'mounted/img2resize.html') console.log(`found ${img2resize} as asset `, found);
-                srcfile = found[0].fullpath;
+            let found = assets.find(img2resize);
+            if (found) {
+                srcfile = found.fspath;
             } else {
-                found = await filez.findRendersTo(config, img2resize);
-                if (found && found.foundMountedOn === '/') {
-                    // if (toresize.docPath === 'mounted/img2resize.html') console.log(`found ${img2resize} as document `, found);
-                    srcfile = path.join(found.foundDir, found.foundFullPath);
-                } else if (found && found.foundMountedOn !== '/') {
-                    srcfile = path.join(found.foundDir, found.foundPathWithinDir);
-                } else {
-                    // if (toresize.docPath === 'mounted/img2resize.html') console.log(`did not find ${img2resize}`);
-                }
+                found = documents.find(img2resize);
+                srcfile = found ? found.fspath : undefined;
             }
             if (!srcfile) throw new Error(`akashacms-builtin: Did not find source file for image to resize ${img2resize}`);
 
@@ -161,8 +159,6 @@ module.exports = class BuiltInPlugin extends Plugin {
 
                 // Make sure the destination directory exists
                 await fs.mkdir(path.dirname(resizedest), { recursive: true });
-                
-                // if (toresize.docPath === 'mounted/img2resize.html') console.log(`resizing ${srcfile} to ${resizedest}`);
                 await resized.toFile(resizedest);
             } catch (e) {
                 throw new Error(`built-in: Image resize failed for ${srcfile} (toresize ${util.inspect(toresize)} found ${util.inspect(found)}) because ${e}`);
@@ -662,6 +658,10 @@ class AnchorCleanup extends mahabhuta.Munger {
     async process($, $link, metadata, dirty) {
         var href     = $link.attr('href');
         var linktext = $link.text();
+        const documents = (await filecache).documents;
+        await documents.isReady();
+        const assets = (await filecache).assets;
+        await assets.isReady();
         // console.log(`AnchorCleanup ${href} ${linktext}`);
         if (href && href !== '#') {
             var uHref = url.parse(href, true, true);
@@ -731,8 +731,9 @@ class AnchorCleanup extends mahabhuta.Munger {
             */
 
             // Look to see if it's an asset file
-            var foundAsset = await filez.findAsset(this.array.options.config.assetDirs, absolutePath);
-            if (foundAsset && foundAsset.length > 0) {
+            let foundAsset = assets.find(absolutePath);
+            // var foundAsset = await filez.findAsset(this.array.options.config.assetDirs, absolutePath);
+            if (foundAsset) { // && foundAsset.length > 0) {
                 return "ok";
             }
 
@@ -751,7 +752,8 @@ class AnchorCleanup extends mahabhuta.Munger {
             }
 
             // Does it exist in documents dir?
-            var found = await filez.findRendersTo(this.array.options.config, absolutePath);
+            let found = documents.find(absolutePath);
+            // var found = await filez.findRendersTo(this.array.options.config, absolutePath);
             // console.log(`AnchorCleanup findRendersTo ${absolutePath} ${util.inspect(found)}`);
             if (!found) {
                 throw new Error(`Did not find ${href} in ${util.inspect(this.array.options.config.documentDirs)} in ${metadata.document.path}`);
@@ -761,26 +763,28 @@ class AnchorCleanup extends mahabhuta.Munger {
             // If this is a directory, there might be /path/to/index.html so we try for that.
             // The problem is that this.array.options.config.findRendererPath would fail on just /path/to but succeed
             // on /path/to/index.html
-            if (found.foundIsDirectory) {
-                found = await filez.findRendersTo(this.array.options.config, path.join(absolutePath, "index.html"));
+            if (found.isDirectory) {
+                found = documents.find(path.join(absolutePath, "index.html"));
+                // found = await filez.findRendersTo(this.array.options.config, path.join(absolutePath, "index.html"));
                 if (!found) {
                     throw new Error(`Did not find ${href} in ${util.inspect(this.array.options.config.documentDirs)} in ${metadata.document.path}`);
                 }
             }
             // Otherwise look into filling emptiness with title
-            var renderer = this.array.options.config.findRendererPath(found.foundFullPath);
+            var renderer = this.array.options.config.findRendererPath(found.path);
             // console.log(`AnchorCleanup ${metadata.document.path} ${href} findRendererPath ${(new Date() - startTime) / 1000} seconds`);
             if (renderer && renderer.metadata) {
-                try {
+                let docmeta = found.docMetadata;
+                /* try {
                     var docmeta = await renderer.metadata(found.foundDir, found.foundPathWithinDir);
                 } catch(err) {
                     throw new Error(`Could not retrieve document metadata for ${found.foundDir} ${found.foundPathWithinDir} because ${err}`);
-                }
+                } */
                 // Automatically add a title= attribute
-                if (!$link.attr('title') && docmeta.title) {
+                if (!$link.attr('title') && docmeta && docmeta.title) {
                     $link.attr('title', docmeta.title);
                 }
-                if (docmeta.title) {
+                if (docmeta && docmeta.title) {
                     $link.text(docmeta.title);
                 }
                 // console.log(`AnchorCleanup finished`);

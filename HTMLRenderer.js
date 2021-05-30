@@ -268,7 +268,7 @@ module.exports = class HTMLRenderer extends Renderer {
             try {
                 docrendered = await this.maharun(docrendered, docdata, config.mahafuncs);
             } catch (e2) {
-                let eee = new Error(`Error with Mahabhuta ${fpath} with ${metadata.layout} ${e2.stack ? e2.stack : e2}`);
+                let eee = new Error(`Error with Mahabhuta ${docInfo.path} with ${metadata.layout} ${e2.stack ? e2.stack : e2}`);
                 console.error(eee);
                 throw eee;
             }

@@ -26,6 +26,7 @@ const path       = require('path');
 const cache      = require('./caching');
 
 exports.findAsset = async function(assetdirs, filename) {
+    throw new Error('Deprecated');
     var cached = cache.get("filez-findAsset", filename);
     if (cached) {
         return Promise.resolve(cached);
@@ -79,6 +80,7 @@ exports.findRendersToForce = function(config, rendersTo) {
 };
 
 exports.findRendersTo = async function(config, rendersTo) {
+    throw new Error('Deprecated');
 
     if (Array.isArray(config)) {
         throw new Error(`findRendersTo must now be given a Configuration object rather than the document array - for ${rendersTo}`);
