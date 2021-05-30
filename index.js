@@ -845,25 +845,6 @@ module.exports.Configuration = class Configuration {
         // for (let result of waitFor) {
         //    results.push(await result);
         // }
-
-        /* OLD code uses globfs
-        return Promise.all(this.assetDirs.map(assetsdir => {
-            var copyTo;
-            var copyFrom;
-            if (typeof assetsdir === 'string') {
-                copyFrom = assetsdir;
-                copyTo = this.renderTo;
-            } else {
-                copyFrom = assetsdir.src;
-                copyTo = path.join(this.renderTo, assetsdir.dest);
-            }
-            return globfs.copyAsync(copyFrom, [ "** /*", '** /.* /*', '** /.*' ], copyTo,
-                    err => {
-                        if (err) reject(err);
-                        else resolve();
-                    });
-        }));
-        */
     }
 
 
