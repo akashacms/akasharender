@@ -4,6 +4,7 @@ import { default as mime } from 'mime';
 import * as util from 'util';
 import * as path from 'path';
 import EventEmitter from 'events';
+import minimatch from 'minimatch';
 
 const _symb_dirs = Symbol('dirs');
 const _symb_watcher = Symbol('watcher');
@@ -25,19 +26,25 @@ export class DirsWatcher extends EventEmitter {
     get dirs() { return this[_symb_dirs]; }
     get collection() { return this[_symb_collnm]; }
 
+    dirForPath(fspath) {
+        let e;
+        for (let entry of this.dirs) {
+            // console.log(`dirForPath fspath ${fspath} path ${entry.path} ${fspath.indexOf(entry.path+'/')}`)
+            if (fspath.indexOf(entry.path+'/') === 0) {
+                e = entry;
+                break;
+            }
+        }
+        return e;
+    }
+
     /**
      * Convert data we gather about a file in the file system into a descriptor object.
      * @param fspath 
      * @param stats 
      */
     fileInfo(fspath, stats) {
-        let e;
-        for (let entry of this.dirs) {
-            if (fspath.indexOf(entry.path) === 0) {
-                e = entry;
-                break;
-            }
-        }
+        let e = this.dirForPath(fspath);
         if (!e) {
             throw new Error(`No mountPoint found for ${fspath}`);
         }
@@ -46,16 +53,47 @@ export class DirsWatcher extends EventEmitter {
         if (docpath.startsWith('/')) {
             docpath = docpath.substring(1);
         }
-        return {
-            fspath: fspath,
-            mime: mime.getType(fspath),
-            baseMetadata: e.baseMetadata,
-            sourcePath: e.path,
-            mountPoint: e.mountPoint,
-            pathInSource: fnInSourceDir,
-            path: docpath,
-            stats
-        };
+        let ignore = false;
+        let include = true;
+        if (e.ignore) {
+            let ignores;
+            if (typeof e.ignore === 'string') {
+                ignores = [ e.ignore ];
+            } else {
+                ignores = e.ignore;
+            }
+            for (let i of ignores) {
+                if (minimatch(fnInSourceDir, i)) ignore = true;
+                // console.log(`e.ignore ${fnInSourceDir} ${i} => ${ignore}`);
+            }
+        }
+        if (e.include) {
+            include = false;
+            let includers;
+            if (typeof e.include === 'string') {
+                includers = [ e.include ];
+            } else {
+                includers = e.include;
+            }
+            for (let i of includers) {
+                if (minimatch(fnInSourceDir, i)) include = true;
+                // console.log(`e.include ${fnInSourceDir} ${i} => ${include}`);
+            }
+        }
+        if (ignore || !include) {
+            return undefined;
+        } else {
+            return {
+                fspath: fspath,
+                mime: mime.getType(fspath),
+                baseMetadata: e.baseMetadata,
+                sourcePath: e.path,
+                mountPoint: e.mountPoint,
+                pathInSource: fnInSourceDir,
+                path: docpath,
+                stats
+            };
+        }
     }
 
     // TODO Does it make sense to store any file data here?
@@ -76,15 +114,26 @@ export class DirsWatcher extends EventEmitter {
             persistent: true, ignoreInitial: false, awaitWriteFinish: true, alwaysStat: true
         });
 
+        // In the event handlers, we create the FileInfo object matching
+        // the path.  The FileInfo is matched to a _symb_dirs entry.
+        // If the _symb_dirs entry has <em>ignore</em> or <em>include</em>
+        // fields, the patterns in those fields are used to determine whether
+        // to include or ignore this file.  If we are to ignore it, then
+        // fileInfo returns undefined.  Hence, in each case we test whether
+        // <em>info</em> has a value before emitting the event.
+        //
+        // All this function does is to receive events from Chokidar,
+        // construct FileInfo objects, and emit matching events.
+
         this[_symb_watcher]
             .on('change', async (fpath, stats) => { 
                 let info = this.fileInfo(fpath, stats);
-                this.emit('change', this.collection, info);
+                if (info) this.emit('change', this.collection, info);
                 // console.log(`DirsWatcher change ${fpath}`, info);
             })
             .on('add', async (fpath, stats) => {
                 let info = this.fileInfo(fpath, stats);
-                this.emit('add', this.collection, info);
+                if (info) this.emit('add', this.collection, info);
                 // console.log(`DirsWatcher add`, info);
             })
             .on('addDir', async (fpath, stats) => { 
@@ -95,7 +144,7 @@ export class DirsWatcher extends EventEmitter {
             .on('unlink', async fpath => { 
                 let info = this.fileInfo(fpath, stats);
                 // console.log(`DirsWatcher unlink ${fpath}`);
-                this.emit('unlink', this.collection, info);
+                if (info) this.emit('unlink', this.collection, info);
             })
             .on('unlinkDir', async fpath => { 
                 // ?? let info = this.fileInfo(fpath, stats);
