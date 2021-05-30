@@ -37,7 +37,9 @@ const remapdirs = dirz => {
             return {
                 path: dir.src,
                 mountPoint: dir.dest,
-                baseMetadata: dir.baseMetadata
+                baseMetadata: dir.baseMetadata,
+                ignore: dir.ignore,
+                include: dir.include
             };
         }
     });
@@ -269,6 +271,7 @@ export class FileCache extends EventEmitter {
                     ? _fpath.substring(1)
                     : _fpath;
 
+        // Select the mount points which might have this file
         let mounts = [];
         for (let entry of this[_symb_dirs]) {
             if (entry.mountPoint === '/') mounts.push(entry);
@@ -278,44 +281,72 @@ export class FileCache extends EventEmitter {
         if (mounts.length === 0) {
             throw new Error(`No mountPoint found for ${fpath}`);
         }
+        /* if (fpath.indexOf("file.txt") >= 0) {
+            console.log(mounts);
+        } */
+
+        // Query for files, taking the mount points in order
+        // Matching a mount point requires that it match the
+        // mount path against the sourcePath in the file info
+        // document, as well as either matching the path
+        // or the renderPath
+        //
+        // Remember what we need is the first file which matches
+        // the path or the renderPath.  In this case "first" means
+        // the first mount point that contains that file.
         let ret;
         for (let mount of mounts) {
             let results = coll.find({
-                /* $and: [
+                // As just described all three of these conditions
+                // must be true for a match
+                $and: [
+                    { mountPoint: { $eq: mount.mountPoint } },
+                    { sourcePath: { $eq: mount.path       } },
                     {
-                        mountPoint: { $eq: mount.path }
-                    },
-                    { */
                         $or: [
                             { path: { $eq: fpath } },
                             { renderPath: { $eq: fpath } }
                         ]
-                    /* }
-                ] */
+                    }
+                ]
             });
             // console.log(`${this.collection} find mountPoint ${mount.path} AND path $eq ${fpath} || renderPath $eq ${fpath}  length=${results.length}`);
             if (results.length > 0) {
+                /* if (fpath.indexOf("file.txt") >= 0) {
+                    console.log(`found ${util.inspect(mount)} ${fpath} `, results);
+                } */
                 ret = results[0];
                 break;
-            }
+            } /* else {
+                if (fpath.indexOf("file.txt") >= 0) {
+                    console.log(`NOT found ${util.inspect(mount)} ${fpath} `);
+                }
+            } */
         }
-        // console.log(`find ${fpath} found ==> `, ret);
+        /* if (fpath.indexOf("file.txt") >= 0) {
+            console.log(`find ${fpath} found ==> `, ret);
+        } */
         return ret;
     }
 
     paths() {
-        console.log(`paths ${this.collection}`);
+        // console.log(`paths ${this.collection}`);
         let coll = getCache(this.collection, { create: true });
-        let ret = coll.find({}, {
-            renderPath: 1, path: 1, fspath: 1
-        });
-        return ret.map(item => {
-            return {
-                fspath: item.fspath,
-                renderPath: item.renderPath,
-                path: item.path
-            };
-        });
+        let paths = coll.find({
+            $distinct: { path: 1 }
+        }, { path: 1 });
+        // console.log(paths);
+        const ret = [];
+        for (let p of paths) {
+            // console.log(p.path);
+            let info = this.find(p.path);
+            ret.push({
+                fspath: info.fspath,
+                path: info.path,
+                renderPath: info.renderPath
+            });
+        }
+        return ret;
     }
 
 }

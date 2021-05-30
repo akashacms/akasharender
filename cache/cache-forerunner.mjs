@@ -99,6 +99,14 @@ export function find(cachenm, where) {
     return cache.find(where);
 }
 
+export function insert(cachenm, document) {
+    if (!cacheExists(cachenm)) {
+        addCache(cachenm);
+    }
+    const cache = getCache(cachenm);
+    cache.insert(document);
+}
+
 export function upsert(cachenm, document) {
     if (!cacheExists(cachenm)) {
         addCache(cachenm);
