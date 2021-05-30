@@ -1245,6 +1245,131 @@ describe('Assets cache', function() {
     });
 });
 
+describe('Search', function() {
+    it('should select by rootPath', function() {
+        let found = filecache.assets.search(config, {
+            rootPath: 'hier/dir1'
+        });
+
+        assert.isDefined(found);
+        assert.isArray(found);
+        for (let doc of found) {
+            assert.equal(doc.path.indexOf('hier/dir1'), 0);
+        }
+    });
+
+    it('should select by pathmatch string', function() {
+        let found = filecache.assets.search(config, {
+            pathmatch: '.jpg$'
+        });
+
+        assert.isDefined(found);
+        assert.isArray(found);
+        for (let doc of found) {
+            assert.isOk(doc.path.match(/\.jpg$/));
+        }
+    });
+
+    it('should select by pathmatch RegExp', function() {
+        let found = filecache.assets.search(config, {
+            pathmatch: /.json$/
+        });
+
+        assert.isDefined(found);
+        assert.isArray(found);
+        for (let doc of found) {
+            assert.isOk(doc.path.match(/\.json$/));
+        }
+    });
+
+    it('should select by GLOB', function() {
+        let found = filecache.assets.search(config, {
+            glob: '**/*.json'
+        });
+
+        assert.isDefined(found);
+        assert.isArray(found);
+        for (let doc of found) {
+            assert.isOk(doc.path.match(/\.json$/));
+        }
+    });
+
+    it('should select by MIME', function() {
+        let found = filecache.assets.search(config, {
+            mime: 'image/jpeg'
+        });
+
+        assert.isDefined(found);
+        assert.isArray(found);
+        for (let doc of found) {
+            assert.equal(doc.mime, "image/jpeg");
+        }
+    });
+
+    it('should select by layout string', function() {
+        let found = filecache.assets.search(config, {
+            layouts: 'default-once.html.liquid'
+        });
+
+        assert.isDefined(found);
+        assert.isArray(found);
+        for (let doc of found) {
+            assert.isDefined(doc.docMetadata);
+            assert.isDefined(doc.docMetadata.layout);
+            assert.equal(doc.docMetadata.layout, 'default-once.html.liquid');
+        }
+    });
+
+    it('should select by layout array', function() {
+        let found = filecache.assets.search(config, {
+            layouts: [ 'default-once.html.liquid', 'default-once.html.njk' ]
+        });
+
+        assert.isDefined(found);
+        assert.isArray(found);
+        for (let doc of found) {
+            assert.isDefined(doc.docMetadata);
+            assert.isDefined(doc.docMetadata.layout);
+            assert.match(doc.docMetadata.layout,
+                /default-once.html.liquid|default-once.html.njk/ );
+        }
+    });
+
+    it('should select by renderer', function() {
+        let found = filecache.assets.search(config, {
+            renderers: [ akasha.HTMLRenderer ]
+        });
+
+        assert.isDefined(found);
+        assert.isArray(found);
+        for (let doc of found) {
+            assert.isDefined(doc.docMetadata);
+            assert.isDefined(doc.docMetadata.layout);
+            assert.match(doc.path,
+                /.html.md$|.html.adoc$|.html.json$|.html.handlebars|.html.liquid$|.html.njk$/ );
+        }
+    });
+
+    it('should select by custom function', function() {
+        let found = filecache.assets.search(config, {
+            filterfunc: (config, options, doc) => {
+                return doc.isDirectory === false
+                    && doc.mountPoint === 'mounted'
+            }
+        });
+
+        assert.isDefined(found);
+        assert.isArray(found);
+        for (let doc of found) {
+            assert.isFalse(doc.isDirectory);
+            assert.match(doc.path, /^mounted\// );
+        }
+    });
+
+
+
+});
+
 describe('Close caches', function() {
 
     it('should close caches', async function() {

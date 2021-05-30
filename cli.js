@@ -322,6 +322,39 @@ program
     });
 
 program
+    .command('search <configFN>')
+    .description('Search for documents')
+    .option('--root <rootPath>', 'Select only files within the named directory')
+    .option('--match <pathmatch>', 'Select only files matching the regular expression')
+    .option('--glob <globmatch>', 'Select only files matching the glob expression')
+    .option('--layout <layout>', 'Select only files matching the layouts')
+    .option('--mime <mime>', 'Select only files matching the MIME type')
+    .action(async (configFN, cmdObj) => {
+        const akasha    = require('./index');
+        // console.log(`render: akasha: ${util.inspect(akasha)}`);
+        try {
+            const config = require(path.join(process.cwd(), configFN));
+            await config.setup();
+            let filecache = await _filecache;
+            // console.log(filecache.documents);
+            await filecache.documents.isReady();
+            console.log(cmdObj);
+            let options = { };
+            if (cmdObj.root) options.rootPath = cmdObj.root;
+            if (cmdObj.match) options.pathmatch = cmdObj.match;
+            if (cmdObj.glob) options.glob = cmdObj.glob;
+            if (cmdObj.layout) options.layouts = cmdObj.layout;
+            if (cmdObj.mime) options.mime = cmdObj.mime;
+            console.log(options);
+            let docs = filecache.documents.search(config, options);
+            console.log(docs);
+            await config.close();
+        } catch (e) {
+            console.error(`docinfo command ERRORED ${e.stack}`);
+        }
+    });
+
+program
     .command('assets <configFN>')
     .description('List the assets in a site configuration')
     .action(async (configFN) => {

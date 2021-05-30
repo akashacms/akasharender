@@ -5,6 +5,7 @@ import { DirsWatcher } from '../watcher/watcher.mjs';
 import { getCache } from './cache-forerunner.mjs';
 import { METHODS } from 'http';
 import fastq from 'fastq';
+import minimatch from 'minimatch';
 
 
 /**
@@ -300,12 +301,12 @@ export class FileCache extends EventEmitter {
                 // As just described all three of these conditions
                 // must be true for a match
                 $and: [
-                    { mountPoint: { $eq: mount.mountPoint } },
-                    { sourcePath: { $eq: mount.path       } },
+                    { mountPoint: { $eeq: mount.mountPoint } },
+                    { sourcePath: { $eeq: mount.path       } },
                     {
                         $or: [
-                            { path: { $eq: fpath } },
-                            { renderPath: { $eq: fpath } }
+                            { path: { $eeq: fpath } },
+                            { renderPath: { $eeq: fpath } }
                         ]
                     }
                 ]
@@ -347,6 +348,138 @@ export class FileCache extends EventEmitter {
             });
         }
         return ret;
+    }
+
+    // Search among the documents for ones matching the conditions named in
+    // the options object
+    //
+    //    pathmatch - must be a regular expression with which to match
+    //         the path
+    //    glob - like pathmatch, but using a Glob expression rather 
+    //         than a regular expression
+    //    mime - strict equality against the MIME type
+    //    rootPath - Select only files within the path specified
+    //    layouts - Select only files using one of the named layout files
+    //    renderers - Selects files that would be rendered by
+    //         a specific Renderer subclass
+    //    filterfunc - Supply a function that is called for each file, to
+    //         implement a custom selection
+
+    search(config, options) {
+        let documents = [];
+        const selector = {
+            $distinct: { path: 1 }
+        };
+        if (options.pathmatch) {
+            if (typeof options.pathmatch === 'string') {
+                selector.path = new RegExp(options.pathmatch);
+            } else if (options.pathmatch instanceof RegExp) {
+                selector.path = options.pathmatch;
+            } else {
+                throw new Error(`Incorrect PATH check ${options.pathmatch}`);
+            }
+        }
+        if (options.mime) {
+            if (typeof options.mime === 'string') {
+                selector.mime = { $eeq: options.mime };
+            } else if (Array.isArray(options.mime)) {
+                selector.mime = { $in: options.mime };
+            } else {
+                throw new Error(`Incorrect MIME check ${options.mime}`);
+            }
+        }
+        if (options.layouts) {
+            if (typeof options.layouts === 'string') {
+                selector.docMetadata = {
+                    layout: { $eeq: options.layouts }
+                }
+            } else if (Array.isArray(options.layouts)) {
+                selector.docMetadata = {
+                    layout: { $in: options.layouts }
+                }
+            } else {
+                throw new Error(`Incorrect LAYOUT check ${options.layouts}`);
+            }
+        }
+        let coll = getCache(this.collection, { create: true });
+        let paths = coll.find(selector, {
+            path: 1,
+            $orderBy: { renderPath: 1 }
+        });
+        for (let p of paths) {
+            // console.log(p.path);
+            let info = this.find(p.path);
+            documents.push(info);
+        }
+        // let documents = this.paths();
+
+        if (options.rootPath) {
+            documents = documents.filter(doc => {
+                return (doc.renderPath.startsWith(options.rootPath))
+                    ? true : false;
+            });
+        }
+
+        /* if (options.pathmatch) {
+            documents = documents.filter(doc => {
+                return doc.path.match(options.pathmatch) !== null;
+            });
+        } */
+
+        if (options.glob) {
+            documents = documents.filter(doc => {
+                return minimatch(doc.path, options.glob);
+            });
+        }
+
+        /* if (options.mime) {
+            documents = documents.filter(doc => {
+                return doc.mime === options.mime;
+            });
+        } */
+
+        if (options.renderers) {
+            documents = documents.filter(doc => {
+                if (!options.renderers) return true;
+                let renderer = config.findRendererPath(doc.path);
+                for (let renderer of options.renderers) {
+                    if (renderer instanceof renderer) {
+                        return true;
+                    }
+                }
+                return false;
+            });
+        }
+
+        /* if (options.layouts) {
+            documents = documents.filter(doc => {
+                for (let layout of options.layouts) {
+                    // console.log(`options.layouts ${doc.metadata.layout} === ${layout}?`);
+                    try {
+                        if (doc.metadata.layout === layout) {
+                            return true;
+                        }
+                    } catch (err) {
+                        console.error(`documentSearch WARN filter layouts ${doc.docpath} has no layout`);
+                    }
+                }
+                return false;
+            });
+        } */
+
+        if (options.filterfunc) {
+            documents = documents.filter(doc => {
+                return options.filterfunc(config, options, doc);
+            });
+        }
+
+        /* documents = documents.sort((a, b) => {
+            if (a.renderPath < b.renderPath) return -1;
+            else if (a.renderPath === b.renderPath) return 0;
+            else return 1;
+        }); */
+
+        return documents;
     }
 
 }
