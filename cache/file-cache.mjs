@@ -355,8 +355,10 @@ export class FileCache extends EventEmitter {
     //
     //    pathmatch - must be a regular expression with which to match
     //         the path
+    //    renderpathmatch - like pathmatch, but matching against renderPath
     //    glob - like pathmatch, but using a Glob expression rather 
     //         than a regular expression
+    //    renderglob - like glob, but matching against renderPath
     //    mime - strict equality against the MIME type
     //    rootPath - Select only files within the path specified
     //    layouts - Select only files using one of the named layout files
@@ -377,6 +379,15 @@ export class FileCache extends EventEmitter {
                 selector.path = options.pathmatch;
             } else {
                 throw new Error(`Incorrect PATH check ${options.pathmatch}`);
+            }
+        }
+        if (options.renderpathmatch) {
+            if (typeof options.renderpathmatch === 'string') {
+                selector.renderPath = new RegExp(options.renderpathmatch);
+            } else if (options.renderpathmatch instanceof RegExp) {
+                selector.renderPath = options.renderpathmatch;
+            } else {
+                throw new Error(`Incorrect PATH check ${options.renderpathmatch}`);
             }
         }
         if (options.mime) {
@@ -429,6 +440,13 @@ export class FileCache extends EventEmitter {
         if (options.glob) {
             documents = documents.filter(doc => {
                 return minimatch(doc.path, options.glob);
+            });
+        }
+
+
+        if (options.renderglob) {
+            documents = documents.filter(doc => {
+                return minimatch(doc.renderPath, options.renderglob);
             });
         }
 

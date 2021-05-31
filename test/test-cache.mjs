@@ -1282,6 +1282,30 @@ describe('Search', function() {
         }
     });
 
+    it('should select by renderpathmatch string', function() {
+        let found = filecache.assets.search(config, {
+            renderpathmatch: '.html$'
+        });
+
+        assert.isDefined(found);
+        assert.isArray(found);
+        for (let doc of found) {
+            assert.isOk(doc.renderPath.match(/\.html$/));
+        }
+    });
+
+    it('should select by renderpathmatch RegExp', function() {
+        let found = filecache.assets.search(config, {
+            renderpathmatch: /.html$/
+        });
+
+        assert.isDefined(found);
+        assert.isArray(found);
+        for (let doc of found) {
+            assert.isOk(doc.renderPath.match(/\.html$/));
+        }
+    });
+
     it('should select by GLOB', function() {
         let found = filecache.assets.search(config, {
             glob: '**/*.json'
@@ -1291,6 +1315,18 @@ describe('Search', function() {
         assert.isArray(found);
         for (let doc of found) {
             assert.isOk(doc.path.match(/\.json$/));
+        }
+    });
+
+    it('should select renderPath by GLOB', function() {
+        let found = filecache.assets.search(config, {
+            renderglob: '**/*.html'
+        });
+
+        assert.isDefined(found);
+        assert.isArray(found);
+        for (let doc of found) {
+            assert.isOk(doc.renderPath.match(/\.html$/));
         }
     });
 
