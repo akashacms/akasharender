@@ -277,7 +277,7 @@ module.exports = class HTMLRenderer extends Renderer {
         }
         data.report(docInfo.mountPoint, docInfo.path, config.renderTo, 
                             "MAHABHUTA", renderStart);
-        await fs.outputFile(
+        await fs.writeFile(
                 path.join(config.renderTo, this.filePath(docInfo.path)),
                 docrendered, 'utf8');
     }
