@@ -159,7 +159,7 @@ exports.indexChain = async function(config, fname) {
         });
     }
 
-    let fileName = fname;
+    let fileName = found.renderPath;
     let parentDir;
     let dn = path.dirname(fileName);
     let done = false;
