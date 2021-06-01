@@ -52,10 +52,12 @@ describe('build site', function() {
     });
 
     it('should run setup', async function() {
+        this.timeout(75000);
         await config.setup();
     });
 
     it('should copy assets', async function() {
+        this.timeout(75000);
         await config.copyAssets();
     });
 
