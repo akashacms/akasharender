@@ -137,7 +137,10 @@ exports.createNewFile = filez.createNewFile;
 exports.Document = documents.Document;
 exports.HTMLDocument = documents.HTMLDocument;
 exports.documentTree = documents.documentTree;
-exports.documentSearch = documents.documentSearch;
+exports.documentSearch = async function(config, options) {
+    const documents = (await exports.filecache).documents;
+    return documents.search(config, options);
+}
 exports.readDocument   = documents.readDocument;
 
 exports.partial = render.partial;
