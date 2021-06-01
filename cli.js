@@ -339,14 +339,14 @@ program
             let filecache = await _filecache;
             // console.log(filecache.documents);
             await filecache.documents.isReady();
-            console.log(cmdObj);
+            // console.log(cmdObj);
             let options = { };
             if (cmdObj.root) options.rootPath = cmdObj.root;
             if (cmdObj.match) options.pathmatch = cmdObj.match;
             if (cmdObj.glob) options.glob = cmdObj.glob;
             if (cmdObj.layout) options.layouts = cmdObj.layout;
             if (cmdObj.mime) options.mime = cmdObj.mime;
-            console.log(options);
+            // console.log(options);
             let docs = filecache.documents.search(config, options);
             console.log(docs);
             await config.close();
