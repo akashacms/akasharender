@@ -112,9 +112,9 @@ module.exports = class BuiltInPlugin extends Plugin {
     async onSiteRendered(config) {
 
         const documents = (await filecache).documents;
-        await documents.isReady();
+        // await documents.isReady();
         const assets = (await filecache).assets;
-        await assets.isReady();
+        // await assets.isReady();
         while (this.resizequeue.length > 0) {
 
             let toresize = this.resizequeue.pop();
@@ -659,9 +659,9 @@ class AnchorCleanup extends mahabhuta.Munger {
         var href     = $link.attr('href');
         var linktext = $link.text();
         const documents = (await filecache).documents;
-        await documents.isReady();
+        // await documents.isReady();
         const assets = (await filecache).assets;
-        await assets.isReady();
+        // await assets.isReady();
         // console.log(`AnchorCleanup ${href} ${linktext}`);
         if (href && href !== '#') {
             var uHref = url.parse(href, true, true);
@@ -731,7 +731,12 @@ class AnchorCleanup extends mahabhuta.Munger {
             */
 
             // Look to see if it's an asset file
-            let foundAsset = assets.find(absolutePath);
+            let foundAsset;
+            try {
+                foundAsset = assets.find(absolutePath);
+            } catch (e) {
+                foundAsset = undefined;
+            }
             // var foundAsset = await filez.findAsset(this.array.options.config.assetDirs, absolutePath);
             if (foundAsset) { // && foundAsset.length > 0) {
                 return "ok";
@@ -747,7 +752,7 @@ class AnchorCleanup extends mahabhuta.Munger {
             // If this link has a body, then don't modify it
             if ((linktext && linktext.length > 0 && linktext !== absolutePath)
                 || ($link.children().length > 0)) {
-                // console.log(`AnchorCleanup skipping ${absolutePath} w/ ${util.inspect(linktext)} children= ${$link.children}`);
+                // console.log(`AnchorCleanup skipping ${absolutePath} w/ ${util.inspect(linktext)} children= ${$link.children()}`);
                 return "ok";
             }
 
