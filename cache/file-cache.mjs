@@ -418,11 +418,9 @@ export class FileCache extends EventEmitter {
             $orderBy: { renderPath: 1 }
         });
         for (let p of paths) {
-            // console.log(p.path);
             let info = this.find(p.path);
             documents.push(info);
         }
-        // let documents = this.paths();
 
         if (options.rootPath) {
             documents = documents.filter(doc => {
@@ -431,30 +429,17 @@ export class FileCache extends EventEmitter {
             });
         }
 
-        /* if (options.pathmatch) {
-            documents = documents.filter(doc => {
-                return doc.path.match(options.pathmatch) !== null;
-            });
-        } */
-
         if (options.glob) {
             documents = documents.filter(doc => {
                 return minimatch(doc.path, options.glob);
             });
         }
 
-
         if (options.renderglob) {
             documents = documents.filter(doc => {
                 return minimatch(doc.renderPath, options.renderglob);
             });
         }
-
-        /* if (options.mime) {
-            documents = documents.filter(doc => {
-                return doc.mime === options.mime;
-            });
-        } */
 
         if (options.renderers) {
             documents = documents.filter(doc => {
@@ -469,33 +454,11 @@ export class FileCache extends EventEmitter {
             });
         }
 
-        /* if (options.layouts) {
-            documents = documents.filter(doc => {
-                for (let layout of options.layouts) {
-                    // console.log(`options.layouts ${doc.metadata.layout} === ${layout}?`);
-                    try {
-                        if (doc.metadata.layout === layout) {
-                            return true;
-                        }
-                    } catch (err) {
-                        console.error(`documentSearch WARN filter layouts ${doc.docpath} has no layout`);
-                    }
-                }
-                return false;
-            });
-        } */
-
         if (options.filterfunc) {
             documents = documents.filter(doc => {
                 return options.filterfunc(config, options, doc);
             });
         }
-
-        /* documents = documents.sort((a, b) => {
-            if (a.renderPath < b.renderPath) return -1;
-            else if (a.renderPath === b.renderPath) return 0;
-            else return 1;
-        }); */
 
         return documents;
     }
