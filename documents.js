@@ -29,7 +29,8 @@ const fs    = require('fs-extra');
 const globfs = require('globfs');
 const render = require('./render');
 // const akasha = require('./index');
-const cache  = require('./caching');
+const cache = import('./cache/cache-forerunner.mjs');
+const filecache = import('./cache/file-cache.mjs');
 const mahabhuta = require('mahabhuta');
 
 const _document_basedir = Symbol('basedir');
@@ -47,6 +48,7 @@ const _document_text = Symbol('text');
 
 /**
  * Standardized object to describe document files which render using an HTMLRenderer.
+ * TODO: Merge this with RenderedFileCache
  */
 exports.Document = class Document {
     constructor(params) {
@@ -333,6 +335,7 @@ var componentizeFileName = module.exports.componentizeFileName = function(filena
  *
  */
 exports.documentTree = function(config, documents) {
+    throw new Error('Deprecated');
 
     var documentTreeRoot = new module.exports.DocumentTreeEntry();
     documentTreeRoot.type = "root";
@@ -364,7 +367,7 @@ exports.documentTree = function(config, documents) {
         // }
 
         let curDirInTree = documentTreeRoot;
-        let components = componentizeFileName(doc.renderpath);
+        let components = componentizeFileName(doc.renderPath);
         // console.log(`makeBookTree components ${doc.path} ${util.inspect(components)}`);
 
         /*
@@ -383,14 +386,14 @@ exports.documentTree = function(config, documents) {
                     let treeEntry = new module.exports.DocumentTreeEntry();
                     treeEntry.type = "file";
                     treeEntry.entryname = component.component;
-                    treeEntry.basedir = doc.basedir;
-                    treeEntry.docpath = doc.docpath;
-                    treeEntry.fullpath = doc.fullpath;
-                    treeEntry.renderer = doc.renderer;
-                    treeEntry.stat = doc.stat;
-                    treeEntry.metadata = doc.metadata;
-                    treeEntry.teaser = doc.metadata.teaser;
-                    treeEntry.title = doc.metadata.title;
+                    treeEntry.basedir = doc.sourcePath;
+                    treeEntry.docpath = doc.pathInSource;
+                    treeEntry.fullpath = doc.fspath;
+                    treeEntry.renderer = config.findRendererPath(doc.path);
+                    treeEntry.stat = doc.stats;
+                    treeEntry.metadata = doc.docMetadata;
+                    treeEntry.teaser = doc.docMetadata.teaser;
+                    treeEntry.title = doc.docMetadata.title;
                     curDirInTree.addChild(treeEntry);
                 }
             } else if (component.type === 'dir') {
@@ -446,6 +449,7 @@ exports.documentTree = function(config, documents) {
 };
 
 async function _documentSearch(config, options) {
+    throw new Error('Deprecated');
 
     // console.log(`documentSearch ${util.inspect(config.documentDirs)} ${util.inspect(options)}`);
 
@@ -480,7 +484,9 @@ async function _documentSearch(config, options) {
         if (!stat) {
             return fini(new Error(`DocumentSearch Could not get fs.stat for ${fullFilePath}`));
         }
-        let fileData = cache.get("documents-search", fullFilePath);
+        let fileData = cache.find("documents-search", {
+            fullFilePath: { $eq: fullFilePath }
+        });
         if (fileData) {
             if (fileData.stat && fileData.stat.ctime === stat.ctime && fileData.stat.mtime === stat.mtime) {
                 return fini(undefined, fileData);
@@ -505,7 +511,7 @@ async function _documentSearch(config, options) {
                 renderer, basedir, stat,
                 fpath, docdestpath, fname: path.basename(fpath),
                 name: filepath ? path.basename(filepath) : path.basename(fpath),
-                filepath,
+                filepath, fullFilePath,
                 metadata
             };
         } else {
@@ -513,12 +519,12 @@ async function _documentSearch(config, options) {
                 renderer, basedir, stat,
                 fpath, docdestpath, fname: path.basename(fpath),
                 name: filepath ? path.basename(filepath) : path.basename(fpath),
-                filepath,
+                filepath, fullFilePath,
                 metadata: undefined
             };
         }
         if (fileData) {
-            cache.set("documents-search", fullFilePath, fileData);
+            cache.insert("documents-search", fileData);
             fini(undefined, fileData);
         } else {
             fini(new Error(`DocumentSearch found no FileData for ${fullFilePath}`));
@@ -639,18 +645,22 @@ exports.documentSearch = function(config, options) {
  */
 exports.readDocument = async function(config, documentPath) {
     // console.log('readDocument '+ documentPath);
-    var found = await filez.findRendersTo(config, documentPath)
+
+    const documents = (await filecache).documents;
+    let found = await documents.find(documentPath);
+
+    // OLD var found = await filez.findRendersTo(config, documentPath)
     // console.log('readDocument '+ documentPath +' ==> found: '+ util.inspect(found));
     if (!found) {
         throw new Error(`Did not find document for ${util.inspect(documentPath)} in ${util.inspect(config.documentDirs)}`);
     }
     // Check if the file has changed from the cached value
-    let path2stat = path.join(found.foundDir, found.foundPathWithinDir);
+    // OLD let path2stat = path.join(found.foundDir, found.foundPathWithinDir);
     let stats;
     try {
-        stats = await fs.stat(path2stat);
+        stats = await fs.stat(found.fspath);
     } catch (err) {
-        throw new Error(`readDocument found ${documentPath} at ${util.inspect(found)} but fs.stat(${path2stat}) threw error ${err.stack}`);
+        throw new Error(`readDocument found ${documentPath} at ${util.inspect(found)} but fs.stat(${found.fspath}) threw error ${err.stack}`);
     }
     if (stats && stats.isDirectory()) {
         // It's an error if the file is a directory
@@ -658,13 +668,16 @@ exports.readDocument = async function(config, documentPath) {
     }
     // If the creation time or modified time is different then the file has changed
     // and therefore needs to be re-read
-    if (stats && (stats.ctime !== found.foundStats.ctime || stats.mtime !== found.foundStats.mtime)) {
-        found = await filez.findRendersToForce(config, documentPath);
-        // Ensure there is no cached copy
-        cache.del("documents-readDocument", documentPath);
-    }
+    // NOTE: For the new FIleCache regime, the file data is
+    //   automatically kept uptodate
+    // if (stats && (stats.ctime !== found.foundStats.ctime
+    //           || stats.mtime !== found.foundStats.mtime)) {
+    //    found = await filez.findRendersToForce(config, documentPath);
+    //    // Ensure there is no cached copy
+    //    cache.del("documents-readDocument", documentPath);
+    // }
     // Try to find the document in the cache, if not read it into memory
-    var doc = cache.get("documents-readDocument", documentPath);
+    /* var doc = cache.find("documents-readDocument", documentPath);
     if (!doc) {
         // console.log('readDocument #1 '+ util.inspect(doc));
         doc = new exports.Document();
@@ -681,7 +694,21 @@ exports.readDocument = async function(config, documentPath) {
         await doc.readDocumentContent(config);
         // Save the document into the cache
         cache.set("documents-readDocument", documentPath);
-    }
+    } */
+
+    // TODO This seems an inconsistency to use a different object
+    //   structure than what's in FileCache
+
+    const doc = new exports.Document();
+    doc.basedir = found.sourcePath;
+    doc.dirMountedOn = found.mountPoint;
+    doc.mountedDirMetadata = found.baseMetadata;
+    doc.docpath = found.pathInSource;
+    doc.docdestpath = path.join(found.mountPoint, found.pathInSource);
+    doc.fullpath = found.path;
+    doc.renderer = config.findRendererPath(found.path);
+    await doc.readDocumentContent(config);
+
     // console.log(`readDocument ${doc.docpath} ${util.inspect(doc.metadata)}`);
     return doc;
 };
