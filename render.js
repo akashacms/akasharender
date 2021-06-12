@@ -27,7 +27,6 @@ const util      = require('util');
 // const cache     = require('./caching');
 // const mahabhuta = require('mahabhuta');
 // const matter    = require('gray-matter');
-const parallelLimit = require('run-parallel-limit');
 const data = require('./data');
 
 const cache = import('./cache/cache-forerunner.mjs');
@@ -37,6 +36,7 @@ const fastq = require('fastq');
 
 //////////////////////////////////////////////////////////
 
+/*
 exports.partial = async function(config, fname, metadata) {
 
     if (!fname || typeof fname !== 'string') {
@@ -45,7 +45,10 @@ exports.partial = async function(config, fname, metadata) {
 
     /* if (!metadata || typeof metadata !== 'object') {
         throw new Error(`partial metadata not an object ${util.inspect(fname)}`);
-    } */
+    } *--/
+
+    Simply need to call filecache.documents.find(fname)
+    But this is an async operation because of how filecache is loaded
 
     var partialFound = await globfs.findAsync(config.partialsDirs, fname);
     if (!partialFound) throw new Error(`No partial found for ${fname} in ${util.inspect(config.partialsDirs)}`);
@@ -86,9 +89,9 @@ exports.partial = async function(config, fname, metadata) {
     }
     // This has been moved into Mahabhuta
     // return mahaPartial.doPartialAsync(partial, attrs);
-};
+}; */
 
-exports.partialSync = function(config, fname, metadata) {
+/* exports.partialSync = function(config, fname, metadata) {
 
     if (!fname || typeof fname !== 'string') {
         throw new Error(`partial fname not a string ${util.inspect(fname)}`);
@@ -96,7 +99,7 @@ exports.partialSync = function(config, fname, metadata) {
 
     /* if (!metadata || typeof metadata !== 'object') {
         throw new Error(`partial metadata not an object ${util.inspect(fname)}`);
-    } */
+    } * --/
 
     var partialFound = globfs.findSync(config.partialsDirs, fname);
     if (!partialFound) throw new Error(`No partial directory found for ${fname}`);
@@ -132,7 +135,7 @@ exports.partialSync = function(config, fname, metadata) {
     }
     // This has been moved into Mahabhuta
     // return mahaPartial.doPartialSync(fname, metadata);
-};
+}; */
 
 //////////////////////////////////////////////////////////
 
@@ -142,17 +145,17 @@ exports.newRenderDocument = async function(config, docInfo) {
     const stats = await fs.stat(docInfo.fspath);
     let renderToDir;
     if (stats && stats.isFile()) {
-        renderToDir = path.dirname(docInfo.path);
+        renderToDir = path.dirname(docInfo.vpath);
         // console.log(`renderDocument ${basedir} ${fpath} ${renderToDir} ${renderToFpath}`);
         await fs.ensureDir(renderToDir);
-    } else { return `SKIP DIRECTORY ${docInfo.path}`; }
+    } else { return `SKIP DIRECTORY ${docInfo.vpath}`; }
 
     const renderToFpath = path.join(config.renderTo, docInfo.renderPath);
 
-    const renderer = config.findRendererPath(docInfo.path);
+    const renderer = config.findRendererPath(docInfo.vpath);
     if (renderer) {
 
-        // console.log(`ABOUT TO RENDER ${renderer.name} ${docInfo.path} ==> ${renderToFpath}`);
+        // console.log(`ABOUT TO RENDER ${renderer.name} ${docInfo.vpath} ==> ${renderToFpath}`);
         try {
             /*  OLD VERSION
             await renderer.renderToFile(basedir, fpath, path.join(renderTo, renderToPlus), renderToPlus, renderBaseMetadata, config);
@@ -162,10 +165,10 @@ exports.newRenderDocument = async function(config, docInfo) {
             // console.log(`RENDERED ${renderer.name} ${docInfo.path} ==> ${renderToFpath}`);
             const renderEndRendered = new Date();
             data.report(docInfo.mountPoint, docInfo.path, config.renderTo, "RENDERED", renderStart);
-            return `${renderer.name} ${docInfo.path} ==> ${renderToFpath} (${(renderEndRendered - renderStart) / 1000} seconds)\n${data.data4file(docInfo.mountPoint, docInfo.path)}`;
+            return `${renderer.name} ${docInfo.vpath} ==> ${renderToFpath} (${(renderEndRendered - renderStart) / 1000} seconds)\n${data.data4file(docInfo.mountPoint, docInfo.vpath)}`;
         } catch (err) {
-            console.error(`in renderer branch for ${docInfo.path} to ${renderToFpath} error=${err.stack ? err.stack : err}`);
-            throw new Error(`in renderer branch for ${docInfo.path} to ${renderToFpath} error=${err.stack ? err.stack : err}`);
+            console.error(`in renderer branch for ${docInfo.vpath} to ${renderToFpath} error=${err.stack ? err.stack : err}`);
+            throw new Error(`in renderer branch for ${docInfo.vpath} to ${renderToFpath} error=${err.stack ? err.stack : err}`);
         }
     } else {
         // console.log(`COPYING ${docInfo.path} ==> ${renderToFpath}`);
@@ -173,10 +176,10 @@ exports.newRenderDocument = async function(config, docInfo) {
             await fs.copy(docInfo.fspath, renderToFpath);
             // console.log(`COPIED ${docInfo.path} ==> ${renderToFpath}`);
             const renderEndCopied = new Date();
-            return `COPY ${docInfo.path} ==> ${renderToFpath} (${(renderEndCopied - renderStart) / 1000} seconds)`;
+            return `COPY ${docInfo.vpath} ==> ${renderToFpath} (${(renderEndCopied - renderStart) / 1000} seconds)`;
         } catch(err) {
-            console.error(`in copy branch for ${docInfo.path} to ${renderToFpath} error=${err.stack ? err.stack : err}`);
-            throw new Error(`in copy branch for ${docInfo.path} to ${renderToFpath} error=${err.stack ? err.stack : err}`);
+            console.error(`in copy branch for ${docInfo.vpath} to ${renderToFpath} error=${err.stack ? err.stack : err}`);
+            throw new Error(`in copy branch for ${docInfo.vpath} to ${renderToFpath} error=${err.stack ? err.stack : err}`);
         }
     }
 }
@@ -248,18 +251,22 @@ exports.newerrender = async function(config) {
     for (let entry of filez) {
         let include = true;
         // console.log(entry);
-        let stats = await fs.stat(entry.fspath);
+        let stats;
+        try {
+            stats = await fs.stat(entry.fspath);
+        } catch (err) { stats = undefined; }
         if (!entry) include = false;
-        else if (stats.isDirectory()) include = false;
-        else if (path.basename(entry.path) === '.DS_Store') include = false;
-        else if (path.basename(entry.path) === '.placeholder') include = false;
+        else if (!stats || stats.isDirectory()) include = false;
+        // This should arise using an ignore clause
+        // else if (path.basename(entry.vpath) === '.DS_Store') include = false;
+        // else if (path.basename(entry.vpath) === '.placeholder') include = false;
 
         if (include) {
             // The queue is an array of tuples containing the
             // config object and the path string
             filez2.push({
                 config: config,
-                info: documents.find(entry.path)
+                info: documents.find(entry.vpath)
             });
         }
     }
@@ -273,15 +280,15 @@ exports.newerrender = async function(config) {
     // The queue has config objects and path strings which is
     // exactly what's required by newRenderDocument
     async function renderDocumentInQueue(entry) {
-        // console.log(`renderDocumentInQueue ${entry.info.path}`);
+        // console.log(`renderDocumentInQueue ${entry.info.vpath}`);
         try {
             let result = await exports.newRenderDocument(entry.config, entry.info);
-            // console.log(result);
+            // console.log(`DONE renderDocumentInQueue ${entry.info.vpath}`, result);
             return { result };
         } catch (error) {
+            // console.log(`ERROR renderDocumentInQueue ${entry.info.vpath}`, error.stack);
             return { error };
         }
-        // console.log(`DONE renderDocumentInQueue ${entry.info.path}`);
     }
 
     // This sets up the queue processor, using the function just above

@@ -33,6 +33,8 @@ const data = require('./data');
 const cache = import('./cache/cache-forerunner.mjs');
 const filecache = import('./cache/file-cache.mjs');
 
+const partialFuncs = import('./partial-funcs.mjs');
+
 /**
  * Rendering support for any file that produces HTML when rendered.
  */
@@ -242,10 +244,10 @@ module.exports = class HTMLRenderer extends Renderer {
     async newRenderToFile(config, docInfo) {
 
         const renderStart = new Date();
-        const doc = await this.readContent(docInfo.sourcePath, docInfo.pathInSource);
+        const doc = await this.readContent(docInfo.mounted, docInfo.pathInMounted);
         const fm = this.parseFrontmatter(doc);
         const doccontent = fm.content;
-        data.report(docInfo.mountPoint, docInfo.path, config.renderTo, 
+        data.report(docInfo.mountPoint, docInfo.vpath, config.renderTo, 
                             "FRONTMATTER", renderStart);
 
         const metadata = await this.newInitMetadata(config, docInfo);
@@ -254,30 +256,30 @@ module.exports = class HTMLRenderer extends Renderer {
         try {
             docrendered = await this.render(doccontent, docdata);
         } catch (err) {
-            console.error(`Error rendering ${docInfo.path} ${(err.stack ? err.stack : err)}`);
-            throw new Error(`Error rendering ${docInfo.path} ${(err.stack ? err.stack : err)}`);
+            console.error(`Error rendering ${docInfo.vpath} ${(err.stack ? err.stack : err)}`);
+            throw new Error(`Error rendering ${docInfo.vpath} ${(err.stack ? err.stack : err)}`);
         }
-        data.report(docInfo.mountPoint, docInfo.path, config.renderTo, 
+        data.report(docInfo.mountPoint, docInfo.vpath, config.renderTo, 
                             "FIRST RENDER", renderStart);
 
         docrendered = await this.renderForLayoutNew(docrendered, docdata, config);
         const renderSecondRender = new Date();
-        data.report(docInfo.mountPoint, docInfo.path, config.renderTo, 
+        data.report(docInfo.mountPoint, docInfo.vpath, config.renderTo, 
                             "SECOND RENDER", renderStart);
-        if (this.doMahabhuta(docInfo.path)) {
+        if (this.doMahabhuta(docInfo.vpath)) {
             try {
                 docrendered = await this.maharun(docrendered, docdata, config.mahafuncs);
             } catch (e2) {
-                let eee = new Error(`Error with Mahabhuta ${docInfo.path} with ${metadata.layout} ${e2.stack ? e2.stack : e2}`);
+                let eee = new Error(`Error with Mahabhuta ${docInfo.vpath} with ${metadata.layout} ${e2.stack ? e2.stack : e2}`);
                 console.error(eee);
                 throw eee;
             }
         } else {
             // console.log(`renderForLayout mahabhuta not allowed ${layoutrendered}`);
         }
-        data.report(docInfo.mountPoint, docInfo.path, config.renderTo, 
+        data.report(docInfo.mountPoint, docInfo.vpath, config.renderTo, 
                             "MAHABHUTA", renderStart);
-        const renderDest = path.join(config.renderTo, this.filePath(docInfo.path));
+        const renderDest = path.join(config.renderTo, this.filePath(docInfo.vpath));
         await fs.ensureDir(path.dirname(renderDest));
         await fs.writeFile(renderDest, docrendered, 'utf8');
     }
@@ -489,14 +491,14 @@ module.exports = class HTMLRenderer extends Renderer {
         metadata.content = "";
         metadata.document = {};
         metadata.document.basedir = docInfo.mountPoint;
-        metadata.document.relpath = docInfo.pathInSource;
-        metadata.document.relrender = renderer.filePath(docInfo.pathInSource);
-        metadata.document.path = docInfo.path;
+        metadata.document.relpath = docInfo.pathInMounted;
+        metadata.document.relrender = renderer.filePath(docInfo.pathInMounted);
+        metadata.document.path = docInfo.vpath;
         metadata.document.renderTo = docInfo.renderPath;
 
         metadata.config      = config;
-        metadata.partialSync = this.akasha.partialSync.bind(renderer, config);
-        metadata.partial     = this.akasha.partial.bind(renderer, config);
+        metadata.partialSync = (await partialFuncs).partialSync.bind(renderer, config);
+        metadata.partial     = (await partialFuncs).partial.bind(renderer, config);
 
         metadata.root_url = config.root_url;
 
@@ -512,6 +514,7 @@ module.exports = class HTMLRenderer extends Renderer {
 
         metadata.akasha = this.akasha;
         metadata.plugin = config.plugin;
+        // console.log(`newInitMetadata`, docInfo);
         metadata.rendered_date = docInfo.stats.mtime;
 
         if (!metadata.publicationDate) {

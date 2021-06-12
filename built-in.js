@@ -29,6 +29,7 @@ const uuidv1 = uuid.v1;
 const documents = require('./documents');
 const filez = require('./filez');
 const render = require('./render');
+const partialFuncs = import('./partial-funcs.mjs');
 const Plugin = require('./Plugin');
 const relative = require('relative');
 const hljs = require('highlight.js');
@@ -370,12 +371,11 @@ class InsertBodyContent extends mahabhuta.CustomElement {
 
 class InsertTeaser extends mahabhuta.CustomElement {
 	get elementName() { return "ak-teaser"; }
-	process($element, metadata, dirty) {
-		return render.partial(this.array.options.config, "ak_teaser.html.ejs", {
+	async process($element, metadata, dirty) {
+		return (await partialFuncs).partial(this.array.options.config, "ak_teaser.html.ejs", {
 			teaser: typeof metadata["ak-teaser"] !== "undefined"
 				? metadata["ak-teaser"] : metadata.teaser
-		})
-		.then(html => { return html; });
+		});
 	}
 }
 
@@ -412,15 +412,13 @@ class CodeEmbed extends mahabhuta.CustomElement {
             txtpath = path.join(path.dirname(metadata.document.renderTo), fn);
         }
 
-        const document = await documents.readDocument(this.array.options.config, txtpath);
-
-        if (!document) {
+        const documents = (await filecache).documents;
+        const found = documents.find(txtpath);
+        if (!found) {
             throw new Error(`code-embed file-name ${fn} does not refer to usable file`);
         }
 
-        const readFrom = path.join(document.basedir, document.docpath);
-
-        const txt = await fs.readFile(readFrom, 'utf8');
+        const txt = await fs.readFile(found.fspath, 'utf8');
         let $ = mahabhuta.parse(`<pre><code></code></pre>`);
         if (lang && lang !== '') {
             $('code').addClass(lang);
@@ -451,7 +449,7 @@ class FigureImage extends mahabhuta.CustomElement {
         const width   = $element.attr('width');
         const style   = $element.attr('style');
         const dest    = $element.attr('dest');
-        return render.partial(this.array.options.config, template, {
+        return (await partialFuncs).partial(this.array.options.config, template, {
             href, clazz, id, caption, width, style, dest
         });
     }
@@ -476,7 +474,7 @@ class img2figureImage extends mahabhuta.CustomElement {
                 ? $element.attr('caption')
                 : "";
         
-        return render.partial(this.array.options.config, template, {
+        return (await partialFuncs).partial(this.array.options.config, template, {
             id, clazz, style, width, href: src, dest, resizewidth, resizeto,
             caption: content
         });
@@ -564,7 +562,7 @@ class ShowContent extends mahabhuta.CustomElement {
         }
         // console.log(`ShowContent ${util.inspect(metadata.document)} ${href}`);
         const doc     = await documents.readDocument(this.array.options.config, href);
-        let ret = await render.partial(this.array.options.config, template, {
+        let ret = await (await partialFuncs).partial(this.array.options.config, template, {
             href, clazz, id, caption, width, style, dest, contentImage,
             document: doc
         });
@@ -776,7 +774,7 @@ class AnchorCleanup extends mahabhuta.Munger {
                 }
             }
             // Otherwise look into filling emptiness with title
-            var renderer = this.array.options.config.findRendererPath(found.path);
+            var renderer = this.array.options.config.findRendererPath(found.vpath);
             // console.log(`AnchorCleanup ${metadata.document.path} ${href} findRendererPath ${(new Date() - startTime) / 1000} seconds`);
             if (renderer && renderer.metadata) {
                 let docmeta = found.docMetadata;

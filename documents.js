@@ -699,15 +699,60 @@ exports.readDocument = async function(config, documentPath) {
     // TODO This seems an inconsistency to use a different object
     //   structure than what's in FileCache
 
-    const doc = new exports.Document();
-    doc.basedir = found.sourcePath;
-    doc.dirMountedOn = found.mountPoint;
-    doc.mountedDirMetadata = found.baseMetadata;
-    doc.docpath = found.pathInSource;
-    doc.docdestpath = path.join(found.mountPoint, found.pathInSource);
-    doc.fullpath = found.path;
-    doc.renderer = config.findRendererPath(found.path);
-    await doc.readDocumentContent(config);
+    // Instead of creating a Document class ... generate this 
+    // anonymous object but using the same field names.
+    //
+    // We also duplicate the field names, to use the same fields
+    // as used in FileCache objects.  That way we can mix-and-match
+    // the code both ways.
+
+    const doc = {
+        basedir: found.mounted,
+        mounted: found.mounted,
+
+        dirMountedOn: found.mountPoint,
+        mountPoint: found.mountPoint,
+
+        mountedDirMetadata: found.baseMetadata,
+        baseMetadata: found.baseMetadata,
+
+        docMetadata: found.docMetadata,
+
+        mime: found.mime,
+
+        fspath: found.fspath,
+
+        docpath: found.pathInMounted,
+        pathInMounted: found.pathInMounted,
+
+        // Original docdestpath: path.join(found.mountPoint, found.pathInMounted)
+        // However, in Stacked Dirs vpath is defined precisely
+        // to be that.  So, we can just use vpath rather than
+        // computing a value that's already known.
+        docdestpath: found.vpath,
+        vpath: found.vpath,
+
+        renderer: config.findRendererPath(found.vpath)
+    };
+
+    // This code is transliterated from readDocumentContent
+
+    doc.stat = await fs.stat(found.fspath);
+    const content = await fs.readFile(found.fspath, 'utf8');
+    if (doc.renderer && doc.renderer.frontmatter) {
+        const matter = doc.renderer.parseFrontmatter(content);
+        // console.log(`readDocumentContent got frontmatter ${util.inspect(matter)}`);
+        doc.data = matter.orig;
+        doc.metadata = await doc.renderer.initMetadata(config,
+            doc.basedir, doc.docpath, doc.dirMountedOn,
+            doc.mountedDirMetadata, matter.data);
+            doc.text = matter.content;
+            doc.text = matter.content;
+        // console.log(`readDocumentContent ${doc.docpath} ${util.inspect(doc.metadata)}`);
+    } else {
+        doc.data = content;
+    }
+
 
     // console.log(`readDocument ${doc.docpath} ${util.inspect(doc.metadata)}`);
     return doc;

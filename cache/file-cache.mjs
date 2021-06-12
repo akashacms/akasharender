@@ -1,24 +1,11 @@
 
 import util from 'util';
 import EventEmitter from 'events';
-import { DirsWatcher } from '../watcher/watcher.mjs';
+import { promises as fs } from 'fs';
+import { DirsWatcher } from '@akashacms/stacked-dirs';
 import { getCache } from './cache-forerunner.mjs';
-import { METHODS } from 'http';
 import fastq from 'fastq';
 import minimatch from 'minimatch';
-
-
-/**
- * 
- * Have four sections: Documents, Assets, Layouts, Partials
- * 
- * TODO: Merge Assets and Documents?
- * 
- * For files that have metadata, parse that metadata and store in the cache.
- * 
- * Have a list of methods to search for files, handling the stacked directory setup.
- * 
- */
 
 export var documents;
 export var assets;
@@ -30,44 +17,84 @@ const remapdirs = dirz => {
         // console.log('document dir ', dir);
         if (typeof dir === 'string') {
             return {
-                path: dir,
+                mounted: dir,
                 mountPoint: '/',
                 baseMetadata: {}
             };
         } else {
             return {
-                path: dir.src,
+                mounted: dir.src,
                 mountPoint: dir.dest,
                 baseMetadata: dir.baseMetadata,
-                ignore: dir.ignore,
-                include: dir.include
+                ignore: dir.ignore
             };
         }
     });
 };
 
-export async function setup(config) {
+export async function setupDocuments(config) {
     try {
-
         // console.log(`filecache setup documents ${util.inspect(config.documentDirs)}`);
         const docsDirs = remapdirs(config.documentDirs);
         documents = new RenderedFileCache(config, docsDirs, 'documents');
         await documents.setup();
+    } catch (err) {
+        console.error(`file-cache setupDocuments FAIL TO INITIALIZE `, err);
+        throw err;
+    }
+}
 
+export async function setupAssets(config) {
+    try {
         // console.log(`filecache setup assets ${util.inspect(config.assetDirs)}`);
         const assetsDirs = remapdirs(config.assetDirs);
+        // console.log(`filecache setup assets ${util.inspect(assetsDirs)}`);
         assets = new FileCache(config, assetsDirs, 'assets');
         await assets.setup();
+        // console.log(`filecache FINISH assets setup`);
+    } catch (err) {
+        console.error(`file-cache setupAssets FAIL TO INITIALIZE `, err);
+        throw err;
+    }
+}
 
-        // console.log(`filecache setup layouts ${util.inspect(config.layoutDirs)}`);
+export async function setupLayouts(config) {
+    try {
+        // console.log(`filecache setup documents ${util.inspect(config.documentDirs)}`);
         const layoutDirs = remapdirs(config.layoutDirs);
         layouts = new FileCache(config, layoutDirs, 'layouts');
         await layouts.setup();
+    } catch (err) {
+        console.error(`file-cache setupLayouts FAIL TO INITIALIZE `, err);
+        throw err;
+    }
+}
 
-        // console.log(`filecache setup partials ${util.inspect(config.partialsDirs)}`);
+export async function setupPartials(config) {
+    try {
+        // console.log(`filecache setup documents ${util.inspect(config.documentDirs)}`);
         const partialsDirs = remapdirs(config.partialsDirs);
         partials = new FileCache(config, partialsDirs, 'partials');
         await partials.setup();
+    } catch (err) {
+        console.error(`file-cache setupPartials FAIL TO INITIALIZE `, err);
+        throw err;
+    }
+}
+
+export async function setup(config) {
+    try {
+        // console.log(`filecache setup documents ${util.inspect(config.documentDirs)}`);
+        await setupDocuments(config);
+
+        // console.log(`filecache setup assets ${util.inspect(config.assetDirs)}`);
+        await setupAssets(config);
+
+        // console.log(`filecache setup layouts ${util.inspect(config.layoutDirs)}`);
+        await setupLayouts(config);
+
+        // console.log(`filecache setup partials ${util.inspect(config.partialsDirs)}`);
+        await setupPartials(config);
 
         // console.log(`filecache setup finished`);
     } catch (err) {
@@ -168,61 +195,109 @@ export class FileCache extends EventEmitter {
 
     async process(item) {
         // let info = item.info;
-        // console.log(`PROCESS ${this.collection} ${item.action} ${item && item.info ? item.info.path : 'UNDEFINED'} queue length ${this[_symb_queue].length()}`);
+        // console.log(`PROCESS ${this.collection} ${item.action} ${item && item.info ? item.info.vpath : 'UNDEFINED'} queue length ${this[_symb_queue].length()}`);
 
         if (item.action === 'change') {
-            await this.doChanged(item.info);
+            await this.handleChanged(item.collection, item.info);
         } else if (item.action === 'add') {
-            await this.doAdded(item.info);
+            await this.handleAdded(item.collection, item.info);
         } else if (item.action === 'unlink') {
-            await this.doUnlinked(item.info);
+            await this.handleUnlinked(item.collection, item.info);
         } else if (item.action === 'ready') {
-            await this.doReady(item.info);
+            await this.handleReady(item.collection);
         } else {
-            throw new Error(`Unknown action ${item.action} for `, item.info);
+            throw new Error(`Unknown action ${item.action} ${item.collection} for `, item.info);
         }
     }
 
-    async doChanged(info) {
-        // console.log(`PROCESS ${this.collection} doChanged`, info.path);
-        info.renderPath = info.path;
+    getCollection(collection) {
+        return getCache(collection, { create: true });
+    }
 
-        let coll = getCache(this.collection, { create: true });
+    async handleChanged(collection, info) {
+        // console.log(`PROCESS ${collection} handleChanged`, info.vpath);
+        if (collection !== this.collection) {
+            throw new Error(`handleChanged event for wrong collection; got ${collection}, expected ${this.collection}`);
+        }
+        try {
+            info.stats = await fs.stat(info.fspath);
+        } catch (err) {
+            info.stats = undefined;
+        }
+        info.renderPath = info.vpath;
+        info.stack = undefined;
+
+        let coll = this.getCollection(collection);
         coll.update({
-            path: {
-                $eq: info.path
+            vpath: {
+                $eq: info.vpath
             },
-            sourcePath: {
-                $eq: info.sourcePath
+            mounted: {
+                $eq: info.mounted
             }
         }, info);
     }
 
-    async doAdded(info) {
-        // console.log(`PROCESS ${this.collection} doAdded`, info.path);
-        info.renderPath = info.path;
+    /**
+     * We receive this:
+     *
+     * {
+     *    fspath: fspath,
+     *    vpath: vpath,
+     *    mime: mime.getType(fspath),
+     *    mounted: dir.mounted,
+     *    mountPoint: dir.mountPoint,
+     *    pathInMounted: computed relative path
+     *    stack: [ array of these instances ]
+     * }
+     *
+     * Need to add:
+     *    renderPath
+     *    And for HTML render files, add the baseMetadata and docMetadata
+     *
+     * Should remove the stack, since it's likely not useful to us.
+     */
 
-        let coll = getCache(this.collection, { create: true });
+    async handleAdded(collection, info) {
+        // console.log(`PROCESS ${collection} handleAdded`, info.vpath);
+        if (collection !== this.collection) {
+            throw new Error(`handleAdded event for wrong collection; got ${collection}, expected ${this.collection}`);
+        }
+        try {
+            info.stats = await fs.stat(info.fspath);
+        } catch (err) {
+            info.stats = undefined;
+        }
+        info.renderPath = info.vpath;
+        info.stack = undefined;
+
+        let coll = this.getCollection(collection);
         coll.insert(info);
     }
 
-    async doUnlinked(info) {
-        // console.log(`PROCESS ${this.collection} doUnlinked`, info.path);
-        let coll = getCache(collection, { create: true });
+    async handleUnlinked(collection, info) {
+        // console.log(`PROCESS ${collection} handleUnlinked`, info.vpath);
+        if (collection !== this.collection) {
+            throw new Error(`handleUnlinked event for wrong collection; got ${collection}, expected ${this.collection}`);
+        }
+        let coll = this.getCollection(collection);
         coll.remove({
-            path: {
-                $eq: info.path
+            vpath: {
+                $eq: info.vpath
             },
-            sourcePath: {
-                $eq: info.sourcePath
+            mounted: {
+                $eq: info.mounted
             }
         });
     }
 
-    async doReady() {
-        // console.log(`PROCESS ${this.collection} doReady`);
+    async handleReady(collection) {
+        // console.log(`PROCESS ${collection} handleReady`);
+        if (collection !== this.collection) {
+            throw new Error(`handleReady event for wrong collection; got ${collection}, expected ${this.collection}`);
+        }
         this[_symb_is_ready] = true;
-        this.emit('ready', this.collection);
+        this.emit('ready', collection);
     }
 
     async setup() {
@@ -230,26 +305,34 @@ export class FileCache extends EventEmitter {
             await this[_symb_watcher].close();
         }
         // console.log(`file-cache ${this.collection} setup DirsWatcher ${util.inspect(this.dirs)}`);
-        this[_symb_watcher] = new DirsWatcher(this.dirs, this.collection);
+        this[_symb_watcher] = new DirsWatcher(this.collection);
         
         this[_symb_watcher].on('change', async (collection, info) => {
-            console.log(`${collection} changed ${info.path}`);
-            this[_symb_queue].push({ action: 'change', info });
+            // console.log(`${collection} changed ${info.vpath}`);
+            this[_symb_queue].push({
+                action: 'change', collection, info
+            });
         })
         .on('add', async (collection, info) => {
-            console.log(`new ${collection} ${info.path}`);
-            this[_symb_queue].push({ action: 'add', info });
+            // console.log(`new ${collection} ${info.vpath}`);
+            this[_symb_queue].push({
+                action: 'add', collection, info
+            });
         })
         .on('unlink', (collection, info) => {
-            console.log(`unlink ${collection} ${info.path}`);
-            this[_symb_queue].push({ action: 'unlink', info });
+            // console.log(`unlink ${collection} ${info.vpath}`);
+            this[_symb_queue].push({
+                action: 'unlink', collection, info
+            });
         })
         .on('ready', (collection) => {
-            console.log(`${collection} ready`);
-            this[_symb_queue].push({ action: 'ready' });
+            // console.log(`${collection} ready`);
+            this[_symb_queue].push({ action: 'ready', collection });
         });
 
-        this[_symb_watcher].start();
+        // console.log(this[_symb_watcher]);
+
+        await this[_symb_watcher].watch(this.dirs);
     }
 
     // TODO Spin off a function dirForFSPath to look for the dirz entry
@@ -266,12 +349,31 @@ export class FileCache extends EventEmitter {
     */
 
     find(_fpath) {
-        let coll = getCache(this.collection, { create: true });
+        let ret;
+        let coll = this.getCollection(this.collection);
 
-        let fpath = _fpath.startsWith("/")
+        let fpath = _fpath.startsWith('/')
                     ? _fpath.substring(1)
                     : _fpath;
 
+        let results = coll.find({
+            // As just described all three of these conditions
+            // must be true for a match
+            $or: [
+                { vpath: { $eeq: fpath } },
+                { renderPath: { $eeq: fpath } }
+            ]
+        });
+        if (results.length > 0) {
+            /* if (fpath.indexOf("file.txt") >= 0) {
+                console.log(`found ${fpath} `, results);
+            } */
+            // console.log(`FileCache find found ${fpath} `, results);
+            ret = results[0];
+        }
+        return ret;
+
+        /*
         // Select the mount points which might have this file
         let mounts = [];
         for (let entry of this[_symb_dirs]) {
@@ -284,7 +386,7 @@ export class FileCache extends EventEmitter {
         }
         /* if (fpath.indexOf("file.txt") >= 0) {
             console.log(mounts);
-        } */
+        } *--/
 
         // Query for files, taking the mount points in order
         // Matching a mount point requires that it match the
@@ -315,35 +417,35 @@ export class FileCache extends EventEmitter {
             if (results.length > 0) {
                 /* if (fpath.indexOf("file.txt") >= 0) {
                     console.log(`found ${util.inspect(mount)} ${fpath} `, results);
-                } */
+                } *--/
                 ret = results[0];
                 break;
             } /* else {
                 if (fpath.indexOf("file.txt") >= 0) {
                     console.log(`NOT found ${util.inspect(mount)} ${fpath} `);
                 }
-            } */
+            } *--/
         }
         /* if (fpath.indexOf("file.txt") >= 0) {
             console.log(`find ${fpath} found ==> `, ret);
-        } */
-        return ret;
+        } *--/
+        return ret; */
     }
 
     paths() {
         // console.log(`paths ${this.collection}`);
-        let coll = getCache(this.collection, { create: true });
+        let coll = this.getCollection(this.collection);
         let paths = coll.find({
-            $distinct: { path: 1 }
-        }, { path: 1 });
+            $distinct: { vpath: 1 }
+        }, { vpath: 1 });
         // console.log(paths);
         const ret = [];
         for (let p of paths) {
             // console.log(p.path);
-            let info = this.find(p.path);
+            let info = this.find(p.vpath);
             ret.push({
                 fspath: info.fspath,
-                path: info.path,
+                vpath: info.vpath,
                 renderPath: info.renderPath
             });
         }
@@ -412,13 +514,13 @@ export class FileCache extends EventEmitter {
                 throw new Error(`Incorrect LAYOUT check ${options.layouts}`);
             }
         }
-        let coll = getCache(this.collection, { create: true });
+        let coll = this.getCollection(this.collection);
         let paths = coll.find(selector, {
-            path: 1,
+            vpath: 1,
             $orderBy: { renderPath: 1 }
         });
         for (let p of paths) {
-            let info = this.find(p.path);
+            let info = this.find(p.vpath);
             documents.push(info);
         }
 
@@ -431,7 +533,7 @@ export class FileCache extends EventEmitter {
 
         if (options.glob) {
             documents = documents.filter(doc => {
-                return minimatch(doc.path, options.glob);
+                return minimatch(doc.vpath, options.glob);
             });
         }
 
@@ -444,7 +546,7 @@ export class FileCache extends EventEmitter {
         if (options.renderers) {
             documents = documents.filter(doc => {
                 if (!options.renderers) return true;
-                let renderer = config.findRendererPath(doc.path);
+                let renderer = config.findRendererPath(doc.vpath);
                 for (let renderer of options.renderers) {
                     if (renderer instanceof renderer) {
                         return true;
@@ -468,54 +570,78 @@ export class FileCache extends EventEmitter {
 export class RenderedFileCache extends FileCache {
 
     async readMetadata(info) {
-        let renderer = this.config.findRendererPath(info.path);
+        for (let dir of this.dirs) {
+            if (dir.mounted === info.mounted) {
+                if (dir.baseMetadata) {
+                    info.baseMetadata = dir.baseMetadata;
+                }
+                break;
+            }
+        }
+        let renderer = this.config.findRendererPath(info.vpath);
         if (renderer) {
-            info.renderPath = renderer.filePath(info.path);
+            info.renderPath = renderer.filePath(info.vpath);
+            // console.log(`RenderedFileCache ${info.vpath} ==> renderPath ${info.renderPath}`);
             if (renderer 
              && renderer.readContent
              && renderer.parseFrontmatter) {
+                // console.log(`RenderedFileCache before readContent ${info.vpath} ${info.mounted} ${info.mountPoint} ${info.pathInMounted}`);
                 let content = await renderer.readContent(
-                    info.sourcePath,
-                    info.pathInSource);
+                    info.mounted,
+                    info.pathInMounted);
                 let fm = renderer.parseFrontmatter(content);
+                // console.log(`RenderedFileCache got document metadata ${info.vpath}`, fm.data);
                 info.docMetadata = fm.data;
             }
         } else {
-            info.renderPath = info.path;
+            info.renderPath = info.vpath;
         }
         return info;
     }
 
-    async doChanged(info) {
-        // console.log(`PROCESS RenderedFileCache ${this.collection} doChanged`, info.path);
+    async handleChanged(collection, info) {
+        // console.log(`PROCESS RenderedFileCache ${this.collection} handleChanged`, info.vpath);
 
-        let coll = getCache(this.collection, { create: true });
+        if (collection !== this.collection) {
+            throw new Error(`handleChanged event for wrong collection; got ${collection}, expected ${this.collection}`);
+        }
+        let coll = this.getCollection(collection);
+        try {
+            info.stats = await fs.stat(info.fspath);
+        } catch (err) {
+            info.stats = undefined;
+        }
+        info.stack = undefined;
         info = await this.readMetadata(info);
         coll.update({
-            path: {
-                $eq: info.path
+            vpath: {
+                $eq: info.vpath
             },
-            sourcePath: {
-                $eq: info.sourcePath
+            mountPoint: {
+                $eq: info.mountPoint
             }
         }, info);
     }
 
-    async doAdded(info) {
-        // console.log(`PROCESS RenderedFileCache ${this.collection} doAdded`, info.path);
+    async handleAdded(collection, info) {
+        // console.log(`PROCESS RenderedFileCache ${this.collection} handleAdded`, info.vpath);
 
-        let coll = getCache(this.collection, { create: true });
+        if (collection !== this.collection) {
+            throw new Error(`handleAdded event for wrong collection; got ${collection}, expected ${this.collection}`);
+        }
+        let coll = this.getCollection(collection);
+        try {
+            info.stats = await fs.stat(info.fspath);
+        } catch (err) {
+            console.log(`PROCESS RenderedFileCache ${this.collection} FAILED TO GET STATS FOR ${info.vpath} because `, err.stack);
+            info.stats = undefined;
+        }
+        info.stack = undefined;
         info = await this.readMetadata(info);
         // console.log(`add `, info);
-        // console.log(`file-cache add ${collection} ${info.path}`, info);
+        // console.log(`file-cache add ${collection} ${info.vpath}`, info);
         coll.insert(info);
-        // console.log(`file-cache AFTER add ${collection} ${info.path}`);
-        /* if (collection === "layouts") {
-            let found = coll.find({
-                path: { $eq: info.path }
-            });
-            console.log(`file-cache AFTER add  ${collection} ${info.path}`, found);
-        } */
+        // console.log(`file-cache AFTER add ${collection} ${info.vpath}`);
     }
 
 }

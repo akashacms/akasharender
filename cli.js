@@ -41,11 +41,13 @@ program
     .action(async (configFN) => {
         try {
             const config = require(path.join(process.cwd(), configFN));
-            await config.setup();
+            let akasha = config.akasha;
+            await akasha.cacheSetup(config);
+            await akasha.setupAssets(config);
             let filecache = await _filecache;
             await filecache.assets.isReady();
             await config.copyAssets();
-            await config.close();
+            await akasha.closeCaches();
         } catch (e) {
             console.error(`copy-assets command ERRORED ${e.stack}`);
         }
@@ -56,10 +58,10 @@ program
     .command('document <configFN> <documentFN>')
     .description('Show information about a document')
     .action(async (configFN, documentFN) => {
-        const akasha    = require('./index');
 
         try {
             const config = require(path.join(process.cwd(), configFN));
+            let akasha = config.akasha;
             let doc = await akasha.readDocument(config, documentFN);
             console.log(`
 basedir: ${doc.basedir}
@@ -85,9 +87,9 @@ program
     .command('renderto <configFN> <documentFN>')
     .description('Call renderTo for a document')
     .action(async (configFN, documentFN) => {
-        const akasha    = require('./index');
         try {
             const config = require(path.join(process.cwd(), configFN));
+            let akasha = config.akasha;
             data.init();
             let found = await filez.findRendersTo(config, documentFN);
             console.log(found);
@@ -100,18 +102,29 @@ program
     .command('render-document <configFN> <documentFN>')
     .description('Render a document into output directory')
     .action(async (configFN, documentFN) => {
-        const akasha    = require('./index');
         try {
             const config = require(path.join(process.cwd(), configFN));
-            await config.setup();
+            let akasha = config.akasha;
+            await akasha.cacheSetup(config);
+            await Promise.all([
+                akasha.setupDocuments(config),
+                akasha.setupAssets(config),
+                akasha.setupLayouts(config),
+                akasha.setupPartials(config)
+            ])
             let filecache = await _filecache;
             // console.log(filecache.documents);
-            await filecache.documents.isReady();
+            await Promise.all([
+                filecache.documents.isReady(),
+                filecache.assets.isReady(),
+                filecache.layouts.isReady(),
+                filecache.partials.isReady()
+            ]);
             data.init();
             console.log(`render-document before renderPath ${documentFN}`);
             let result = await akasha.renderPath(config, documentFN);
             console.log(result);
-            await config.close();
+            await akasha.closeCaches();
         } catch (e) {
             console.error(`render-document command ERRORED ${e.stack}`);
         }
@@ -122,11 +135,24 @@ program
     .description('Render a site into output directory')
     .option('--quiet', 'Do not print the rendering report')
     .action(async (configFN, cmdObj) => {
-        const akasha    = require('./index');
         // console.log(`render: akasha: ${util.inspect(akasha)}`);
         try {
             const config = require(path.join(process.cwd(), configFN));
-            await config.setup();
+            let akasha = config.akasha;
+            await akasha.cacheSetup(config);
+            await Promise.all([
+                akasha.setupDocuments(config),
+                akasha.setupAssets(config),
+                akasha.setupLayouts(config),
+                akasha.setupPartials(config)
+            ])
+            let filecache = await _filecache;
+            await Promise.all([
+                filecache.documents.isReady(),
+                filecache.assets.isReady(),
+                filecache.layouts.isReady(),
+                filecache.partials.isReady()
+            ]);
             data.init();
             let results = await akasha.render(config);
             if (!cmdObj.quiet) {
@@ -143,7 +169,7 @@ program
                     }
                 }
             }
-            await config.close();
+            await akasha.closeCaches();
         } catch (e) {
             console.error(`render command ERRORED ${e.stack}`);
         }
@@ -161,10 +187,10 @@ program
     .option('--email <email>', 'Github user email to use')
     .option('--nopush', 'Do not push to Github, only commit')
     .action(async (configFN, cmdObj) => {
-        const akasha    = require('./index');
         // console.log(`render: akasha: ${util.inspect(akasha)}`);
         try {
             const config = require(path.join(process.cwd(), configFN));
+            let akasha = config.akasha;
 
             let options = {
                 dotfiles: true
@@ -214,10 +240,10 @@ program
     .command('config <configFN>')
     .description('Print a site configuration')
     .action(async (configFN) => {
-        const akasha    = require('./index');
         // console.log(`render: akasha: ${util.inspect(akasha)}`);
         try {
             const config = require(path.join(process.cwd(), configFN));
+            let akasha = config.akasha;
             console.log(config);
         } catch (e) {
             console.error(`config command ERRORED ${e.stack}`);
@@ -228,10 +254,10 @@ program
     .command('docdirs <configFN>')
     .description('List the documents directories in a site configuration')
     .action(async (configFN) => {
-        const akasha    = require('./index');
         // console.log(`render: akasha: ${util.inspect(akasha)}`);
         try {
             const config = require(path.join(process.cwd(), configFN));
+            let akasha = config.akasha;
             await config.setup();
             console.log(config.documentDirs);
         } catch (e) {
@@ -243,11 +269,11 @@ program
     .command('assetdirs <configFN>')
     .description('List the assets directories in a site configuration')
     .action(async (configFN) => {
-        const akasha    = require('./index');
         // console.log(`render: akasha: ${util.inspect(akasha)}`);
         try {
             const config = require(path.join(process.cwd(), configFN));
             await config.setup();
+            let akasha = config.akasha;
             console.log(config.assetDirs);
         } catch (e) {
             console.error(`assetdirs command ERRORED ${e.stack}`);
@@ -258,10 +284,10 @@ program
     .command('partialdirs <configFN>')
     .description('List the partials directories in a site configuration')
     .action(async (configFN) => {
-        const akasha    = require('./index');
         // console.log(`render: akasha: ${util.inspect(akasha)}`);
         try {
             const config = require(path.join(process.cwd(), configFN));
+            let akasha = config.akasha;
             console.log(config.partialsDirs);
         } catch (e) {
             console.error(`partialdirs command ERRORED ${e.stack}`);
@@ -272,10 +298,10 @@ program
     .command('layoutsdirs <configFN>')
     .description('List the layouts directories in a site configuration')
     .action(async (configFN) => {
-        const akasha    = require('./index');
         // console.log(`render: akasha: ${util.inspect(akasha)}`);
         try {
             const config = require(path.join(process.cwd(), configFN));
+            let akasha = config.akasha;
             await config.setup();
             console.log(config.layoutDirs);
         } catch (e) {
@@ -288,10 +314,10 @@ program
     .command('documents <configFN>')
     .description('List the documents in a site configuration')
     .action(async (configFN) => {
-        const akasha    = require('./index');
         // console.log(`render: akasha: ${util.inspect(akasha)}`);
         try {
             const config = require(path.join(process.cwd(), configFN));
+            let akasha = config.akasha;
             await config.setup();
             let filecache = await _filecache;
             // console.log(filecache.documents);
@@ -307,10 +333,10 @@ program
     .command('docinfo <configFN> <docFN>')
     .description('Show information about a document in a site configuration')
     .action(async (configFN, docFN) => {
-        const akasha    = require('./index');
         // console.log(`render: akasha: ${util.inspect(akasha)}`);
         try {
             const config = require(path.join(process.cwd(), configFN));
+            let akasha = config.akasha;
             await config.setup();
             let filecache = await _filecache;
             // console.log(filecache.documents);
@@ -331,10 +357,10 @@ program
     .option('--layout <layout>', 'Select only files matching the layouts')
     .option('--mime <mime>', 'Select only files matching the MIME type')
     .action(async (configFN, cmdObj) => {
-        const akasha    = require('./index');
         // console.log(`render: akasha: ${util.inspect(akasha)}`);
         try {
             const config = require(path.join(process.cwd(), configFN));
+            let akasha = config.akasha;
             await config.setup();
             let filecache = await _filecache;
             // console.log(filecache.documents);
@@ -359,10 +385,10 @@ program
     .command('assets <configFN>')
     .description('List the assets in a site configuration')
     .action(async (configFN) => {
-        const akasha    = require('./index');
         // console.log(`render: akasha: ${util.inspect(akasha)}`);
         try {
             const config = require(path.join(process.cwd(), configFN));
+            let akasha = config.akasha;
             await config.setup();
             let filecache = await _filecache;
             // console.log(filecache.documents);
@@ -378,10 +404,10 @@ program
     .command('assetinfo <configFN> <docFN>')
     .description('Show information about an asset in a site configuration')
     .action(async (configFN, assetFN) => {
-        const akasha    = require('./index');
         // console.log(`render: akasha: ${util.inspect(akasha)}`);
         try {
             const config = require(path.join(process.cwd(), configFN));
+            let akasha = config.akasha;
             await config.setup();
             let filecache = await _filecache;
             // console.log(filecache.documents);
@@ -397,10 +423,10 @@ program
     .command('layouts <configFN>')
     .description('List the layouts in a site configuration')
     .action(async (configFN) => {
-        const akasha    = require('./index');
         // console.log(`render: akasha: ${util.inspect(akasha)}`);
         try {
             const config = require(path.join(process.cwd(), configFN));
+            let akasha = config.akasha;
             await config.setup();
             let filecache = await _filecache;
             // console.log(filecache.documents);
@@ -421,10 +447,10 @@ program
     .command('layoutinfo <configFN> <docFN>')
     .description('Show information about a layout in a site configuration')
     .action(async (configFN, layoutFN) => {
-        const akasha    = require('./index');
         // console.log(`render: akasha: ${util.inspect(akasha)}`);
         try {
             const config = require(path.join(process.cwd(), configFN));
+            let akasha = config.akasha;
             await config.setup();
             let filecache = await _filecache;
             // console.log(filecache.documents);
@@ -440,10 +466,10 @@ program
     .command('partials <configFN>')
     .description('List the partials in a site configuration')
     .action(async (configFN) => {
-        const akasha    = require('./index');
         // console.log(`render: akasha: ${util.inspect(akasha)}`);
         try {
             const config = require(path.join(process.cwd(), configFN));
+            let akasha = config.akasha;
             await config.setup();
             let filecache = await _filecache;
             // console.log(filecache.documents);
@@ -462,10 +488,10 @@ program
     .command('partialinfo <configFN> <docFN>')
     .description('Show information about a partial in a site configuration')
     .action(async (configFN, partialFN) => {
-        const akasha    = require('./index');
         // console.log(`render: akasha: ${util.inspect(akasha)}`);
         try {
             const config = require(path.join(process.cwd(), configFN));
+            let akasha = config.akasha;
             await config.setup();
             let filecache = await _filecache;
             // console.log(filecache.documents);

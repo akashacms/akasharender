@@ -48,6 +48,61 @@ mime.define({'text/x-asciidoc': ['adoc', 'asciidoc']});
 exports.cache = import('./cache/cache-forerunner.mjs');
 exports.filecache = import('./cache/file-cache.mjs');
 
+exports.cacheSetup = async function(config) {
+    try {
+        await (await exports.cache).setup(config);
+    } catch (err) {
+        console.error(`INITIALIZATION FAILURE COULD NOT INITIALIZE CACHE `, err);
+        process.exit(1);
+    }
+}
+
+exports.closeCaches = async function() {
+    try {
+        await (await exports.filecache).close();
+        await (await exports.cache).close();
+    } catch (err) {
+        console.error(`INITIALIZATION FAILURE COULD NOT CLOSE CACHES `, err);
+        process.exit(1);
+    }
+}
+
+exports.setupDocuments = async function(config) {
+    try {
+        await (await exports.filecache).setupDocuments(config);
+    } catch (err) {
+        console.error(`INITIALIZATION FAILURE COULD NOT INITIALIZE DOCUMENTS CACHE `, err);
+        process.exit(1);
+    }
+}
+
+exports.setupAssets = async function(config) {
+    try {
+        await (await exports.filecache).setupAssets(config);
+    } catch (err) {
+        console.error(`INITIALIZATION FAILURE COULD NOT INITIALIZE ASSETS CACHE `, err);
+        process.exit(1);
+    }
+}
+
+exports.setupLayouts = async function(config) {
+    try {
+        await (await exports.filecache).setupLayouts(config);
+    } catch (err) {
+        console.error(`INITIALIZATION FAILURE COULD NOT INITIALIZE LAYOUTS CACHE `, err);
+        process.exit(1);
+    }
+}
+
+exports.setupPartials = async function(config) {
+    try {
+        await (await exports.filecache).setupPartials(config);
+    } catch (err) {
+        console.error(`INITIALIZATION FAILURE COULD NOT INITIALIZE PARTIALS CACHE `, err);
+        process.exit(1);
+    }
+}
+
 // exports.cache = require('./caching');
 exports.Plugin = require('./Plugin');
 
@@ -68,19 +123,20 @@ module.exports.CSSLESSRenderer = require('./render-cssless');
 exports.render = render.newerrender; //  render.newrender;
 exports.renderDocument = render.renderDocument;
 
-exports.renderPath = async (config, path) => {
+exports.renderPath = async (config, path2r) => {
     const documents = (await exports.filecache).documents;
-    let found = await documents.find(path);
+    let found = await documents.find(path2r);
+    console.log(`renderPath ${path2r}`, found);
     if (!found) {
-        throw new Error(`Did not find document for ${path}`);
+        throw new Error(`Did not find document for ${path2r}`);
     }
     let result = await render.newRenderDocument(config, found);
     return result;
 }
 
-exports.renderPathOLD = async (config, path) => {
+/* exports.renderPathOLD = async (config, path2r) => {
 
-    let found = await exports.findRendersTo(config, path);
+    let found = await exports.findRendersTo(config, path2r);
     let result = await exports.renderDocument(
                 config,
                 found.foundDir,
@@ -89,7 +145,7 @@ exports.renderPathOLD = async (config, path) => {
                 found.foundMountedOn,
                 found.foundBaseMetadata);
     return result;
-}
+} */
 
 exports.readRenderedFile = async(config, fpath) => {
 
@@ -143,9 +199,14 @@ exports.documentSearch = async function(config, options) {
 }
 exports.readDocument   = documents.readDocument;
 
-exports.partial = render.partial;
+const partialFuncs = import('./partial-funcs.mjs');
 
-exports.partialSync = render.partialSync;
+exports.partial = undefined;
+exports.partialSync = undefined;
+(async () => {
+    exports.partial = (await partialFuncs).partial;
+    exports.partialSync = (await partialFuncs).partialSync;
+})();
 
 exports.indexChain = async function(config, fname) {
 
@@ -190,52 +251,6 @@ exports.indexChain = async function(config, fname) {
 
     return ret.reverse();
 }
-
-/* exports.indexChainOLD = async function(config, fname) {
-
-    var ret = [];
-    const parsed = path.parse(fname);
-
-    var findParents = async function(config, fileName) {
-        // var newFileName;
-        var parentDir;
-        // console.log(`findParents ${fileName}`);
-        if (path.dirname(fileName) === '.'
-         || path.dirname(fileName) === parsed.root) {
-            return;
-        } else {
-            if (path.basename(fileName) === "index.html") {
-                parentDir = path.dirname(path.dirname(fileName));
-            } else {
-                parentDir = path.dirname(fileName);
-            }
-            var lookFor = path.join(parentDir, "index.html");
-            return filez.findRendersTo(config, lookFor)
-            .then(found => {
-                // console.log(util.inspect(found));
-                if (typeof found !== 'undefined') {
-                    ret.push({ foundDir: found.foundDir, foundPath: found.foundPath, filename: lookFor });
-                }
-                return findParents(config, lookFor);
-            });
-        }
-    };
-
-    let renderer = config.findRendererPath(fname);
-    if (renderer) {
-        fname = renderer.filePath(fname);
-    }
-
-    var found = await filez.findRendersTo(config, fname);
-    if (typeof found === 'undefined') {
-        throw new Error(`Did not find directory for ${fname}`);
-    }
-    ret.push({ foundDir: found.foundDir, foundPath: found.foundPath, filename: fname });
-    await findParents(config, fname);
-
-    // console.log(`indexChain FINI ${util.inspect(ret.reverse)}`);
-    return ret.reverse();
-}; */
 
 exports.relative = require('relative');
 
@@ -394,7 +409,7 @@ module.exports.Configuration = class Configuration {
         let config = this;
         this.addMahabhuta(mahaPartial.mahabhutaArray({
             renderPartial: function(fname, metadata) {
-                return render.partial(config, fname, metadata);
+                return exports.partial(config, fname, metadata);
             }
         }));
     }
@@ -530,7 +545,9 @@ module.exports.Configuration = class Configuration {
         return this;
     }
 
-    async setup() {
+    // Moved these to standalone functions
+
+    /* async setup() {
         try {
             // console.log(`before cache`);
             await (await exports.cache).setup(this);
@@ -542,12 +559,12 @@ module.exports.Configuration = class Configuration {
             console.error(`INITIALIZATION FAILURE COULD NOT INITIALIZE CACHE `, err);
             process.exit(1);
         }
-    }
+    } */
 
-    async close() {
+    /* async close() {
         await (await exports.filecache).close();
         await (await exports.cache).close();
-    }
+    } */
 
     /**
      * Record the configuration directory so that we can correctly interpolate
@@ -824,6 +841,7 @@ module.exports.Configuration = class Configuration {
                 await fs.ensureDir(path.dirname(destFN));
                 // Copy from the absolute pathname, to the computed 
                 // location within the destination directory
+                // console.log(`copyAssets ${item.fspath} ==> ${destFN}`);
                 await fs.copy(item.fspath, destFN, {
                     overwrite: true,
                     preserveTimestamps: true
@@ -849,8 +867,6 @@ module.exports.Configuration = class Configuration {
         //    results.push(await result);
         // }
     }
-
-
 
     /**
      * Call the beforeSiteRendered function of any plugin which has that function.
