@@ -238,7 +238,9 @@ exports.indexChain = async function(config, fname) {
         } else {
             parentDir = path.dirname(fileName);
         }
-        let lookFor = path.join(parentDir, "index.html");
+        // The test case is expecting all filename field values
+        // to start with a '/' charater.  Not sure why.
+        let lookFor = path.join('/', parentDir, "index.html");
 
         let found = await documents.find(lookFor);
         if (found) {
