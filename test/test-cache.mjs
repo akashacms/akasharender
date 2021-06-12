@@ -130,7 +130,7 @@ describe('Setup cache', function() {
 
     it('should successfully setup cache database', async function() {
         try {
-            await config.setup();
+            await akasha.cacheSetup(config);
         } catch (e) {
             console.error(e);
             throw e;
@@ -138,7 +138,14 @@ describe('Setup cache', function() {
     });
 
     it('should successfully setup file caches', async function() {
+        this.timeout(75000);
         try {
+            await Promise.all([
+                akasha.setupDocuments(config),
+                akasha.setupAssets(config),
+                akasha.setupLayouts(config),
+                akasha.setupPartials(config)
+            ])
             await Promise.all([
                 filecache.documents.isReady(),
                 filecache.assets.isReady(),
@@ -499,7 +506,7 @@ function isPathAllowed(pathinfo, allowed_paths) {
         // console.log(`pathinfo ${util.inspect(pathinfo)} allowed ${util.inspect(allowed)}`);
         if (minimatch(pathinfo.fspath, allowed.fspath)
             && pathinfo.renderPath === allowed.renderPath
-            && pathinfo.path === allowed.path) {
+            && pathinfo.vpath === allowed.vpath) {
                 return true;
             }
     }
@@ -511,342 +518,342 @@ describe('Documents cache', function() {
         {
             fspath: '**/mounted2/img2resize.html.md',
             renderPath: 'mounted/img2resize.html',
-            path: 'mounted/img2resize.html.md'
+            vpath: 'mounted/img2resize.html.md'
         },
         {
             fspath: '**/documents/anchor-cleanups-handlebars.html.md',
             renderPath: 'anchor-cleanups-handlebars.html',
-            path: 'anchor-cleanups-handlebars.html.md'
+            vpath: 'anchor-cleanups-handlebars.html.md'
         },
         {
             fspath: '**/documents/anchor-cleanups-liquid.html.md',
             renderPath: 'anchor-cleanups-liquid.html',
-            path: 'anchor-cleanups-liquid.html.md'
+            vpath: 'anchor-cleanups-liquid.html.md'
         },
         {
             fspath: '**/documents/anchor-cleanups-nunjucks.html.md',
             renderPath: 'anchor-cleanups-nunjucks.html',
-            path: 'anchor-cleanups-nunjucks.html.md'
+            vpath: 'anchor-cleanups-nunjucks.html.md'
         },
         {
             fspath: '**/documents/anchor-cleanups.html.md',
             renderPath: 'anchor-cleanups.html',
-            path: 'anchor-cleanups.html.md'
+            vpath: 'anchor-cleanups.html.md'
         },
         {
             fspath: '**/documents/asciidoctor-handlebars.html.adoc',
             renderPath: 'asciidoctor-handlebars.html',
-            path: 'asciidoctor-handlebars.html.adoc'
+            vpath: 'asciidoctor-handlebars.html.adoc'
         },
         {
             fspath: '**/documents/asciidoctor-liquid.html.adoc',
             renderPath: 'asciidoctor-liquid.html',
-            path: 'asciidoctor-liquid.html.adoc'
+            vpath: 'asciidoctor-liquid.html.adoc'
         },
         {
             fspath: '**/documents/asciidoctor-nunjucks.html.adoc',
             renderPath: 'asciidoctor-nunjucks.html',
-            path: 'asciidoctor-nunjucks.html.adoc'
+            vpath: 'asciidoctor-nunjucks.html.adoc'
         },
         {
             fspath: '**/documents/asciidoctor.html.adoc',
             renderPath: 'asciidoctor.html',
-            path: 'asciidoctor.html.adoc'
+            vpath: 'asciidoctor.html.adoc'
         },
         {
             fspath: '**/documents/body-class-handlebars.html.md',
             renderPath: 'body-class-handlebars.html',
-            path: 'body-class-handlebars.html.md'
+            vpath: 'body-class-handlebars.html.md'
         },
         {
             fspath: '**/documents/body-class-liquid.html.md',
             renderPath: 'body-class-liquid.html',
-            path: 'body-class-liquid.html.md'
+            vpath: 'body-class-liquid.html.md'
         },
         {
             fspath: '**/documents/body-class-nunjucks.html.md',
             renderPath: 'body-class-nunjucks.html',
-            path: 'body-class-nunjucks.html.md'
+            vpath: 'body-class-nunjucks.html.md'
         },
         {
             fspath: '**/documents/body-class.html.md',
             renderPath: 'body-class.html',
-            path: 'body-class.html.md'
+            vpath: 'body-class.html.md'
         },
         {
             fspath: '**/documents/code-embed-handlebars.html.md',
             renderPath: 'code-embed-handlebars.html',
-            path: 'code-embed-handlebars.html.md'
+            vpath: 'code-embed-handlebars.html.md'
         },
         {
             fspath: '**/documents/code-embed-liquid.html.md',
             renderPath: 'code-embed-liquid.html',
-            path: 'code-embed-liquid.html.md'
+            vpath: 'code-embed-liquid.html.md'
         },
         {
             fspath: '**/documents/code-embed-nunjucks.html.md',
             renderPath: 'code-embed-nunjucks.html',
-            path: 'code-embed-nunjucks.html.md'
+            vpath: 'code-embed-nunjucks.html.md'
         },
         {
             fspath: '**/documents/code-embed.html.md',
             renderPath: 'code-embed.html',
-            path: 'code-embed.html.md'
+            vpath: 'code-embed.html.md'
         },
         {
             fspath: '**/documents/fig-img-handlebars.html.md',
             renderPath: 'fig-img-handlebars.html',
-            path: 'fig-img-handlebars.html.md'
+            vpath: 'fig-img-handlebars.html.md'
         },
         {
             fspath: '**/documents/fig-img-liquid.html.md',
             renderPath: 'fig-img-liquid.html',
-            path: 'fig-img-liquid.html.md'
+            vpath: 'fig-img-liquid.html.md'
         },
         {
             fspath: '**/documents/fig-img-nunjucks.html.md',
             renderPath: 'fig-img-nunjucks.html',
-            path: 'fig-img-nunjucks.html.md'
+            vpath: 'fig-img-nunjucks.html.md'
         },
         {
             fspath: '**/documents/fig-img.html.md',
             renderPath: 'fig-img.html',
-            path: 'fig-img.html.md'
+            vpath: 'fig-img.html.md'
         },
         {
             fspath: '**/documents/img2figimg-handlebars.html.md',
             renderPath: 'img2figimg-handlebars.html',
-            path: 'img2figimg-handlebars.html.md'
+            vpath: 'img2figimg-handlebars.html.md'
         },
         {
             fspath: '**/documents/img2figimg-liquid.html.md',
             renderPath: 'img2figimg-liquid.html',
-            path: 'img2figimg-liquid.html.md'
+            vpath: 'img2figimg-liquid.html.md'
         },
         {
             fspath: '**/documents/img2figimg-nunjucks.html.md',
             renderPath: 'img2figimg-nunjucks.html',
-            path: 'img2figimg-nunjucks.html.md'
+            vpath: 'img2figimg-nunjucks.html.md'
         },
         {
             fspath: '**/documents/img2figimg.html.md',
             renderPath: 'img2figimg.html',
-            path: 'img2figimg.html.md'
+            vpath: 'img2figimg.html.md'
         },
         {
             fspath: '**/documents/img2resize-handlebars.html.md',
             renderPath: 'img2resize-handlebars.html',
-            path: 'img2resize-handlebars.html.md'
+            vpath: 'img2resize-handlebars.html.md'
         },
         {
             fspath: '**/documents/img2resize-liquid.html.md',
             renderPath: 'img2resize-liquid.html',
-            path: 'img2resize-liquid.html.md'
+            vpath: 'img2resize-liquid.html.md'
         },
         {
             fspath: '**/documents/img2resize-nunjucks.html.md',
             renderPath: 'img2resize-nunjucks.html',
-            path: 'img2resize-nunjucks.html.md'
+            vpath: 'img2resize-nunjucks.html.md'
         },
         {
             fspath: '**/documents/img2resize.html.md',
             renderPath: 'img2resize.html',
-            path: 'img2resize.html.md'
+            vpath: 'img2resize.html.md'
         },
         {
             fspath: '**/documents/index.html.md',
             renderPath: 'index.html',
-            path: 'index.html.md'
+            vpath: 'index.html.md'
         },
         {
             fspath: '**/documents/json-data-handlebars.html.json',
             renderPath: 'json-data-handlebars.html',
-            path: 'json-data-handlebars.html.json'
+            vpath: 'json-data-handlebars.html.json'
         },
         {
             fspath: '**/documents/json-data-liquid.html.json',
             renderPath: 'json-data-liquid.html',
-            path: 'json-data-liquid.html.json'
+            vpath: 'json-data-liquid.html.json'
         },
         {
             fspath: '**/documents/json-data-nunjucks.html.json',
             renderPath: 'json-data-nunjucks.html',
-            path: 'json-data-nunjucks.html.json'
+            vpath: 'json-data-nunjucks.html.json'
         },
         {
             fspath: '**/documents/json-data.html.json',
             renderPath: 'json-data.html',
-            path: 'json-data.html.json'
+            vpath: 'json-data.html.json'
         },
         {
             fspath: '**/documents/metadata-style-javascript.html.md',
             renderPath: 'metadata-style-javascript.html',
-            path: 'metadata-style-javascript.html.md'
+            vpath: 'metadata-style-javascript.html.md'
         },
         {
             fspath: '**/documents/njk-func.html.md',
             renderPath: 'njk-func.html',
-            path: 'njk-func.html.md'
+            vpath: 'njk-func.html.md'
         },
         {
             fspath: '**/documents/njk-incl.html.md',
             renderPath: 'njk-incl.html',
-            path: 'njk-incl.html.md'
+            vpath: 'njk-incl.html.md'
         },
         {
             fspath: '**/documents/partials-handlebars.html.handlebars',
             renderPath: 'partials-handlebars.html',
-            path: 'partials-handlebars.html.handlebars'
+            vpath: 'partials-handlebars.html.handlebars'
         },
         {
             fspath: '**/documents/partials-liquid.html.liquid',
             renderPath: 'partials-liquid.html',
-            path: 'partials-liquid.html.liquid'
+            vpath: 'partials-liquid.html.liquid'
         },
         {
             fspath: '**/documents/partials-nunjucks.html.njk',
             renderPath: 'partials-nunjucks.html',
-            path: 'partials-nunjucks.html.njk'
+            vpath: 'partials-nunjucks.html.njk'
         },
         {
             fspath: '**/documents/partials.html.md',
             renderPath: 'partials.html',
-            path: 'partials.html.md'
+            vpath: 'partials.html.md'
         },
         {
             fspath: '**/documents/select-elements.html.md',
             renderPath: 'select-elements.html',
-            path: 'select-elements.html.md'
+            vpath: 'select-elements.html.md'
         },
         {
             fspath: '**/documents/show-content-handlebars.html.md',
             renderPath: 'show-content-handlebars.html',
-            path: 'show-content-handlebars.html.md'
+            vpath: 'show-content-handlebars.html.md'
         },
         {
             fspath: '**/documents/show-content-liquid.html.md',
             renderPath: 'show-content-liquid.html',
-            path: 'show-content-liquid.html.md'
+            vpath: 'show-content-liquid.html.md'
         },
         {
             fspath: '**/documents/show-content-nunjucks.html.md',
             renderPath: 'show-content-nunjucks.html',
-            path: 'show-content-nunjucks.html.md'
+            vpath: 'show-content-nunjucks.html.md'
         },
         {
             fspath: '**/documents/show-content.html.md',
             renderPath: 'show-content.html',
-            path: 'show-content.html.md'
+            vpath: 'show-content.html.md'
         },
         {
             fspath: '**/documents/shown-content.html.md',
             renderPath: 'shown-content.html',
-            path: 'shown-content.html.md'
+            vpath: 'shown-content.html.md'
         },
         {
             fspath: '**/documents/simple-style-javascript.html.md',
             renderPath: 'simple-style-javascript.html',
-            path: 'simple-style-javascript.html.md'
+            vpath: 'simple-style-javascript.html.md'
         },
         {
             fspath: '**/documents/teaser-content.html.md',
             renderPath: 'teaser-content.html',
-            path: 'teaser-content.html.md'
+            vpath: 'teaser-content.html.md'
         },
         {
             fspath: '**/mounted2/img/Human-Skeleton.jpg',
             renderPath: 'mounted/img/Human-Skeleton.jpg',
-            path: 'mounted/img/Human-Skeleton.jpg'
+            vpath: 'mounted/img/Human-Skeleton.jpg'
         },
         {
             fspath: '**/documents/subdir/index.html.md',
             renderPath: 'subdir/index.html',
-            path: 'subdir/index.html.md'
+            vpath: 'subdir/index.html.md'
         },
         {
             fspath: '**/documents/subdir/show-content-local.html.md',
             renderPath: 'subdir/show-content-local.html',
-            path: 'subdir/show-content-local.html.md'
+            vpath: 'subdir/show-content-local.html.md'
         },
         {
             fspath: '**/documents/subdir/shown-content-local.html.md',
             renderPath: 'subdir/shown-content-local.html',
-            path: 'subdir/shown-content-local.html.md'
+            vpath: 'subdir/shown-content-local.html.md'
         },
         {
             fspath: '**/documents/img/Human-Skeleton.jpg',
             renderPath: 'img/Human-Skeleton.jpg',
-            path: 'img/Human-Skeleton.jpg'
+            vpath: 'img/Human-Skeleton.jpg'
         },
         {
             fspath: '**/documents/hier-broke/dir1/sibling.html.md',
             renderPath: 'hier-broke/dir1/sibling.html',
-            path: 'hier-broke/dir1/sibling.html.md'
+            vpath: 'hier-broke/dir1/sibling.html.md'
         },
         {
             fspath: '**/documents/hier-broke/dir1/dir2/index.html.md',
             renderPath: 'hier-broke/dir1/dir2/index.html',
-            path: 'hier-broke/dir1/dir2/index.html.md'
+            vpath: 'hier-broke/dir1/dir2/index.html.md'
         },
         {
             fspath: '**/documents/hier-broke/dir1/dir2/sibling.html.md',
             renderPath: 'hier-broke/dir1/dir2/sibling.html',
-            path: 'hier-broke/dir1/dir2/sibling.html.md'
+            vpath: 'hier-broke/dir1/dir2/sibling.html.md'
         },
         {
             fspath: '**/documents/hier/index.html.md',
             renderPath: 'hier/index.html',
-            path: 'hier/index.html.md'
+            vpath: 'hier/index.html.md'
         },
         {
             fspath: '**/documents/hier/imgdir/index.html.md',
             renderPath: 'hier/imgdir/index.html',
-            path: 'hier/imgdir/index.html.md'
+            vpath: 'hier/imgdir/index.html.md'
         },
         {
             fspath: '**/documents/hier/imgdir/img/tesla-nema.jpg',
             renderPath: 'hier/imgdir/img/tesla-nema.jpg',
-            path: 'hier/imgdir/img/tesla-nema.jpg'
+            vpath: 'hier/imgdir/img/tesla-nema.jpg'
         },
         {
             fspath: '**/documents/hier/dir1/index.html.md',
             renderPath: 'hier/dir1/index.html',
-            path: 'hier/dir1/index.html.md'
+            vpath: 'hier/dir1/index.html.md'
         },
         {
             fspath: '**/documents/hier/dir1/sibling.html.md',
             renderPath: 'hier/dir1/sibling.html',
-            path: 'hier/dir1/sibling.html.md'
+            vpath: 'hier/dir1/sibling.html.md'
         },
         {
             fspath: '**/documents/hier/dir1/dir2/index.html.md',
             renderPath: 'hier/dir1/dir2/index.html',
-            path: 'hier/dir1/dir2/index.html.md'
+            vpath: 'hier/dir1/dir2/index.html.md'
         },
         {
             fspath: '**/documents/hier/dir1/dir2/nested-anchor.html.md',
             renderPath: 'hier/dir1/dir2/nested-anchor.html',
-            path: 'hier/dir1/dir2/nested-anchor.html.md'
+            vpath: 'hier/dir1/dir2/nested-anchor.html.md'
         },
         {
             fspath: '**/documents/hier/dir1/dir2/nested-img-resize.html.md',
             renderPath: 'hier/dir1/dir2/nested-img-resize.html',
-            path: 'hier/dir1/dir2/nested-img-resize.html.md'
+            vpath: 'hier/dir1/dir2/nested-img-resize.html.md'
         },
         {
             fspath: '**/documents/hier/dir1/dir2/sibling.html.md',
             renderPath: 'hier/dir1/dir2/sibling.html',
-            path: 'hier/dir1/dir2/sibling.html.md'
+            vpath: 'hier/dir1/dir2/sibling.html.md'
         },
         {
             fspath: '**/documents/code/foo.css',
             renderPath: 'code/foo.css',
-            path: 'code/foo.css'
+            vpath: 'code/foo.css'
         },
         {
             fspath: '**/documents/code/foo.js',
             renderPath: 'code/foo.js',
-            path: 'code/foo.js'
+            vpath: 'code/foo.js'
         }
     ];
 
@@ -871,8 +878,8 @@ describe('Documents cache', function() {
         assert.isDefined(found);
         assert.equal(found.mime, 'text/markdown');
         assert.equal(found.mountPoint, '/');
-        assert.equal(found.pathInSource, 'index.html.md');
-        assert.equal(found.path, 'index.html.md');
+        assert.equal(found.pathInMounted, 'index.html.md');
+        assert.equal(found.vpath, 'index.html.md');
         assert.equal(found.renderPath, 'index.html');
     });
 
@@ -882,8 +889,8 @@ describe('Documents cache', function() {
         assert.isDefined(found);
         assert.equal(found.mime, 'text/markdown');
         assert.equal(found.mountPoint, '/');
-        assert.equal(found.pathInSource, 'index.html.md');
-        assert.equal(found.path, 'index.html.md');
+        assert.equal(found.pathInMounted, 'index.html.md');
+        assert.equal(found.vpath, 'index.html.md');
         assert.equal(found.renderPath, 'index.html');
     });
 
@@ -893,8 +900,8 @@ describe('Documents cache', function() {
         assert.isDefined(found);
         assert.equal(found.mime, 'text/markdown');
         assert.equal(found.mountPoint, '/');
-        assert.equal(found.pathInSource, 'index.html.md');
-        assert.equal(found.path, 'index.html.md');
+        assert.equal(found.pathInMounted, 'index.html.md');
+        assert.equal(found.vpath, 'index.html.md');
         assert.equal(found.renderPath, 'index.html');
     });
     
@@ -904,8 +911,8 @@ describe('Documents cache', function() {
         assert.isDefined(found);
         assert.equal(found.mime, 'text/markdown');
         assert.equal(found.mountPoint, '/');
-        assert.equal(found.pathInSource, 'subdir/show-content-local.html.md');
-        assert.equal(found.path, 'subdir/show-content-local.html.md');
+        assert.equal(found.pathInMounted, 'subdir/show-content-local.html.md');
+        assert.equal(found.vpath, 'subdir/show-content-local.html.md');
         assert.equal(found.renderPath, 'subdir/show-content-local.html');
     });
     
@@ -915,8 +922,8 @@ describe('Documents cache', function() {
         assert.isDefined(found);
         assert.equal(found.mime, 'text/markdown');
         assert.equal(found.mountPoint, '/');
-        assert.equal(found.pathInSource, 'subdir/show-content-local.html.md');
-        assert.equal(found.path, 'subdir/show-content-local.html.md');
+        assert.equal(found.pathInMounted, 'subdir/show-content-local.html.md');
+        assert.equal(found.vpath, 'subdir/show-content-local.html.md');
         assert.equal(found.renderPath, 'subdir/show-content-local.html');
     });
     
@@ -926,10 +933,10 @@ describe('Documents cache', function() {
         // console.log(found);
         assert.isDefined(found);
         assert.equal(found.mime, 'text/markdown');
-        assert.include(found.sourcePath, 'mounted2');
+        assert.include(found.mounted, 'mounted2');
         assert.equal(found.mountPoint, 'mounted');
-        assert.equal(found.pathInSource, 'img2resize.html.md');
-        assert.equal(found.path, 'mounted/img2resize.html.md');
+        assert.equal(found.pathInMounted, 'img2resize.html.md');
+        assert.equal(found.vpath, 'mounted/img2resize.html.md');
         assert.equal(found.renderPath, 'mounted/img2resize.html');
     });
     
@@ -938,10 +945,10 @@ describe('Documents cache', function() {
 
         assert.isDefined(found);
         assert.equal(found.mime, 'text/markdown');
-        assert.include(found.sourcePath, 'mounted2');
+        assert.include(found.mounted, 'mounted2');
         assert.equal(found.mountPoint, 'mounted');
-        assert.equal(found.pathInSource, 'img2resize.html.md');
-        assert.equal(found.path, 'mounted/img2resize.html.md');
+        assert.equal(found.pathInMounted, 'img2resize.html.md');
+        assert.equal(found.vpath, 'mounted/img2resize.html.md');
         assert.equal(found.renderPath, 'mounted/img2resize.html');
     });
     
@@ -950,10 +957,10 @@ describe('Documents cache', function() {
 
         assert.isDefined(found);
         assert.equal(found.mime, 'image/jpeg');
-        assert.include(found.sourcePath, 'mounted2');
+        assert.include(found.mounted, 'mounted2');
         assert.equal(found.mountPoint, 'mounted');
-        assert.equal(found.pathInSource, 'img/Human-Skeleton.jpg');
-        assert.equal(found.path, 'mounted/img/Human-Skeleton.jpg');
+        assert.equal(found.pathInMounted, 'img/Human-Skeleton.jpg');
+        assert.equal(found.vpath, 'mounted/img/Human-Skeleton.jpg');
         assert.equal(found.renderPath, 'mounted/img/Human-Skeleton.jpg');
     });
     
@@ -963,10 +970,10 @@ describe('Documents cache', function() {
         // console.log(found);
         assert.isDefined(found);
         assert.equal(found.mime, 'image/jpeg');
-        assert.include(found.sourcePath, 'mounted2');
+        assert.include(found.mounted, 'mounted2');
         assert.equal(found.mountPoint, 'mounted');
-        assert.equal(found.pathInSource, 'img/Human-Skeleton.jpg');
-        assert.equal(found.path, 'mounted/img/Human-Skeleton.jpg');
+        assert.equal(found.pathInMounted, 'img/Human-Skeleton.jpg');
+        assert.equal(found.vpath, 'mounted/img/Human-Skeleton.jpg');
         assert.equal(found.renderPath, 'mounted/img/Human-Skeleton.jpg');
     });
     
@@ -1001,57 +1008,57 @@ describe('Layouts cache', function() {
         {
             fspath: '**/layouts-extra/inclusion2.html',
             renderPath: 'inclusion2.html',
-            path: 'inclusion2.html'
+            vpath: 'inclusion2.html'
         },
         {
             fspath: '**/layouts-extra/njkincl.html.njk',
             renderPath: 'njkincl.html.njk',
-            path: 'njkincl.html.njk'
+            vpath: 'njkincl.html.njk'
         },
         {
             fspath: '**/layouts/ak_core_macros.njk',
             renderPath: 'ak_core_macros.njk',
-            path: 'ak_core_macros.njk'
+            vpath: 'ak_core_macros.njk'
         },
         {
             fspath: '**/layouts/default-once.html.ejs',
             renderPath: 'default-once.html.ejs',
-            path: 'default-once.html.ejs'
+            vpath: 'default-once.html.ejs'
         },
         {
             fspath: '**/layouts/default-once.html.handlebars',
             renderPath: 'default-once.html.handlebars',
-            path: 'default-once.html.handlebars'
+            vpath: 'default-once.html.handlebars'
         },
         {
             fspath: '**/layouts/default-once.html.liquid',
             renderPath: 'default-once.html.liquid',
-            path: 'default-once.html.liquid'
+            vpath: 'default-once.html.liquid'
         },
         {
             fspath: '**/layouts/default-once.html.njk',
             renderPath: 'default-once.html.njk',
-            path: 'default-once.html.njk'
+            vpath: 'default-once.html.njk'
         },
         {
             fspath: '**/layouts/default.html.ejs',
             renderPath: 'default.html.ejs',
-            path: 'default.html.ejs'
+            vpath: 'default.html.ejs'
         },
         {
             fspath: '**/layouts/inclusion.html',
             renderPath: 'inclusion.html',
-            path: 'inclusion.html'
+            vpath: 'inclusion.html'
         },
         {
             fspath: '**/layouts/njk-funcs.html.njk',
             renderPath: 'njk-funcs.html.njk',
-            path: 'njk-funcs.html.njk'
+            vpath: 'njk-funcs.html.njk'
         },
         {
             fspath: '**/layouts/njkincl.html.njk',
             renderPath: 'njkincl.html.njk',
-            path: 'njkincl.html.njk'
+            vpath: 'njkincl.html.njk'
         }
     ];
 
@@ -1074,10 +1081,10 @@ describe('Layouts cache', function() {
 
         assert.isDefined(found);
         // No MIME type available assert.equal(found.mime, 'text/html');
-        assert.include(found.sourcePath, 'layouts-extra');
+        assert.include(found.mounted, 'layouts-extra');
         assert.equal(found.mountPoint, '/');
-        assert.equal(found.pathInSource, 'njkincl.html.njk');
-        assert.equal(found.path, 'njkincl.html.njk');
+        assert.equal(found.pathInMounted, 'njkincl.html.njk');
+        assert.equal(found.vpath, 'njkincl.html.njk');
         assert.equal(found.renderPath, 'njkincl.html.njk');
     });
 });
@@ -1087,82 +1094,82 @@ describe('Partials cache', function() {
         {
             fspath: '**/partials2/helloworld.html',
             renderPath: 'helloworld.html',
-            path: 'helloworld.html'
+            vpath: 'helloworld.html'
         },
         {
             fspath: '**/partials2/helloworld2.html',
             renderPath: 'helloworld2.html',
-            path: 'helloworld2.html'
+            vpath: 'helloworld2.html'
         },
         {
             fspath: '**/partials2/json-format.html.ejs',
             renderPath: 'json-format.html.ejs',
-            path: 'json-format.html.ejs'
+            vpath: 'json-format.html.ejs'
         },
         {
             fspath: '**/partials2/listrender.html.ejs',
             renderPath: 'listrender.html.ejs',
-            path: 'listrender.html.ejs'
+            vpath: 'listrender.html.ejs'
         },
         {
             fspath: '**/partials2/listrender.html.handlebars',
             renderPath: 'listrender.html.handlebars',
-            path: 'listrender.html.handlebars'
+            vpath: 'listrender.html.handlebars'
         },
         {
             fspath: '**/partials2/strong.html.ejs',
             renderPath: 'strong.html.ejs',
-            path: 'strong.html.ejs'
+            vpath: 'strong.html.ejs'
         },
         {
             fspath: '**/partials2/strong.html.handlebars',
             renderPath: 'strong.html.handlebars',
-            path: 'strong.html.handlebars'
+            vpath: 'strong.html.handlebars'
         },
         {
             fspath: '**/partials2/test.html.njk',
             renderPath: 'test.html.njk',
-            path: 'test.html.njk'
+            vpath: 'test.html.njk'
         },
         {
             fspath: '**/partials/ak_figimg.html.ejs',
             renderPath: 'ak_figimg.html.ejs',
-            path: 'ak_figimg.html.ejs'
+            vpath: 'ak_figimg.html.ejs'
         },
         {
             fspath: '**/partials/ak_figimg.html.handlebars',
             renderPath: 'ak_figimg.html.handlebars',
-            path: 'ak_figimg.html.handlebars'
+            vpath: 'ak_figimg.html.handlebars'
         },
         {
             fspath: '**/partials/ak_figimg.html.njk',
             renderPath: 'ak_figimg.html.njk',
-            path: 'ak_figimg.html.njk'
+            vpath: 'ak_figimg.html.njk'
         },
         {
             fspath: '**/partials/ak_show-content-card.html.ejs',
             renderPath: 'ak_show-content-card.html.ejs',
-            path: 'ak_show-content-card.html.ejs'
+            vpath: 'ak_show-content-card.html.ejs'
         },
         {
             fspath: '**/partials/ak_show-content.html.ejs',
             renderPath: 'ak_show-content.html.ejs',
-            path: 'ak_show-content.html.ejs'
+            vpath: 'ak_show-content.html.ejs'
         },
         {
             fspath: '**/partials/ak_show-content.html.handlebars',
             renderPath: 'ak_show-content.html.handlebars',
-            path: 'ak_show-content.html.handlebars'
+            vpath: 'ak_show-content.html.handlebars'
         },
         {
             fspath: '**/partials/ak_show-content.html.njk',
             renderPath: 'ak_show-content.html.njk',
-            path: 'ak_show-content.html.njk'
+            vpath: 'ak_show-content.html.njk'
         },
         {
             fspath: '**/partials/ak_teaser.html.ejs',
             renderPath: 'ak_teaser.html.ejs',
-            path: 'ak_teaser.html.ejs'
+            vpath: 'ak_teaser.html.ejs'
         }
     ];
 
@@ -1185,10 +1192,10 @@ describe('Partials cache', function() {
 
         assert.isDefined(found);
         assert.equal(found.mime, 'text/html');
-        assert.include(found.sourcePath, 'partials2');
+        assert.include(found.mounted, 'partials2');
         assert.equal(found.mountPoint, '/');
-        assert.equal(found.pathInSource, 'helloworld.html');
-        assert.equal(found.path, 'helloworld.html');
+        assert.equal(found.pathInMounted, 'helloworld.html');
+        assert.equal(found.vpath, 'helloworld.html');
         assert.equal(found.renderPath, 'helloworld.html');
     });
 });
@@ -1198,12 +1205,12 @@ describe('Assets cache', function() {
         {
             fspath: '**/assets2/file.txt',
             renderPath: 'file.txt',
-            path: 'file.txt'
+            vpath: 'file.txt'
         },
         {
             fspath: '**/assets/rss_button.png',
             renderPath: 'rss_button.png',
-            path: 'rss_button.png'
+            vpath: 'rss_button.png'
         }
     ];
 
@@ -1227,8 +1234,8 @@ describe('Assets cache', function() {
         assert.isDefined(found);
         assert.equal(found.mime, 'image/png');
         assert.equal(found.mountPoint, '/');
-        assert.equal(found.pathInSource, 'rss_button.png');
-        assert.equal(found.path, 'rss_button.png');
+        assert.equal(found.pathInMounted, 'rss_button.png');
+        assert.equal(found.vpath, 'rss_button.png');
         assert.equal(found.renderPath, 'rss_button.png');
     });
 
@@ -1237,10 +1244,10 @@ describe('Assets cache', function() {
 
         assert.isDefined(found);
         assert.equal(found.mime, 'text/plain');
-        assert.include(found.sourcePath, 'assets2');
+        assert.include(found.mounted, 'assets2');
         assert.equal(found.mountPoint, '/');
-        assert.equal(found.pathInSource, 'file.txt');
-        assert.equal(found.path, 'file.txt');
+        assert.equal(found.pathInMounted, 'file.txt');
+        assert.equal(found.vpath, 'file.txt');
         assert.equal(found.renderPath, 'file.txt');
     });
 });
@@ -1410,7 +1417,7 @@ describe('Close caches', function() {
 
     it('should close caches', async function() {
         try {
-            await config.close();
+            await akasha.closeCaches();
         } catch (e) {
             console.error(e);
             throw e;

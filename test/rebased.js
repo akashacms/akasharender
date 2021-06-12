@@ -3,6 +3,9 @@ const { promisify } = require('util');
 const akasha   = require('../index');
 const { assert } = require('chai');
 const sizeOf = promisify(require('image-size'));
+// Note this is an ES6 module and to use it we must 
+// use an async function along with the await keyword
+const _filecache = import('../cache/file-cache.mjs');
 
 
 // This is about hosting a website on a subdirectory
@@ -56,11 +59,32 @@ describe('build rebased site', function() {
         config_rebase.prepare();
     });
 
-    it('should render rebased website', async function() {
+    it('should run setup', async function() {
+        this.timeout(75000);
+        await akasha.cacheSetup(config_rebase);
+        await Promise.all([
+            akasha.setupDocuments(config_rebase),
+            akasha.setupAssets(config_rebase),
+            akasha.setupLayouts(config_rebase),
+            akasha.setupPartials(config_rebase)
+        ])
+        let filecache = await _filecache;
+        await Promise.all([
+            filecache.documents.isReady(),
+            filecache.assets.isReady(),
+            filecache.layouts.isReady(),
+            filecache.partials.isReady()
+        ]);
+    });
 
+    it('should copy assets', async function() {
+        this.timeout(75000);
+        await config_rebase.copyAssets();
+    });
+
+    it('should build site', async function() {
         this.timeout(75000);
         let failed = false;
-        await config_rebase.setup();
         let results = await akasha.render(config_rebase);
         for (let result of results) {
             if (result.error) {
@@ -68,10 +92,12 @@ describe('build rebased site', function() {
                 console.error(result.error);
             }
         }
-        // console.log(`site finished failed = ${failed}`);
         assert.isFalse(failed);
-        await config_rebase.close();
+    });
 
+    it('should close the configuration', async function() {
+        this.timeout(75000);
+        await akasha.closeCaches();
     });
 });
 
@@ -866,8 +892,21 @@ describe('rebased teaser, content', function() {
 
 describe('Rebased index Chain', function() {
     before(async function() {
-        await config_rebase.setup();
-        const documents = (await akasha.filecache).documents;
+        await akasha.cacheSetup(config_rebase);
+        await Promise.all([
+            akasha.setupDocuments(config_rebase),
+            akasha.setupAssets(config_rebase),
+            akasha.setupLayouts(config_rebase),
+            akasha.setupPartials(config_rebase)
+        ])
+        let filecache = await _filecache;
+        // console.log(filecache.documents);
+        await Promise.all([
+            filecache.documents.isReady(),
+            filecache.assets.isReady(),
+            filecache.layouts.isReady(),
+            filecache.partials.isReady()
+        ]);
         // console.log(`before documents.isReady`);
         // await documents.isReady();
     });
@@ -989,7 +1028,8 @@ describe('Rebased index Chain', function() {
     });
 
     after(async function() {
-        await config_rebase.close();
+        this.timeout(75000);
+        await akasha.closeCaches();
     });
 
 });

@@ -2,8 +2,11 @@
 const { promisify } = require('util');
 const akasha   = require('../index');
 const { assert } = require('chai');
-const { after } = require('oembetter/filters');
 const sizeOf = promisify(require('image-size'));
+// Note this is an ES6 module and to use it we must 
+// use an async function along with the await keyword
+const _filecache = import('../cache/file-cache.mjs');
+
 
 let config;
 
@@ -53,7 +56,20 @@ describe('build site', function() {
 
     it('should run setup', async function() {
         this.timeout(75000);
-        await config.setup();
+        await akasha.cacheSetup(config);
+        await Promise.all([
+            akasha.setupDocuments(config),
+            akasha.setupAssets(config),
+            akasha.setupLayouts(config),
+            akasha.setupPartials(config)
+        ])
+        let filecache = await _filecache;
+        await Promise.all([
+            filecache.documents.isReady(),
+            filecache.assets.isReady(),
+            filecache.layouts.isReady(),
+            filecache.partials.isReady()
+        ]);
     });
 
     it('should copy assets', async function() {
@@ -80,7 +96,8 @@ describe('build site', function() {
     });
 
     it('should close the configuration', async function() {
-        await config.close();
+        this.timeout(75000);
+        await akasha.closeCaches();
     });
 });
 
@@ -1015,8 +1032,21 @@ describe('Select Elements', function() {
 
 describe('Index Chain', function() {
     before(async function() {
-        await config.setup();
-        const documents = (await akasha.filecache).documents;
+        await akasha.cacheSetup(config);
+        await Promise.all([
+            akasha.setupDocuments(config),
+            akasha.setupAssets(config),
+            akasha.setupLayouts(config),
+            akasha.setupPartials(config)
+        ])
+        let filecache = await _filecache;
+        // console.log(filecache.documents);
+        await Promise.all([
+            filecache.documents.isReady(),
+            filecache.assets.isReady(),
+            filecache.layouts.isReady(),
+            filecache.partials.isReady()
+        ]);
         // console.log(`before documents.isReady`);
         // await documents.isReady();
     });
@@ -1138,7 +1168,7 @@ describe('Index Chain', function() {
     });
 
     it('should close configuration', async function() {
-        await config.close();
+        await akasha.closeCaches();
     });
 
 });
