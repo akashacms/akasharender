@@ -126,7 +126,7 @@ exports.renderDocument = render.renderDocument;
 exports.renderPath = async (config, path2r) => {
     const documents = (await exports.filecache).documents;
     let found = await documents.find(path2r);
-    console.log(`renderPath ${path2r}`, found);
+    // console.log(`renderPath ${path2r}`, found);
     if (!found) {
         throw new Error(`Did not find document for ${path2r}`);
     }
@@ -134,19 +134,15 @@ exports.renderPath = async (config, path2r) => {
     return result;
 }
 
-/* exports.renderPathOLD = async (config, path2r) => {
-
-    let found = await exports.findRendersTo(config, path2r);
-    let result = await exports.renderDocument(
-                config,
-                found.foundDir,
-                found.foundPathWithinDir,
-                config.renderTo,
-                found.foundMountedOn,
-                found.foundBaseMetadata);
-    return result;
-} */
-
+/**
+ * Reads a file from the rendering directory.  It is primarily to be
+ * used in test cases, where we'll run a build then read the individual
+ * files to make sure they've rendered correctly.
+ * 
+ * @param {*} config 
+ * @param {*} fpath 
+ * @returns 
+ */
 exports.readRenderedFile = async(config, fpath) => {
 
     let html = await fs.readFile(path.join(config.renderDestination, fpath), 'utf8');
@@ -179,7 +175,12 @@ exports.findRendererPath = function(p) {
  * @params {string} rendersTo The full path of the rendered file
  * @return {Object} Description of the source file
  */
-exports.findRendersTo = filez.findRendersTo;
+
+// It's possible this is no longer being used.
+// This is of course supplanted by FileCache.find
+// In fact, the function itself is Deprecated and
+// throws an Error instead.
+// exports.findRendersTo = filez.findRendersTo;
 
 /**
  *
@@ -190,13 +191,17 @@ exports.findRendersTo = filez.findRendersTo;
 // NO LONGER USED exports.readFile = filez.readFile;
 exports.createNewFile = filez.createNewFile;
 
-exports.Document = documents.Document;
-exports.HTMLDocument = documents.HTMLDocument;
-exports.documentTree = documents.documentTree;
-exports.documentSearch = async function(config, options) {
-    const documents = (await exports.filecache).documents;
-    return documents.search(config, options);
-}
+// These functions from documents.js seem to be unuseful.
+// The last function has been rewritten to be minimal
+// and straightforward.
+//
+// exports.Document = documents.Document;
+// exports.HTMLDocument = documents.HTMLDocument;
+// exports.documentTree = documents.documentTree;
+// exports.documentSearch = async function(config, options) {
+//    const documents = (await exports.filecache).documents;
+//    return documents.search(config, options);
+// }
 exports.readDocument   = documents.readDocument;
 
 const partialFuncs = import('./partial-funcs.mjs');
@@ -630,6 +635,8 @@ module.exports.Configuration = class Configuration {
         if (this.configDir != null) {
             if (typeof dir === 'string' && !path.isAbsolute(dir)) {
                 dir = path.join(this.configDir, dir);
+            } else if (typeof dir === 'object' && !path.isAbsolute(dir.src)) {
+                dir.src = path.join(this.configDir, dir.src);
             }
         }
         this[_config_layoutDirs].push(dir);
@@ -650,6 +657,8 @@ module.exports.Configuration = class Configuration {
         if (this.configDir != null) {
             if (typeof dir === 'string' && !path.isAbsolute(dir)) {
                 dir = path.join(this.configDir, dir);
+            } else if (typeof dir === 'object' && !path.isAbsolute(dir.src)) {
+                dir.src = path.join(this.configDir, dir.src);
             }
         }
         this[_config_partialDirs].push(dir);
