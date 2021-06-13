@@ -474,7 +474,7 @@ export class FileCache extends EventEmitter {
     search(config, options) {
         let documents = [];
         const selector = {
-            $distinct: { path: 1 }
+            $distinct: { vpath: 1 }
         };
         if (options.pathmatch) {
             if (typeof options.pathmatch === 'string') {
