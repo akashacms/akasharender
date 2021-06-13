@@ -732,6 +732,10 @@ exports.readDocument = async function(config, documentPath) {
         docdestpath: found.vpath,
         vpath: found.vpath,
 
+        renderPath: found.renderPath,
+        renderpath: found.renderPath,
+        rendername: path.basename(found.renderPath),
+
         renderer: config.findRendererPath(found.vpath)
     };
 
