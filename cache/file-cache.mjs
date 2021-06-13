@@ -478,9 +478,9 @@ export class FileCache extends EventEmitter {
         };
         if (options.pathmatch) {
             if (typeof options.pathmatch === 'string') {
-                selector.path = new RegExp(options.pathmatch);
+                selector.vpath = new RegExp(options.pathmatch);
             } else if (options.pathmatch instanceof RegExp) {
-                selector.path = options.pathmatch;
+                selector.vpath = options.pathmatch;
             } else {
                 throw new Error(`Incorrect PATH check ${options.pathmatch}`);
             }
