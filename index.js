@@ -238,16 +238,16 @@ exports.indexChain = async function(config, fname) {
         } else {
             parentDir = path.dirname(fileName);
         }
-        // The test case is expecting all filename field values
-        // to start with a '/' charater.  Not sure why.
-        let lookFor = path.join('/', parentDir, "index.html");
+        let lookFor = path.join(parentDir, "index.html");
 
         let found = await documents.find(lookFor);
         if (found) {
             ret.push({
                 foundDir: found.mountPoint,
                 foundPath: found.renderPath,
-                filename: lookFor
+                // The test case is expecting all filename field values
+                // to start with a '/' charater.  Not sure why.
+                filename: '/' + lookFor
             });
         }
     
@@ -871,7 +871,8 @@ module.exports.Configuration = class Configuration {
             waitFor.push(queue.push(entry));
         }
         // This waits for all Promise's to finish
-        await Promise.all(waitFor);
+        // But if there were no Promise's, no need to wait
+        if (waitFor.length > 0) await Promise.all(waitFor);
         // There are no results in this case to care about
         // const results = [];
         // for (let result of waitFor) {

@@ -172,7 +172,9 @@ export class FileCache extends EventEmitter {
      * initial indexing has happened.
      */
     async isReady() {
-        while (!this[_symb_is_ready]) {
+        // If there's no directories, there won't be any files 
+        // to load, and no need to wait
+        while (this[_symb_dirs].length > 0 && !this[_symb_is_ready]) {
             // This does a 100ms pause
             // That lets us check is_ready every 100ms
             // at very little cost
