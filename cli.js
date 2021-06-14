@@ -347,6 +347,7 @@ program
     .option('--root <rootPath>', 'Select only files within the named directory')
     .option('--match <pathmatch>', 'Select only files matching the regular expression')
     .option('--glob <globmatch>', 'Select only files matching the glob expression')
+    .option('--renderglob <globmatch>', 'Select only files rendering to the glob expression')
     .option('--layout <layout>', 'Select only files matching the layouts')
     .option('--mime <mime>', 'Select only files matching the MIME type')
     .action(async (configFN, cmdObj) => {
@@ -364,6 +365,7 @@ program
             if (cmdObj.root) options.rootPath = cmdObj.root;
             if (cmdObj.match) options.pathmatch = cmdObj.match;
             if (cmdObj.glob) options.glob = cmdObj.glob;
+            if (cmdObj.renderglob) options.renderglob = cmdObj.renderglob;
             if (cmdObj.layout) options.layouts = cmdObj.layout;
             if (cmdObj.mime) options.mime = cmdObj.mime;
             // console.log(options);
