@@ -32,6 +32,8 @@ const data      = require('./data');
 // use an async function along with the await keyword
 const _filecache = import('./cache/file-cache.mjs');
 
+const _watchman = import('./cache/watchman.mjs');
+
 process.title = 'akasharender';
 program.version('0.7.5');
 
@@ -162,6 +164,37 @@ program
             await akasha.closeCaches();
         } catch (e) {
             console.error(`render command ERRORED ${e.stack}`);
+        }
+    });
+
+program
+    .command('watch <configFN>')
+    .description('Track changes to files in a site, and rebuild anything that changes')
+    .action(async (configFN, cmdObj) => {
+        // console.log(`render: akasha: ${util.inspect(akasha)}`);
+        try {
+            const config = require(path.join(process.cwd(), configFN));
+            let akasha = config.akasha;
+            await akasha.cacheSetup(config);
+            await Promise.all([
+                akasha.setupDocuments(config),
+                akasha.setupAssets(config),
+                akasha.setupLayouts(config),
+                akasha.setupPartials(config)
+            ])
+            let filecache = await _filecache;
+            await Promise.all([
+                filecache.documents.isReady(),
+                filecache.assets.isReady(),
+                filecache.layouts.isReady(),
+                filecache.partials.isReady()
+            ]);
+            data.init();
+            const watchman = (await _watchman).watchman;
+            await watchman(config);
+            // await akasha.closeCaches();
+        } catch (e) {
+            console.error(`watch command ERRORED ${e.stack}`);
         }
     });
 

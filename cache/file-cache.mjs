@@ -201,12 +201,16 @@ export class FileCache extends EventEmitter {
 
         if (item.action === 'change') {
             await this.handleChanged(item.collection, item.info);
+            this.emit('change', item.collection, item.info);
         } else if (item.action === 'add') {
             await this.handleAdded(item.collection, item.info);
+            this.emit('add', item.collection, item.info);
         } else if (item.action === 'unlink') {
             await this.handleUnlinked(item.collection, item.info);
+            this.emit('unlink', item.collection, item.info);
         } else if (item.action === 'ready') {
             await this.handleReady(item.collection);
+            this.emit('ready', item.collection);
         } else {
             throw new Error(`Unknown action ${item.action} ${item.collection} for `, item.info);
         }
