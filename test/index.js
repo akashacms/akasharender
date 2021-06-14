@@ -1,4 +1,6 @@
 
+const fs = require('fs').promises;
+const path = require('path');
 const { promisify } = require('util');
 const akasha   = require('../index');
 const { assert } = require('chai');
@@ -161,6 +163,12 @@ describe('stylesheets, javascripts', function() {
         it('should find stylesheets, javascript from metadata values IN njk-func.html', async function() {
             let { html, $ } = await akasha.readRenderedFile(config, 'njk-func.html');
             checkMetadataStyleJS(html, $);
+        });
+
+        it('should find style.css', async function() {
+            let style = path.join(config.renderDestination, 'style.css');
+            let stats = await fs.stat(style);
+            assert.isOk(stats);
         });
     });
 });

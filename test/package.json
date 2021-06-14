@@ -8,8 +8,9 @@
     "test-normal": "mocha ./index",
     "test-rebased": "mocha ./rebased",
     "test-cache": "mocha ./test-cache.mjs",
-    "build": "npm-run-all build:copy",
+    "build": "npm-run-all build:copy build:render",
     "build:copy": "node ../cli.js copy-assets config-normal.js",
+    "build:render": "node ../cli.js render config-normal.js",
     "setup": "npm install && cd .. && npm install",
     "clean": "rm -rf node_modules out out-rebased"
   },
