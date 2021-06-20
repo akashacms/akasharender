@@ -77,12 +77,12 @@ export async function watchman(config) {
     assets
     .on('change', async (collection, info) => {
         const destFN = path.join(config.renderDestination, info.renderPath);
-        await fs.copy(info.fspath, destFN);
+        await fs.copyFile(info.fspath, destFN);
         console.log(`CHANGE ${info.vpath} COPY==> ${info.renderPath}`);
     })
     .on('add', async (collection, info) => {
         const destFN = path.join(config.renderDestination, info.renderPath);
-        await fs.copy(info.fspath, destFN);
+        await fs.copyFile(info.fspath, destFN);
         console.log(`ADD ${info.vpath} COPY==> ${info.renderPath}`);
     })
     .on('unlink', async (collection, info) => {
