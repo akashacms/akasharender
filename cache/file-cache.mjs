@@ -2,6 +2,7 @@
 import util from 'util';
 import EventEmitter from 'events';
 import { promises as fs } from 'fs';
+import path from 'path';
 import { DirsWatcher } from '@akashacms/stacked-dirs';
 import { getCache } from './cache-forerunner.mjs';
 import fastq from 'fastq';
@@ -574,6 +575,55 @@ export class FileCache extends EventEmitter {
 }
 
 export class RenderedFileCache extends FileCache {
+
+    async readDocument(info) {
+        let stats;
+        try {
+            stats = await fs.stat(info.fspath);
+        } catch (err) {
+            throw new Error(`readDocument found ${util.inspect(info)} but fs.stat(${info.fspath}) threw error ${err.stack}`);
+        }
+        const doc = {
+            basedir: info.mounted,
+            mounted: info.mounted,
+
+            dirMountedOn: info.mountPoint,
+            mountPoint: info.mountPoint,
+
+            mountedDirMetadata: info.baseMetadata,
+            baseMetadata: info.baseMetadata,
+
+            docMetadata: info.docMetadata,
+
+            mime: info.mime,
+
+            fspath: info.fspath,
+
+            docpath: info.pathInMounted,
+            pathInMounted: info.pathInMounted,
+
+            // Original docdestpath: path.join(info.mountPoint, info.pathInMounted)
+            // However, in Stacked Dirs vpath is defined precisely
+            // to be that.  So, we can just use vpath rather than
+            // computing a value that's already known.
+            docdestpath: info.vpath,
+            vpath: info.vpath,
+
+            renderPath: info.renderPath,
+            renderpath: info.renderPath,
+            rendername: path.basename(info.renderPath),
+
+            stat: stats,
+            stats: stats,
+
+            renderer: this.config.findRendererPath(info.vpath)
+        };
+
+        if (doc.renderer && doc.renderer.frontmatter) {
+            doc.metadata = await doc.renderer.newInitMetadata(this.config, info);
+        }
+        return doc;
+    }
 
     async readMetadata(info) {
         for (let dir of this.dirs) {

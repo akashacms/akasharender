@@ -736,22 +736,25 @@ exports.readDocument = async function(config, documentPath) {
         renderpath: found.renderPath,
         rendername: path.basename(found.renderPath),
 
+        stat: stats,
+        stats: stats,
+
         renderer: config.findRendererPath(found.vpath)
     };
 
     // This code is transliterated from readDocumentContent
 
-    doc.stat = await fs.stat(found.fspath);
     const content = await fs.readFile(found.fspath, 'utf8');
     if (doc.renderer && doc.renderer.frontmatter) {
-        const matter = doc.renderer.parseFrontmatter(content);
+        // const matter = doc.renderer.parseFrontmatter(content);
         // console.log(`readDocumentContent got frontmatter ${util.inspect(matter)}`);
-        doc.data = matter.orig;
-        doc.metadata = await doc.renderer.initMetadata(config,
-            doc.basedir, doc.docpath, doc.dirMountedOn,
-            doc.mountedDirMetadata, matter.data);
-            doc.text = matter.content;
-            doc.text = matter.content;
+        // doc.data = matter.orig;
+        doc.metadata = await doc.renderer.newInitMetadata(config, found);
+        // doc.metadata = await doc.renderer.initMetadata(config,
+        //    doc.basedir, doc.docpath, doc.dirMountedOn,
+        //    doc.mountedDirMetadata, matter.data);
+        //    doc.text = matter.content;
+        //    doc.text = matter.content;
         // console.log(`readDocumentContent ${doc.docpath} ${util.inspect(doc.metadata)}`);
     } else {
         doc.data = content;

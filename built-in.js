@@ -795,7 +795,10 @@ class AnchorCleanup extends mahabhuta.Munger {
                 // console.log(`AnchorCleanup ${metadata.document.path} ${href} DONE ${(new Date() - startTime) / 1000} seconds`);
                 return "ok";
             } else {
-                throw new Error(`Could not fill in empty 'a' element in ${metadata.document.path} with href ${href}`);
+                // Don't bother throwing an error.  Just fill it in with
+                // something.
+                $link.text(href);
+                // throw new Error(`Could not fill in empty 'a' element in ${metadata.document.path} with href ${href}`);
             }
         } else {
             return "ok";
