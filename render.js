@@ -243,6 +243,9 @@ exports.newerrender = async function(config) {
 
     const documents = (await filecache).documents;
     await documents.isReady();
+    // console.log('CALLING config.hookBeforeSiteRendered');
+    await config.hookBeforeSiteRendered();
+    
     // 1. Gather list of files from RenderFileCache
     const filez = documents.paths();
 

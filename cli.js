@@ -137,7 +137,7 @@ program
                 akasha.setupAssets(config),
                 akasha.setupLayouts(config),
                 akasha.setupPartials(config)
-            ])
+            ]);
             let filecache = await _filecache;
             await Promise.all([
                 filecache.documents.isReady(),
@@ -190,6 +190,8 @@ program
                 filecache.partials.isReady()
             ]);
             data.init();
+            // console.log('CALLING config.hookBeforeSiteRendered');
+            await config.hookBeforeSiteRendered();
             const watchman = (await _watchman).watchman;
             await watchman(config);
             // await akasha.closeCaches();
