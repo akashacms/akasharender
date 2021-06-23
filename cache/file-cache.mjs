@@ -5,7 +5,6 @@ import { promises as fs } from 'fs';
 import path from 'path';
 import { DirsWatcher } from '@akashacms/stacked-dirs';
 import { getCache } from './cache-forerunner.mjs';
-import fastq from 'fastq';
 import minimatch from 'minimatch';
 
 export var documents;
@@ -128,7 +127,6 @@ const _symb_dirs = Symbol('dirs');
 const _symb_collnm = Symbol('collection-name');
 const _symb_watcher = Symbol('watcher');
 const _symb_is_ready = Symbol('isReady');
-const _symb_queue = Symbol('fastq');
 
 /**
  * FileCache listens to events from DirsWatcher, maintaining file data in
@@ -160,7 +158,6 @@ export class FileCache extends EventEmitter {
         this[_symb_collnm] = collection;
         this[_symb_is_ready] = false;
         let that = this;
-        this[_symb_queue] = fastq.promise(that, this.process, 1);
     }
 
     get config()     { return this[_symb_config]; }
@@ -196,28 +193,10 @@ export class FileCache extends EventEmitter {
         }
     }
 
-    async process(item) {
-        // let info = item.info;
-        // console.log(`PROCESS ${this.collection} ${item.action} ${item && item.info ? item.info.vpath : 'UNDEFINED'} queue length ${this[_symb_queue].length()}`);
-
-        if (item.action === 'change') {
-            await this.handleChanged(item.collection, item.info);
-            this.emit('change', item.collection, item.info);
-        } else if (item.action === 'add') {
-            await this.handleAdded(item.collection, item.info);
-            this.emit('add', item.collection, item.info);
-        } else if (item.action === 'unlink') {
-            await this.handleUnlinked(item.collection, item.info);
-            this.emit('unlink', item.collection, item.info);
-        } else if (item.action === 'ready') {
-            await this.handleReady(item.collection);
-            this.emit('ready', item.collection);
-        } else {
-            throw new Error(`Unknown action ${item.action} ${item.collection} for `, item.info);
-        }
-    }
-
     getCollection(collection) {
+        if (!collection) {
+            collection = this[_symb_collnm];
+        }
         return getCache(collection, { create: true });
     }
 
@@ -316,25 +295,23 @@ export class FileCache extends EventEmitter {
         
         this[_symb_watcher].on('change', async (collection, info) => {
             // console.log(`${collection} changed ${info.vpath}`);
-            this[_symb_queue].push({
-                action: 'change', collection, info
-            });
+            await this.handleChanged(collection, info);
+            this.emit('change', collection, info);
         })
         .on('add', async (collection, info) => {
             // console.log(`new ${collection} ${info.vpath}`);
-            this[_symb_queue].push({
-                action: 'add', collection, info
-            });
+            await this.handleAdded(collection, info);
+            this.emit('add', collection, info);
         })
-        .on('unlink', (collection, info) => {
+        .on('unlink', async (collection, info) => {
             // console.log(`unlink ${collection} ${info.vpath}`);
-            this[_symb_queue].push({
-                action: 'unlink', collection, info
-            });
+            await this.handleUnlinked(collection, info);
+            this.emit('unlink', collection, info);
         })
-        .on('ready', (collection) => {
+        .on('ready', async (collection) => {
             // console.log(`${collection} ready`);
-            this[_symb_queue].push({ action: 'ready', collection });
+            await this.handleReady(collection);
+            this.emit('ready', collection);
         });
 
         // console.log(this[_symb_watcher]);
