@@ -908,6 +908,36 @@ module.exports.Configuration = class Configuration {
         }
     }
 
+    async hookFileAdded(collection, vpinfo) {
+        var config = this;
+        for (let plugin of config.plugins) {
+            if (typeof plugin.onFileAdded !== 'undefined') {
+                // console.log(`CALLING plugin ${plugin.name} onFileAdded`);
+                await plugin.onFileAdded(config, collection, vpinfo);
+            }
+        }
+    }
+
+    async hookFileChanged(collection, vpinfo) {
+        var config = this;
+        for (let plugin of config.plugins) {
+            if (typeof plugin.onFileChanged !== 'undefined') {
+                // console.log(`CALLING plugin ${plugin.name} onFileChanged`);
+                await plugin.onFileChanged(config, collection, vpinfo);
+            }
+        }
+    }
+
+    async hookFileUnlinked(collection, vpinfo) {
+        var config = this;
+        for (let plugin of config.plugins) {
+            if (typeof plugin.onFileUnlinked !== 'undefined') {
+                // console.log(`CALLING plugin ${plugin.name} onFileUnlinked`);
+                await plugin.onFileUnlinked(config, collection, vpinfo);
+            }
+        }
+    }
+
     /**
      * use - go through plugins array, adding each to the plugins array in
      * the config file, then calling the config function of each plugin.

@@ -222,6 +222,8 @@ export class FileCache extends EventEmitter {
                 $eq: info.mounted
             }
         }, info);
+
+        await config.hookFileChanged(collection, info);
     }
 
     /**
@@ -259,6 +261,8 @@ export class FileCache extends EventEmitter {
 
         let coll = this.getCollection(collection);
         coll.insert(info);
+
+        await config.hookFileAdded(collection, info);
     }
 
     async handleUnlinked(collection, info) {
@@ -266,6 +270,9 @@ export class FileCache extends EventEmitter {
         if (collection !== this.collection) {
             throw new Error(`handleUnlinked event for wrong collection; got ${collection}, expected ${this.collection}`);
         }
+
+        await config.hookFileUnlinked(collection, info);
+
         let coll = this.getCollection(collection);
         coll.remove({
             vpath: {
@@ -421,16 +428,16 @@ export class FileCache extends EventEmitter {
         let coll = this.getCollection(this.collection);
         let paths = coll.find({
             $distinct: { vpath: 1 }
-        }, { vpath: 1 });
+        }, { fspath: 1, vpath: 1, renderPath: 1 });
         // console.log(paths);
         const ret = [];
         for (let p of paths) {
             // console.log(p.path);
-            let info = this.find(p.vpath);
+            // let info = this.find(p.vpath);
             ret.push({
-                fspath: info.fspath,
-                vpath: info.vpath,
-                renderPath: info.renderPath
+                fspath: p.fspath,
+                vpath: p.vpath,
+                renderPath: p.renderPath
             });
         }
         return ret;
@@ -654,6 +661,8 @@ export class RenderedFileCache extends FileCache {
                 $eq: info.mountPoint
             }
         }, info);
+
+        await config.hookFileChanged(collection, info);
     }
 
     async handleAdded(collection, info) {
@@ -675,6 +684,8 @@ export class RenderedFileCache extends FileCache {
         // console.log(`file-cache add ${collection} ${info.vpath}`, info);
         coll.insert(info);
         // console.log(`file-cache AFTER add ${collection} ${info.vpath}`);
+
+        await config.hookFileAdded(collection, info);
     }
 
 }
