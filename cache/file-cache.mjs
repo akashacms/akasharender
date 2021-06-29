@@ -223,7 +223,7 @@ export class FileCache extends EventEmitter {
             }
         }, info);
 
-        await config.hookFileChanged(collection, info);
+        await this.config.hookFileChanged(collection, info);
     }
 
     /**
@@ -262,7 +262,7 @@ export class FileCache extends EventEmitter {
         let coll = this.getCollection(collection);
         coll.insert(info);
 
-        await config.hookFileAdded(collection, info);
+        await this.config.hookFileAdded(collection, info);
     }
 
     async handleUnlinked(collection, info) {
@@ -271,7 +271,7 @@ export class FileCache extends EventEmitter {
             throw new Error(`handleUnlinked event for wrong collection; got ${collection}, expected ${this.collection}`);
         }
 
-        await config.hookFileUnlinked(collection, info);
+        await this.config.hookFileUnlinked(collection, info);
 
         let coll = this.getCollection(collection);
         coll.remove({
@@ -662,7 +662,7 @@ export class RenderedFileCache extends FileCache {
             }
         }, info);
 
-        await config.hookFileChanged(collection, info);
+        await this.config.hookFileChanged(collection, info);
     }
 
     async handleAdded(collection, info) {
@@ -685,7 +685,7 @@ export class RenderedFileCache extends FileCache {
         coll.insert(info);
         // console.log(`file-cache AFTER add ${collection} ${info.vpath}`);
 
-        await config.hookFileAdded(collection, info);
+        await this.config.hookFileAdded(collection, info);
     }
 
 }
