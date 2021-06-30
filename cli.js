@@ -168,6 +168,56 @@ program
     });
 
 program
+    .command('explain <configFN>')
+    .description('Explain a cache query')
+    .action(async (configFN) => {
+        try {
+            const config = require(path.join(process.cwd(), configFN));
+            let akasha = config.akasha;
+            await akasha.cacheSetup(config);
+            await akasha.setupDocuments(config);
+            let filecache = await _filecache;
+            await filecache.documents.isReady();
+            data.init();
+            let explanation = filecache.documents
+                .getCollection(filecache.documents.collection)
+                .explain(
+                    /* {
+                    $or: [
+                        { vpath: { $eeq: "archive/java.net/2005/08/findbugs.html.md" } },
+                        { renderPath: { $eeq: "archive/java.net/2005/08/findbugs.html" } }
+                    ]
+                    } */
+                    {
+                        renderPath: /\.html$/,
+                        vpath: /^blog\/2019\//,
+                        docMetadata: {
+                            layout: {
+                                $in: [
+                                    "blog.html.ejs",
+                                    "blog.html.njk",
+                                    "blog.html.handlebars"
+                                ]
+                            },
+                            blogtag: { $eeq: "news" }
+                        }
+                    }
+                );
+            // console.log(JSON.stringify(explanation, undefined, ' '));
+            console.log(`EXPLAINING ${explanation.operation} results: ${explanation.results}`);
+            console.log('Analysis ', explanation.analysis);
+            console.log('Analysis - query ', explanation.analysis.query);
+            console.log('Steps ', explanation.steps);
+            console.log('Time ', explanation.time);
+            console.log('Index ', explanation.index);
+            console.log('Log ', explanation.log);
+            await akasha.closeCaches();
+        } catch (e) {
+            console.error(`render command ERRORED ${e.stack}`);
+        }
+    });
+
+program
     .command('watch <configFN>')
     .description('Track changes to files in a site, and rebuild anything that changes')
     .action(async (configFN, cmdObj) => {

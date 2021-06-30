@@ -294,6 +294,26 @@ export class FileCache extends EventEmitter {
     }
 
     async setup() {
+        // Set up indexes.  We developed these based on the
+        // frequent queries that are made.
+        const coll = this.getCollection(this.collection);
+        const indexing = {
+            vpath: 1, fspath: 1, renderPath: 1, mountPoint: 1,
+            docMetadata: { layout: 1 }
+        };
+        coll.ensureIndex(indexing);
+
+        // console.log(`${this.collection} setup indexes`, indexing);
+
+        for (let plugin of this.config.plugins) {
+            let ind = plugin.cacheIndexes[this.collection];
+            if (ind) {
+                // console.log(`${this.collection} setup ${plugin.name} index`, ind);
+                coll.ensureIndex(ind);
+            }
+        }
+
+        // Set up the Chokidar instance.
         if (this[_symb_watcher]) {
             await this[_symb_watcher].close();
         }
