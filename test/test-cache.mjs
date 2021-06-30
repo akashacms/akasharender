@@ -854,6 +854,11 @@ describe('Documents cache', function() {
             fspath: '**/documents/code/foo.js',
             renderPath: 'code/foo.js',
             vpath: 'code/foo.js'
+        },
+        {
+            fspath: '**/documents/style.css.less',
+            renderPath: 'style.css',
+            vpath: 'style.css.less'
         }
     ];
 
