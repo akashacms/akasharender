@@ -125,7 +125,38 @@ exports.renderDocument = render.renderDocument;
 
 exports.renderPath = async (config, path2r) => {
     const documents = (await exports.filecache).documents;
-    let found = await documents.find(path2r);
+    let found;
+    let count = 0;
+    while (count < 20) {
+        /* What's happening is this might be called from cli.js
+         * in render-document, and we might be asked to render the
+         * last document that will be ADD'd to the FileCache.
+         *
+         * In such a case <code>isReady</code> might return <code>true</code>
+         * but not all files will have been ADD'd to the FileCache.
+         * In that case <code>documents.find</code> returns
+         * <code>undefined</code>
+         *
+         * What this does is try up to 20 times to load the document,
+         * sleeping for 100 milliseconds each time.
+         *
+         * The cleaner alternative would be to wait for not only
+         * the <code>ready</code> from the <code>documents</code> FileCache,
+         * but also for all the initial ADD events to be handled.  But
+         * that second condition seems difficult to detect reliably.
+         */
+        found = await documents.find(path2r);
+        if (found) break;
+        else {
+            await new Promise((resolve, reject) => {
+                setTimeout(() => {
+                    resolve();
+                }, 100);
+            });
+            count++;
+        }
+    }
+
     // console.log(`renderPath ${path2r}`, found);
     if (!found) {
         throw new Error(`Did not find document for ${path2r}`);

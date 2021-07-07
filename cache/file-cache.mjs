@@ -38,6 +38,7 @@ export async function setupDocuments(config) {
         const docsDirs = remapdirs(config.documentDirs);
         documents = new RenderedFileCache(config, docsDirs, 'documents');
         await documents.setup();
+        // console.log(`filecache FINISH documents setup`);
     } catch (err) {
         console.error(`file-cache setupDocuments FAIL TO INITIALIZE `, err);
         throw err;
@@ -60,10 +61,11 @@ export async function setupAssets(config) {
 
 export async function setupLayouts(config) {
     try {
-        // console.log(`filecache setup documents ${util.inspect(config.documentDirs)}`);
+        // console.log(`filecache setup layouts ${util.inspect(config.documentDirs)}`);
         const layoutDirs = remapdirs(config.layoutDirs);
         layouts = new FileCache(config, layoutDirs, 'layouts');
         await layouts.setup();
+        // console.log(`filecache FINISH layouts setup`);
     } catch (err) {
         console.error(`file-cache setupLayouts FAIL TO INITIALIZE `, err);
         throw err;
@@ -72,10 +74,11 @@ export async function setupLayouts(config) {
 
 export async function setupPartials(config) {
     try {
-        // console.log(`filecache setup documents ${util.inspect(config.documentDirs)}`);
+        // console.log(`filecache setup partials ${util.inspect(config.documentDirs)}`);
         const partialsDirs = remapdirs(config.partialsDirs);
         partials = new FileCache(config, partialsDirs, 'partials');
         await partials.setup();
+        // console.log(`filecache FINISH partials setup`);
     } catch (err) {
         console.error(`file-cache setupPartials FAIL TO INITIALIZE `, err);
         throw err;
@@ -181,7 +184,7 @@ export class FileCache extends EventEmitter {
                 setTimeout(() => {
                     resolve();
                 }, 100);
-            })
+            });
         }        
         return true;
     }
@@ -299,6 +302,7 @@ export class FileCache extends EventEmitter {
         const coll = this.getCollection(this.collection);
         const indexing = {
             vpath: 1, fspath: 1, renderPath: 1, mountPoint: 1,
+            rendersToHTML: true,
             docMetadata: { layout: 1 }
         };
         coll.ensureIndex(indexing);
@@ -360,6 +364,7 @@ export class FileCache extends EventEmitter {
     */
 
     find(_fpath) {
+        // console.log(`find ${_fpath}`);
         let ret;
         let coll = this.getCollection(this.collection);
 
@@ -382,6 +387,7 @@ export class FileCache extends EventEmitter {
             // console.log(`FileCache find found ${fpath} `, results);
             ret = results[0];
         }
+        // console.log(`find ${fpath} ${ret ? 'SUCCESS' : 'FAIL'}`);
         return ret;
 
         /*
@@ -616,6 +622,8 @@ export class RenderedFileCache extends FileCache {
             renderPath: info.renderPath,
             renderpath: info.renderPath,
             rendername: path.basename(info.renderPath),
+            rendersToHTML: minimatch(info.renderPath, '**/*.html')
+                        ? true : false,
 
             stat: stats,
             stats: stats,
@@ -641,6 +649,8 @@ export class RenderedFileCache extends FileCache {
         let renderer = this.config.findRendererPath(info.vpath);
         if (renderer) {
             info.renderPath = renderer.filePath(info.vpath);
+            info.rendersToHTML = minimatch(info.renderPath, '**/*.html')
+                        ? true : false;
             // console.log(`RenderedFileCache ${info.vpath} ==> renderPath ${info.renderPath}`);
             if (renderer 
              && renderer.readContent

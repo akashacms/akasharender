@@ -99,18 +99,18 @@ program
             let akasha = config.akasha;
             await akasha.cacheSetup(config);
             await Promise.all([
-                akasha.setupDocuments(config),
                 akasha.setupAssets(config),
                 akasha.setupLayouts(config),
-                akasha.setupPartials(config)
+                akasha.setupPartials(config),
+                akasha.setupDocuments(config)
             ])
             let filecache = await _filecache;
             // console.log(filecache.documents);
             await Promise.all([
-                filecache.documents.isReady(),
                 filecache.assets.isReady(),
                 filecache.layouts.isReady(),
-                filecache.partials.isReady()
+                filecache.partials.isReady(),
+                filecache.documents.isReady()
             ]);
             data.init();
             console.log(`render-document before renderPath ${documentFN}`);
