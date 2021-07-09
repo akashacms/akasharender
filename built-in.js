@@ -326,6 +326,7 @@ class FooterJavaScript extends mahabhuta.CustomElement {
 
 class HeadLinkRelativizer extends mahabhuta.Munger {
     get selector() { return "html head link"; }
+    get elementName() { return "html head link"; }
     async process($, $link, metadata, dirty) {
         let href = $link.attr('href');
 
@@ -343,6 +344,7 @@ class HeadLinkRelativizer extends mahabhuta.Munger {
 
 class ScriptRelativizer extends mahabhuta.Munger {
     get selector() { return "script"; }
+    get elementName() { return "script"; }
     async process($, $link, metadata, dirty) {
         let href = $link.attr('src');
 
@@ -483,6 +485,7 @@ class img2figureImage extends mahabhuta.CustomElement {
 
 class ImageRewriter extends mahabhuta.Munger {
     get selector() { return "html body img"; }
+    get elementName() { return "html body img"; }
     async process($, $link, metadata, dirty) {
         // console.log($element);
 
@@ -612,6 +615,7 @@ module.exports.mahabhuta.addMahafunc(new Partial()); */
 //
 class SelectElements extends mahabhuta.Munger {
     get selector() { return "select-elements"; }
+    get elementName() { return "select-elements"; }
 
     async process($, $link, metadata, dirty) {
         let count = $link.attr('count')
@@ -651,7 +655,8 @@ class SelectElements extends mahabhuta.Munger {
 }
 
 class AnchorCleanup extends mahabhuta.Munger {
-    get selector() { return "html body a"; }
+    get selector() { return "html body a[munged!='yes']"; }
+    get elementName() { return "html body a[munged!='yes']"; }
 
     async process($, $link, metadata, dirty) {
         var href     = $link.attr('href');
@@ -677,6 +682,16 @@ class AnchorCleanup extends mahabhuta.Munger {
             // For reference we need the absolute pathname of the href within
             // the project.  For example to retrieve the title when we're filling
             // in for an empty <a> we need the absolute pathname.
+
+            // Mark this link as having been processed.
+            // The purpose is if Mahabhuta runs multiple passes,
+            // to not process the link multiple times.
+            // Before adding this - we saw this Munger take as much
+            // as 800ms to execute, for EVERY pass made by Mahabhuta.
+            //
+            // Adding this attribute, and checking for it in the selector,
+            // means we only process the link once.
+            $link.attr('munged', 'yes');
 
             let absolutePath;
 
@@ -775,6 +790,19 @@ class AnchorCleanup extends mahabhuta.Munger {
                 }
             }
             // Otherwise look into filling emptiness with title
+
+            let docmeta = found.docMetadata;
+            // Automatically add a title= attribute
+            if (!$link.attr('title') && docmeta && docmeta.title) {
+                $link.attr('title', docmeta.title);
+            }
+            if (docmeta && docmeta.title) {
+                $link.text(docmeta.title);
+            } else {
+                $link.text(href);
+            }
+
+            /*
             var renderer = this.array.options.config.findRendererPath(found.vpath);
             // console.log(`AnchorCleanup ${metadata.document.path} ${href} findRendererPath ${(new Date() - startTime) / 1000} seconds`);
             if (renderer && renderer.metadata) {
@@ -783,7 +811,7 @@ class AnchorCleanup extends mahabhuta.Munger {
                     var docmeta = await renderer.metadata(found.foundDir, found.foundPathWithinDir);
                 } catch(err) {
                     throw new Error(`Could not retrieve document metadata for ${found.foundDir} ${found.foundPathWithinDir} because ${err}`);
-                } */
+                } *--/
                 // Automatically add a title= attribute
                 if (!$link.attr('title') && docmeta && docmeta.title) {
                     $link.attr('title', docmeta.title);
@@ -800,6 +828,7 @@ class AnchorCleanup extends mahabhuta.Munger {
                 $link.text(href);
                 // throw new Error(`Could not fill in empty 'a' element in ${metadata.document.path} with href ${href}`);
             }
+            */
         } else {
             return "ok";
         }

@@ -2,6 +2,7 @@
 import { promises as fsp } from 'fs';
 import fs from 'fs';
 import { documents, assets, layouts, partials } from './cache/file-cache.mjs';
+import util from 'util';
 
 export async function partial(config, fname, metadata) {
 
@@ -11,13 +12,16 @@ export async function partial(config, fname, metadata) {
 
     // console.log(`partial ${fname}`);
     const found = partials.find(fname);
-    if (!found) new Error(`No partial found for ${fname} in ${util.inspect(config.partialsDirs)}`);
+    if (!found) {
+        throw new Error(`No partial found for ${fname} in ${util.inspect(config.partialsDirs)}`);
+    }
+    console.log(`partial ${fname} ==> ${found.vpath} ${found.fspath}`);
 
     let stats;
     try {
         stats = await fsp.stat(found.fspath);
     } catch (err) {
-        throw new Error(`partial could not stata ${found.vpath} at ${found.fspath}`, err.stack);
+        throw new Error(`partial could not stat ${found.vpath} at ${found.fspath}`, err.stack);
     }
     if (!stats.isFile()) {
         throw new Error(`renderPartial non-file found for ${fname} - ${found.vpath}`);

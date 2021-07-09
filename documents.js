@@ -654,8 +654,17 @@ exports.readDocument = async function(config, documentPath) {
     if (!found) {
         throw new Error(`Did not find document for ${util.inspect(documentPath)} in ${util.inspect(config.documentDirs)}`);
     }
+
+    const doc = await documents.readDocument(found);
+    return doc;
+
+    // The rest of this is being kept for historical purposes.  The
+    // new function in FileCache is meant to replace this function.  The
+    // new function does everything below this point.
+
     // Check if the file has changed from the cached value
     // OLD let path2stat = path.join(found.foundDir, found.foundPathWithinDir);
+    /*
     let stats;
     try {
         stats = await fs.stat(found.fspath);
@@ -666,6 +675,7 @@ exports.readDocument = async function(config, documentPath) {
         // It's an error if the file is a directory
         throw new Error(`readDocument found directory for ${documentPath}`);
     }
+    */
     // If the creation time or modified time is different then the file has changed
     // and therefore needs to be re-read
     // NOTE: For the new FIleCache regime, the file data is
@@ -706,6 +716,7 @@ exports.readDocument = async function(config, documentPath) {
     // as used in FileCache objects.  That way we can mix-and-match
     // the code both ways.
 
+    /*
     const doc = {
         basedir: found.mounted,
         mounted: found.mounted,
@@ -741,9 +752,11 @@ exports.readDocument = async function(config, documentPath) {
 
         renderer: config.findRendererPath(found.vpath)
     };
+    */
 
     // This code is transliterated from readDocumentContent
 
+    /*
     const content = await fs.readFile(found.fspath, 'utf8');
     if (doc.renderer && doc.renderer.frontmatter) {
         // const matter = doc.renderer.parseFrontmatter(content);
@@ -759,8 +772,9 @@ exports.readDocument = async function(config, documentPath) {
     } else {
         doc.data = content;
     }
+    */
 
 
     // console.log(`readDocument ${doc.docpath} ${util.inspect(doc.metadata)}`);
-    return doc;
+    // return doc;
 };
