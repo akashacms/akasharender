@@ -143,14 +143,9 @@ exports.newRenderDocument = async function(config, docInfo) {
     const renderStart = new Date();
     const renderBaseMetadata = docInfo.baseMetadata;
     const stats = await fs.stat(docInfo.fspath);
-    let renderToDir;
     if (stats && stats.isFile()) {
-        renderToDir = path.dirname(docInfo.vpath);
-        // console.log(`renderDocument ${basedir} ${fpath} ${renderToDir} ${renderToFpath}`);
-        await fs.ensureDir(renderToDir);
     } else { return `SKIP DIRECTORY ${docInfo.vpath}`; }
 
-    const renderToFpath = path.join(config.renderTo, docInfo.renderPath);
 
     const renderer = config.findRendererPath(docInfo.vpath);
     if (renderer) {
@@ -173,6 +168,8 @@ exports.newRenderDocument = async function(config, docInfo) {
     } else {
         // console.log(`COPYING ${docInfo.path} ==> ${renderToFpath}`);
         try {
+            const renderToFpath = path.join(config.renderTo, docInfo.renderPath);
+            await fs.ensureDir(renderToDir);
             await fs.copy(docInfo.fspath, renderToFpath);
             // console.log(`COPIED ${docInfo.path} ==> ${renderToFpath}`);
             const renderEndCopied = new Date();
