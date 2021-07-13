@@ -913,7 +913,7 @@ describe('Documents cache', function() {
         assert.equal(found.dirname, '/');
     });
 
-    function siblingsContains(siblings, vpath) {
+    function filezContains(siblings, vpath) {
         let ret = false;
         for (let sibling of siblings) {
             if (sibling.vpath === vpath) {
@@ -929,34 +929,34 @@ describe('Documents cache', function() {
         for (let sibling of siblings) {
             assert.equal(sibling.dirname, '/');
         }
-        assert.isOk(siblingsContains(siblings, 'img2figimg-liquid.html.md'));
-        assert.isOk(siblingsContains(siblings, 'img2figimg-handlebars.html.md'));
-        assert.isOk(siblingsContains(siblings, 'img2resize-handlebars.html.md'));
-        assert.isOk(siblingsContains(siblings, 'img2resize-nunjucks.html.md'));
-        assert.isOk(siblingsContains(siblings, 'img2figimg.html.md'));
-        assert.isOk(siblingsContains(siblings, 'index.html.md'));
-        assert.isOk(siblingsContains(siblings, 'fig-img.html.md'));
-        assert.isOk(siblingsContains(siblings, 'json-data-handlebars.html.json'));
-        assert.isOk(siblingsContains(siblings, 'json-data-nunjucks.html.json'));
-        assert.isOk(siblingsContains(siblings, 'json-data-liquid.html.json'));
-        assert.isOk(siblingsContains(siblings, 'json-data.html.json'));
-        assert.isOk(siblingsContains(siblings, 'metadata-style-javascript.html.md'));
-        assert.isOk(siblingsContains(siblings, 'njk-incl.html.md'));
-        assert.isOk(siblingsContains(siblings, 'img2resize.html.md'));
-        assert.isOk(siblingsContains(siblings, 'img2resize-liquid.html.md'));
-        assert.isOk(siblingsContains(siblings, 'njk-func.html.md'));
-        assert.isOk(siblingsContains(siblings, 'partials.html.md'));
-        assert.isOk(siblingsContains(siblings, 'partials-handlebars.html.handlebars'));
-        assert.isOk(siblingsContains(siblings, 'select-elements.html.md'));
-        assert.isOk(siblingsContains(siblings, 'show-content-handlebars.html.md'));
-        assert.isOk(siblingsContains(siblings, 'show-content-nunjucks.html.md'));
-        assert.isOk(siblingsContains(siblings, 'show-content.html.md'));
-        assert.isOk(siblingsContains(siblings, 'shown-content.html.md'));
-        assert.isOk(siblingsContains(siblings, 'simple-style-javascript.html.md'));
-        assert.isOk(siblingsContains(siblings, 'teaser-content.html.md'));
-        assert.isOk(siblingsContains(siblings, 'partials-liquid.html.liquid'));
-        assert.isOk(siblingsContains(siblings, 'show-content-liquid.html.md'));
-        assert.isOk(siblingsContains(siblings, 'partials-nunjucks.html.njk'));
+        assert.isOk(filezContains(siblings, 'img2figimg-liquid.html.md'));
+        assert.isOk(filezContains(siblings, 'img2figimg-handlebars.html.md'));
+        assert.isOk(filezContains(siblings, 'img2resize-handlebars.html.md'));
+        assert.isOk(filezContains(siblings, 'img2resize-nunjucks.html.md'));
+        assert.isOk(filezContains(siblings, 'img2figimg.html.md'));
+        assert.isOk(filezContains(siblings, 'index.html.md'));
+        assert.isOk(filezContains(siblings, 'fig-img.html.md'));
+        assert.isOk(filezContains(siblings, 'json-data-handlebars.html.json'));
+        assert.isOk(filezContains(siblings, 'json-data-nunjucks.html.json'));
+        assert.isOk(filezContains(siblings, 'json-data-liquid.html.json'));
+        assert.isOk(filezContains(siblings, 'json-data.html.json'));
+        assert.isOk(filezContains(siblings, 'metadata-style-javascript.html.md'));
+        assert.isOk(filezContains(siblings, 'njk-incl.html.md'));
+        assert.isOk(filezContains(siblings, 'img2resize.html.md'));
+        assert.isOk(filezContains(siblings, 'img2resize-liquid.html.md'));
+        assert.isOk(filezContains(siblings, 'njk-func.html.md'));
+        assert.isOk(filezContains(siblings, 'partials.html.md'));
+        assert.isOk(filezContains(siblings, 'partials-handlebars.html.handlebars'));
+        assert.isOk(filezContains(siblings, 'select-elements.html.md'));
+        assert.isOk(filezContains(siblings, 'show-content-handlebars.html.md'));
+        assert.isOk(filezContains(siblings, 'show-content-nunjucks.html.md'));
+        assert.isOk(filezContains(siblings, 'show-content.html.md'));
+        assert.isOk(filezContains(siblings, 'shown-content.html.md'));
+        assert.isOk(filezContains(siblings, 'simple-style-javascript.html.md'));
+        assert.isOk(filezContains(siblings, 'teaser-content.html.md'));
+        assert.isOk(filezContains(siblings, 'partials-liquid.html.liquid'));
+        assert.isOk(filezContains(siblings, 'show-content-liquid.html.md'));
+        assert.isOk(filezContains(siblings, 'partials-nunjucks.html.njk'));
     });
 
     it('should find /subdir/show-content-local.html', function() {
@@ -985,9 +985,9 @@ describe('Documents cache', function() {
     
     it('should find siblings for /subdir/show-content-local.html.md', function() {
         let siblings = filecache.documents.siblings('subdir/show-content-local.html.md');
-        assert.isOk(siblingsContains(siblings, 'subdir/index.html.md'));
-        assert.isOk(siblingsContains(siblings, 'subdir/show-content-local.html.md'));
-        assert.isOk(siblingsContains(siblings, 'subdir/shown-content-local.html.md'));
+        assert.isOk(filezContains(siblings, 'subdir/index.html.md'));
+        assert.isOk(filezContains(siblings, 'subdir/show-content-local.html.md'));
+        assert.isOk(filezContains(siblings, 'subdir/shown-content-local.html.md'));
         for (let sibling of siblings) {
             assert.equal(sibling.dirname, 'subdir');
         }
@@ -1022,7 +1022,7 @@ describe('Documents cache', function() {
     
     it('should find siblings for mounted/img2resize.html', function() {
         let siblings = filecache.documents.siblings('mounted/img2resize.html');
-        assert.isOk(siblingsContains(siblings, 'mounted/img2resize.html.md'));
+        assert.isOk(filezContains(siblings, 'mounted/img2resize.html.md'));
         for (let sibling of siblings) {
             assert.equal(sibling.dirname, 'mounted');
         }
@@ -1057,7 +1057,7 @@ describe('Documents cache', function() {
     
     it('should find siblings for /mounted/img/Human-Skeleton.jpg', function() {
         let siblings = filecache.documents.siblings('/mounted/img/Human-Skeleton.jpg');
-        assert.isOk(siblingsContains(siblings, 'mounted/img/Human-Skeleton.jpg'));
+        assert.isOk(filezContains(siblings, 'mounted/img/Human-Skeleton.jpg'));
         for (let sibling of siblings) {
             assert.equal(sibling.dirname, 'mounted/img');
         }
@@ -1065,7 +1065,7 @@ describe('Documents cache', function() {
 
     it('should find siblings for mounted/img/Human-Skeleton.jpg', function() {
         let siblings = filecache.documents.siblings('mounted/img/Human-Skeleton.jpg');
-        assert.isOk(siblingsContains(siblings, 'mounted/img/Human-Skeleton.jpg'));
+        assert.isOk(filezContains(siblings, 'mounted/img/Human-Skeleton.jpg'));
         for (let sibling of siblings) {
             assert.equal(sibling.dirname, 'mounted/img');
         }
@@ -1093,6 +1093,27 @@ describe('Documents cache', function() {
         let found = filecache.documents.find('/unknown-Skeleton.jpg');
 
         assert.isUndefined(found);
+    });
+
+    it('should find index files for hier', function() {
+        let indexes = filecache.documents.indexFiles('hier/');
+        assert.isOk(filezContains(indexes, 'hier/index.html.md'));
+        assert.isOk(filezContains(indexes, 'hier/dir1/index.html.md'));
+        assert.isOk(filezContains(indexes, 'hier/dir1/dir2/index.html.md'));
+        assert.isOk(filezContains(indexes, 'hier/imgdir/index.html.md'));
+    });
+
+    it('should find index files for hier/dir1', function() {
+        let indexes = filecache.documents.indexFiles('hier/dir1');
+        assert.isFalse(filezContains(indexes, 'hier/index.html.md'));
+        assert.isOk(filezContains(indexes, 'hier/dir1/index.html.md'));
+        assert.isOk(filezContains(indexes, 'hier/dir1/dir2/index.html.md'));
+        assert.isFalse(filezContains(indexes, 'hier/imgdir/index.html.md'));
+    });
+
+    it('should find index files for hier-broke', function() {
+        let indexes = filecache.documents.indexFiles('hier-broke');
+        assert.isOk(filezContains(indexes, 'hier-broke/dir1/dir2/index.html.md'));
     });
 
 

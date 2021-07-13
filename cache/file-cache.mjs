@@ -470,6 +470,22 @@ export class FileCache extends EventEmitter {
         return ret;
     }
 
+    indexFiles(_dirname) {
+        let coll = this.getCollection(this.collection);
+        let dirname = _dirname.startsWith('/')
+                    ? _dirname.substring(1)
+                    : _dirname;
+        if (dirname === '.') dirname = '/';
+        const selector = {
+            renderPath: /\/index.html$/
+        }
+        if (dirname !== '/') {
+            selector.vpath = new RegExp(`^${dirname}`);
+        }
+        let ret = coll.find(selector);
+        return ret;
+    }
+
     paths() {
         // console.log(`paths ${this.collection}`);
         let coll = this.getCollection(this.collection);
