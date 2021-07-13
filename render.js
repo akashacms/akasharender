@@ -169,14 +169,15 @@ exports.newRenderDocument = async function(config, docInfo) {
         // console.log(`COPYING ${docInfo.path} ==> ${renderToFpath}`);
         try {
             const renderToFpath = path.join(config.renderTo, docInfo.renderPath);
+            const renderToDir = path.dirname(renderToFpath);
             await fs.ensureDir(renderToDir);
             await fs.copy(docInfo.fspath, renderToFpath);
             // console.log(`COPIED ${docInfo.path} ==> ${renderToFpath}`);
             const renderEndCopied = new Date();
             return `COPY ${docInfo.vpath} ==> ${renderToFpath} (${(renderEndCopied - renderStart) / 1000} seconds)`;
         } catch(err) {
-            console.error(`in copy branch for ${docInfo.vpath} to ${renderToFpath} error=${err.stack ? err.stack : err}`);
-            throw new Error(`in copy branch for ${docInfo.vpath} to ${renderToFpath} error=${err.stack ? err.stack : err}`);
+            console.error(`in copy branch for ${docInfo.vpath} to ${docInfo.renderPath} error=${err.stack ? err.stack : err}`);
+            throw new Error(`in copy branch for ${docInfo.vpath} to ${docInfo.renderPath} error=${err.stack ? err.stack : err}`);
         }
     }
 }
