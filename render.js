@@ -160,10 +160,10 @@ exports.newRenderDocument = async function(config, docInfo) {
             // console.log(`RENDERED ${renderer.name} ${docInfo.path} ==> ${renderToFpath}`);
             const renderEndRendered = new Date();
             data.report(docInfo.mountPoint, docInfo.vpath, config.renderTo, "RENDERED", renderStart);
-            return `${renderer.name} ${docInfo.vpath} ==> ${renderToFpath} (${(renderEndRendered - renderStart) / 1000} seconds)\n${data.data4file(docInfo.mountPoint, docInfo.vpath)}`;
+            return `${renderer.name} ${docInfo.vpath} ==> ${docInfo.renderPath} (${(renderEndRendered - renderStart) / 1000} seconds)\n${data.data4file(docInfo.mountPoint, docInfo.vpath)}`;
         } catch (err) {
-            console.error(`in renderer branch for ${docInfo.vpath} to ${renderToFpath} error=${err.stack ? err.stack : err}`);
-            throw new Error(`in renderer branch for ${docInfo.vpath} to ${renderToFpath} error=${err.stack ? err.stack : err}`);
+            console.error(`in renderer branch for ${docInfo.vpath} to ${docInfo.renderPath} error=${err.stack ? err.stack : err}`);
+            throw new Error(`in renderer branch for ${docInfo.vpath} to ${docInfo.renderPath} error=${err.stack ? err.stack : err}`);
         }
     } else {
         // console.log(`COPYING ${docInfo.path} ==> ${renderToFpath}`);
