@@ -457,8 +457,11 @@ export class FileCache extends EventEmitter {
         return ret; */
     }
 
-    siblings(vpath) {
+    siblings(_fpath) {
         let coll = this.getCollection(this.collection);
+        let vpath = _fpath.startsWith('/')
+                    ? _fpath.substring(1)
+                    : _fpath;
         let dirname = path.dirname(vpath);
         if (dirname === '.') dirname = '/';
         let ret = coll.find({

@@ -1055,6 +1055,14 @@ describe('Documents cache', function() {
         assert.equal(found.dirname, 'mounted/img');
     });
     
+    it('should find siblings for /mounted/img/Human-Skeleton.jpg', function() {
+        let siblings = filecache.documents.siblings('/mounted/img/Human-Skeleton.jpg');
+        assert.isOk(siblingsContains(siblings, 'mounted/img/Human-Skeleton.jpg'));
+        for (let sibling of siblings) {
+            assert.equal(sibling.dirname, 'mounted/img');
+        }
+    });
+
     it('should find siblings for mounted/img/Human-Skeleton.jpg', function() {
         let siblings = filecache.documents.siblings('mounted/img/Human-Skeleton.jpg');
         assert.isOk(siblingsContains(siblings, 'mounted/img/Human-Skeleton.jpg'));
