@@ -886,6 +886,7 @@ describe('Documents cache', function() {
         assert.equal(found.pathInMounted, 'index.html.md');
         assert.equal(found.vpath, 'index.html.md');
         assert.equal(found.renderPath, 'index.html');
+        assert.equal(found.dirname, '/');
     });
 
     it('should find index.html.md', function() {
@@ -897,6 +898,7 @@ describe('Documents cache', function() {
         assert.equal(found.pathInMounted, 'index.html.md');
         assert.equal(found.vpath, 'index.html.md');
         assert.equal(found.renderPath, 'index.html');
+        assert.equal(found.dirname, '/');
     });
 
     it('should find index.html', function() {
@@ -908,8 +910,55 @@ describe('Documents cache', function() {
         assert.equal(found.pathInMounted, 'index.html.md');
         assert.equal(found.vpath, 'index.html.md');
         assert.equal(found.renderPath, 'index.html');
+        assert.equal(found.dirname, '/');
     });
+
+    function siblingsContains(siblings, vpath) {
+        let ret = false;
+        for (let sibling of siblings) {
+            if (sibling.vpath === vpath) {
+                ret = true;
+                break;
+            }
+        }
+        return ret;
+    }
     
+    it('should find siblings for index.html', function() {
+        let siblings = filecache.documents.siblings('index.html.md');
+        for (let sibling of siblings) {
+            assert.equal(sibling.dirname, '/');
+        }
+        assert.isOk(siblingsContains(siblings, 'img2figimg-liquid.html.md'));
+        assert.isOk(siblingsContains(siblings, 'img2figimg-handlebars.html.md'));
+        assert.isOk(siblingsContains(siblings, 'img2resize-handlebars.html.md'));
+        assert.isOk(siblingsContains(siblings, 'img2resize-nunjucks.html.md'));
+        assert.isOk(siblingsContains(siblings, 'img2figimg.html.md'));
+        assert.isOk(siblingsContains(siblings, 'index.html.md'));
+        assert.isOk(siblingsContains(siblings, 'fig-img.html.md'));
+        assert.isOk(siblingsContains(siblings, 'json-data-handlebars.html.json'));
+        assert.isOk(siblingsContains(siblings, 'json-data-nunjucks.html.json'));
+        assert.isOk(siblingsContains(siblings, 'json-data-liquid.html.json'));
+        assert.isOk(siblingsContains(siblings, 'json-data.html.json'));
+        assert.isOk(siblingsContains(siblings, 'metadata-style-javascript.html.md'));
+        assert.isOk(siblingsContains(siblings, 'njk-incl.html.md'));
+        assert.isOk(siblingsContains(siblings, 'img2resize.html.md'));
+        assert.isOk(siblingsContains(siblings, 'img2resize-liquid.html.md'));
+        assert.isOk(siblingsContains(siblings, 'njk-func.html.md'));
+        assert.isOk(siblingsContains(siblings, 'partials.html.md'));
+        assert.isOk(siblingsContains(siblings, 'partials-handlebars.html.handlebars'));
+        assert.isOk(siblingsContains(siblings, 'select-elements.html.md'));
+        assert.isOk(siblingsContains(siblings, 'show-content-handlebars.html.md'));
+        assert.isOk(siblingsContains(siblings, 'show-content-nunjucks.html.md'));
+        assert.isOk(siblingsContains(siblings, 'show-content.html.md'));
+        assert.isOk(siblingsContains(siblings, 'shown-content.html.md'));
+        assert.isOk(siblingsContains(siblings, 'simple-style-javascript.html.md'));
+        assert.isOk(siblingsContains(siblings, 'teaser-content.html.md'));
+        assert.isOk(siblingsContains(siblings, 'partials-liquid.html.liquid'));
+        assert.isOk(siblingsContains(siblings, 'show-content-liquid.html.md'));
+        assert.isOk(siblingsContains(siblings, 'partials-nunjucks.html.njk'));
+    });
+
     it('should find /subdir/show-content-local.html', function() {
         let found = filecache.documents.find('/subdir/show-content-local.html');
 
@@ -919,6 +968,7 @@ describe('Documents cache', function() {
         assert.equal(found.pathInMounted, 'subdir/show-content-local.html.md');
         assert.equal(found.vpath, 'subdir/show-content-local.html.md');
         assert.equal(found.renderPath, 'subdir/show-content-local.html');
+        assert.equal(found.dirname, 'subdir');
     });
     
     it('should find subdir/show-content-local.html.md', function() {
@@ -930,8 +980,19 @@ describe('Documents cache', function() {
         assert.equal(found.pathInMounted, 'subdir/show-content-local.html.md');
         assert.equal(found.vpath, 'subdir/show-content-local.html.md');
         assert.equal(found.renderPath, 'subdir/show-content-local.html');
+        assert.equal(found.dirname, 'subdir');
     });
     
+    it('should find siblings for /subdir/show-content-local.html.md', function() {
+        let siblings = filecache.documents.siblings('subdir/show-content-local.html.md');
+        assert.isOk(siblingsContains(siblings, 'subdir/index.html.md'));
+        assert.isOk(siblingsContains(siblings, 'subdir/show-content-local.html.md'));
+        assert.isOk(siblingsContains(siblings, 'subdir/shown-content-local.html.md'));
+        for (let sibling of siblings) {
+            assert.equal(sibling.dirname, 'subdir');
+        }
+    });
+
     it('should find /mounted/img2resize.html.md', function() {
         let found = filecache.documents.find('/mounted/img2resize.html.md');
 
@@ -943,6 +1004,7 @@ describe('Documents cache', function() {
         assert.equal(found.pathInMounted, 'img2resize.html.md');
         assert.equal(found.vpath, 'mounted/img2resize.html.md');
         assert.equal(found.renderPath, 'mounted/img2resize.html');
+        assert.equal(found.dirname, 'mounted');
     });
     
     it('should find mounted/img2resize.html', function() {
@@ -955,8 +1017,17 @@ describe('Documents cache', function() {
         assert.equal(found.pathInMounted, 'img2resize.html.md');
         assert.equal(found.vpath, 'mounted/img2resize.html.md');
         assert.equal(found.renderPath, 'mounted/img2resize.html');
+        assert.equal(found.dirname, 'mounted');
     });
     
+    it('should find siblings for mounted/img2resize.html', function() {
+        let siblings = filecache.documents.siblings('mounted/img2resize.html');
+        assert.isOk(siblingsContains(siblings, 'mounted/img2resize.html.md'));
+        for (let sibling of siblings) {
+            assert.equal(sibling.dirname, 'mounted');
+        }
+    });
+
     it('should find /mounted/img/Human-Skeleton.jpg', function() {
         let found = filecache.documents.find('/mounted/img/Human-Skeleton.jpg');
 
@@ -967,6 +1038,7 @@ describe('Documents cache', function() {
         assert.equal(found.pathInMounted, 'img/Human-Skeleton.jpg');
         assert.equal(found.vpath, 'mounted/img/Human-Skeleton.jpg');
         assert.equal(found.renderPath, 'mounted/img/Human-Skeleton.jpg');
+        assert.equal(found.dirname, 'mounted/img');
     });
     
     it('should find mounted/img/Human-Skeleton.jpg', function() {
@@ -980,8 +1052,17 @@ describe('Documents cache', function() {
         assert.equal(found.pathInMounted, 'img/Human-Skeleton.jpg');
         assert.equal(found.vpath, 'mounted/img/Human-Skeleton.jpg');
         assert.equal(found.renderPath, 'mounted/img/Human-Skeleton.jpg');
+        assert.equal(found.dirname, 'mounted/img');
     });
     
+    it('should find siblings for mounted/img/Human-Skeleton.jpg', function() {
+        let siblings = filecache.documents.siblings('mounted/img/Human-Skeleton.jpg');
+        assert.isOk(siblingsContains(siblings, 'mounted/img/Human-Skeleton.jpg'));
+        for (let sibling of siblings) {
+            assert.equal(sibling.dirname, 'mounted/img');
+        }
+    });
+
     it('should not find mounted/unknown-Skeleton.jpg', function() {
         let found = filecache.documents.find('mounted/unknown-Skeleton.jpg');
 
@@ -1005,6 +1086,7 @@ describe('Documents cache', function() {
 
         assert.isUndefined(found);
     });
+
 
 });
 

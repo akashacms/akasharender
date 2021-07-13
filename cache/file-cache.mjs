@@ -38,6 +38,7 @@ export async function setupDocuments(config) {
         const docsDirs = remapdirs(config.documentDirs);
         documents = new RenderedFileCache(config, docsDirs, 'documents');
         await documents.setup();
+        await config.hookFileCacheSetup('documents', documents);
         // console.log(`filecache FINISH documents setup`);
     } catch (err) {
         console.error(`file-cache setupDocuments FAIL TO INITIALIZE `, err);
@@ -52,6 +53,7 @@ export async function setupAssets(config) {
         // console.log(`filecache setup assets ${util.inspect(assetsDirs)}`);
         assets = new FileCache(config, assetsDirs, 'assets');
         await assets.setup();
+        await config.hookFileCacheSetup('assets', assets);
         // console.log(`filecache FINISH assets setup`);
     } catch (err) {
         console.error(`file-cache setupAssets FAIL TO INITIALIZE `, err);
@@ -65,6 +67,7 @@ export async function setupLayouts(config) {
         const layoutDirs = remapdirs(config.layoutDirs);
         layouts = new FileCache(config, layoutDirs, 'layouts');
         await layouts.setup();
+        await config.hookFileCacheSetup('layouts', layouts);
         // console.log(`filecache FINISH layouts setup`);
     } catch (err) {
         console.error(`file-cache setupLayouts FAIL TO INITIALIZE `, err);
@@ -78,6 +81,7 @@ export async function setupPartials(config) {
         const partialsDirs = remapdirs(config.partialsDirs);
         partials = new FileCache(config, partialsDirs, 'partials');
         await partials.setup();
+        await config.hookFileCacheSetup('partials', partials);
         // console.log(`filecache FINISH partials setup`);
     } catch (err) {
         console.error(`file-cache setupPartials FAIL TO INITIALIZE `, err);
@@ -214,6 +218,8 @@ export class FileCache extends EventEmitter {
             info.stats = undefined;
         }
         info.renderPath = info.vpath;
+        info.dirname = path.dirname(info.vpath);
+        if (info.dirname === '.') info.dirname = '/';
         info.stack = undefined;
 
         let coll = this.getCollection(collection);
@@ -260,6 +266,8 @@ export class FileCache extends EventEmitter {
             info.stats = undefined;
         }
         info.renderPath = info.vpath;
+        info.dirname = path.dirname(info.vpath);
+        if (info.dirname === '.') info.dirname = '/';
         info.stack = undefined;
 
         let coll = this.getCollection(collection);
@@ -449,6 +457,16 @@ export class FileCache extends EventEmitter {
         return ret; */
     }
 
+    siblings(vpath) {
+        let coll = this.getCollection(this.collection);
+        let dirname = path.dirname(vpath);
+        if (dirname === '.') dirname = '/';
+        let ret = coll.find({
+            dirname: { $eeq: dirname }
+        });
+        return ret;
+    }
+
     paths() {
         // console.log(`paths ${this.collection}`);
         let coll = this.getCollection(this.collection);
@@ -618,6 +636,7 @@ export class RenderedFileCache extends FileCache {
             // computing a value that's already known.
             docdestpath: info.vpath,
             vpath: info.vpath,
+            dirname: path.dirname(info.vpath),
 
             renderPath: info.renderPath,
             renderpath: info.renderPath,
@@ -630,6 +649,7 @@ export class RenderedFileCache extends FileCache {
 
             renderer: this.config.findRendererPath(info.vpath)
         };
+        if (doc.dirname === '.') doc.dirname = '/';
 
         if (doc.renderer && doc.renderer.frontmatter) {
             doc.metadata = await doc.renderer.newInitMetadata(this.config, info);
@@ -666,6 +686,8 @@ export class RenderedFileCache extends FileCache {
         } else {
             info.renderPath = info.vpath;
         }
+        info.dirname = path.dirname(info.vpath);
+        if (info.dirname === '.') info.dirname = '/';
         return info;
     }
 

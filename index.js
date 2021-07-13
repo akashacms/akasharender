@@ -969,6 +969,15 @@ module.exports.Configuration = class Configuration {
         }
     }
 
+    async hookFileCacheSetup(collectionnm, collection) {
+        var config = this;
+        for (let plugin of config.plugins) {
+            if (typeof plugin.onFileCacheSetup !== 'undefined') {
+                await plugin.onFileCacheSetup(config, collectionnm, collection);
+            }
+        }
+    }
+
     /**
      * use - go through plugins array, adding each to the plugins array in
      * the config file, then calling the config function of each plugin.
