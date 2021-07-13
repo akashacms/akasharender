@@ -1095,12 +1095,41 @@ describe('Documents cache', function() {
         assert.isUndefined(found);
     });
 
+    it('should find index files for /', function() {
+        let indexes = filecache.documents.indexFiles('/');
+
+        assert.isOk(filezContains(indexes, 'index.html.md'));
+        assert.isOk(filezContains(indexes, 'subdir/index.html.md'));
+        assert.isOk(filezContains(indexes, 'hier-broke/dir1/dir2/index.html.md'));
+        assert.isOk(filezContains(indexes, 'hier/index.html.md'));
+        assert.isOk(filezContains(indexes, 'hier/dir1/index.html.md'));
+        assert.isOk(filezContains(indexes, 'hier/dir1/dir2/index.html.md'));
+        assert.isOk(filezContains(indexes, 'hier/imgdir/index.html.md'));
+    });
+
+    it('should find index files for undefined', function() {
+        let indexes = filecache.documents.indexFiles();
+
+        assert.isOk(filezContains(indexes, 'index.html.md'));
+        assert.isOk(filezContains(indexes, 'subdir/index.html.md'));
+        assert.isOk(filezContains(indexes, 'hier-broke/dir1/dir2/index.html.md'));
+        assert.isOk(filezContains(indexes, 'hier/index.html.md'));
+        assert.isOk(filezContains(indexes, 'hier/dir1/index.html.md'));
+        assert.isOk(filezContains(indexes, 'hier/dir1/dir2/index.html.md'));
+        assert.isOk(filezContains(indexes, 'hier/imgdir/index.html.md'));
+    });
+
+
     it('should find index files for hier', function() {
         let indexes = filecache.documents.indexFiles('hier/');
         assert.isOk(filezContains(indexes, 'hier/index.html.md'));
         assert.isOk(filezContains(indexes, 'hier/dir1/index.html.md'));
         assert.isOk(filezContains(indexes, 'hier/dir1/dir2/index.html.md'));
         assert.isOk(filezContains(indexes, 'hier/imgdir/index.html.md'));
+
+        assert.isFalse(filezContains(indexes, 'index.html.md'));
+        assert.isFalse(filezContains(indexes, 'subdir/index.html.md'));
+        assert.isFalse(filezContains(indexes, 'hier-broke/dir1/dir2/index.html.md'));
     });
 
     it('should find index files for hier/dir1', function() {
@@ -1114,6 +1143,14 @@ describe('Documents cache', function() {
     it('should find index files for hier-broke', function() {
         let indexes = filecache.documents.indexFiles('hier-broke');
         assert.isOk(filezContains(indexes, 'hier-broke/dir1/dir2/index.html.md'));
+
+
+        assert.isFalse(filezContains(indexes, 'index.html.md'));
+        assert.isFalse(filezContains(indexes, 'subdir/index.html.md'));
+        assert.isFalse(filezContains(indexes, 'hier/index.html.md'));
+        assert.isFalse(filezContains(indexes, 'hier/dir1/index.html.md'));
+        assert.isFalse(filezContains(indexes, 'hier/dir1/dir2/index.html.md'));
+        assert.isFalse(filezContains(indexes, 'hier/imgdir/index.html.md'));
     });
 
 

@@ -470,18 +470,30 @@ export class FileCache extends EventEmitter {
         return ret;
     }
 
+    /**
+     * Returns the files that render to <code>index.html</code> under
+     * the given directory.
+     */
     indexFiles(_dirname) {
         let coll = this.getCollection(this.collection);
-        let dirname = _dirname.startsWith('/')
+        let dirname = _dirname && _dirname.startsWith('/')
                     ? _dirname.substring(1)
                     : _dirname;
-        if (dirname === '.') dirname = '/';
-        const selector = {
-            renderPath: /\/index.html$/
+        if (dirname === '.'
+         || dirname === ''
+         || typeof dirname === 'undefined') {
+            dirname = '/';
         }
+        const selector = {
+            $or: [
+                { renderPath: /\/index\.html$/ },
+                { renderPath: /^index\.html$/ }
+            ]
+        };
         if (dirname !== '/') {
             selector.vpath = new RegExp(`^${dirname}`);
         }
+        // console.log(selector);
         let ret = coll.find(selector);
         return ret;
     }
