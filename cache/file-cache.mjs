@@ -466,7 +466,8 @@ export class FileCache extends EventEmitter {
         if (dirname === '.') dirname = '/';
         let ret = coll.find({
             dirname: { $eeq: dirname },
-            vpath: { $nee: vpath }
+            vpath: { $nee: vpath },
+            renderPath: /\.html$/
         }, {
             $orderBy: { vpath: 1 }
         });
