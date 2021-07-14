@@ -465,7 +465,10 @@ export class FileCache extends EventEmitter {
         let dirname = path.dirname(vpath);
         if (dirname === '.') dirname = '/';
         let ret = coll.find({
-            dirname: { $eeq: dirname }
+            dirname: { $eeq: dirname },
+            vpath: { $nee: vpath }
+        }, {
+            $orderBy: { vpath: 1 }
         });
         return ret;
     }
@@ -494,7 +497,9 @@ export class FileCache extends EventEmitter {
             selector.vpath = new RegExp(`^${dirname}`);
         }
         // console.log(selector);
-        let ret = coll.find(selector);
+        let ret = coll.find(selector, {
+            $orderBy: { dirname: 1 }
+        });
         return ret;
     }
 
