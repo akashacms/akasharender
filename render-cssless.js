@@ -20,6 +20,8 @@
  'use strict';
 
 const Renderer = require('./Renderer');
+const fs       = require('fs').promises;
+const path     = require('path');
 const less     = require('less');
 
 module.exports = class CSSLESSRenderer extends Renderer {
@@ -38,6 +40,13 @@ module.exports = class CSSLESSRenderer extends Renderer {
                 else     resolve(css);
             });
         });
+    }
+
+    async newRenderToFile(config, docInfo) {
+        let lesstxt = await fs.readFile(docInfo.fspath, 'utf8');
+        let css = await this.render(lesstxt, {});
+        let writeTo = path.join(config.renderDestination, docInfo.renderPath);
+        await fs.writeFile(writeTo, css.css);
     }
 
     async renderToFile(basedir, fpath, renderTo, renderToPlus, metadata, config) {

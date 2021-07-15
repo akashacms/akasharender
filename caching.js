@@ -19,8 +19,8 @@
 
 'use strict';
 
-const FlatCache = require('flat-cache');
-const cache = FlatCache.load('akasharender');
+// const FlatCache = require('flat-cache');
+// const cache = FlatCache.load('akasharender');
 
 exports.set = function(module, key, val) {
     return cache.setKey(`${module}-${key}`, val);

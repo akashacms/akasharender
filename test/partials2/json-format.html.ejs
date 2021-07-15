@@ -1,0 +1,12 @@
+<ul class="json-data">
+<%
+var keys = Object.keys(data);
+for (var i = 0; i < keys.length; i++) {
+    var datum = data[keys[i]];
+    %>
+    <li>
+    <%= keys[i] %> :- <%= datum %>
+    </li>
+    <%
+} %>
+</ul>

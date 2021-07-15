@@ -1,49 +1,91 @@
 
+const fs = require('fs').promises;
+const path = require('path');
 const { promisify } = require('util');
 const akasha   = require('../index');
 const { assert } = require('chai');
 const sizeOf = promisify(require('image-size'));
+// Note this is an ES6 module and to use it we must 
+// use an async function along with the await keyword
+const _filecache = import('../cache/file-cache.mjs');
 
 
-const config = new akasha.Configuration();
-config.rootURL("https://example.akashacms.com");
-config.configDir = __dirname;
-config.addLayoutsDir('layouts')
-      .addLayoutsDir('layouts-extra')
-      .addDocumentsDir('documents')
-      .addDocumentsDir({
-          src: 'mounted',
-          dest: 'mounted'
-      })
-      .addPartialsDir('partials');
-config.setMahabhutaConfig({
-    recognizeSelfClosing: true,
-    recognizeCDATA: true,
-    decodeEntities: true
-});
-config
-    .addFooterJavaScript({ href: "/vendor/jquery/jquery.min.js" })
-    .addFooterJavaScript({ 
-        href: "/vendor/popper.js/umd/popper.min.js",
-        lang: 'no-known-lang'
-    })
-    .addFooterJavaScript({ href: "/vendor/bootstrap/js/bootstrap.min.js" })
-    .addHeaderJavaScript({ href: "/vendor/header-js.js"})
-    .addHeaderJavaScript({ 
-        href: "/vendor/popper.js/popper.min.js",
-        lang: 'no-known-lang'
-    })
-    .addHeaderJavaScript({
-        script: "alert('in header with inline script');"
-    })
-    .addStylesheet({ href: "/vendor/bootstrap/css/bootstrap.min.css" })
-    .addStylesheet({       href: "/style.css" })
-    .addStylesheet({       href: "/print.css", media: "print" });
-config.prepare();
+let config;
 
 describe('build site', function() {
+    it('should construct configuration', async function() {
+        this.timeout(75000);
+        config = new akasha.Configuration();
+        config.rootURL("https://example.akashacms.com");
+        config.configDir = __dirname;
+        config
+            .addAssetsDir('assets2')
+            .addAssetsDir('assets')
+            .addLayoutsDir('layouts')
+            .addLayoutsDir('layouts-extra')
+            .addDocumentsDir('documents')
+            .addDocumentsDir({
+                src: 'mounted',
+                dest: 'mounted'
+            })
+            .addPartialsDir('partials');
+        config.setMahabhutaConfig({
+            recognizeSelfClosing: true,
+            recognizeCDATA: true,
+            decodeEntities: true
+        });
+        config
+            .addFooterJavaScript({ href: "/vendor/jquery/jquery.min.js" })
+            .addFooterJavaScript({ 
+                href: "/vendor/popper.js/umd/popper.min.js",
+                lang: 'no-known-lang'
+            })
+            .addFooterJavaScript({ href: "/vendor/bootstrap/js/bootstrap.min.js" })
+            .addHeaderJavaScript({ href: "/vendor/header-js.js"})
+            .addHeaderJavaScript({ 
+                href: "/vendor/popper.js/popper.min.js",
+                lang: 'no-known-lang'
+            })
+            .addHeaderJavaScript({
+                script: "alert('in header with inline script');"
+            })
+            .addStylesheet({ href: "/vendor/bootstrap/css/bootstrap.min.css" })
+            .addStylesheet({       href: "/style.css" })
+            .addStylesheet({       href: "/print.css", media: "print" });
+        config.setConcurrency(5);
+        config.prepare();
+    });
+
+    it('should run setup', async function() {
+        this.timeout(75000);
+        await akasha.cacheSetup(config);
+        await Promise.all([
+            akasha.setupDocuments(config),
+            akasha.setupAssets(config),
+            akasha.setupLayouts(config),
+            akasha.setupPartials(config)
+        ])
+        let filecache = await _filecache;
+        await Promise.all([
+            filecache.documents.isReady(),
+            filecache.assets.isReady(),
+            filecache.layouts.isReady(),
+            filecache.partials.isReady()
+        ]);
+    });
+
+    it('should copy assets', async function() {
+        this.timeout(75000);
+        await config.copyAssets();
+    });
+
+    it('should overwrite file from stacked directory', async function() {
+        let { html, $ } = await akasha.readRenderedFile(config, 'file.txt');
+        assert.include(html, 'overriding');
+    });
+
     it('should build site', async function() {
-        this.timeout(25000);
+        this.timeout(75000);
         let failed = false;
         let results = await akasha.render(config);
         for (let result of results) {
@@ -53,6 +95,11 @@ describe('build site', function() {
             }
         }
         assert.isFalse(failed);
+    });
+
+    it('should close the configuration', async function() {
+        this.timeout(75000);
+        await akasha.closeCaches();
     });
 });
 
@@ -116,6 +163,12 @@ describe('stylesheets, javascripts', function() {
         it('should find stylesheets, javascript from metadata values IN njk-func.html', async function() {
             let { html, $ } = await akasha.readRenderedFile(config, 'njk-func.html');
             checkMetadataStyleJS(html, $);
+        });
+
+        it('should find style.css', async function() {
+            let style = path.join(config.renderDestination, 'style.css');
+            let stats = await fs.stat(style);
+            assert.isOk(stats);
         });
     });
 });
@@ -410,23 +463,26 @@ describe('teaser, content', function() {
         // console.log(html);
 
         assert.equal($('body #resizeto50').length, 1);
-        assert.include($('body #resizeto50').attr('src'), "img/Human-Skeleton.jpg");
+        assert.include([
+            "img/Human-Skeleton-50.jpg",
+            "img/Human-Skeleton.jpg"
+        ], $('body #resizeto50').attr('src'));
         assert.notExists($('body #resizeto50').attr('resize-width'));
 
         assert.equal($('body #resizeto150').length, 1);
-        assert.include($('body #resizeto150').attr('src'), "img/Human-Skeleton-150.jpg");
+        assert.include("img/Human-Skeleton-150.jpg", $('body #resizeto150').attr('src'));
         assert.notExists($('body #resizeto150').attr('resize-width'));
         assert.notExists($('body #resizeto150').attr('resize-to'));
 
         assert.equal($('body #resizeto250figure').length, 1);
         assert.equal($('body #resizeto250figure figcaption').length, 1);
-        assert.include($('body #resizeto250figure img').attr('src'), "img/Human-Skeleton-250-figure.jpg");
+        assert.include("img/Human-Skeleton-250-figure.jpg", $('body #resizeto250figure img').attr('src'));
         assert.notExists($('body #resizeto250figure img').attr('resize-width'));
         assert.notExists($('body #resizeto250figure img').attr('resize-to'));
-        assert.include($('body #resizeto250figure figcaption').html(), "Image caption");
+        assert.include("Image caption", $('body #resizeto250figure figcaption').html());
 
         assert.equal($('body #resizerss').length, 1);
-        assert.include($('body #resizerss').attr('src'), "rss_button.png");
+        assert.include("rss_button.png", $('body #resizerss').attr('src'));
         assert.notExists($('body #resizerss').attr('resize-width'));
         assert.notExists($('body #resizerss').attr('resize-to'));
 
@@ -436,15 +492,32 @@ describe('teaser, content', function() {
         assert.notExists($('body #png2jpg').attr('resize-to'));
 
         // console.log(config.plugin('akashacms-builtin').resizequeue);
-        assert.equal(config.plugin('akashacms-builtin').resizequeue.length, 30);
+        assert.equal(config.plugin('akashacms-builtin').resizequeue.length, 0);
+        /*
+        const checkItem = (item, _item) => {
+            if (_item.src === item.src
+             && _item.resizewidth === item.resizewidth
+             && _item.resizeto === item.resizeto
+             && _item.docPath === item.docPath) {
+                return true;
+            } else {
+                return false;
+            }
+        }
         const queueContains = (queue, item) => {
             let found = false;
             for (let _item of queue) {
-                if (_item.src === item.src
-                 && _item.resizewidth === item.resizewidth
-                 && _item.resizeto === item.resizeto
-                 && _item.docPath === item.docPath) {
-                    found = true;
+                if (Array.isArray(item)) {
+                    let found = false;
+                    for (let i of item) {
+                        if (checkItem(i, _item)) {
+                            found = true;
+                            break;
+                        }
+                    }
+                } else {
+                    found = checkItem(item, _item);
+                    if (found) break;
                 }
             }
             return found;
@@ -573,12 +646,23 @@ describe('teaser, content', function() {
             "resizewidth": "100",
             "src": "/mounted/img/Human-Skeleton.jpg"
         }));
-        assert.isTrue(queueContains(config.plugin('akashacms-builtin').resizequeue, {
+        // console.log(config.plugin('akashacms-builtin').resizequeue);
+        assert.isTrue(queueContains(config.plugin('akashacms-builtin').resizequeue, /* [ {
+            src: 'img/Human-Skeleton-50.jpg',
+            resizewidth: '50',
+            resizeto: undefined,
+            docPath: "img2resize.html"
+        }, {
             src: 'img/Human-Skeleton.jpg',
             resizewidth: '50',
             resizeto: undefined,
             docPath: "img2resize.html"
-        }));
+        }, * / {
+            src: 'img/Human-Skeleton.jpg',
+            resizewidth: '50',
+            resizeto: 'img/Human-Skeleton-50.jpg',
+            docPath: "img2resize.html"
+        }/*  ] * /));
         assert.isTrue(queueContains(config.plugin('akashacms-builtin').resizequeue, {
             src: 'img/Human-Skeleton.jpg',
             resizewidth: '150',
@@ -633,8 +717,9 @@ describe('teaser, content', function() {
             "resizewidth": "100",
             "src": "/mounted/img/Human-Skeleton.jpg",
         }));
+        */
 
-        let size50 = await sizeOf('out/img/Human-Skeleton.jpg');
+        let size50 = await sizeOf('out/img/Human-Skeleton-50.jpg');
         assert.equal(size50.width, 50);
 
         let size150 = await sizeOf('out/img/Human-Skeleton-150.jpg');
@@ -954,6 +1039,26 @@ describe('Select Elements', function() {
 });
 
 describe('Index Chain', function() {
+    before(async function() {
+        await akasha.cacheSetup(config);
+        await Promise.all([
+            akasha.setupDocuments(config),
+            akasha.setupAssets(config),
+            akasha.setupLayouts(config),
+            akasha.setupPartials(config)
+        ])
+        let filecache = await _filecache;
+        // console.log(filecache.documents);
+        await Promise.all([
+            filecache.documents.isReady(),
+            filecache.assets.isReady(),
+            filecache.layouts.isReady(),
+            filecache.partials.isReady()
+        ]);
+        // console.log(`before documents.isReady`);
+        // await documents.isReady();
+    });
+
     it('should generate correct index chain for /hier/dir1/dir2/sibling.html', async function() {
         let chain = await akasha.indexChain(config, '/hier/dir1/dir2/sibling.html');
 
@@ -1069,6 +1174,11 @@ describe('Index Chain', function() {
         assert.include(chain[0].foundPath, 'index.html');
         assert.include(chain[0].filename, '/index.html');
     });
+
+    it('should close configuration', async function() {
+        await akasha.closeCaches();
+    });
+
 });
 
 describe('Nunjucks Include', function() {

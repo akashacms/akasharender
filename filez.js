@@ -25,11 +25,8 @@ const util       = require('util');
 const path       = require('path');
 const cache      = require('./caching');
 
-exports.copyAssets = function(assetdirs, renderTo) {
-    return globfs.copyAsync(assetdirs, '**/*', renderTo);
-};
-
 exports.findAsset = async function(assetdirs, filename) {
+    throw new Error('Deprecated');
     var cached = cache.get("filez-findAsset", filename);
     if (cached) {
         return Promise.resolve(cached);
@@ -77,60 +74,13 @@ exports.findAsset = async function(assetdirs, filename) {
     return results;
 };
 
-exports.findSync = function(dirs, fileName) {
-    throw new Error('findSync deprecated - use globfs.findSync');
-    // for (var i = 0; i < dirs.length; i++) {
-    //     var dir = dirs[i];
-    //     var fileToFind = path.join(dir, fileName);
-    //     // log(fileToFind);
-    //     var stat = fs.existsSync(fileToFind) ? fs.statSync(fileToFind) : undefined;
-    //     if (stat) {
-    //         log(`filez.findSync ${util.inspect(dirs)} found ${dir}/${fileName}`);
-    //         return fileToFind;
-    //     }
-    // }
-    // log(`filez.findSync FAIL ${util.inspect(dirs)} ${fileName}`);
-    // return undefined;
-};
-
-exports.find = async function(dirs, fileName) {
-    throw new Error('find deprecated - use globfs.findAsync');
-    // if (!dirs) throw new Error("Must supply directories to search");
-    // if (!fileName) throw new Error("Must supply a fileName");
-    //     // log(`filez.find ${util.inspect(dirs)} ${fileName}`);
-
-    // var found = false;
-    // var foundDir;
-
-    // for (var dir of dirs) {
-    //     var stats = undefined;
-    //     try {
-    //         stats = await fs.stat(path.join(dir, fileName));
-    //     } catch (e) {
-    //         if (e.code !== 'ENOENT') throw e;
-    //         stats = undefined;
-    //     }
-
-    //     if (stats && stats.isFile()) {
-    //         found = true;
-    //         foundDir = dir;
-    //         // log(`filez.find ${util.inspect(dirs)} ${fileName} found ${foundDir}`);
-    //         break;
-    //     }
-    // }
-    // if (found) return foundDir;
-    // else {
-    //     log(`filez.find FAIL ${util.inspect(dirs)} ${fileName}`);
-    //     return undefined;
-    // }
-};
-
 exports.findRendersToForce = function(config, rendersTo) {
     cache.del("filez-findRendersTo", rendersTo);
     return exports.findRendersTo(config, rendersTo);
 };
 
 exports.findRendersTo = async function(config, rendersTo) {
+    throw new Error('Deprecated');
 
     if (Array.isArray(config)) {
         throw new Error(`findRendersTo must now be given a Configuration object rather than the document array - for ${rendersTo}`);
@@ -399,12 +349,6 @@ exports.createNewFile = async function(dir, fpath, text) {
     } catch (e) {
         throw new Error(`createNewFile FAIL because ${e.stack}`)
     }
-};
-
-exports.readFile = function(dir, fpath) {
-    return Promise.reject(new Error("readFile deprecated - use fs.readFileAsync instead"));
-    var readFpath = path.join(dir, fpath);
-    return fs.readFile(readFpath, 'utf8');
 };
 
 exports.writeFile = async function(dir, fpath, text) {

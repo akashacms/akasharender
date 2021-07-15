@@ -55,3 +55,28 @@ For more information see:
 * Source for project website: https://github.com/akashacms/akashacms-website
 * Example repository: https://github.com/akashacms/akashacms-example
 * Website matching the example: https://example.akashacms.com/
+
+
+
+
+* caching.js:    return cache.getKey(`${module}-${key}`);
+* documents.js:        let fileData = cache.get("documents-search", fullFilePath);
+    * Wants the data for a pathname
+* documents.js:    var doc = cache.get("documents-readDocument", documentPath);
+    * Wants the data for a pathname
+* filez.js:    var cached = cache.get("filez-findAsset", filename);
+* filez.js:    var cached = cache.get("filez-findRendersTo", rendersTo);
+    * Wants the data for a pathname
+
+TODO:
+
+* DONE Rewrite watcher/watcher to only send out events
+    * TODO - move find function to an appropriate place
+    * TODO - add methods to add a directory to watch, or remove a directory from being watched.
+* In the Configuration object:
+    * set up the watcher instances
+    * As addDocumentsDir/etc are called, add to the corresponding watcher
+    * Add corresponding removeDocumentsDir/etc functions, and also remove from corresponding watcher
+* Create cache-filez - listens to those events - using cache-forerunner, set up data storage for file data
+* Rewrite the code in documents.js to match
+* Rewrite the code which uses functions in filez.js to match

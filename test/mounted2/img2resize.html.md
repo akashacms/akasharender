@@ -1,17 +1,13 @@
 ---
-title: Converting image to figure/image test
+title: Testing images in a mounted document directory
 layout: default-once.html.ejs
 ---
+
+THIS IS THE OVERRIDING VERSION OF img2resize
 
 This image should be left alone
 
 <img id="no-change" src="img/Human-Skeleton.jpg">
-
-This image should be resized to 50px
-
-<img id="resizeto50" resize-width="50" 
-    src="img/Human-Skeleton.jpg"
-    resize-to="img/Human-Skeleton-50.jpg">
 
 This image should be resized to 150px, to a new file name, and `<img src>` attribute rewritten
 
@@ -29,15 +25,13 @@ This image should be encased in a `<figure>`, with a `<figcaption>`, resized to 
         resize-to="img/Human-Skeleton-250-figure.jpg"
         caption="Image caption">
 
-This tests an image in an assets directory
-
-<img id="resizerss" src="rss_button.png" resize-width="50">
-
-This tests converting an image from PNG to JPEG
-
-<img id="png2jpg"  src="rss_button.png" resize-width="50" resize-to="rss_button.jpg">
-
 This tests resizing an image from a mounted directory
 
 <img id="mountedimg" src="/mounted/img/Human-Skeleton.jpg" 
-    resize-width="100" resize-to="/img/Human-Skeleton-mounted-100.jpg">
+    resize-width="100" resize-to="img/Human-Skeleton-mounted-100.jpg">
+
+
+This tests resizing an image from a mounted directory
+
+<img id="mountedimg2nonmounted" src="/mounted/img/Human-Skeleton.jpg" 
+    resize-width="100" resize-to="/img/Human-Skeleton-from-mounted-to-img-100.jpg">

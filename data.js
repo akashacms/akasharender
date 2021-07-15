@@ -56,6 +56,10 @@ module.exports.remove = function(basedir, fpath) {
     });
 };
 
+module.exports.removeAll = function() {
+    traces = [];
+};
+
 module.exports.print = function() {
     if (!traces) return;
     let traces2 = traces.sort((a, b) => {

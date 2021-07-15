@@ -27,6 +27,11 @@ const nunjucks = require('nunjucks');
 
 const _nunjuck_env = Symbol('id');
 
+const getMounted = (dir) => {
+    if (typeof dir === 'string') return dir;
+    else return dir.src;
+};
+
 module.exports = class NunjucksRenderer extends HTMLRenderer {
     constructor() {
         super(".html.njk", /^(.*\.html)\.(njk)$/);
@@ -38,10 +43,24 @@ module.exports = class NunjucksRenderer extends HTMLRenderer {
         // console.log(`njkenv layoutDirs ${util.inspect(config.layoutDirs)}`);
         // Detect if config is not set
         if (!config) throw new Error(`render-nunjucks no config`);
+
+        // Get the paths for both the Layouts and Partials directories,
+        // because with Nunjucks we are storing macros files in some
+        // layouts directories.
+        const layoutsMounted = config.layoutDirs.map(getMounted);
+        const partialsMounted = config.partialsDirs.map(getMounted);
+        const loadFrom = layoutsMounted.concat(partialsMounted);
+
+        // console.log(`njkenv `, loadFrom);
+
+        // An open question is whether to create a custom Loader
+        // class to integrate Nunjucks better with FileCache.  Clearly
+        // Nunjucks can handle files being updated behind the scene.
+
         this[_nunjuck_env] = new nunjucks.Environment(
             // Using watch=true requires installing chokidar
-            new nunjucks.FileSystemLoader(
-                config.layoutDirs.concat(config.partialsDirs), { watch: false }),
+            new nunjucks.FileSystemLoader(loadFrom, { watch: false }),
+                // config.layoutDirs.concat(config.partialsDirs), { watch: false }),
             {
                 autoescape: false
             }
