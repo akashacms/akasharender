@@ -23,6 +23,7 @@ describe('build rebased site', function() {
         config_rebase = new akasha.Configuration();
         config_rebase.rootURL("https://example.akashacms.com/rebase/to/");
         config_rebase.configDir = __dirname;
+        config_rebase.use(require('./test-plugin/plugin.js'));
         config_rebase.addLayoutsDir('layouts')
             .addLayoutsDir('layouts-extra')
             .addDocumentsDir('documents')
@@ -61,7 +62,8 @@ describe('build rebased site', function() {
 
     it('should run setup', async function() {
         this.timeout(75000);
-        await akasha.cacheSetup(config_rebase);
+        await akasha.cacheSetupComplete(config_rebase);
+        /* await akasha.cacheSetup(config_rebase);
         await Promise.all([
             akasha.setupDocuments(config_rebase),
             akasha.setupAssets(config_rebase),
@@ -74,7 +76,12 @@ describe('build rebased site', function() {
             filecache.assets.isReady(),
             filecache.layouts.isReady(),
             filecache.partials.isReady()
-        ]);
+        ]); */
+    });
+
+    it('should have called onPluginCacheSetup', function() {
+        assert.isOk(config_rebase.plugin('akashacms-test-plugin')
+                            .onPluginCacheSetupCalled);
     });
 
     it('should copy assets', async function() {
@@ -892,21 +899,20 @@ describe('rebased teaser, content', function() {
 
 describe('Rebased index Chain', function() {
     before(async function() {
-        await akasha.cacheSetup(config_rebase);
-        await Promise.all([
-            akasha.setupDocuments(config_rebase),
-            akasha.setupAssets(config_rebase),
-            akasha.setupLayouts(config_rebase),
-            akasha.setupPartials(config_rebase)
+        await akasha.cacheSetupComplete(config_rebase);
+        /* await Promise.all([
+            akasha.setupDocuments(config),
+            akasha.setupAssets(config),
+            akasha.setupLayouts(config),
+            akasha.setupPartials(config)
         ])
         let filecache = await _filecache;
-        // console.log(filecache.documents);
         await Promise.all([
             filecache.documents.isReady(),
             filecache.assets.isReady(),
             filecache.layouts.isReady(),
             filecache.partials.isReady()
-        ]);
+        ]); */
         // console.log(`before documents.isReady`);
         // await documents.isReady();
     });

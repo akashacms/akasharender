@@ -103,6 +103,39 @@ exports.setupPartials = async function(config) {
     }
 }
 
+exports.setupPluginCaches = async function(config) {
+    try {
+        await config.hookPluginCacheSetup();
+    } catch (err) {
+        console.error(`INITIALIZATION FAILURE COULD NOT INITIALIZE PLUGINS CACHES `, err);
+        process.exit(1);
+    }
+}
+
+exports.cacheSetupComplete = async function(config) {
+    try {
+        let cache = (await exports.cache)
+        await cache.setup(config);
+        let filecache = (await exports.filecache);
+        await Promise.all([
+            filecache.setupDocuments(config),
+            filecache.setupAssets(config),
+            filecache.setupLayouts(config),
+            filecache.setupPartials(config),
+            exports.setupPluginCaches(config)
+        ])
+        await Promise.all([
+            filecache.documents.isReady(),
+            filecache.assets.isReady(),
+            filecache.layouts.isReady(),
+            filecache.partials.isReady()
+        ]);
+    } catch (err) {
+        console.error(`INITIALIZATION FAILURE COULD NOT INITIALIZE CACHE SYSTEM `, err);
+        process.exit(1);
+    }
+}
+
 // exports.cache = require('./caching');
 exports.Plugin = require('./Plugin');
 
@@ -916,7 +949,7 @@ module.exports.Configuration = class Configuration {
      */
     async hookBeforeSiteRendered() {
         // console.log('hookBeforeSiteRendered');
-        var config = this;
+        const config = this;
         for (let plugin of config.plugins) {
             if (typeof plugin.beforeSiteRendered !== 'undefined') {
                 // console.log(`CALLING plugin ${plugin.name} beforeSiteRendered`);
@@ -930,7 +963,7 @@ module.exports.Configuration = class Configuration {
      */
     async hookSiteRendered() {
         // console.log('hookSiteRendered');
-        var config = this;
+        const config = this;
         for (let plugin of config.plugins) {
             if (typeof plugin.onSiteRendered !== 'undefined') {
                 // console.log(`CALLING plugin ${plugin.name} onSiteRendered`);
@@ -940,7 +973,7 @@ module.exports.Configuration = class Configuration {
     }
 
     async hookFileAdded(collection, vpinfo) {
-        var config = this;
+        const config = this;
         for (let plugin of config.plugins) {
             if (typeof plugin.onFileAdded !== 'undefined') {
                 // console.log(`CALLING plugin ${plugin.name} onFileAdded`);
@@ -950,7 +983,7 @@ module.exports.Configuration = class Configuration {
     }
 
     async hookFileChanged(collection, vpinfo) {
-        var config = this;
+        const config = this;
         for (let plugin of config.plugins) {
             if (typeof plugin.onFileChanged !== 'undefined') {
                 // console.log(`CALLING plugin ${plugin.name} onFileChanged`);
@@ -960,7 +993,7 @@ module.exports.Configuration = class Configuration {
     }
 
     async hookFileUnlinked(collection, vpinfo) {
-        var config = this;
+        const config = this;
         for (let plugin of config.plugins) {
             if (typeof plugin.onFileUnlinked !== 'undefined') {
                 // console.log(`CALLING plugin ${plugin.name} onFileUnlinked`);
@@ -970,10 +1003,19 @@ module.exports.Configuration = class Configuration {
     }
 
     async hookFileCacheSetup(collectionnm, collection) {
-        var config = this;
+        const config = this;
         for (let plugin of config.plugins) {
             if (typeof plugin.onFileCacheSetup !== 'undefined') {
                 await plugin.onFileCacheSetup(config, collectionnm, collection);
+            }
+        }
+    }
+
+    async hookPluginCacheSetup() {
+        const config = this;
+        for (let plugin of config.plugins) {
+            if (typeof plugin.onPluginCacheSetup !== 'undefined') {
+                await plugin.onPluginCacheSetup(config);
             }
         }
     }

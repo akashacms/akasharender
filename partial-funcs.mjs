@@ -15,7 +15,7 @@ export async function partial(config, fname, metadata) {
     if (!found) {
         throw new Error(`No partial found for ${fname} in ${util.inspect(config.partialsDirs)}`);
     }
-    console.log(`partial ${fname} ==> ${found.vpath} ${found.fspath}`);
+    // console.log(`partial ${fname} ==> ${found.vpath} ${found.fspath}`);
 
     let stats;
     try {

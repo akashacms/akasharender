@@ -18,6 +18,7 @@ describe('build site', function() {
         config = new akasha.Configuration();
         config.rootURL("https://example.akashacms.com");
         config.configDir = __dirname;
+        config.use(require('./test-plugin/plugin.js'));
         config
             .addAssetsDir('assets2')
             .addAssetsDir('assets')
@@ -58,8 +59,8 @@ describe('build site', function() {
 
     it('should run setup', async function() {
         this.timeout(75000);
-        await akasha.cacheSetup(config);
-        await Promise.all([
+        await akasha.cacheSetupComplete(config);
+        /* await Promise.all([
             akasha.setupDocuments(config),
             akasha.setupAssets(config),
             akasha.setupLayouts(config),
@@ -71,7 +72,12 @@ describe('build site', function() {
             filecache.assets.isReady(),
             filecache.layouts.isReady(),
             filecache.partials.isReady()
-        ]);
+        ]); */
+    });
+
+    it('should have called onPluginCacheSetup', function() {
+        assert.isOk(config.plugin('akashacms-test-plugin')
+                            .onPluginCacheSetupCalled);
     });
 
     it('should copy assets', async function() {
