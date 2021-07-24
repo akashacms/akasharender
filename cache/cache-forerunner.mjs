@@ -55,20 +55,26 @@ export function cacheExists(cachenm) {
     return caches.has(cachenm);
 }
 
-export async function addCache(cachenm) {
+export function addCache(cachenm) {
     if (caches.has(cachenm)) {
         return;
         // throw new Error(`Cache ${cachenm} already exists`);
     }
-    let coll = db.collection(cachenm);
+    let coll = db.collection(cachenm, { autoCreate: true });
     caches.set(cachenm, coll);
 
-    await new Promise((resolve, reject) => {
+    // This function must be synchronous, because getCache must be synchronous.
+    // Hence we cannot perform an asynchronous operation like using coll.load.
+    //
+    // We've added a new function, loadCache, that is untested for now,
+    // which is to be used in such cases.
+
+    /* await new Promise((resolve, reject) => {
         coll.load(function (err) {
             if (!err) resolve();
             else reject(`Failed to load ${cachenm} because ${err}`);
         });
-    });
+    }); */
 }
 
 export function getCache(cachenm, options) {
@@ -89,6 +95,19 @@ export function deleteCache(cachenm) {
     let coll = caches.get(cachenm);
     coll.drop();
     caches.delete(cachenm);
+}
+
+export async function loadCache(cachenm) {
+    if (!cacheExists(cachenm)) {
+        addCache(cachenm);
+    }
+    const coll = getCache(cachenm);
+    await new Promise((resolve, reject) => {
+        coll.load(function (err) {
+            if (!err) resolve();
+            else reject(`Failed to load ${cachenm} because ${err}`);
+        });
+    });
 }
 
 export function find(cachenm, where) {
