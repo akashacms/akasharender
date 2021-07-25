@@ -97,21 +97,7 @@ program
         try {
             const config = require(path.join(process.cwd(), configFN));
             let akasha = config.akasha;
-            await akasha.cacheSetup(config);
-            await Promise.all([
-                akasha.setupAssets(config),
-                akasha.setupLayouts(config),
-                akasha.setupPartials(config),
-                akasha.setupDocuments(config)
-            ])
-            let filecache = await _filecache;
-            // console.log(filecache.documents);
-            await Promise.all([
-                filecache.assets.isReady(),
-                filecache.layouts.isReady(),
-                filecache.partials.isReady(),
-                filecache.documents.isReady()
-            ]);
+            await akasha.cacheSetupComplete(config);
             data.init();
             console.log(`render-document before renderPath ${documentFN}`);
             let result = await akasha.renderPath(config, documentFN);
@@ -131,20 +117,7 @@ program
         try {
             const config = require(path.join(process.cwd(), configFN));
             let akasha = config.akasha;
-            await akasha.cacheSetup(config);
-            await Promise.all([
-                akasha.setupDocuments(config),
-                akasha.setupAssets(config),
-                akasha.setupLayouts(config),
-                akasha.setupPartials(config)
-            ]);
-            let filecache = await _filecache;
-            await Promise.all([
-                filecache.documents.isReady(),
-                filecache.assets.isReady(),
-                filecache.layouts.isReady(),
-                filecache.partials.isReady()
-            ]);
+            await akasha.cacheSetupComplete(config);
             data.init();
             let results = await akasha.render(config);
             if (!cmdObj.quiet) {
@@ -225,20 +198,7 @@ program
         try {
             const config = require(path.join(process.cwd(), configFN));
             let akasha = config.akasha;
-            await akasha.cacheSetup(config);
-            await Promise.all([
-                akasha.setupDocuments(config),
-                akasha.setupAssets(config),
-                akasha.setupLayouts(config),
-                akasha.setupPartials(config)
-            ])
-            let filecache = await _filecache;
-            await Promise.all([
-                filecache.documents.isReady(),
-                filecache.assets.isReady(),
-                filecache.layouts.isReady(),
-                filecache.partials.isReady()
-            ]);
+            await akasha.cacheSetupComplete(config);
             data.init();
             // console.log('CALLING config.hookBeforeSiteRendered');
             await config.hookBeforeSiteRendered();
