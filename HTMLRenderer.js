@@ -485,7 +485,7 @@ module.exports = class HTMLRenderer extends Renderer {
             fmmcount++;
         }
         if (fmmcount <= 0) {
-            console.error(`WARNING: No metadata discovered in ${basedir} ${fpath}`);
+            console.error(`WARNING: No metadata discovered in ${docInfo.vpath}`);
         }
 
         metadata.content = "";
