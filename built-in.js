@@ -552,7 +552,6 @@ class ShowContent extends mahabhuta.CustomElement {
         if (!template) template = 'ak_show-content.html.njk';
         let href    = $element.attr('href');
         if (!href) return Promise.reject(new Error('show-content must receive an href'));
-        href = href.startsWith('/') ? href.substring(1) : href;
         const clazz   = $element.attr('class');
         const id      = $element.attr('id');
         const caption = $element.html();
@@ -564,6 +563,7 @@ class ShowContent extends mahabhuta.CustomElement {
             let dir = path.dirname(metadata.document.path);
             href = path.join('/', dir, href);
         }
+        href = href.startsWith('/') ? href.substring(1) : href;
         // console.log(`ShowContent ${util.inspect(metadata.document)} ${href}`);
         const doc     = await documents.readDocument(this.array.options.config, href);
         let ret = await (await partialFuncs).partial(this.array.options.config, template, {
