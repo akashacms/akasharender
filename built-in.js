@@ -552,6 +552,7 @@ class ShowContent extends mahabhuta.CustomElement {
         if (!template) template = 'ak_show-content.html.njk';
         let href    = $element.attr('href');
         if (!href) return Promise.reject(new Error('show-content must receive an href'));
+        href = href.startsWith('/') ? href.substring(1) : href;
         const clazz   = $element.attr('class');
         const id      = $element.attr('id');
         const caption = $element.html();
