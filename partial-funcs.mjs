@@ -45,6 +45,8 @@ export async function partial(config, fname, metadata) {
             mdata[prop] = metadata[prop];
         }
         mdata.config = config;
+        mdata.partialSync = partialSync.bind(renderer, config);
+        mdata.partial     = partial.bind(renderer, config);
         return renderer.render(partialText, mdata);
     } else if (found.vpath.endsWith('.html') || found.vpath.endsWith('.xhtml')) {
         // console.log(`partial reading file ${found.vpath}`);
@@ -69,7 +71,7 @@ export function partialSync(config, fname, metadata) {
     try {
         stats = fs.statSync(found.fspath);
     } catch (err) {
-        throw new Error(`partialSync could not stata ${found.vpath} at ${found.fspath}`, err.stack);
+        throw new Error(`partialSync could not stat ${found.vpath} at ${found.fspath}`, err.stack);
     }
     if (!stats.isFile()) {
         throw new Error(`renderPartial non-file found for ${fname} - ${found.vpath}`);
@@ -88,6 +90,7 @@ export function partialSync(config, fname, metadata) {
             mdata[prop] = metadata[prop];
         }
         mdata.config = config;
+        mdata.partialSync = partialSync.bind(renderer, config);
         let partialText = fs.readFileSync(found.fspath, 'utf8');
         return renderer.renderSync(partialText, mdata);
     } else if (found.vpath.endsWith('.html') || found.vpath.endsWith('.xhtml')) {
