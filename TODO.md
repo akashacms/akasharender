@@ -57,3 +57,11 @@ The `DataTable` class can provide a few methods for searching the data.
 Perhaps a plugin like Affiliates can be rewritten to use DataTable?  As it stands, the Affiliates plugin has been rewritten with some custom code creating a Collection etc.
 
 For example, a DataTable of electric vehicle attributes - of solar panel attributes - of Linux Single Board Computer attributes - could be used in content.
+
+# Cache body for partials/layouts
+
+These two types of files are read repeatedly.  Their content can be cached in FileCache.
+
+# FileCache restructure how metadata calculated
+
+As part of previous task make sure when FileCache adds a file, to scan it for metadata, and to do all the things in the readDocument method.
