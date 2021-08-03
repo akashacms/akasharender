@@ -17,6 +17,9 @@ export async function partial(config, fname, metadata) {
     }
     // console.log(`partial ${fname} ==> ${found.vpath} ${found.fspath}`);
 
+    /* No longer necessary to <code>stat</code> these files, because
+     * DirsWatcher has already determined these are regular files.
+     *
     let stats;
     try {
         stats = await fsp.stat(found.fspath);
@@ -26,6 +29,7 @@ export async function partial(config, fname, metadata) {
     if (!stats.isFile()) {
         throw new Error(`renderPartial non-file found for ${fname} - ${found.vpath}`);
     }
+    */
 
     // console.log(`partial ${fname} ==> vpath ${found.vpath} fspath ${found.fspath}`);
 
@@ -67,6 +71,9 @@ export function partialSync(config, fname, metadata) {
     const found = partials.find(fname);
     if (!found) new Error(`No partial found for ${fname} in ${util.inspect(config.partialsDirs)}`);
 
+    /* No longer necessary to <code>stat</code> these files, because
+     * DirsWatcher has already determined these are regular files.
+     *
     let stats;
     try {
         stats = fs.statSync(found.fspath);
@@ -76,6 +83,7 @@ export function partialSync(config, fname, metadata) {
     if (!stats.isFile()) {
         throw new Error(`renderPartial non-file found for ${fname} - ${found.vpath}`);
     }
+    */
 
     var renderer = config.findRendererPath(found.vpath);
     if (renderer) {
