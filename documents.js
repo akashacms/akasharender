@@ -644,6 +644,9 @@ exports.documentSearch = function(config, options) {
  * Find the Document by its path within one of the DocumentDirs, then construct a Document object.
  */
 exports.readDocument = async function(config, documentPath) {
+
+    console.error('DEPRECATED: readDocument -- instead use filecache.documents.find ');
+
     // console.log('readDocument '+ documentPath);
 
     const documents = (await filecache).documents;

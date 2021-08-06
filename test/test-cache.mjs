@@ -934,7 +934,7 @@ describe('Documents cache', function() {
         assert.isOk(filezContains(siblings, 'img2resize-handlebars.html.md'));
         assert.isOk(filezContains(siblings, 'img2resize-nunjucks.html.md'));
         assert.isOk(filezContains(siblings, 'img2figimg.html.md'));
-        assert.isOk(filezContains(siblings, 'index.html.md'));
+        assert.isNotOk(filezContains(siblings, 'index.html.md'));
         assert.isOk(filezContains(siblings, 'fig-img.html.md'));
         assert.isOk(filezContains(siblings, 'json-data-handlebars.html.json'));
         assert.isOk(filezContains(siblings, 'json-data-nunjucks.html.json'));
@@ -986,7 +986,7 @@ describe('Documents cache', function() {
     it('should find siblings for /subdir/show-content-local.html.md', function() {
         let siblings = filecache.documents.siblings('subdir/show-content-local.html.md');
         assert.isOk(filezContains(siblings, 'subdir/index.html.md'));
-        assert.isOk(filezContains(siblings, 'subdir/show-content-local.html.md'));
+        assert.isNotOk(filezContains(siblings, 'subdir/show-content-local.html.md'));
         assert.isOk(filezContains(siblings, 'subdir/shown-content-local.html.md'));
         for (let sibling of siblings) {
             assert.equal(sibling.dirname, 'subdir');
@@ -1057,7 +1057,7 @@ describe('Documents cache', function() {
     
     it('should find siblings for /mounted/img/Human-Skeleton.jpg', function() {
         let siblings = filecache.documents.siblings('/mounted/img/Human-Skeleton.jpg');
-        assert.isOk(filezContains(siblings, 'mounted/img/Human-Skeleton.jpg'));
+        assert.isNotOk(filezContains(siblings, 'mounted/img/Human-Skeleton.jpg'));
         for (let sibling of siblings) {
             assert.equal(sibling.dirname, 'mounted/img');
         }
@@ -1065,7 +1065,7 @@ describe('Documents cache', function() {
 
     it('should find siblings for mounted/img/Human-Skeleton.jpg', function() {
         let siblings = filecache.documents.siblings('mounted/img/Human-Skeleton.jpg');
-        assert.isOk(filezContains(siblings, 'mounted/img/Human-Skeleton.jpg'));
+        assert.isNotOk(filezContains(siblings, 'mounted/img/Human-Skeleton.jpg'));
         for (let sibling of siblings) {
             assert.equal(sibling.dirname, 'mounted/img');
         }

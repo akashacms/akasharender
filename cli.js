@@ -66,22 +66,20 @@ program
             let akasha = config.akasha;
             await akasha.cacheSetup(config);
             await akasha.setupDocuments(config);
-            let filecache = await _filecache;
-            await filecache.documents.isReady();
-            let doc = await akasha.readDocument(config, documentFN);
+            const filecache = await _filecache;
+            const documents = filecache.documents;
+            await documents.isReady();
+            const doc = await documents.find(documentFN);
+            // data: ${doc.data}
+            // text: ${doc.text}
             console.log(`
 basedir: ${doc.basedir}
 docpath: ${doc.docpath}
-fullpath: ${doc.fullpath}
+fspath: ${doc.fspath}
 renderer: ${util.inspect(doc.renderer)}
 renderpath: ${doc.renderpath}
 
-data: ${doc.data}
-
 metadata: ${util.inspect(doc.metadata)}
-
-text: ${doc.text}
-
 
 `);
             await akasha.closeCaches();

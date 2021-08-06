@@ -65,3 +65,19 @@ These two types of files are read repeatedly.  Their content can be cached in Fi
 # FileCache restructure how metadata calculated
 
 As part of previous task make sure when FileCache adds a file, to scan it for metadata, and to do all the things in the readDocument method.
+
+# Adopt the Tempura template engine, replacing EJS?
+
+https://github.com/lukeed/tempura
+
+Apparently the EJS template engine is VERY SLOW.  Tempura is a new template engine, with a syntax very much like Handlebars, but is EXTREMELY FAST.
+
+But since it's a brand new engine, is it a good idea to rely on this?  The ease of adding custom block handlers makes it easier to integrate with AkashaRender.
+
+In any case the plan would be 
+
+* Create render-tempura.js
+* In there, add "Custom Blocks" to supply the partial and partialSync functions
+* Make sure to turn on the async option, so we can use async functions
+* For the functions exported from Built-IN and BASE modules, add their functions as custom blocks
+

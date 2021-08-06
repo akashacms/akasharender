@@ -81,8 +81,6 @@ module.exports = class HTMLRenderer extends Renderer {
 
             // const layoutStart = new Date();
 
-            var fnLayout;
-            var layouttext;
             var layoutcontent;
             var layoutdata;
             var layoutrendered;
@@ -96,11 +94,15 @@ module.exports = class HTMLRenderer extends Renderer {
                 throw new Error(`No layout found in ${util.inspect(config.layoutDirs)} for ${metadata.layout} in file ${metadata.document.path}`);
             }
 
-            let layout = await fs.readFile(found.fspath, 'utf8');
-            layouttext = layout;
-            var fm = matter(layout);
-            layoutcontent = fm.content;
-            layoutdata    = this.copyMetadataProperties(metadata, fm.data);
+            if (found.docContent) {
+                layoutcontent = found.docContent;
+                layoutdata = this.copyMetadataProperties(metadata, found.metadata);
+            } else {
+                let layout = await fs.readFile(found.fspath, 'utf8');
+                let fm = matter(layout);
+                layoutcontent = fm.content;
+                layoutdata    = this.copyMetadataProperties(metadata, fm.data);
+            }
             layoutdata.content = rendered;
             const renderer = config.findRendererPath(metadata.layout);
             if (!renderer) {
@@ -484,9 +486,9 @@ module.exports = class HTMLRenderer extends Renderer {
             metadata[yprop] = docInfo.docMetadata[yprop];
             fmmcount++;
         }
-        if (fmmcount <= 0) {
+        /* if (fmmcount <= 0) {
             console.error(`WARNING: No metadata discovered in ${docInfo.vpath}`);
-        }
+        } */
 
         metadata.content = "";
         metadata.document = {};

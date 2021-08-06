@@ -36,7 +36,9 @@ export async function partial(config, fname, metadata) {
     const renderer = config.findRendererPath(found.vpath);
     if (renderer) {
         // console.log(`partial about to render ${util.inspect(found.vpath)}`);
-        var partialText = await fsp.readFile(found.fspath, 'utf8');
+        let partialText = found.docContent
+                ? found.docContent
+                : await fsp.readFile(found.fspath, 'utf8');
 
         // Some renderers (Nunjuks) require that metadata.config
         // point to the config object.  This block of code
@@ -99,7 +101,9 @@ export function partialSync(config, fname, metadata) {
         }
         mdata.config = config;
         mdata.partialSync = partialSync.bind(renderer, config);
-        let partialText = fs.readFileSync(found.fspath, 'utf8');
+        let partialText = found.docContent
+                ? found.docContent
+                : fs.readFileSync(found.fspath, 'utf8');
         return renderer.renderSync(partialText, mdata);
     } else if (found.vpath.endsWith('.html') || found.vpath.endsWith('.xhtml')) {
         return fs.readFileSync(found.fspath, 'utf8');

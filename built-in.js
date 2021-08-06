@@ -559,13 +559,16 @@ class ShowContent extends mahabhuta.CustomElement {
         const style   = $element.attr('style');
         const dest    = $element.attr('dest');
         const contentImage = $element.attr('content-image');
+        let doc2read;
         if (! href.startsWith('/')) {
             let dir = path.dirname(metadata.document.path);
-            href = path.join('/', dir, href);
+            doc2read = path.join('/', dir, href);
+        } else {
+            doc2read = href;
         }
-        href = href.startsWith('/') ? href.substring(1) : href;
-        // console.log(`ShowContent ${util.inspect(metadata.document)} ${href}`);
-        const doc     = await documents.readDocument(this.array.options.config, href);
+        // console.log(`ShowContent ${util.inspect(metadata.document)} ${doc2read}`);
+        const documents = (await filecache).documents;
+        const doc = await documents.find(doc2read);
         let ret = await (await partialFuncs).partial(this.array.options.config, template, {
             href, clazz, id, caption, width, style, dest, contentImage,
             document: doc
