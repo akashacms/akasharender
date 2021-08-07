@@ -54,6 +54,7 @@
     "relative": "^3.0.x",
     "rss": "^1.2.x",
     "sharp": "^0.26.x",
+    "tempura": "^0.3.2",
     "uuid": "^8.3.x"
   },
   "devDependencies": {},
