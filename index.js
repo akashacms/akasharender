@@ -1120,6 +1120,7 @@ module.exports.Configuration = class Configuration {
         if (!this.findRendererName(renderer.name)) {
             this[_config_renderers].push(renderer);
             renderer.akasha = this.akasha;
+            renderer.config = this;
         }
     }
 
