@@ -1,5 +1,5 @@
 ---
-layout: default-once.html.handlebars
+layout: default-once.html.tempura
 title: Figure/Image Formatted with Liquid template
 ---
 

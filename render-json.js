@@ -38,13 +38,15 @@ module.exports = class JSONRenderer extends HTMLRenderer {
     }
 
     renderSync(text, metadata) {
-        var json = JSON.parse(text);
+        let json = JSON.parse(text);
+        // console.log(`JSONRenderer renderSync ${text} ==> ${util.inspect(json)}`);
+        // console.log(`JSONRenderer renderSync JSONFormatter ${metadata.JSONFormatter}`);
         return partialSync(metadata.config, metadata.JSONFormatter, { data: json });
     }
 
     async render(text, metadata) {
         try {
-            var json = JSON.parse(text);
+            let json = JSON.parse(text);
             // console.log(`JSONRenderer ${text} ==> ${util.inspect(json)}`);
             // console.log(`JSONRenderer JSONFormatter ${metadata.JSONFormatter}`);
             return await partial(metadata.config, metadata.JSONFormatter, { data: json });

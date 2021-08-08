@@ -379,6 +379,11 @@ describe('teaser, content', function() {
         checkBodyClass(html, $);
     });
 
+    it('should find added body class values with Tempura', async function() {
+        let { html, $ } = await akasha.readRenderedFile(config, 'body-class-tempura.html');
+        checkBodyClass(html, $);
+    });
+
     const checkFigImg = (html, $) => {
 
         assert.exists(html, 'result exists');
@@ -411,6 +416,11 @@ describe('teaser, content', function() {
 
     it('should render fig-img with Handlebars', async function() {
         let { html, $ } = await akasha.readRenderedFile(config, 'fig-img-handlebars.html');
+        checkFigImg(html, $);
+    });
+
+    it('should render fig-img with Tempura', async function() {
+        let { html, $ } = await akasha.readRenderedFile(config, 'fig-img-tempura.html');
         checkFigImg(html, $);
     });
 
@@ -761,6 +771,11 @@ describe('teaser, content', function() {
         await checkImg2Resize(html, $, config);
     });
 
+    it('should resize img with Tempura', async function() {
+        let { html, $ } = await akasha.readRenderedFile(config, 'img2resize-tempura.html');
+        await checkImg2Resize(html, $, config);
+    });
+
     const checkShowContent = (html, $) => {
         assert.exists(html, 'result exists');
         assert.isString(html, 'result isString');
@@ -902,6 +917,11 @@ describe('teaser, content', function() {
 
     it('should process anchor cleanups with Handlebars', async function() {
         let { html, $ } = await akasha.readRenderedFile(config, 'anchor-cleanups-handlebars.html');
+        checkAnchorCleanups(html, $);
+    });
+
+    it('should process anchor cleanups with tempura', async function() {
+        let { html, $ } = await akasha.readRenderedFile(config, 'anchor-cleanups-tempura.html');
         checkAnchorCleanups(html, $);
     });
 
@@ -1248,6 +1268,11 @@ describe('Partials', function() {
                 'This is to be included');
     });
 
+    it('should render HTML and EJS partials with Tempura', async function() {
+        let { html, $ } = await akasha.readRenderedFile(config, 'partials-tempura.html');
+        checkPartials(html, $);
+    });
+
     it('should render HTML and EJS partials with Handlebars', async function() {
         let { html, $ } = await akasha.readRenderedFile(config, 'partials-handlebars.html');
         checkPartials(html, $);
@@ -1288,6 +1313,11 @@ describe('JSON document', function() {
         let { html, $ } = await akasha.readRenderedFile(config, 'json-data-handlebars.html');
         checkJSONdata(html, $);
     });
+
+    /* it('should render JSON document with Tempura', async function() {
+        let { html, $ } = await akasha.readRenderedFile(config, 'json-data-tempura.html');
+        checkJSONdata(html, $);
+    }); */
 });
 
 describe('AsciiDoc document', function() {
@@ -1320,6 +1350,11 @@ describe('AsciiDoc document', function() {
 
     it('should render AsciiDoc document with Handlebars', async function() {
         let { html, $ } = await akasha.readRenderedFile(config, 'asciidoctor-handlebars.html');
+        checkAsciidoc(html, $);
+    });
+
+    it('should render AsciiDoc document with Tempura', async function() {
+        let { html, $ } = await akasha.readRenderedFile(config, 'asciidoctor-tempura.html');
         checkAsciidoc(html, $);
     });
 });
@@ -1368,6 +1403,11 @@ describe('code-embed element', function() {
 
     it('should render code-embed document rendered with Handlebars', async function() {
         let { html, $ } = await akasha.readRenderedFile(config, 'code-embed-handlebars.html');
+        checkCodeEmbed(html, $);
+    });
+
+    it('should render code-embed document rendered with Tempura', async function() {
+        let { html, $ } = await akasha.readRenderedFile(config, 'code-embed-tempura.html');
         checkCodeEmbed(html, $);
     });
 });

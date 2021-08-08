@@ -859,6 +859,56 @@ describe('Documents cache', function() {
             fspath: '**/documents/style.css.less',
             renderPath: 'style.css',
             vpath: 'style.css.less'
+        },
+        {
+            fspath: '**/documents/anchor-cleanups-tempura.html.md',
+            renderPath: 'anchor-cleanups-tempura.html',
+            vpath: 'anchor-cleanups-tempura.html.md'
+        },
+        {
+            fspath: '**/documents/asciidoctor-tempura.html.adoc',
+            renderPath: 'asciidoctor-tempura.html',
+            vpath: 'asciidoctor-tempura.html.adoc'
+        },
+        {
+            fspath: '**/documents/body-class-tempura.html.md',
+            renderPath: 'body-class-tempura.html',
+            vpath: 'body-class-tempura.html.md'
+        },
+        {
+            fspath: '**/documents/code-embed-tempura.html.md',
+            renderPath: 'code-embed-tempura.html',
+            vpath: 'code-embed-tempura.html.md'
+        },
+        {
+            fspath: '**/documents/fig-img-tempura.html.md',
+            renderPath: 'fig-img-tempura.html',
+            vpath: 'fig-img-tempura.html.md'
+        },
+        {
+            fspath: '**/documents/img2figimg-tempura.html.md',
+            renderPath: 'img2figimg-tempura.html',
+            vpath: 'img2figimg-tempura.html.md'
+        },
+        {
+            fspath: '**/documents/img2resize-tempura.html.md',
+            renderPath: 'img2resize-tempura.html',
+            vpath: 'img2resize-tempura.html.md'
+        },
+        {
+            fspath: '**/documents/json-data-tempura.html.json',
+            renderPath: 'json-data-tempura.html',
+            vpath: 'json-data-tempura.html.json'
+        },
+        {
+            fspath: '**/documents/json-data-tempura.html.json-ignore',
+            renderPath: 'json-data-tempura.html.json-ignore',
+            vpath: 'json-data-tempura.html.json-ignore'
+        },
+        {
+            fspath: '**/documents/partials-tempura.html.tempura',
+            renderPath: 'partials-tempura.html',
+            vpath: 'partials-tempura.html.tempura'
         }
     ];
 
@@ -1212,6 +1262,16 @@ describe('Layouts cache', function() {
             fspath: '**/layouts/njkincl.html.njk',
             renderPath: 'njkincl.html.njk',
             vpath: 'njkincl.html.njk'
+        },
+        {
+            fspath: '**/layouts/default-once.html.tempura',
+            renderPath: 'default-once.html.tempura',
+            vpath: 'default-once.html.tempura'
+        },
+        {
+            fspath: '**/layouts/default.html.tempura',
+            renderPath: 'default.html.tempura',
+            vpath: 'default.html.tempura'
         }
     ];
 
@@ -1323,6 +1383,21 @@ describe('Partials cache', function() {
             fspath: '**/partials/ak_teaser.html.ejs',
             renderPath: 'ak_teaser.html.ejs',
             vpath: 'ak_teaser.html.ejs'
+        },
+        {
+            fspath: '**/partials/listrender.html.tempura',
+            renderPath: 'listrender.html.tempura',
+            vpath: 'listrender.html.tempura'
+        },
+        {
+            fspath: '**/partials/json-format.html.tempura',
+            renderPath: 'json-format.html.tempura',
+            vpath: 'json-format.html.tempura'
+        },
+        {
+            fspath: '**/partials/strong.html.tempura',
+            renderPath: 'strong.html.tempura',
+            vpath: 'strong.html.tempura'
         }
     ];
 
