@@ -35,8 +35,6 @@
 <article id="duplicate">
     <ak-insert-body-content></ak-insert-body-content>
 </article>
-
-{{ config.plugin('akashacms-builtin').doFooterJavaScript(document = document, headerJavaScriptAddBottom = headerJavaScriptAddBottom) }}
 <ak-footerJavaScript></ak-footerJavaScript>
 </body>
 </html>

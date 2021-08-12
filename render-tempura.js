@@ -35,7 +35,7 @@ function extractFileNameMetaData(args) {
             continue;
         }
         if (!(prop in data)) {
-            data[prop] = frontmatter[prop];
+            data[prop] = args[prop];
         }
     }
     return { fileName, metadata: data };
