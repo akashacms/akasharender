@@ -61,7 +61,7 @@ module.exports = class EJSRenderer extends HTMLRenderer {
     }
 
     renderSync(text, metadata, vpinfo) {
-        let opts = this.getEJSOptions(vpinfo.fspath);
+        let opts = this.getEJSOptions(vpinfo ? vpinfo.fspath : undefined);
         // console.log(`render  ${text} ${metadata} ${opts}`);
         return ejs.render(text, metadata, opts);
     }
@@ -70,7 +70,7 @@ module.exports = class EJSRenderer extends HTMLRenderer {
         /* return Promise.resolve(ejs.render(text, metadata)); */
         return new Promise((resolve, reject) => {
             try {
-                let opts = this.getEJSOptions(vpinfo.fspath);
+                let opts = this.getEJSOptions(vpinfo ? vpinfo.fspath : undefined);
                 // console.log(`render async ${text} ${metadata} ${opts}`);
                 resolve(ejs.render(text, metadata, opts));
             } catch(e) {
