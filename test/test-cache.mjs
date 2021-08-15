@@ -909,6 +909,11 @@ describe('Documents cache', function() {
             fspath: '**/documents/partials-tempura.html.tempura',
             renderPath: 'partials-tempura.html',
             vpath: 'partials-tempura.html.tempura'
+        },
+        {
+            fspath: '**/documents/ejs-include.html.ejs',
+            vpath: 'ejs-include.html.ejs',
+            renderPath: 'ejs-include.html'
         }
     ];
 

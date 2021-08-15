@@ -1279,6 +1279,22 @@ describe('Partials', function() {
     });
 });
 
+// This was an attempt to support the EJS include function
+describe('EJS Include', function() {
+    it('should render EJS include functions', async function() {
+        let { html, $ } = await akasha.readRenderedFile(config, 'ejs-include.html');
+        
+        assert.exists(html, 'result exists');
+        assert.isString(html, 'result isString');
+
+        assert.include($('article #hello-include #html-partial').html(), 'tiny partial');
+        assert.include($('article #hello-partial #html-partial').html(), 'tiny partial');
+        assert.include($('article #strong-include #strong').html(), 'Include Body');
+        assert.include($('article #strong-partial #strong').html(), 'Include Partials');
+    });
+
+});
+
 describe('JSON document', function() {
     const checkJSONdata = (html, $) => {
         assert.exists(html, 'result exists');

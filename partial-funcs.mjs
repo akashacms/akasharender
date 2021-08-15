@@ -53,7 +53,7 @@ export async function partial(config, fname, metadata) {
         mdata.config = config;
         mdata.partialSync = partialSync.bind(renderer, config);
         mdata.partial     = partial.bind(renderer, config);
-        return renderer.render(partialText, mdata);
+        return renderer.render(partialText, mdata, found);
     } else if (found.vpath.endsWith('.html') || found.vpath.endsWith('.xhtml')) {
         // console.log(`partial reading file ${found.vpath}`);
         return fsp.readFile(found.fspath, 'utf8');
@@ -104,7 +104,7 @@ export function partialSync(config, fname, metadata) {
         let partialText = found.docContent
                 ? found.docContent
                 : fs.readFileSync(found.fspath, 'utf8');
-        return renderer.renderSync(partialText, mdata);
+        return renderer.renderSync(partialText, mdata, found);
     } else if (found.vpath.endsWith('.html') || found.vpath.endsWith('.xhtml')) {
         return fs.readFileSync(found.fspath, 'utf8');
     } else {

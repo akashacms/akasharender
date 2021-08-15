@@ -1,0 +1,18 @@
+---
+layout: default.html.ejs
+title: EJS Include
+---
+
+<span id="hello-include"><%- include('helloworld.html') %></span>
+
+<span id="hello-partial"><partial file-name='helloworld.html'></partial></span>
+
+<span id="strong-include">
+<%- include('strong.html.ejs', { partialBody: 'Include Body' }) %>
+</span>
+
+<span id="strong-partial">
+<partial file-name="strong.html.ejs">
+Include Partials
+</partial>
+</span>
