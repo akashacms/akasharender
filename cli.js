@@ -518,6 +518,7 @@ program
             let filecache = await _filecache;
             // console.log(filecache.documents);
             await filecache.partials.isReady();
+            await akasha.setupPluginCaches(config)
             console.log(filecache.partials.paths());
             await akasha.closeCaches();
         } catch (e) {
@@ -536,6 +537,7 @@ program
         try {
             const config = require(path.join(process.cwd(), configFN));
             let akasha = config.akasha;
+            // await akasha.cacheSetupComplete(config);
             await akasha.cacheSetup(config);
             await akasha.setupPartials(config);
             let filecache = await _filecache;

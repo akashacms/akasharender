@@ -50,7 +50,8 @@ exports.filecache = import('./cache/file-cache.mjs');
 
 exports.cacheSetup = async function(config) {
     try {
-        await (await exports.cache).setup(config);
+        let cache = (await exports.cache);
+        await cache.setup(config);
     } catch (err) {
         console.error(`INITIALIZATION FAILURE COULD NOT INITIALIZE CACHE `, err);
         process.exit(1);
@@ -59,8 +60,10 @@ exports.cacheSetup = async function(config) {
 
 exports.closeCaches = async function() {
     try {
-        await (await exports.filecache).close();
-        await (await exports.cache).close();
+        let cache = (await exports.cache);
+        let filecache = (await exports.filecache);
+        await filecache.close();
+        await cache.close();
     } catch (err) {
         console.error(`INITIALIZATION FAILURE COULD NOT CLOSE CACHES `, err);
         process.exit(1);
@@ -69,7 +72,8 @@ exports.closeCaches = async function() {
 
 exports.setupDocuments = async function(config) {
     try {
-        await (await exports.filecache).setupDocuments(config);
+        let filecache = (await exports.filecache);
+        await filecache.setupDocuments(config);
     } catch (err) {
         console.error(`INITIALIZATION FAILURE COULD NOT INITIALIZE DOCUMENTS CACHE `, err);
         process.exit(1);
@@ -78,7 +82,8 @@ exports.setupDocuments = async function(config) {
 
 exports.setupAssets = async function(config) {
     try {
-        await (await exports.filecache).setupAssets(config);
+        let filecache = (await exports.filecache);
+        await filecache.setupAssets(config);
     } catch (err) {
         console.error(`INITIALIZATION FAILURE COULD NOT INITIALIZE ASSETS CACHE `, err);
         process.exit(1);
@@ -87,7 +92,8 @@ exports.setupAssets = async function(config) {
 
 exports.setupLayouts = async function(config) {
     try {
-        await (await exports.filecache).setupLayouts(config);
+        let filecache = (await exports.filecache);
+        await filecache.setupLayouts(config);
     } catch (err) {
         console.error(`INITIALIZATION FAILURE COULD NOT INITIALIZE LAYOUTS CACHE `, err);
         process.exit(1);
@@ -96,7 +102,9 @@ exports.setupLayouts = async function(config) {
 
 exports.setupPartials = async function(config) {
     try {
-        await (await exports.filecache).setupPartials(config);
+        let filecache = (await exports.filecache);
+        await filecache.setupPartials(config);
+        // console.log(`setupPartials SUCCESS`);
     } catch (err) {
         console.error(`INITIALIZATION FAILURE COULD NOT INITIALIZE PARTIALS CACHE `, err);
         process.exit(1);

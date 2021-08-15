@@ -6,6 +6,7 @@ import path from 'path';
 import { DirsWatcher } from '@akashacms/stacked-dirs';
 import { getCache } from './cache-forerunner.mjs';
 import minimatch from 'minimatch';
+import fastq from 'fastq';
 
 export var documents;
 export var assets;
@@ -139,6 +140,7 @@ const _symb_watcher = Symbol('watcher');
 const _symb_is_ready = Symbol('isReady');
 const _symb_cache_content = Symbol('cacheContent');
 const _symb_map_renderpath = Symbol('mapRenderPath');
+const _symb_queue = Symbol('queue');
 
 /**
  * FileCache listens to events from DirsWatcher, maintaining file data in
@@ -172,6 +174,24 @@ export class FileCache extends EventEmitter {
         this[_symb_cache_content] = false;
         this[_symb_map_renderpath] = false;
         let that = this;
+        this[_symb_queue] = fastq.promise(async function(event) {
+            if (event.collection !== that.collection) {
+                throw new Error(`handleChanged event for wrong collection; got ${event.collection}, expected ${that.collection}`);
+            }
+            if (event.code === 'changed') {
+                await that.handleChanged(event.collection, event.info);
+                that.emit('change', event.collection, event.info);
+            } else if (event.code === 'added') {
+                await that.handleAdded(event.collection, event.info);
+                that.emit('add', event.collection, event.info);
+            } else if (event.code === 'unlinked') {
+                await that.handleUnlinked(event.collection, event.info);
+                that.emit('unlink', event.collection, event.info);
+            } else if (event.code === 'ready') {
+                await that.handleReady(event.collection);
+                that.emit('ready', event.collection);
+            }
+        }, 1);
     }
 
     get config()     { return this[_symb_config]; }
@@ -194,7 +214,7 @@ export class FileCache extends EventEmitter {
             // This does a 100ms pause
             // That lets us check is_ready every 100ms
             // at very little cost
-            // console.log(`!isReady ${this.collection}`);
+            // console.log(`!isReady ${this.collection} ${this[_symb_dirs].length} ${this[_symb_is_ready]}`);
             await new Promise((resolve, reject) => {
                 setTimeout(() => {
                     resolve();
@@ -391,23 +411,31 @@ export class FileCache extends EventEmitter {
         
         this[_symb_watcher].on('change', async (collection, info) => {
             // console.log(`${collection} changed ${info.vpath}`);
-            await this.handleChanged(collection, info);
-            this.emit('change', collection, info);
+            this[_symb_queue].push({
+                code: 'changed',
+                collection, info
+            });
         })
         .on('add', async (collection, info) => {
             // console.log(`new ${collection} ${info.vpath}`);
-            await this.handleAdded(collection, info);
-            this.emit('add', collection, info);
+            this[_symb_queue].push({
+                code: 'added',
+                collection, info
+            });
         })
         .on('unlink', async (collection, info) => {
             // console.log(`unlink ${collection} ${info.vpath}`);
-            await this.handleUnlinked(collection, info);
-            this.emit('unlink', collection, info);
+            this[_symb_queue].push({
+                code: 'unlinked',
+                collection, info
+            });
         })
         .on('ready', async (collection) => {
             // console.log(`${collection} ready`);
-            await this.handleReady(collection);
-            this.emit('ready', collection);
+            this[_symb_queue].push({
+                code: 'ready',
+                collection
+            });
         });
 
         // console.log(this[_symb_watcher]);
