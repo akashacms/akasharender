@@ -289,7 +289,6 @@ function _doHeaderJavaScript(metadata, options) {
 	// console.log(`_doHeaderJavaScript ${util.inspect(scripts)}`);
 	// console.log(`_doHeaderJavaScript ${util.inspect(options.config.scripts)}`);
 	return _doJavaScripts(metadata, scripts, options);
-	// return render.partialSync(options.config, "ak_javaScript.html.ejs", { javaScripts: scripts });
 }
 
 function _doFooterJavaScript(metadata, options) {
@@ -300,7 +299,6 @@ function _doFooterJavaScript(metadata, options) {
 		scripts = options.config.scripts ? options.config.scripts.javaScriptBottom : undefined;
 	}
 	return _doJavaScripts(metadata, scripts, options);
-	// return render.partialSync(options.config, "ak_javaScript.html.ejs", { javaScripts: scripts });
 }
 
 class StylesheetsElement extends mahabhuta.CustomElement {
@@ -374,7 +372,8 @@ class InsertBodyContent extends mahabhuta.CustomElement {
 class InsertTeaser extends mahabhuta.CustomElement {
 	get elementName() { return "ak-teaser"; }
 	async process($element, metadata, dirty) {
-		return (await partialFuncs).partial(this.array.options.config, "ak_teaser.html.ejs", {
+		return (await partialFuncs).partial(this.array.options.config,
+                                            "ak_teaser.html.njk", {
 			teaser: typeof metadata["ak-teaser"] !== "undefined"
 				? metadata["ak-teaser"] : metadata.teaser
 		});

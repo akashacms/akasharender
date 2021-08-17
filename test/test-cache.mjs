@@ -914,6 +914,11 @@ describe('Documents cache', function() {
             fspath: '**/documents/ejs-include.html.ejs',
             vpath: 'ejs-include.html.ejs',
             renderPath: 'ejs-include.html'
+        },
+        {
+            fspath: '**/documents/teaser-njk-macro.html.md',
+            vpath: 'teaser-njk-macro.html.md',
+            renderPath: 'teaser-njk-macro.html'
         }
     ];
 
@@ -1277,6 +1282,11 @@ describe('Layouts cache', function() {
             fspath: '**/layouts/default.html.tempura',
             renderPath: 'default.html.tempura',
             vpath: 'default.html.tempura'
+        },
+        {
+            fspath: '**/layouts/default-once-teaser.html.njk',
+            vpath: 'default-once-teaser.html.njk',
+            renderPath: 'default-once-teaser.html.njk'
         }
     ];
 
@@ -1403,6 +1413,11 @@ describe('Partials cache', function() {
             fspath: '**/partials/strong.html.tempura',
             renderPath: 'strong.html.tempura',
             vpath: 'strong.html.tempura'
+        },
+        {
+            fspath: '**/partials/ak_teaser.html.njk',
+            vpath: 'ak_teaser.html.njk',
+            renderPath: 'ak_teaser.html.njk'
         }
     ];
 

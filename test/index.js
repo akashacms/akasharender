@@ -351,6 +351,16 @@ describe('teaser, content', function() {
         assert.include($('body article#duplicate').html(), 'This is content text');
     });
 
+    it('should find teaser, using nunjucks macro', async function() {
+        let { html, $ } = await akasha.readRenderedFile(config, 'teaser-njk-macro.html');
+
+        assert.exists(html, 'result exists');
+        assert.isString(html, 'result isString');
+
+        assert.include($('body section#teaser').html(), 'This is teaser text w/ NJK macro');
+        assert.include($('body article#original').html(), 'This is content text');
+    });
+
     const checkBodyClass = (html, $) => {
 
         assert.exists(html, 'result exists');
