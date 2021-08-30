@@ -23,8 +23,11 @@
 
 const program   = require('commander');
 const ghpages   = require('gh-pages');
+const fs        = require('fs');
+const fsp       = require('fs/promises');
 const path      = require('path');
 const util      = require('util');
+const { Console } = require('console');
 const filez     = require('./filez');
 const data      = require('./data');
 
@@ -110,6 +113,8 @@ program
     .command('render <configFN>')
     .description('Render a site into output directory')
     .option('--quiet', 'Do not print the rendering report')
+    .option('--results-to <resultFile>', 'Store the results into the named file')
+    .option('--perfresults <perfResultsFile>', 'Store the time to render each document')
     .action(async (configFN, cmdObj) => {
         // console.log(`render: akasha: ${util.inspect(akasha)}`);
         try {
@@ -131,6 +136,44 @@ program
                         // console.log(util.inspect(result.result));
                     }
                 }
+            }
+            if (cmdObj.resultsTo) {
+                const output = fs.createWriteStream(cmdObj.resultsTo);
+                for (let result of results) {
+                    if (result.error) {
+                        output.write('****ERROR '+ result.error + '\n');
+                    } else {
+                        output.write(result.result + '\n');
+                        // console.log(util.inspect(result.result));
+                    }
+                }
+                output.close();
+            }
+            if (cmdObj.perfresults) {
+                const output = fs.createWriteStream(cmdObj.perfresults);
+                for (let result of results) {
+                    if (result.error) {
+                        // Ignore
+                    } else if (result.result.startsWith('COPY')) {
+                        // Ignore
+                    } else {
+                        let results = result.result.split('\n');
+                        let perf = results[0];
+                        let matches = perf.match(/.* ==> (.*) \(([0-9\.]+) seconds\)$/);
+                        if (!matches) continue;
+                        if (matches.length < 3) continue;
+                        let fn = matches[1];
+                        let time = matches[2];
+                        let report = `${time} ${fn}`;
+                        for (let i = 1; i < results.length; i++) {
+                            let stages = results[i].match(/(FRONTMATTER|FIRST RENDER|SECOND RENDER|MAHABHUTA|RENDERED) ([0-9\.]+) seconds$/);
+                            if (!stages || stages.length < 3) continue;
+                            report += ` ${stages[1]} ${stages[2]}`;
+                        }
+                        output.write(`${report}\n`);
+                    }
+                }
+                output.close();
             }
             await akasha.closeCaches();
         } catch (e) {
