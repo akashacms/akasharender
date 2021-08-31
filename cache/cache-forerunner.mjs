@@ -55,6 +55,10 @@ export function cacheExists(cachenm) {
     return caches.has(cachenm);
 }
 
+export function view(viewnm) {
+    return db.view(viewnm);
+}
+
 export function addCache(cachenm) {
     if (caches.has(cachenm)) {
         return;
