@@ -50,7 +50,7 @@
     "mime": "^2.5.2",
     "minimatch": "^3.0.4",
     "nunjucks": "^3.2.x",
-    "oembetter": "^0.1.x",
+    "oembetter": "^1.0.x",
     "relative": "^3.0.x",
     "rss": "^1.2.x",
     "sharp": "^0.26.x",
