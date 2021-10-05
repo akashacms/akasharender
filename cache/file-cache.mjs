@@ -33,12 +33,30 @@ const remapdirs = dirz => {
     });
 };
 
+/*
+ * NOTICE there are handlers for `error` events here.
+ * I was not able to come up with a method to automatically detect
+ * if an error event is thrown from a FileCache instance.
+ *
+ * The test suite for this is in `bad-formatting.js` and the goal is to
+ * run those tests, automatically determining that the error is found.
+ * But these setup functions are not directly called in that test case.
+ * Do we rewrite the test case to call the functions in `cacheSetupComplete`
+ * and set up error handlers to ensure the error is emitted?
+ *
+ * Unless we do something like that, testing this feature will require a
+ * manual run of the bad-formatting tests.
+ */
+
 export async function setupDocuments(config) {
     try {
         // console.log(`filecache setup documents ${util.inspect(config.documentDirs)}`);
         const docsDirs = remapdirs(config.documentDirs);
         documents = new FileCache(config, docsDirs, 'documents');
         documents.mapRenderPath = true;
+        documents.on('error', err => {
+            console.error(`ERROR in documents `, err);
+        });
         await documents.setup();
         await config.hookFileCacheSetup('documents', documents);
         // console.log(`filecache FINISH documents setup`);
@@ -54,6 +72,9 @@ export async function setupAssets(config) {
         const assetsDirs = remapdirs(config.assetDirs);
         // console.log(`filecache setup assets ${util.inspect(assetsDirs)}`);
         assets = new FileCache(config, assetsDirs, 'assets');
+        assets.on('error', err => {
+            console.error(`ERROR in assets `, err);
+        });
         await assets.setup();
         await config.hookFileCacheSetup('assets', assets);
         // console.log(`filecache FINISH assets setup`);
@@ -68,6 +89,9 @@ export async function setupLayouts(config) {
         // console.log(`filecache setup layouts ${util.inspect(config.documentDirs)}`);
         const layoutDirs = remapdirs(config.layoutDirs);
         layouts = new FileCache(config, layoutDirs, 'layouts');
+        layouts.on('error', err => {
+            console.error(`ERROR in layouts `, err);
+        });
         layouts.cacheContent = true;
         await layouts.setup();
         await config.hookFileCacheSetup('layouts', layouts);
@@ -83,6 +107,9 @@ export async function setupPartials(config) {
         // console.log(`filecache setup partials ${util.inspect(config.documentDirs)}`);
         const partialsDirs = remapdirs(config.partialsDirs);
         partials = new FileCache(config, partialsDirs, 'partials');
+        partials.on('error', err => {
+            console.error(`ERROR in partials `, err);
+        });
         partials.cacheContent = true;
         await partials.setup();
         await config.hookFileCacheSetup('partials', partials);
@@ -179,14 +206,44 @@ export class FileCache extends EventEmitter {
                 throw new Error(`handleChanged event for wrong collection; got ${event.collection}, expected ${that.collection}`);
             }
             if (event.code === 'changed') {
-                await that.handleChanged(event.collection, event.info);
-                that.emit('change', event.collection, event.info);
+                try {
+                    // console.log(`change ${event.collection} ${event.info.vpath}`);
+                    await that.handleChanged(event.collection, event.info);
+                    that.emit('change', event.collection, event.info);
+                } catch (e) {
+                    that.emit('error', {
+                        code: event.code,
+                        collection: event.collection,
+                        vpath: event.info.vpath,
+                        error: e
+                    });
+                }
             } else if (event.code === 'added') {
-                await that.handleAdded(event.collection, event.info);
-                that.emit('add', event.collection, event.info);
+                try {
+                    // console.log(`add ${event.collection} ${event.info.vpath}`);
+                    await that.handleAdded(event.collection, event.info);
+                    that.emit('add', event.collection, event.info);
+                } catch (e) {
+                    that.emit('error', {
+                        code: event.code,
+                        collection: event.collection,
+                        vpath: event.info.vpath,
+                        error: e
+                    });
+                }
             } else if (event.code === 'unlinked') {
-                await that.handleUnlinked(event.collection, event.info);
-                that.emit('unlink', event.collection, event.info);
+                try {
+                    // console.log(`unlink ${event.collection} ${event.info.vpath}`);
+                    await that.handleUnlinked(event.collection, event.info);
+                    that.emit('unlink', event.collection, event.info);
+                } catch (e) {
+                    that.emit('error', {
+                        code: event.code,
+                        collection: event.collection,
+                        vpath: event.info.vpath,
+                        error: e
+                    });
+                }
             } else if (event.code === 'ready') {
                 await that.handleReady(event.collection);
                 that.emit('ready', event.collection);
