@@ -233,7 +233,7 @@ export class FileCache extends EventEmitter {
                 }
             } else if (event.code === 'unlinked') {
                 try {
-                    // console.log(`unlink ${event.collection} ${event.info.vpath}`);
+                    // console.log(`unlink ${event.collection} ${event.info.vpath}`, event.info);
                     await that.handleUnlinked(event.collection, event.info);
                     that.emit('unlink', event.collection, event.info);
                 } catch (e) {

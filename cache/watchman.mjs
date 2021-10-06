@@ -63,40 +63,117 @@ async function rebuild(config) {
 export async function watchman(config) {
     documents
     .on('change', async (collection, info) => {
-        await renderVPath(config, info);
+        try {
+            await renderVPath(config, info);
+        } catch (e) {
+            documents.emit('error', {
+                code: 'change',
+                collection: collection,
+                vpath: info.vpath,
+                error: e
+            });
+        }
     })
     .on('add', async (collection, info) => {
-        await renderVPath(config, info);
+        try {
+            await renderVPath(config, info);
+        } catch (e) {
+            documents.emit('error', {
+                code: 'add',
+                collection: collection,
+                vpath: info.vpath,
+                error: e
+            });
+        }
     })
     .on('unlink', async (collection, info) => {
-        await fs.unlink(path.join(config.renderDestination, info.renderPath));
-        console.log(`UNLINK ${info.renderPath}`);
+        try {
+            // console.log(`UNLINK ${config.renderDestination} ${info.renderPath}`);
+            if (!config.renderDestination || !info.renderPath) {
+                console.log(`UNLINK ${collection} could not perform unlink for `, info);
+                return;
+            }
+            await fs.unlink(path.join(config.renderDestination, info.renderPath));
+            console.log(`UNLINK ${info.renderPath}`);
+        } catch (e) {
+            documents.emit('error', {
+                code: 'unlink',
+                collection: collection,
+                vpath: info.vpath,
+                error: e
+            });
+        }
     });
     console.log('... watching documents');
 
     assets
     .on('change', async (collection, info) => {
-        const destFN = path.join(config.renderDestination, info.renderPath);
-        await fs.copyFile(info.fspath, destFN);
-        console.log(`CHANGE ${info.vpath} COPY==> ${info.renderPath}`);
+        try {
+            const destFN = path.join(config.renderDestination, info.renderPath);
+            await fs.copyFile(info.fspath, destFN);
+            console.log(`CHANGE ${info.vpath} COPY==> ${info.renderPath}`);
+        } catch (e) {
+            assets.emit('error', {
+                code: 'change',
+                collection: collection,
+                vpath: info.vpath,
+                error: e
+            });
+        }
     })
     .on('add', async (collection, info) => {
-        const destFN = path.join(config.renderDestination, info.renderPath);
-        await fs.copyFile(info.fspath, destFN);
-        console.log(`ADD ${info.vpath} COPY==> ${info.renderPath}`);
+        try {
+            const destFN = path.join(config.renderDestination, info.renderPath);
+            await fs.copyFile(info.fspath, destFN);
+            console.log(`ADD ${info.vpath} COPY==> ${info.renderPath}`);
+        } catch (e) {
+            assets.emit('error', {
+                code: 'add',
+                collection: collection,
+                vpath: info.vpath,
+                error: e
+            });
+        }
     })
     .on('unlink', async (collection, info) => {
-        await fs.unlink(path.join(config.renderDestination, info.renderPath));
-        console.log(`UNLINK ${info.renderPath}`);
+        try {
+            await fs.unlink(path.join(config.renderDestination, info.renderPath));
+            console.log(`UNLINK ${info.renderPath}`);
+        } catch (e) {
+            assets.emit('error', {
+                code: 'unlink',
+                collection: collection,
+                vpath: info.vpath,
+                error: e
+            });
+        }
     });
     console.log('... watching assets');
 
     layouts
     .on('change', async (collection, info) => {
-        await renderForLayout(config, info);
+        try {
+            await renderForLayout(config, info);
+        } catch (e) {
+            layouts.emit('error', {
+                code: 'change',
+                collection: collection,
+                vpath: info.vpath,
+                error: e
+            });
+        }
     })
     .on('add', async (collection, info) => {
-        await renderForLayout(config, info);
+        try {
+            await renderForLayout(config, info);
+        } catch (e) {
+            layouts.emit('error', {
+                code: 'add',
+                collection: collection,
+                vpath: info.vpath,
+                error: e
+            });
+        }
     })
     .on('unlink', (collection, info) => {
         // Nothing to do
@@ -105,10 +182,28 @@ export async function watchman(config) {
 
     partials
     .on('change', async (collection, info) => {
-        await rebuild(config);
+        try {
+            await rebuild(config);
+        } catch (e) {
+            partials.emit('error', {
+                code: 'change',
+                collection: collection,
+                vpath: info.vpath,
+                error: e
+            });
+        }
     })
     .on('add', async (collection, info) => {
-        await rebuild(config);
+        try {
+            await rebuild(config);
+        } catch (e) {
+            partials.emit('error', {
+                code: 'add',
+                collection: collection,
+                vpath: info.vpath,
+                error: e
+            });
+        }
     })
     .on('unlink', (collection, info) => {
         // Nothing to do
