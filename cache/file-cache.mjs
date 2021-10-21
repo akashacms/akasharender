@@ -104,7 +104,7 @@ export async function setupLayouts(config) {
 
 export async function setupPartials(config) {
     try {
-        // console.log(`filecache setup partials ${util.inspect(config.documentDirs)}`);
+        // console.log(`filecache setup partials ${util.inspect(config.partialsDirs)}`);
         const partialsDirs = remapdirs(config.partialsDirs);
         partials = new FileCache(config, partialsDirs, 'partials');
         partials.on('error', err => {

@@ -736,6 +736,7 @@ module.exports.Configuration = class Configuration {
                 dir.src = path.join(this.configDir, dir.src);
             }
         }
+        // console.log(`addPartialsDir `, dir);
         this[_config_partialDirs].push(dir);
         return this;
     }
@@ -1124,12 +1125,13 @@ module.exports.Configuration = class Configuration {
     registerRenderer(renderer) {
         if (!(renderer instanceof module.exports.Renderer)) {
             console.error('Not A Renderer '+ util.inspect(renderer));
-            throw new Error('Not a Renderer');
+            throw new Error(`Not a Renderer ${renderer.name}`);
         }
         if (!this.findRendererName(renderer.name)) {
-            this[_config_renderers].push(renderer);
             renderer.akasha = this.akasha;
             renderer.config = this;
+            // console.log(`registerRenderer `, renderer);
+            this[_config_renderers].push(renderer);
         }
     }
 
@@ -1146,8 +1148,9 @@ module.exports.Configuration = class Configuration {
             console.error('Not A Renderer '+ util.inspect(renderer));
             throw new Error('Not a Renderer');
         }
-        this[_config_renderers].unshift(renderer);
         renderer.akasha = this.akasha;
+        renderer.config = this;
+        this[_config_renderers].unshift(renderer);
     }
 
     findRendererName(name) {

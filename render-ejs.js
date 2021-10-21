@@ -52,11 +52,19 @@ module.exports = class EJSRenderer extends HTMLRenderer {
             filename: fspath
         };
 
-        const layoutsMounted = this.config.layoutDirs.map(getMounted);
-        const partialsMounted = this.config.partialsDirs.map(getMounted);
-        const loadFrom = partialsMounted.concat(layoutsMounted);
+        // console.log(`getEJSOptions `, this);
+        if (!this.config) throw new Error(`getEJSOptions no config`);
+        const layoutsMounted = this.config.layoutDirs
+                        ? this.config.layoutDirs.map(getMounted)
+                        : undefined;
+        const partialsMounted = this.config.partialsDirs
+                        ? this.config.partialsDirs.map(getMounted)
+                        : undefined;
+        const loadFrom = partialsMounted
+                        ? partialsMounted.concat(layoutsMounted)
+                        : layoutsMounted;
         // console.log(`getEJSOptions loadFrom `, loadFrom);
-        this.ejsOptions.views = loadFrom;
+        if (loadFrom) this.ejsOptions.views = loadFrom;
         return this.ejsOptions;
     }
 
