@@ -2,6 +2,18 @@
 
 This should probably be kept in GitHub issues -- eventually
 
+# Improved tags support
+
+We've added support for the tags field into the core
+
+CLI commands to retrieve list of tags, list of documents for a given tag, etc
+
+# Removing dead code
+
+RenderedFileCache in cache/file-cache
+
+In HTMLRenderer there are a bunch of old functions
+
 # Supporting responsive image formats
 
 Nowadays we can write something like the following to instruct web browsers to use optional image sizes or formats.
