@@ -756,6 +756,16 @@ describe('Documents cache', function() {
             vpath: 'simple-style-javascript.html.md'
         },
         {
+            fspath: '**/documents/tags-array.html.md',
+            renderPath: 'tags-array.html',
+            vpath: 'tags-array.html.md'
+        },
+        {
+            fspath: '**/documents/tags-string.html.md',
+            renderPath: 'tags-string.html',
+            vpath: 'tags-string.html.md'
+        },
+        {
             fspath: '**/documents/teaser-content.html.md',
             renderPath: 'teaser-content.html',
             vpath: 'teaser-content.html.md'
@@ -1019,6 +1029,65 @@ describe('Documents cache', function() {
         assert.isOk(filezContains(siblings, 'partials-nunjucks.html.njk'));
     });
 
+    describe('tags', function() {
+
+        it('should not find tags in show-content.html', function() {
+            let found = filecache.documents.find('show-content.html');
+
+            assert.isDefined(found);
+            assert.equal(found.mime, 'text/markdown');
+            assert.equal(found.mountPoint, '/');
+
+            assert.isDefined(found.metadata);
+            assert.isDefined(found.metadata.tags);
+            assert.isArray(found.metadata.tags);
+            assert.equal(found.metadata.tags.length, 0);
+        });
+
+        it('should find tags in tags-array.html', function() {
+            let found = filecache.documents.find('tags-array.html');
+
+            assert.isDefined(found);
+            assert.equal(found.mime, 'text/markdown');
+            assert.equal(found.mountPoint, '/');
+
+            assert.isDefined(found.metadata);
+            assert.isDefined(found.metadata.tags);
+            assert.isArray(found.metadata.tags);
+            assert.equal(found.metadata.tags.length, 3);
+
+            assert.isTrue(found.metadata.tags.includes('Tag1'));
+            assert.isTrue(found.metadata.tags.includes('Tag2'));
+            assert.isTrue(found.metadata.tags.includes('Tag3'));
+            assert.isFalse(found.metadata.tags.includes('Tag-string-1'));
+            assert.isFalse(found.metadata.tags.includes('Tag-string-2'));
+            assert.isFalse(found.metadata.tags.includes('Tag-string-3'));
+            assert.isFalse(found.metadata.tags.includes('not-found'));
+        });
+
+        it('should find tags in tags-string.html', function() {
+            let found = filecache.documents.find('/tags-string.html.md');
+
+            assert.isDefined(found);
+            assert.equal(found.mime, 'text/markdown');
+            assert.equal(found.mountPoint, '/');
+
+            assert.isDefined(found.metadata);
+            assert.isDefined(found.metadata.tags);
+            assert.isArray(found.metadata.tags);
+            assert.equal(found.metadata.tags.length, 3);
+
+            assert.isFalse(found.metadata.tags.includes('Tag1'));
+            assert.isFalse(found.metadata.tags.includes('Tag2'));
+            assert.isFalse(found.metadata.tags.includes('Tag3'));
+            assert.isTrue(found.metadata.tags.includes('Tag-string-1'));
+            assert.isTrue(found.metadata.tags.includes('Tag-string-2'));
+            assert.isTrue(found.metadata.tags.includes('Tag-string-3'));
+            assert.isFalse(found.metadata.tags.includes('not-found'));
+        });
+
+    });
+
     it('should find /subdir/show-content-local.html', function() {
         let found = filecache.documents.find('/subdir/show-content-local.html');
 
@@ -1131,88 +1200,94 @@ describe('Documents cache', function() {
         }
     });
 
-    it('should not find mounted/unknown-Skeleton.jpg', function() {
-        let found = filecache.documents.find('mounted/unknown-Skeleton.jpg');
+    describe('Unknown files', function() {
 
-        assert.isUndefined(found);
+        it('should not find mounted/unknown-Skeleton.jpg', function() {
+            let found = filecache.documents.find('mounted/unknown-Skeleton.jpg');
+
+            assert.isUndefined(found);
+        });
+
+        it('should not find /mounted/unknown-Skeleton.jpg', function() {
+            let found = filecache.documents.find('/mounted/unknown-Skeleton.jpg');
+
+            assert.isUndefined(found);
+        });
+
+        it('should not find unknown-Skeleton.jpg', function() {
+            let found = filecache.documents.find('unknown-Skeleton.jpg');
+
+            assert.isUndefined(found);
+        });
+
+        it('should not find /unknown-Skeleton.jpg', function() {
+            let found = filecache.documents.find('/unknown-Skeleton.jpg');
+
+            assert.isUndefined(found);
+        });
+
     });
 
-    it('should not find /mounted/unknown-Skeleton.jpg', function() {
-        let found = filecache.documents.find('/mounted/unknown-Skeleton.jpg');
+    describe('Index files', function() {
 
-        assert.isUndefined(found);
+        it('should find index files for /', function() {
+            let indexes = filecache.documents.indexFiles('/');
+
+            assert.isOk(filezContains(indexes, 'index.html.md'));
+            assert.isOk(filezContains(indexes, 'subdir/index.html.md'));
+            assert.isOk(filezContains(indexes, 'hier-broke/dir1/dir2/index.html.md'));
+            assert.isOk(filezContains(indexes, 'hier/index.html.md'));
+            assert.isOk(filezContains(indexes, 'hier/dir1/index.html.md'));
+            assert.isOk(filezContains(indexes, 'hier/dir1/dir2/index.html.md'));
+            assert.isOk(filezContains(indexes, 'hier/imgdir/index.html.md'));
+        });
+
+        it('should find index files for undefined', function() {
+            let indexes = filecache.documents.indexFiles();
+
+            assert.isOk(filezContains(indexes, 'index.html.md'));
+            assert.isOk(filezContains(indexes, 'subdir/index.html.md'));
+            assert.isOk(filezContains(indexes, 'hier-broke/dir1/dir2/index.html.md'));
+            assert.isOk(filezContains(indexes, 'hier/index.html.md'));
+            assert.isOk(filezContains(indexes, 'hier/dir1/index.html.md'));
+            assert.isOk(filezContains(indexes, 'hier/dir1/dir2/index.html.md'));
+            assert.isOk(filezContains(indexes, 'hier/imgdir/index.html.md'));
+        });
+
+        it('should find index files for hier', function() {
+            let indexes = filecache.documents.indexFiles('hier/');
+            assert.isOk(filezContains(indexes, 'hier/index.html.md'));
+            assert.isOk(filezContains(indexes, 'hier/dir1/index.html.md'));
+            assert.isOk(filezContains(indexes, 'hier/dir1/dir2/index.html.md'));
+            assert.isOk(filezContains(indexes, 'hier/imgdir/index.html.md'));
+
+            assert.isFalse(filezContains(indexes, 'index.html.md'));
+            assert.isFalse(filezContains(indexes, 'subdir/index.html.md'));
+            assert.isFalse(filezContains(indexes, 'hier-broke/dir1/dir2/index.html.md'));
+        });
+
+        it('should find index files for hier/dir1', function() {
+            let indexes = filecache.documents.indexFiles('hier/dir1');
+            assert.isFalse(filezContains(indexes, 'hier/index.html.md'));
+            assert.isOk(filezContains(indexes, 'hier/dir1/index.html.md'));
+            assert.isOk(filezContains(indexes, 'hier/dir1/dir2/index.html.md'));
+            assert.isFalse(filezContains(indexes, 'hier/imgdir/index.html.md'));
+        });
+
+        it('should find index files for hier-broke', function() {
+            let indexes = filecache.documents.indexFiles('hier-broke');
+            assert.isOk(filezContains(indexes, 'hier-broke/dir1/dir2/index.html.md'));
+
+
+            assert.isFalse(filezContains(indexes, 'index.html.md'));
+            assert.isFalse(filezContains(indexes, 'subdir/index.html.md'));
+            assert.isFalse(filezContains(indexes, 'hier/index.html.md'));
+            assert.isFalse(filezContains(indexes, 'hier/dir1/index.html.md'));
+            assert.isFalse(filezContains(indexes, 'hier/dir1/dir2/index.html.md'));
+            assert.isFalse(filezContains(indexes, 'hier/imgdir/index.html.md'));
+        });
+
     });
-    
-    it('should not find unknown-Skeleton.jpg', function() {
-        let found = filecache.documents.find('unknown-Skeleton.jpg');
-
-        assert.isUndefined(found);
-    });
-
-    it('should not find /unknown-Skeleton.jpg', function() {
-        let found = filecache.documents.find('/unknown-Skeleton.jpg');
-
-        assert.isUndefined(found);
-    });
-
-    it('should find index files for /', function() {
-        let indexes = filecache.documents.indexFiles('/');
-
-        assert.isOk(filezContains(indexes, 'index.html.md'));
-        assert.isOk(filezContains(indexes, 'subdir/index.html.md'));
-        assert.isOk(filezContains(indexes, 'hier-broke/dir1/dir2/index.html.md'));
-        assert.isOk(filezContains(indexes, 'hier/index.html.md'));
-        assert.isOk(filezContains(indexes, 'hier/dir1/index.html.md'));
-        assert.isOk(filezContains(indexes, 'hier/dir1/dir2/index.html.md'));
-        assert.isOk(filezContains(indexes, 'hier/imgdir/index.html.md'));
-    });
-
-    it('should find index files for undefined', function() {
-        let indexes = filecache.documents.indexFiles();
-
-        assert.isOk(filezContains(indexes, 'index.html.md'));
-        assert.isOk(filezContains(indexes, 'subdir/index.html.md'));
-        assert.isOk(filezContains(indexes, 'hier-broke/dir1/dir2/index.html.md'));
-        assert.isOk(filezContains(indexes, 'hier/index.html.md'));
-        assert.isOk(filezContains(indexes, 'hier/dir1/index.html.md'));
-        assert.isOk(filezContains(indexes, 'hier/dir1/dir2/index.html.md'));
-        assert.isOk(filezContains(indexes, 'hier/imgdir/index.html.md'));
-    });
-
-
-    it('should find index files for hier', function() {
-        let indexes = filecache.documents.indexFiles('hier/');
-        assert.isOk(filezContains(indexes, 'hier/index.html.md'));
-        assert.isOk(filezContains(indexes, 'hier/dir1/index.html.md'));
-        assert.isOk(filezContains(indexes, 'hier/dir1/dir2/index.html.md'));
-        assert.isOk(filezContains(indexes, 'hier/imgdir/index.html.md'));
-
-        assert.isFalse(filezContains(indexes, 'index.html.md'));
-        assert.isFalse(filezContains(indexes, 'subdir/index.html.md'));
-        assert.isFalse(filezContains(indexes, 'hier-broke/dir1/dir2/index.html.md'));
-    });
-
-    it('should find index files for hier/dir1', function() {
-        let indexes = filecache.documents.indexFiles('hier/dir1');
-        assert.isFalse(filezContains(indexes, 'hier/index.html.md'));
-        assert.isOk(filezContains(indexes, 'hier/dir1/index.html.md'));
-        assert.isOk(filezContains(indexes, 'hier/dir1/dir2/index.html.md'));
-        assert.isFalse(filezContains(indexes, 'hier/imgdir/index.html.md'));
-    });
-
-    it('should find index files for hier-broke', function() {
-        let indexes = filecache.documents.indexFiles('hier-broke');
-        assert.isOk(filezContains(indexes, 'hier-broke/dir1/dir2/index.html.md'));
-
-
-        assert.isFalse(filezContains(indexes, 'index.html.md'));
-        assert.isFalse(filezContains(indexes, 'subdir/index.html.md'));
-        assert.isFalse(filezContains(indexes, 'hier/index.html.md'));
-        assert.isFalse(filezContains(indexes, 'hier/dir1/index.html.md'));
-        assert.isFalse(filezContains(indexes, 'hier/dir1/dir2/index.html.md'));
-        assert.isFalse(filezContains(indexes, 'hier/imgdir/index.html.md'));
-    });
-
 
 });
 

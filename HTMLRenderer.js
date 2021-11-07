@@ -390,6 +390,22 @@ module.exports = class HTMLRenderer extends Renderer {
         metadata.document.path = docInfo.vpath;
         metadata.document.renderTo = docInfo.renderPath;
 
+        // Ensure the <em>tags</em> field is an array
+        if (!(metadata.tags)) {
+            metadata.tags = [];
+        } else if (typeof (metadata.tags) === 'string') {
+            let taglist = [];
+            const re = /\s*,\s*/;
+            metadata.tags.split(re).forEach(tag => {
+                taglist.push(tag.trim());
+            });
+            metadata.tags = taglist;
+        } else if (!Array.isArray(metadata.tags)) {
+            throw new Error(
+                `FORMAT ERROR - ${docInfo.vpath} has badly formatted tags `,
+                metadata.tags);
+        }
+
         metadata.config      = config;
         metadata.partialSync = (await partialFuncs).partialSync.bind(renderer, config);
         metadata.partial     = (await partialFuncs).partial.bind(renderer, config);
