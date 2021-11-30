@@ -143,11 +143,9 @@ exports.cacheSetupComplete = async function(config) {
     }
 }
 
-// exports.cache = require('./caching');
 exports.Plugin = require('./Plugin');
 
 const render = require('./render');
-// ?? What is this ?? const { cache } = require('ejs');
 
 module.exports.Renderer = require('./Renderer');
 module.exports.HTMLRenderer = require('./HTMLRenderer');
@@ -247,21 +245,6 @@ exports.findRendererPath = function(p) {
  * @params {string} rendersTo The full path of the rendered file
  * @return {Object} Description of the source file
  */
-
-// It's possible this is no longer being used.
-// This is of course supplanted by FileCache.find
-// In fact, the function itself is Deprecated and
-// throws an Error instead.
-// exports.findRendersTo = filez.findRendersTo;
-
-/**
- *
- *
- * @param dir
- * @param fpath
- */
-// NO LONGER USED exports.readFile = filez.readFile;
-exports.createNewFile = filez.createNewFile;
 
 const partialFuncs = import('./partial-funcs.mjs');
 

@@ -28,22 +28,6 @@ title: AkashaRender Configuration object
 EOF
 dox --api <../Configuration.js >>guide/api/Configuration.js.html.md
 
-cat <<EOF >guide/api/documents.js.html.md
----
-layout: plugin-documentation.html.ejs
-title: Documents
----
-EOF
-dox --api <../documents.js >>guide/api/documents.js.html.md
-
-cat <<EOF >guide/api/filez.js.html.md
----
-layout: plugin-documentation.html.ejs
-title: File-system operations
----
-EOF
-dox --api <../filez.js >>guide/api/filez.js.html.md
-
 cat <<EOF >guide/api/HTMLRenderer.js.html.md
 ---
 layout: plugin-documentation.html.ejs
