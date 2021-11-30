@@ -26,7 +26,6 @@ const util  = require('util');
 const sharp = require('sharp');
 const uuid  = require('uuid');
 const uuidv1 = uuid.v1;
-const documents = require('./documents');
 const filez = require('./filez');
 const render = require('./render');
 const partialFuncs = import('./partial-funcs.mjs');

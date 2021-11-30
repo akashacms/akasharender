@@ -36,7 +36,6 @@ const mahabhuta = require('mahabhuta');
 exports.mahabhuta = mahabhuta;
 const cheerio = require('cheerio');
 const mahaPartial = require('mahabhuta/maha/partial');
-const documents = require('./documents');
 
 const mime = require('mime');
 
@@ -263,19 +262,6 @@ exports.findRendererPath = function(p) {
  */
 // NO LONGER USED exports.readFile = filez.readFile;
 exports.createNewFile = filez.createNewFile;
-
-// These functions from documents.js seem to be unuseful.
-// The last function has been rewritten to be minimal
-// and straightforward.
-//
-// exports.Document = documents.Document;
-// exports.HTMLDocument = documents.HTMLDocument;
-// exports.documentTree = documents.documentTree;
-// exports.documentSearch = async function(config, options) {
-//    const documents = (await exports.filecache).documents;
-//    return documents.search(config, options);
-// }
-exports.readDocument   = documents.readDocument;
 
 const partialFuncs = import('./partial-funcs.mjs');
 
