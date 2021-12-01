@@ -1151,7 +1151,7 @@ describe('Documents cache', function() {
             };
 
             assert.isTrue(goodvpath(found[0].vpath));
-            assert.isTrue(goodvpath(found[0].vpath));
+            assert.isTrue(goodvpath(found[1].vpath));
         });
 
     });
