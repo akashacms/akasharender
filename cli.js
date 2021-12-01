@@ -427,6 +427,26 @@ program
     });
 
 program
+    .command('tags <configFN>')
+    .description('List the tags')
+    .action(async (configFN) => {
+        // console.log(`render: akasha: ${util.inspect(akasha)}`);
+        try {
+            const config = require(path.join(process.cwd(), configFN));
+            let akasha = config.akasha;
+            await akasha.cacheSetup(config);
+            await akasha.setupDocuments(config);
+            let filecache = await _filecache;
+            // console.log(filecache.documents);
+            await filecache.documents.isReady();
+            console.log(filecache.documents.tags());
+            await akasha.closeCaches();
+        } catch (e) {
+            console.error(`docinfo command ERRORED ${e.stack}`);
+        }
+    });
+
+program
     .command('search <configFN>')
     .description('Search for documents')
     .option('--root <rootPath>', 'Select only files within the named directory')
@@ -435,6 +455,7 @@ program
     .option('--renderglob <globmatch>', 'Select only files rendering to the glob expression')
     .option('--layout <layout>', 'Select only files matching the layouts')
     .option('--mime <mime>', 'Select only files matching the MIME type')
+    .option('--tag <tag>', 'Select only files with the tag')
     .action(async (configFN, cmdObj) => {
         // console.log(`render: akasha: ${util.inspect(akasha)}`);
         try {
@@ -453,12 +474,13 @@ program
             if (cmdObj.renderglob) options.renderglob = cmdObj.renderglob;
             if (cmdObj.layout) options.layouts = cmdObj.layout;
             if (cmdObj.mime) options.mime = cmdObj.mime;
+            if (cmdObj.tag) options.tag = cmdObj.tag;
             // console.log(options);
             let docs = filecache.documents.search(config, options);
             console.log(docs);
             await akasha.closeCaches();
         } catch (e) {
-            console.error(`docinfo command ERRORED ${e.stack}`);
+            console.error(`search command ERRORED ${e.stack}`);
         }
     });
 

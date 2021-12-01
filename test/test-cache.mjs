@@ -1086,6 +1086,74 @@ describe('Documents cache', function() {
             assert.isFalse(found.metadata.tags.includes('not-found'));
         });
 
+        it('should find documents with Tag1', function() {
+            let found = filecache.documents.search(config, {
+                tag: 'Tag1'
+            });
+
+            assert.isDefined(found);
+            assert.isArray(found);
+            assert.equal(found.length, 1);
+
+            assert.equal(found[0].vpath, 'tags-array.html.md');
+        });
+
+        it('should find documents with Tag-string-2', function() {
+            let found = filecache.documents.search(config, {
+                tag: 'Tag-string-2'
+            });
+
+            assert.isDefined(found);
+            assert.isArray(found);
+            assert.equal(found.length, 1);
+
+            assert.equal(found[0].vpath, 'tags-string.html.md');
+        });
+
+        it('should not find documents with foober', function() {
+            let found = filecache.documents.search(config, {
+                tag: 'foober'
+            });
+
+            assert.isDefined(found);
+            assert.isArray(found);
+            assert.equal(found.length, 0);
+        });
+
+        it('should find all tags', function() {
+            let found = filecache.documents.tags();
+
+            assert.isDefined(found);
+            assert.isArray(found);
+            assert.equal(found.length, 6);
+
+            assert.deepEqual(found, [
+                'Tag-string-1',
+                'Tag-string-2',
+                'Tag-string-3',
+                'Tag1',
+                'Tag2',
+                'Tag3'
+            ]);
+        });
+
+
+        it('should find documents with tags', function() {
+            let found = filecache.documents.documentsWithTags();
+
+            assert.isDefined(found);
+            assert.isArray(found);
+            assert.equal(found.length, 2);
+
+            const goodvpath = (vp) => {
+                return (vp === 'tags-array.html.md')
+                    || (vp === 'tags-string.html.md');
+            };
+
+            assert.isTrue(goodvpath(found[0].vpath));
+            assert.isTrue(goodvpath(found[0].vpath));
+        });
+
     });
 
     it('should find /subdir/show-content-local.html', function() {

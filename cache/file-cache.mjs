@@ -666,6 +666,44 @@ export class FileCache extends EventEmitter {
         return ret;
     }
 
+    documentsWithTags() {
+        let coll = this.getCollection(this.collection);
+        let docs = coll.find({
+            $and: [
+                { renderPath: /\.html$/ },
+                { $exists: { metadata: 1 }},
+                { metadata: { $count: { tags: { $gte: 1 }}}}
+            ]
+        });
+        return docs;
+    }
+
+    tags() {
+        /* let coll = this.getCollection(this.collection);
+        let tags = coll.find({
+            $and: [
+                { renderPath: /\.html$/ },
+                { $exists: { metadata: 1 }},
+                { metadata: { $count: { tags: { $gte: 1 }}}}
+            ]
+        }); */
+        let docs = this.documentsWithTags();
+        // console.log(tags);
+        const ret = [];
+        for (let doc of docs) {
+            for (let tag of doc.metadata.tags) {
+                if (! ret.includes(tag)) ret.push(tag);
+            }
+        }
+        return ret.sort((a, b) => {
+            var tagA = a.toLowerCase();
+            var tagB = b.toLowerCase();
+            if (tagA < tagB) return -1;
+            if (tagA > tagB) return 1;
+            return 0;
+        });
+    }
+
     // Search among the documents for ones matching the conditions named in
     // the options object
     //
@@ -736,6 +774,14 @@ export class FileCache extends EventEmitter {
         for (let p of paths) {
             let info = this.find(p.vpath);
             documents.push(info);
+        }
+
+        if (options.tag) {
+            documents = documents.filter(doc => {
+                if (!doc.metadata) return false;
+                return (doc.metadata.tags.includes(options.tag))
+                    ? true : false;
+            });
         }
 
         if (options.rootPath) {
