@@ -23,16 +23,12 @@ const globfs    = require('globfs');
 const path      = require('path');
 const fs        = require('fs-extra');
 const util      = require('util');
-// const url       = require('url');
-// const cache     = require('./caching');
-// const mahabhuta = require('mahabhuta');
-// const matter    = require('gray-matter');
-const data = require('./data');
+const data      = require('./data');
 
-const cache = import('./cache/cache-forerunner.mjs');
+const cache     = import('./cache/cache-forerunner.mjs');
 const filecache = import('./cache/file-cache.mjs');
 
-const fastq = require('fastq');
+const fastq     = require('fastq');
 
 //////////////////////////////////////////////////////////
 
@@ -233,6 +229,9 @@ exports.newerrender = async function(config) {
 };
 
 exports.newrender = async function(config) {
+
+    throw new Error('DEPRECATED');
+
     data.init();
     // console.log('CALLING config.hookBeforeSiteRendered');
     await config.hookBeforeSiteRendered();
@@ -386,6 +385,8 @@ exports.newrender = async function(config) {
 
 //exports.render = function(docdirs, layoutDirs, partialDirs, mahafuncs, renderTo) {
 exports.render = async function(config) {
+
+    throw new Error('DEPRECATED');
 
     // util.log(util.inspect(config.mahafuncs));
     // log('render');

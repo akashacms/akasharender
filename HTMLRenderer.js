@@ -125,7 +125,8 @@ module.exports = class HTMLRenderer extends Renderer {
      */
     async renderForLayout(rendered, metadata, config) {
         // console.log('renderForLayout '+ util.inspect(metadata));
-        console.log(`******** DEPRECATED renderForLayout`);
+        throw new Error(`******** DEPRECATED renderForLayout`);
+
         if (metadata.layout) {
             // find layout
             // read layout
@@ -239,7 +240,8 @@ module.exports = class HTMLRenderer extends Renderer {
 
     async renderToFile(basedir, fpath, renderTo, renderToPlus, metadata, config) {
 
-        console.log(`******** renderToFile renderForLayout`);
+        throw new Error(`******** renderToFile renderForLayout`);
+        
         const renderStart = new Date();
 
         // console.log(`renderToFile ${basedir} ${fpath} ${renderTo} ${renderToPlus} ${util.inspect(metadata)}`);
@@ -454,6 +456,8 @@ module.exports = class HTMLRenderer extends Renderer {
      * supposed to be rendered, as well as some useful functions.
      */
     async initMetadata(config, basedir, fpath, renderToPlus, baseMetadata, fmMetadata) {
+
+        throw new Error('DEPRECATED');
 
         // console.log(`initMetadata ${basedir} ${fpath} ${renderToPlus} ${util.inspect(baseMetadata)} ${util.inspect(fmMetadata)}`);
         const renderer = this;
