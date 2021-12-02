@@ -1051,6 +1051,19 @@ describe('Documents cache', function() {
             assert.equal(found.mime, 'text/markdown');
             assert.equal(found.mountPoint, '/');
 
+            assert.isDefined(found.docMetadata);
+            assert.isDefined(found.docMetadata.tags);
+            assert.isArray(found.docMetadata.tags);
+            assert.equal(found.docMetadata.tags.length, 3);
+
+            assert.isTrue(found.docMetadata.tags.includes('Tag1'));
+            assert.isTrue(found.docMetadata.tags.includes('Tag2'));
+            assert.isTrue(found.docMetadata.tags.includes('Tag3'));
+            assert.isFalse(found.docMetadata.tags.includes('Tag-string-1'));
+            assert.isFalse(found.docMetadata.tags.includes('Tag-string-2'));
+            assert.isFalse(found.docMetadata.tags.includes('Tag-string-3'));
+            assert.isFalse(found.docMetadata.tags.includes('not-found'));
+
             assert.isDefined(found.metadata);
             assert.isDefined(found.metadata.tags);
             assert.isArray(found.metadata.tags);
@@ -1071,6 +1084,19 @@ describe('Documents cache', function() {
             assert.isDefined(found);
             assert.equal(found.mime, 'text/markdown');
             assert.equal(found.mountPoint, '/');
+
+            assert.isDefined(found.docMetadata);
+            assert.isDefined(found.docMetadata.tags);
+            assert.isArray(found.docMetadata.tags);
+            assert.equal(found.docMetadata.tags.length, 3);
+
+            assert.isFalse(found.docMetadata.tags.includes('Tag1'));
+            assert.isFalse(found.docMetadata.tags.includes('Tag2'));
+            assert.isFalse(found.docMetadata.tags.includes('Tag3'));
+            assert.isTrue(found.docMetadata.tags.includes('Tag-string-1'));
+            assert.isTrue(found.docMetadata.tags.includes('Tag-string-2'));
+            assert.isTrue(found.docMetadata.tags.includes('Tag-string-3'));
+            assert.isFalse(found.docMetadata.tags.includes('not-found'));
 
             assert.isDefined(found.metadata);
             assert.isDefined(found.metadata.tags);

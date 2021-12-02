@@ -348,6 +348,11 @@ export class FileCache extends EventEmitter {
                 info.docMetadata = fm.data;
                 info.docContent = fm.content;
                 info.metadata = await renderer.newInitMetadata(this.config, info);
+                // There may be doc.docMetadata.tags derived from
+                // the front-matter.  In newInitMetadata we ensure that
+                // doc.metadata.tags holds an array.  This line makes
+                // sure that doc.docMetadata.tags is in agreement.
+                info.docMetadata.tags = info.metadata.tags;
             }
         } else {
             info.renderPath = info.vpath;
@@ -830,102 +835,4 @@ export class FileCache extends EventEmitter {
     // call this function.  We put this dummy function
     // in place to avoid making changes right now.
     async readDocument(info) { return info; }
-}
-
-export class RenderedFileCache extends FileCache {
-
-    async readDocument(info) {
-        console.error('DEPRECATED - use FileCache instead');
-        let stats;
-        try {
-            stats = await fs.stat(info.fspath);
-        } catch (err) {
-            throw new Error(`readDocument found ${util.inspect(info)} but fs.stat(${info.fspath}) threw error ${err.stack}`);
-        }
-        const doc = {
-            basedir: info.mounted,
-            mounted: info.mounted,
-
-            dirMountedOn: info.mountPoint,
-            mountPoint: info.mountPoint,
-
-            mountedDirMetadata: info.baseMetadata,
-            baseMetadata: info.baseMetadata,
-
-            docMetadata: info.docMetadata,
-
-            mime: info.mime,
-
-            fspath: info.fspath,
-
-            docpath: info.pathInMounted,
-            pathInMounted: info.pathInMounted,
-
-            // Original docdestpath: path.join(info.mountPoint, info.pathInMounted)
-            // However, in Stacked Dirs vpath is defined precisely
-            // to be that.  So, we can just use vpath rather than
-            // computing a value that's already known.
-            docdestpath: info.vpath,
-            vpath: info.vpath,
-            dirname: path.dirname(info.vpath),
-
-            renderPath: info.renderPath,
-            renderpath: info.renderPath,
-            rendername: path.basename(info.renderPath),
-            rendersToHTML: minimatch(info.renderPath, '**/*.html')
-                        ? true : false,
-
-            stat: stats,
-            stats: stats,
-
-            renderer: this.config.findRendererPath(info.vpath)
-        };
-        if (doc.dirname === '.') doc.dirname = '/';
-
-        if (doc.renderer && doc.renderer.frontmatter) {
-            doc.metadata = await doc.renderer.newInitMetadata(this.config, info);
-        }
-        return doc;
-    }
-
-    async handleChanged(collection, info) {
-        console.error('DEPRECATED - use FileCache instead');
-        // console.log(`PROCESS RenderedFileCache ${this.collection} handleChanged`, info.vpath);
-
-        if (collection !== this.collection) {
-            throw new Error(`handleChanged event for wrong collection; got ${collection}, expected ${this.collection}`);
-        }
-        await this.gatherInfoData(info);
-        info.stack = undefined;
-        let coll = this.getCollection(collection);
-        coll.update({
-            vpath: {
-                $eq: info.vpath
-            },
-            mountPoint: {
-                $eq: info.mountPoint
-            }
-        }, info);
-
-        await this.config.hookFileChanged(collection, info);
-    }
-
-    async handleAdded(collection, info) {
-        console.error('DEPRECATED - use FileCache instead');
-        // console.log(`PROCESS RenderedFileCache ${this.collection} handleAdded`, info.vpath);
-
-        if (collection !== this.collection) {
-            throw new Error(`handleAdded event for wrong collection; got ${collection}, expected ${this.collection}`);
-        }
-        await this.gatherInfoData(info);
-        info.stack = undefined;
-        // console.log(`add `, info);
-        // console.log(`file-cache add ${collection} ${info.vpath}`, info);
-        let coll = this.getCollection(collection);
-        coll.insert(info);
-        // console.log(`file-cache AFTER add ${collection} ${info.vpath}`);
-
-        await this.config.hookFileAdded(collection, info);
-    }
-
 }
