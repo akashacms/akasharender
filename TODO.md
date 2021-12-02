@@ -2,15 +2,17 @@
 
 This should probably be kept in GitHub issues -- eventually
 
-# Improved tags support
+# Replace sightmap
 
-We've added support for the tags field into the core
+This is an ancient package, that basically see's zero usage.  Surely there is a better package.
 
-CLI commands to retrieve list of tags, list of documents for a given tag, etc
+Bonus points for something that builds Google News XML files
+
+https://www.npmjs.com/package/sitemap - Looks very modern and comprehensive
+
+https://www.npmjs.com/package/easy-sitemap - Much lighter weight
 
 # Removing dead code
-
-RenderedFileCache in cache/file-cache
 
 In HTMLRenderer there are a bunch of old functions
 

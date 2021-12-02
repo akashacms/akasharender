@@ -35,6 +35,7 @@ const hljs = require('highlight.js');
 // const akasha   = require('./index');
 const cache = import('./cache/cache-forerunner.mjs');
 const filecache = import('./cache/file-cache.mjs');
+const cheerio   = require('cheerio');
 const mahabhuta = require('mahabhuta');
 const mahaMetadata = require('mahabhuta/maha/metadata');
 const mahaPartial = require('mahabhuta/maha/partial');
@@ -224,7 +225,7 @@ function _doStylesheets(metadata, options) {
                     stylehref = newHref;
                 }
             }
-            let $ = mahabhuta.parse('<link rel="stylesheet" type="text/css" href=""/>');
+            let $ = cheerio.load('<link rel="stylesheet" type="text/css" href=""/>', null, false);
             $('link').attr('href', stylehref);
             if (style.media) {
                 $('link').attr('media', style.media);
@@ -248,7 +249,7 @@ function _doJavaScripts(metadata, scripts, options) {
 			throw new Error(`Must specify either href or script in ${util.inspect(script)}`);
 		}
         if (!script.script) script.script = '';
-        let $ = mahabhuta.parse('<script ></script>');
+        let $ = cheerio.load('<script ></script>', null, false);
         if (script.lang) $('script').attr('type', script.lang);
         if (script.href) {
             let scripthref = script.href;
@@ -303,21 +304,25 @@ function _doFooterJavaScript(metadata, options) {
 class StylesheetsElement extends mahabhuta.CustomElement {
 	get elementName() { return "ak-stylesheets"; }
 	process($element, metadata, dirty) {
-		return Promise.resolve(_doStylesheets(metadata, this.array.options));
+		let ret =  _doStylesheets(metadata, this.array.options);
+        // console.log(`StylesheetsElement `, ret);
+        return ret;
 	}
 }
 
 class HeaderJavaScript extends mahabhuta.CustomElement {
 	get elementName() { return "ak-headerJavaScript"; }
 	process($element, metadata, dirty) {
-		return Promise.resolve(_doHeaderJavaScript(metadata, this.array.options));
+		let ret = _doHeaderJavaScript(metadata, this.array.options);
+        // console.log(`HeaderJavaScript `, ret);
+        return ret;
 	}
 }
 
 class FooterJavaScript extends mahabhuta.CustomElement {
 	get elementName() { return "ak-footerJavaScript"; }
 	process($element, metadata, dirty) {
-		return Promise.resolve(_doFooterJavaScript(metadata, this.array.options));
+		return _doFooterJavaScript(metadata, this.array.options);
 	}
 }
 
