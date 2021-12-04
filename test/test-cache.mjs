@@ -871,44 +871,44 @@ describe('Documents cache', function() {
             vpath: 'style.css.less'
         },
         {
-            fspath: '**/documents/anchor-cleanups-tempura.html.md',
-            renderPath: 'anchor-cleanups-tempura.html',
-            vpath: 'anchor-cleanups-tempura.html.md'
+            fspath: '**/documents/anchor-cleanups-tempura.html.md-MOOT',
+            renderPath: 'anchor-cleanups-tempura.html.md-MOOT',
+            vpath: 'anchor-cleanups-tempura.html.md-MOOT'
         },
         {
-            fspath: '**/documents/asciidoctor-tempura.html.adoc',
-            renderPath: 'asciidoctor-tempura.html',
-            vpath: 'asciidoctor-tempura.html.adoc'
+            fspath: '**/documents/asciidoctor-tempura.html.adoc-MOOT',
+            renderPath: 'asciidoctor-tempura.html.adoc-MOOT',
+            vpath: 'asciidoctor-tempura.html.adoc-MOOT'
         },
         {
-            fspath: '**/documents/body-class-tempura.html.md',
-            renderPath: 'body-class-tempura.html',
-            vpath: 'body-class-tempura.html.md'
+            fspath: '**/documents/body-class-tempura.html.md-MOOT',
+            renderPath: 'body-class-tempura.html.md-MOOT',
+            vpath: 'body-class-tempura.html.md-MOOT'
         },
         {
-            fspath: '**/documents/code-embed-tempura.html.md',
-            renderPath: 'code-embed-tempura.html',
-            vpath: 'code-embed-tempura.html.md'
+            fspath: '**/documents/code-embed-tempura.html.md-MOOT',
+            renderPath: 'code-embed-tempura.html.md-MOOT',
+            vpath: 'code-embed-tempura.html.md-MOOT'
         },
         {
-            fspath: '**/documents/fig-img-tempura.html.md',
-            renderPath: 'fig-img-tempura.html',
-            vpath: 'fig-img-tempura.html.md'
+            fspath: '**/documents/fig-img-tempura.html.md-MOOT',
+            renderPath: 'fig-img-tempura.html.md-MOOT',
+            vpath: 'fig-img-tempura.html.md-MOOT'
         },
         {
-            fspath: '**/documents/img2figimg-tempura.html.md',
-            renderPath: 'img2figimg-tempura.html',
-            vpath: 'img2figimg-tempura.html.md'
+            fspath: '**/documents/img2figimg-tempura.html.md-MOOT',
+            renderPath: 'img2figimg-tempura.html.md-MOOT',
+            vpath: 'img2figimg-tempura.html.md-MOOT'
         },
         {
-            fspath: '**/documents/img2resize-tempura.html.md',
-            renderPath: 'img2resize-tempura.html',
-            vpath: 'img2resize-tempura.html.md'
+            fspath: '**/documents/img2resize-tempura.html.md-MOOT',
+            renderPath: 'img2resize-tempura.html.md-MOOT',
+            vpath: 'img2resize-tempura.html.md-MOOT'
         },
         {
-            fspath: '**/documents/json-data-tempura.html.json',
-            renderPath: 'json-data-tempura.html',
-            vpath: 'json-data-tempura.html.json'
+            fspath: '**/documents/json-data-tempura.html.json-MOOT',
+            renderPath: 'json-data-tempura.html.md-MOOT',
+            vpath: 'json-data-tempura.html.json-MOOT'
         },
         {
             fspath: '**/documents/json-data-tempura.html.json-ignore',
@@ -916,9 +916,9 @@ describe('Documents cache', function() {
             vpath: 'json-data-tempura.html.json-ignore'
         },
         {
-            fspath: '**/documents/partials-tempura.html.tempura',
-            renderPath: 'partials-tempura.html',
-            vpath: 'partials-tempura.html.tempura'
+            fspath: '**/documents/partials-tempura.html.tempura-MOOT',
+            renderPath: 'partials-tempura.html.tempura-MOOT',
+            vpath: 'partials-tempura.html.tempura-MOOT'
         },
         {
             fspath: '**/documents/ejs-include.html.ejs',

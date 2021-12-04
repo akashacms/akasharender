@@ -392,10 +392,10 @@ describe('teaser, content', function() {
         checkBodyClass(html, $);
     });
 
-    it('should find added body class values with Tempura', async function() {
+    /* it('should find added body class values with Tempura', async function() {
         let { html, $ } = await akasha.readRenderedFile(config, 'body-class-tempura.html');
         checkBodyClass(html, $);
-    });
+    }); */
 
     const checkFigImg = (html, $) => {
 
@@ -432,10 +432,10 @@ describe('teaser, content', function() {
         checkFigImg(html, $);
     });
 
-    it('should render fig-img with Tempura', async function() {
+    /* it('should render fig-img with Tempura', async function() {
         let { html, $ } = await akasha.readRenderedFile(config, 'fig-img-tempura.html');
         checkFigImg(html, $);
-    });
+    }); */
 
     const checkIMG2FigIMG = (html, $) => {
         assert.exists(html, 'result exists');
@@ -784,10 +784,10 @@ describe('teaser, content', function() {
         await checkImg2Resize(html, $, config);
     });
 
-    it('should resize img with Tempura', async function() {
+    /* it('should resize img with Tempura', async function() {
         let { html, $ } = await akasha.readRenderedFile(config, 'img2resize-tempura.html');
         await checkImg2Resize(html, $, config);
-    });
+    }); */
 
     const checkShowContent = (html, $) => {
         assert.exists(html, 'result exists');
@@ -933,10 +933,10 @@ describe('teaser, content', function() {
         checkAnchorCleanups(html, $);
     });
 
-    it('should process anchor cleanups with tempura', async function() {
+    /* it('should process anchor cleanups with tempura', async function() {
         let { html, $ } = await akasha.readRenderedFile(config, 'anchor-cleanups-tempura.html');
         checkAnchorCleanups(html, $);
-    });
+    }); */
 
     describe('/mounted/img2resize.html', function() {
         let html;
@@ -1281,10 +1281,10 @@ describe('Partials', function() {
                 'This is to be included');
     });
 
-    it('should render HTML and EJS partials with Tempura', async function() {
+    /* it('should render HTML and EJS partials with Tempura', async function() {
         let { html, $ } = await akasha.readRenderedFile(config, 'partials-tempura.html');
         checkPartials(html, $);
-    });
+    }); */
 
     it('should render HTML and EJS partials with Handlebars', async function() {
         let { html, $ } = await akasha.readRenderedFile(config, 'partials-handlebars.html');
@@ -1382,10 +1382,10 @@ describe('AsciiDoc document', function() {
         checkAsciidoc(html, $);
     });
 
-    it('should render AsciiDoc document with Tempura', async function() {
+    /* it('should render AsciiDoc document with Tempura', async function() {
         let { html, $ } = await akasha.readRenderedFile(config, 'asciidoctor-tempura.html');
         checkAsciidoc(html, $);
-    });
+    }); */
 });
 
 describe('code-embed element', function() {
@@ -1435,10 +1435,10 @@ describe('code-embed element', function() {
         checkCodeEmbed(html, $);
     });
 
-    it('should render code-embed document rendered with Tempura', async function() {
+    /* it('should render code-embed document rendered with Tempura', async function() {
         let { html, $ } = await akasha.readRenderedFile(config, 'code-embed-tempura.html');
         checkCodeEmbed(html, $);
-    });
+    }); */
 });
 
 describe('final funcs', function() {
