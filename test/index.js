@@ -3,6 +3,7 @@ const fs = require('fs').promises;
 const path = require('path');
 const { promisify } = require('util');
 const akasha   = require('../index');
+const mahabhuta = akasha.mahabhuta;
 const { assert } = require('chai');
 const sizeOf = promisify(require('image-size'));
 // Note this is an ES6 module and to use it we must 
@@ -55,6 +56,8 @@ describe('build site', function() {
             .addStylesheet({       href: "/print.css", media: "print" });
         config.setConcurrency(5);
         config.prepare();
+
+        require('./final-mahabhuta.js').addFinalMahabhuta(config, mahabhuta);
     });
 
     it('should run setup', async function() {
@@ -1435,6 +1438,30 @@ describe('code-embed element', function() {
     it('should render code-embed document rendered with Tempura', async function() {
         let { html, $ } = await akasha.readRenderedFile(config, 'code-embed-tempura.html');
         checkCodeEmbed(html, $);
+    });
+});
+
+describe('final funcs', function() {
+
+    const files2check = [
+        'index.html', 'teaser-content.html', 'show-content.html',
+        'partials.html', 'img2resize.html', 'img2figimg.html',
+        'fig-img.html', 'ejs-include.html', 'code-embed.html',
+        'body-class.html', 'asciidoctor.html', 'anchor-cleanups.html'
+    ];
+
+    it('should have removed munged attributes', async function() {
+        for (let fn of files2check) {
+            let { html, $ } = await akasha.readRenderedFile(config, fn);
+            assert.isTrue($('a[munged]').length <= 0);
+        }
+    });
+
+    it('should have body final=ran', async function() {
+        for (let fn of files2check) {
+            let { html, $ } = await akasha.readRenderedFile(config, fn);
+            assert.equal($('body').attr('final'), 'ran');
+        }
     });
 });
 

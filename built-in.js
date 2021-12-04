@@ -186,6 +186,9 @@ module.exports.mahabhutaArray = function(options) {
     ret.addMahafunc(new ShowContent());
     ret.addMahafunc(new SelectElements());
     ret.addMahafunc(new AnchorCleanup());
+
+    ret.addFinalMahafunc(new MungedAttrRemover());
+
     return ret;
 };
 
@@ -572,11 +575,13 @@ class ShowContent extends mahabhuta.CustomElement {
         // console.log(`ShowContent ${util.inspect(metadata.document)} ${doc2read}`);
         const documents = (await filecache).documents;
         const doc = await documents.find(doc2read);
-        let ret = await (await partialFuncs).partial(this.array.options.config, template, {
+        const data = {
             href, clazz, id, caption, width, style, dest, contentImage,
             document: doc
-        });
-        // console.log(`ShowContent ${href} ==> ${ret}`);
+        };
+        let ret = await (await partialFuncs).partial(
+                this.array.options.config, template, data);
+        // console.log(`ShowContent ${href} ${util.inspect(data)} ==> ${ret}`);
         return ret;
     }
 }
@@ -839,5 +844,20 @@ class AnchorCleanup extends mahabhuta.Munger {
         } else {
             return "ok";
         }
+    }
+}
+
+////////////////  MAHAFUNCS FOR FINAL PASS
+
+/**
+ * Removes the <code>munged=yes</code> attribute that is added
+ * by <code>AnchorCleanup</code>.
+ */
+class MungedAttrRemover extends mahabhuta.Munger {
+    get selector() { return 'html body a[munged]'; }
+    get elementName() { return 'html body a[munged]'; }
+    async process($, $element, metadata, dirty, done) {
+        // console.log($element);
+        $element.removeAttr('munged');
     }
 }

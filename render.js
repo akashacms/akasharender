@@ -87,6 +87,7 @@ exports.newRenderDocument = async function(config, docInfo) {
  */
 exports.renderDocument = async function(config, basedir, fpath, renderTo, renderToPlus, renderBaseMetadata) {
 
+    throw new Error(`renderDocument DEPRECATED - use newRenderDocument`);
     const renderStart = new Date();
 
     var docPathname = path.join(basedir, fpath);
