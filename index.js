@@ -871,6 +871,17 @@ module.exports.Configuration = class Configuration {
 
     setMahabhutaConfig(cheerio) {
         this[_config_cheerio] = cheerio;
+
+        // For cheerio 1.0.0-rc.10 we need to use this setting.
+        // If the configuration has set this, we must not
+        // override their setting.  But, generally, for correct
+        // operation and handling of Mahabhuta tags, we need
+        // this setting to be <code>true</code>
+        if (!('_useHtmlParser2' in this[_config_cheerio])) {
+            this[_config_cheerio]._useHtmlParser2 = true;
+        }
+
+        // console.log(this[_config_cheerio]);
     }
 
     get mahabhutaConfig() { return this[_config_cheerio]; }

@@ -45,7 +45,7 @@
     "highlight.js": "^10.4.x",
     "less": ">=3.12.x",
     "liquid": "^5.1.x",
-    "mahabhuta": "^0.7.x",
+    "mahabhuta": "0.7.9",
     "markdown-it": "^12.x",
     "mime": "^2.5.2",
     "minimatch": "^3.0.4",
