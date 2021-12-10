@@ -31,7 +31,6 @@ const path   = require('path');
 const oembetter = require('oembetter')();
 const RSS    = require('rss');
 const fastq = require('fastq');
-const globfs = require('globfs');
 const mahabhuta = require('mahabhuta');
 exports.mahabhuta = mahabhuta;
 const cheerio = require('cheerio');
