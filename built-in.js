@@ -436,7 +436,9 @@ class CodeEmbed extends mahabhuta.CustomElement {
             $('pre').attr('id', id);
         }
         if (lang && lang !== '') {
-            $('code').append(hljs.highlight(lang, txt).value);
+            $('code').append(hljs.highlight(txt, {
+                language: lang
+            }).value);
         } else {
             $('code').append(hljs.highlightAuto(txt).value);
         }
