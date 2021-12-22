@@ -12,9 +12,15 @@ https://www.npmjs.com/package/sitemap - Looks very modern and comprehensive
 
 https://www.npmjs.com/package/easy-sitemap - Much lighter weight
 
-# Removing dead code
+# Convert some or all code to TypeScript and/or ES6
 
-In HTMLRenderer there are a bunch of old functions
+It's the way of the future.  AkashaRender has some needs for advanced data type support.
+
+# Revisit the choice of Commander in cli.js
+
+Perhaps "yargs" is better?
+
+Maybe cli.js can be rewritten as a zx script?
 
 # Supporting responsive image formats
 
@@ -71,20 +77,3 @@ The `DataTable` class can provide a few methods for searching the data.
 Perhaps a plugin like Affiliates can be rewritten to use DataTable?  As it stands, the Affiliates plugin has been rewritten with some custom code creating a Collection etc.
 
 For example, a DataTable of electric vehicle attributes - of solar panel attributes - of Linux Single Board Computer attributes - could be used in content.
-
-# Adopt the Tempura template engine, replacing EJS?
-
-https://github.com/lukeed/tempura
-
-Apparently the EJS template engine is VERY SLOW.  Tempura is a new template engine, with a syntax very much like Handlebars, but is EXTREMELY FAST.
-
-But since it's a brand new engine, is it a good idea to rely on this?  The ease of adding custom block handlers makes it easier to integrate with AkashaRender.
-
-In any case the plan would be 
-
-* Create render-tempura.js
-* In there, add "Custom Blocks" to supply the partial and partialSync functions
-* Make sure to turn on the async option, so we can use async functions
-* For the functions exported from Built-IN and BASE modules, add their functions as custom blocks
-
-NOTE - PARTIALLY IMPLEMENTED
