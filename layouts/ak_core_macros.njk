@@ -34,3 +34,7 @@
         href="{{ href }}"
         {% if title %} title="{{ title }}"{% else %} title="Sitemap"{% endif %}/>
 {%- endmacro %}
+
+{% macro doteaser(text) %}
+{% include "ak_teaser.html.njk" %}
+{% endmacro %}

@@ -3,6 +3,9 @@ const { promisify } = require('util');
 const akasha   = require('../index');
 const { assert } = require('chai');
 const sizeOf = promisify(require('image-size'));
+// Note this is an ES6 module and to use it we must 
+// use an async function along with the await keyword
+const _filecache = import('../cache/file-cache.mjs');
 
 
 // This is about hosting a website on a subdirectory
@@ -11,47 +14,83 @@ const sizeOf = promisify(require('image-size'));
 // start with /rebase/to/ ... 
 // Hence /index.html would become /rebase/to/index.html
 
-const config_rebase = new akasha.Configuration();
-config_rebase.rootURL("https://example.akashacms.com/rebase/to/");
-config_rebase.configDir = __dirname;
-config_rebase.addLayoutsDir('layouts')
-    .addLayoutsDir('layouts-extra')
-    .addDocumentsDir('documents')
-    .addDocumentsDir({
-        src: 'mounted',
-        dest: 'mounted'
-    })
-    .addPartialsDir('partials')
-    .setRenderDestination('out-rebased');
-    config_rebase.setMahabhutaConfig({
-    recognizeSelfClosing: true,
-    recognizeCDATA: true,
-    decodeEntities: true
-});
-config_rebase
-    .addFooterJavaScript({ href: "/vendor/jquery/jquery.min.js" })
-    .addFooterJavaScript({ 
-        href: "/vendor/popper.js/umd/popper.min.js",
-        lang: 'no-known-lang'
-    })
-    .addFooterJavaScript({ href: "/vendor/bootstrap/js/bootstrap.min.js" })
-    .addHeaderJavaScript({ href: "/vendor/header-js.js"})
-    .addHeaderJavaScript({ 
-        href: "/vendor/popper.js/popper.min.js",
-        lang: 'no-known-lang'
-    })
-    .addHeaderJavaScript({
-        script: "alert('in header with inline script');"
-    })
-    .addStylesheet({ href: "/vendor/bootstrap/css/bootstrap.min.css" })
-    .addStylesheet({       href: "/style.css" })
-    .addStylesheet({       href: "/print.css", media: "print" });
-    config_rebase.prepare();
+let config_rebase;
 
 describe('build rebased site', function() {
-    it('should render rebased website', async function() {
+    it('should create configuration', async function() {
 
-        this.timeout(25000);
+        this.timeout(75000);
+        config_rebase = new akasha.Configuration();
+        config_rebase.rootURL("https://example.akashacms.com/rebase/to/");
+        config_rebase.configDir = __dirname;
+        config_rebase.use(require('./test-plugin/plugin.js'));
+        config_rebase.addLayoutsDir('layouts')
+            .addLayoutsDir('layouts-extra')
+            .addDocumentsDir('documents')
+            .addDocumentsDir({
+                src: 'mounted',
+                dest: 'mounted'
+            })
+            .addPartialsDir('partials')
+            .setRenderDestination('out-rebased');
+            config_rebase.setMahabhutaConfig({
+            recognizeSelfClosing: true,
+            recognizeCDATA: true,
+            decodeEntities: true
+        });
+        config_rebase
+            .addFooterJavaScript({ href: "/vendor/jquery/jquery.min.js" })
+            .addFooterJavaScript({ 
+                href: "/vendor/popper.js/umd/popper.min.js",
+                lang: 'no-known-lang'
+            })
+            .addFooterJavaScript({ href: "/vendor/bootstrap/js/bootstrap.min.js" })
+            .addHeaderJavaScript({ href: "/vendor/header-js.js"})
+            .addHeaderJavaScript({ 
+                href: "/vendor/popper.js/popper.min.js",
+                lang: 'no-known-lang'
+            })
+            .addHeaderJavaScript({
+                script: "alert('in header with inline script');"
+            })
+            .addStylesheet({ href: "/vendor/bootstrap/css/bootstrap.min.css" })
+            .addStylesheet({       href: "/style.css" })
+            .addStylesheet({       href: "/print.css", media: "print" });
+        config_rebase.setConcurrency(5);
+        config_rebase.prepare();
+    });
+
+    it('should run setup', async function() {
+        this.timeout(75000);
+        await akasha.cacheSetupComplete(config_rebase);
+        /* await akasha.cacheSetup(config_rebase);
+        await Promise.all([
+            akasha.setupDocuments(config_rebase),
+            akasha.setupAssets(config_rebase),
+            akasha.setupLayouts(config_rebase),
+            akasha.setupPartials(config_rebase)
+        ])
+        let filecache = await _filecache;
+        await Promise.all([
+            filecache.documents.isReady(),
+            filecache.assets.isReady(),
+            filecache.layouts.isReady(),
+            filecache.partials.isReady()
+        ]); */
+    });
+
+    it('should have called onPluginCacheSetup', function() {
+        assert.isOk(config_rebase.plugin('akashacms-test-plugin')
+                            .onPluginCacheSetupCalled);
+    });
+
+    it('should copy assets', async function() {
+        this.timeout(75000);
+        await config_rebase.copyAssets();
+    });
+
+    it('should build site', async function() {
+        this.timeout(75000);
         let failed = false;
         let results = await akasha.render(config_rebase);
         for (let result of results) {
@@ -61,7 +100,11 @@ describe('build rebased site', function() {
             }
         }
         assert.isFalse(failed);
+    });
 
+    it('should close the configuration', async function() {
+        this.timeout(75000);
+        await akasha.closeCaches();
     });
 });
 
@@ -385,33 +428,37 @@ describe('rebased teaser, content', function() {
         // console.log(html);
 
         assert.equal($('body #resizeto50').length, 1);
-        assert.include($('body #resizeto50').attr('src'), "img/Human-Skeleton.jpg");
+        assert.include([
+            "img/Human-Skeleton-50.jpg",
+            "img/Human-Skeleton.jpg"
+        ], $('body #resizeto50').attr('src'));
         assert.notExists($('body #resizeto50').attr('resize-width'));
 
         assert.equal($('body #resizeto150').length, 1);
-        assert.include($('body #resizeto150').attr('src'), "img/Human-Skeleton-150.jpg");
+        assert.include("img/Human-Skeleton-150.jpg", $('body #resizeto150').attr('src'));
         assert.notExists($('body #resizeto150').attr('resize-width'));
         assert.notExists($('body #resizeto150').attr('resize-to'));
 
         assert.equal($('body #resizeto250figure').length, 1);
         assert.equal($('body #resizeto250figure figcaption').length, 1);
-        assert.include($('body #resizeto250figure img').attr('src'), "img/Human-Skeleton-250-figure.jpg");
+        assert.include("img/Human-Skeleton-250-figure.jpg", $('body #resizeto250figure img').attr('src'));
         assert.notExists($('body #resizeto250figure img').attr('resize-width'));
         assert.notExists($('body #resizeto250figure img').attr('resize-to'));
-        assert.include($('body #resizeto250figure figcaption').html(), "Image caption");
+        assert.include("Image caption", $('body #resizeto250figure figcaption').html());
 
         assert.equal($('body #resizerss').length, 1);
-        assert.include($('body #resizerss').attr('src'), "rss_button.png");
+        assert.include("rss_button.png", $('body #resizerss').attr('src'));
         assert.notExists($('body #resizerss').attr('resize-width'));
         assert.notExists($('body #resizerss').attr('resize-to'));
 
         assert.equal($('body #png2jpg').length, 1);
-        assert.include($('body #png2jpg').attr('src'), "rss_button.jpg");
+        assert.include("rss_button.jpg", $('body #png2jpg').attr('src'));
         assert.notExists($('body #png2jpg').attr('resize-width'));
         assert.notExists($('body #png2jpg').attr('resize-to'));
 
         // console.log(config.plugin('akashacms-builtin').resizequeue);
-        assert.equal(config.plugin('akashacms-builtin').resizequeue.length, 30);
+        assert.equal(config.plugin('akashacms-builtin').resizequeue.length, 0);
+        /*
         const queueContains = (queue, item) => {
             let found = false;
             for (let _item of queue) {
@@ -552,7 +599,7 @@ describe('rebased teaser, content', function() {
         assert.isTrue(queueContains(config.plugin('akashacms-builtin').resizequeue, {
             src: 'img/Human-Skeleton.jpg',
             resizewidth: '50',
-            resizeto: undefined,
+            resizeto: 'img/Human-Skeleton-50.jpg',
             docPath: "img2resize.html"
         }));
         assert.isTrue(queueContains(config.plugin('akashacms-builtin').resizequeue, {
@@ -609,6 +656,7 @@ describe('rebased teaser, content', function() {
             "resizewidth": "100",
             "src": "/mounted/img/Human-Skeleton.jpg",
         }));
+        */
 
         let size50 = await sizeOf('out-rebased/img/Human-Skeleton.jpg');
         assert.equal(size50.width, 50);
@@ -850,6 +898,25 @@ describe('rebased teaser, content', function() {
 
 
 describe('Rebased index Chain', function() {
+    before(async function() {
+        await akasha.cacheSetupComplete(config_rebase);
+        /* await Promise.all([
+            akasha.setupDocuments(config),
+            akasha.setupAssets(config),
+            akasha.setupLayouts(config),
+            akasha.setupPartials(config)
+        ])
+        let filecache = await _filecache;
+        await Promise.all([
+            filecache.documents.isReady(),
+            filecache.assets.isReady(),
+            filecache.layouts.isReady(),
+            filecache.partials.isReady()
+        ]); */
+        // console.log(`before documents.isReady`);
+        // await documents.isReady();
+    });
+
     it('should generate correct index chain for /hier/dir1/dir2/sibling.html', async function() {
         let chain = await akasha.indexChain(config_rebase, '/hier/dir1/dir2/sibling.html');
 
@@ -965,6 +1032,12 @@ describe('Rebased index Chain', function() {
         assert.include(chain[0].foundPath, 'index.html');
         assert.include(chain[0].filename, '/index.html');
     });
+
+    after(async function() {
+        this.timeout(75000);
+        await akasha.closeCaches();
+    });
+
 });
 
 describe('Rebased Nunjucks Include', function() {

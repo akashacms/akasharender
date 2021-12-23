@@ -26,13 +26,16 @@ const util  = require('util');
 const sharp = require('sharp');
 const uuid  = require('uuid');
 const uuidv1 = uuid.v1;
-const documents = require('./documents');
 const filez = require('./filez');
 const render = require('./render');
+const partialFuncs = import('./partial-funcs.mjs');
 const Plugin = require('./Plugin');
 const relative = require('relative');
 const hljs = require('highlight.js');
 // const akasha   = require('./index');
+const cache = import('./cache/cache-forerunner.mjs');
+const filecache = import('./cache/file-cache.mjs');
+const cheerio   = require('cheerio');
 const mahabhuta = require('mahabhuta');
 const mahaMetadata = require('mahabhuta/maha/metadata');
 const mahaPartial = require('mahabhuta/maha/partial');
@@ -109,8 +112,13 @@ module.exports = class BuiltInPlugin extends Plugin {
 
     async onSiteRendered(config) {
 
-        for (let toresize of this.resizequeue) {
-            // if (toresize.docPath === 'mounted/img2resize.html') console.log(`resizing `, toresize);
+        const documents = (await filecache).documents;
+        // await documents.isReady();
+        const assets = (await filecache).assets;
+        // await assets.isReady();
+        while (this.resizequeue.length > 0) {
+
+            let toresize = this.resizequeue.pop();
 
             let img2resize;
             if (!path.isAbsolute(toresize.src)) {
@@ -121,24 +129,15 @@ module.exports = class BuiltInPlugin extends Plugin {
             } else {
                 img2resize = toresize.src;
             }
-            // if (toresize.docPath === 'mounted/img2resize.html') console.log(`img2resize ${img2resize}`);
 
             let srcfile = undefined;
 
-            let found = await filez.findAsset(config.assetDirs, img2resize);
-            if (Array.isArray(found) && found.length >= 1) {
-                // if (toresize.docPath === 'mounted/img2resize.html') console.log(`found ${img2resize} as asset `, found);
-                srcfile = found[0].fullpath;
+            let found = assets.find(img2resize);
+            if (found) {
+                srcfile = found.fspath;
             } else {
-                found = await filez.findRendersTo(config, img2resize);
-                if (found && found.foundMountedOn === '/') {
-                    // if (toresize.docPath === 'mounted/img2resize.html') console.log(`found ${img2resize} as document `, found);
-                    srcfile = path.join(found.foundDir, found.foundFullPath);
-                } else if (found && found.foundMountedOn !== '/') {
-                    srcfile = path.join(found.foundDir, found.foundPathWithinDir);
-                } else {
-                    // if (toresize.docPath === 'mounted/img2resize.html') console.log(`did not find ${img2resize}`);
-                }
+                found = documents.find(img2resize);
+                srcfile = found ? found.fspath : undefined;
             }
             if (!srcfile) throw new Error(`akashacms-builtin: Did not find source file for image to resize ${img2resize}`);
 
@@ -161,8 +160,6 @@ module.exports = class BuiltInPlugin extends Plugin {
 
                 // Make sure the destination directory exists
                 await fs.mkdir(path.dirname(resizedest), { recursive: true });
-                
-                // if (toresize.docPath === 'mounted/img2resize.html') console.log(`resizing ${srcfile} to ${resizedest}`);
                 await resized.toFile(resizedest);
             } catch (e) {
                 throw new Error(`built-in: Image resize failed for ${srcfile} (toresize ${util.inspect(toresize)} found ${util.inspect(found)}) because ${e}`);
@@ -189,6 +186,9 @@ module.exports.mahabhutaArray = function(options) {
     ret.addMahafunc(new ShowContent());
     ret.addMahafunc(new SelectElements());
     ret.addMahafunc(new AnchorCleanup());
+
+    ret.addFinalMahafunc(new MungedAttrRemover());
+
     return ret;
 };
 
@@ -228,7 +228,7 @@ function _doStylesheets(metadata, options) {
                     stylehref = newHref;
                 }
             }
-            let $ = mahabhuta.parse('<link rel="stylesheet" type="text/css" href=""/>');
+            let $ = cheerio.load('<link rel="stylesheet" type="text/css" href=""/>', null, false);
             $('link').attr('href', stylehref);
             if (style.media) {
                 $('link').attr('media', style.media);
@@ -252,7 +252,7 @@ function _doJavaScripts(metadata, scripts, options) {
 			throw new Error(`Must specify either href or script in ${util.inspect(script)}`);
 		}
         if (!script.script) script.script = '';
-        let $ = mahabhuta.parse('<script ></script>');
+        let $ = cheerio.load('<script ></script>', null, false);
         if (script.lang) $('script').attr('type', script.lang);
         if (script.href) {
             let scripthref = script.href;
@@ -292,7 +292,6 @@ function _doHeaderJavaScript(metadata, options) {
 	// console.log(`_doHeaderJavaScript ${util.inspect(scripts)}`);
 	// console.log(`_doHeaderJavaScript ${util.inspect(options.config.scripts)}`);
 	return _doJavaScripts(metadata, scripts, options);
-	// return render.partialSync(options.config, "ak_javaScript.html.ejs", { javaScripts: scripts });
 }
 
 function _doFooterJavaScript(metadata, options) {
@@ -303,32 +302,36 @@ function _doFooterJavaScript(metadata, options) {
 		scripts = options.config.scripts ? options.config.scripts.javaScriptBottom : undefined;
 	}
 	return _doJavaScripts(metadata, scripts, options);
-	// return render.partialSync(options.config, "ak_javaScript.html.ejs", { javaScripts: scripts });
 }
 
 class StylesheetsElement extends mahabhuta.CustomElement {
 	get elementName() { return "ak-stylesheets"; }
 	process($element, metadata, dirty) {
-		return Promise.resolve(_doStylesheets(metadata, this.array.options));
+		let ret =  _doStylesheets(metadata, this.array.options);
+        // console.log(`StylesheetsElement `, ret);
+        return ret;
 	}
 }
 
 class HeaderJavaScript extends mahabhuta.CustomElement {
 	get elementName() { return "ak-headerJavaScript"; }
 	process($element, metadata, dirty) {
-		return Promise.resolve(_doHeaderJavaScript(metadata, this.array.options));
+		let ret = _doHeaderJavaScript(metadata, this.array.options);
+        // console.log(`HeaderJavaScript `, ret);
+        return ret;
 	}
 }
 
 class FooterJavaScript extends mahabhuta.CustomElement {
 	get elementName() { return "ak-footerJavaScript"; }
 	process($element, metadata, dirty) {
-		return Promise.resolve(_doFooterJavaScript(metadata, this.array.options));
+		return _doFooterJavaScript(metadata, this.array.options);
 	}
 }
 
 class HeadLinkRelativizer extends mahabhuta.Munger {
     get selector() { return "html head link"; }
+    get elementName() { return "html head link"; }
     async process($, $link, metadata, dirty) {
         let href = $link.attr('href');
 
@@ -346,6 +349,7 @@ class HeadLinkRelativizer extends mahabhuta.Munger {
 
 class ScriptRelativizer extends mahabhuta.Munger {
     get selector() { return "script"; }
+    get elementName() { return "script"; }
     async process($, $link, metadata, dirty) {
         let href = $link.attr('src');
 
@@ -374,12 +378,12 @@ class InsertBodyContent extends mahabhuta.CustomElement {
 
 class InsertTeaser extends mahabhuta.CustomElement {
 	get elementName() { return "ak-teaser"; }
-	process($element, metadata, dirty) {
-		return render.partial(this.array.options.config, "ak_teaser.html.ejs", {
+	async process($element, metadata, dirty) {
+		return (await partialFuncs).partial(this.array.options.config,
+                                            "ak_teaser.html.njk", {
 			teaser: typeof metadata["ak-teaser"] !== "undefined"
 				? metadata["ak-teaser"] : metadata.teaser
-		})
-		.then(html => { return html; });
+		});
 	}
 }
 
@@ -416,15 +420,13 @@ class CodeEmbed extends mahabhuta.CustomElement {
             txtpath = path.join(path.dirname(metadata.document.renderTo), fn);
         }
 
-        const document = await documents.readDocument(this.array.options.config, txtpath);
-
-        if (!document) {
+        const documents = (await filecache).documents;
+        const found = documents.find(txtpath);
+        if (!found) {
             throw new Error(`code-embed file-name ${fn} does not refer to usable file`);
         }
 
-        const readFrom = path.join(document.basedir, document.docpath);
-
-        const txt = await fs.readFile(readFrom, 'utf8');
+        const txt = await fs.readFile(found.fspath, 'utf8');
         let $ = mahabhuta.parse(`<pre><code></code></pre>`);
         if (lang && lang !== '') {
             $('code').addClass(lang);
@@ -434,7 +436,9 @@ class CodeEmbed extends mahabhuta.CustomElement {
             $('pre').attr('id', id);
         }
         if (lang && lang !== '') {
-            $('code').append(hljs.highlight(lang, txt).value);
+            $('code').append(hljs.highlight(txt, {
+                language: lang
+            }).value);
         } else {
             $('code').append(hljs.highlightAuto(txt).value);
         }
@@ -455,7 +459,7 @@ class FigureImage extends mahabhuta.CustomElement {
         const width   = $element.attr('width');
         const style   = $element.attr('style');
         const dest    = $element.attr('dest');
-        return render.partial(this.array.options.config, template, {
+        return (await partialFuncs).partial(this.array.options.config, template, {
             href, clazz, id, caption, width, style, dest
         });
     }
@@ -480,7 +484,7 @@ class img2figureImage extends mahabhuta.CustomElement {
                 ? $element.attr('caption')
                 : "";
         
-        return render.partial(this.array.options.config, template, {
+        return (await partialFuncs).partial(this.array.options.config, template, {
             id, clazz, style, width, href: src, dest, resizewidth, resizeto,
             caption: content
         });
@@ -489,6 +493,7 @@ class img2figureImage extends mahabhuta.CustomElement {
 
 class ImageRewriter extends mahabhuta.Munger {
     get selector() { return "html body img"; }
+    get elementName() { return "html body img"; }
     async process($, $link, metadata, dirty) {
         // console.log($element);
 
@@ -562,17 +567,23 @@ class ShowContent extends mahabhuta.CustomElement {
         const style   = $element.attr('style');
         const dest    = $element.attr('dest');
         const contentImage = $element.attr('content-image');
+        let doc2read;
         if (! href.startsWith('/')) {
             let dir = path.dirname(metadata.document.path);
-            href = path.join('/', dir, href);
+            doc2read = path.join('/', dir, href);
+        } else {
+            doc2read = href;
         }
-        // console.log(`ShowContent ${util.inspect(metadata.document)} ${href}`);
-        const doc     = await documents.readDocument(this.array.options.config, href);
-        let ret = await render.partial(this.array.options.config, template, {
+        // console.log(`ShowContent ${util.inspect(metadata.document)} ${doc2read}`);
+        const documents = (await filecache).documents;
+        const doc = await documents.find(doc2read);
+        const data = {
             href, clazz, id, caption, width, style, dest, contentImage,
             document: doc
-        });
-        // console.log(`ShowContent ${href} ==> ${ret}`);
+        };
+        let ret = await (await partialFuncs).partial(
+                this.array.options.config, template, data);
+        // console.log(`ShowContent ${href} ${util.inspect(data)} ==> ${ret}`);
         return ret;
     }
 }
@@ -618,6 +629,7 @@ module.exports.mahabhuta.addMahafunc(new Partial()); */
 //
 class SelectElements extends mahabhuta.Munger {
     get selector() { return "select-elements"; }
+    get elementName() { return "select-elements"; }
 
     async process($, $link, metadata, dirty) {
         let count = $link.attr('count')
@@ -657,11 +669,16 @@ class SelectElements extends mahabhuta.Munger {
 }
 
 class AnchorCleanup extends mahabhuta.Munger {
-    get selector() { return "html body a"; }
+    get selector() { return "html body a[munged!='yes']"; }
+    get elementName() { return "html body a[munged!='yes']"; }
 
     async process($, $link, metadata, dirty) {
         var href     = $link.attr('href');
         var linktext = $link.text();
+        const documents = (await filecache).documents;
+        // await documents.isReady();
+        const assets = (await filecache).assets;
+        // await assets.isReady();
         // console.log(`AnchorCleanup ${href} ${linktext}`);
         if (href && href !== '#') {
             var uHref = url.parse(href, true, true);
@@ -679,6 +696,16 @@ class AnchorCleanup extends mahabhuta.Munger {
             // For reference we need the absolute pathname of the href within
             // the project.  For example to retrieve the title when we're filling
             // in for an empty <a> we need the absolute pathname.
+
+            // Mark this link as having been processed.
+            // The purpose is if Mahabhuta runs multiple passes,
+            // to not process the link multiple times.
+            // Before adding this - we saw this Munger take as much
+            // as 800ms to execute, for EVERY pass made by Mahabhuta.
+            //
+            // Adding this attribute, and checking for it in the selector,
+            // means we only process the link once.
+            $link.attr('munged', 'yes');
 
             let absolutePath;
 
@@ -731,8 +758,14 @@ class AnchorCleanup extends mahabhuta.Munger {
             */
 
             // Look to see if it's an asset file
-            var foundAsset = await filez.findAsset(this.array.options.config.assetDirs, absolutePath);
-            if (foundAsset && foundAsset.length > 0) {
+            let foundAsset;
+            try {
+                foundAsset = assets.find(absolutePath);
+            } catch (e) {
+                foundAsset = undefined;
+            }
+            // var foundAsset = await filez.findAsset(this.array.options.config.assetDirs, absolutePath);
+            if (foundAsset) { // && foundAsset.length > 0) {
                 return "ok";
             }
 
@@ -746,51 +779,87 @@ class AnchorCleanup extends mahabhuta.Munger {
             // If this link has a body, then don't modify it
             if ((linktext && linktext.length > 0 && linktext !== absolutePath)
                 || ($link.children().length > 0)) {
-                // console.log(`AnchorCleanup skipping ${absolutePath} w/ ${util.inspect(linktext)} children= ${$link.children}`);
+                // console.log(`AnchorCleanup skipping ${absolutePath} w/ ${util.inspect(linktext)} children= ${$link.children()}`);
                 return "ok";
             }
 
             // Does it exist in documents dir?
-            var found = await filez.findRendersTo(this.array.options.config, absolutePath);
+            let found = documents.find(absolutePath);
+            // var found = await filez.findRendersTo(this.array.options.config, absolutePath);
             // console.log(`AnchorCleanup findRendersTo ${absolutePath} ${util.inspect(found)}`);
             if (!found) {
-                throw new Error(`Did not find ${href} in ${util.inspect(this.array.options.config.documentDirs)} in ${metadata.document.path}`);
+                console.log(`WARNING: Did not find ${href} in ${util.inspect(this.array.options.config.documentDirs)} in ${metadata.document.path} absolutePath ${absolutePath}`);
+                return "ok";
             }
             // console.log(`AnchorCleanup ${metadata.document.path} ${href} findRendersTo ${(new Date() - startTime) / 1000} seconds`);
 
             // If this is a directory, there might be /path/to/index.html so we try for that.
             // The problem is that this.array.options.config.findRendererPath would fail on just /path/to but succeed
             // on /path/to/index.html
-            if (found.foundIsDirectory) {
-                found = await filez.findRendersTo(this.array.options.config, path.join(absolutePath, "index.html"));
+            if (found.isDirectory) {
+                found = documents.find(path.join(absolutePath, "index.html"));
+                // found = await filez.findRendersTo(this.array.options.config, path.join(absolutePath, "index.html"));
                 if (!found) {
                     throw new Error(`Did not find ${href} in ${util.inspect(this.array.options.config.documentDirs)} in ${metadata.document.path}`);
                 }
             }
             // Otherwise look into filling emptiness with title
-            var renderer = this.array.options.config.findRendererPath(found.foundFullPath);
+
+            let docmeta = found.docMetadata;
+            // Automatically add a title= attribute
+            if (!$link.attr('title') && docmeta && docmeta.title) {
+                $link.attr('title', docmeta.title);
+            }
+            if (docmeta && docmeta.title) {
+                $link.text(docmeta.title);
+            } else {
+                $link.text(href);
+            }
+
+            /*
+            var renderer = this.array.options.config.findRendererPath(found.vpath);
             // console.log(`AnchorCleanup ${metadata.document.path} ${href} findRendererPath ${(new Date() - startTime) / 1000} seconds`);
             if (renderer && renderer.metadata) {
-                try {
+                let docmeta = found.docMetadata;
+                /* try {
                     var docmeta = await renderer.metadata(found.foundDir, found.foundPathWithinDir);
                 } catch(err) {
                     throw new Error(`Could not retrieve document metadata for ${found.foundDir} ${found.foundPathWithinDir} because ${err}`);
-                }
+                } *--/
                 // Automatically add a title= attribute
-                if (!$link.attr('title') && docmeta.title) {
+                if (!$link.attr('title') && docmeta && docmeta.title) {
                     $link.attr('title', docmeta.title);
                 }
-                if (docmeta.title) {
+                if (docmeta && docmeta.title) {
                     $link.text(docmeta.title);
                 }
                 // console.log(`AnchorCleanup finished`);
                 // console.log(`AnchorCleanup ${metadata.document.path} ${href} DONE ${(new Date() - startTime) / 1000} seconds`);
                 return "ok";
             } else {
-                throw new Error(`Could not fill in empty 'a' element in ${metadata.document.path} with href ${href}`);
+                // Don't bother throwing an error.  Just fill it in with
+                // something.
+                $link.text(href);
+                // throw new Error(`Could not fill in empty 'a' element in ${metadata.document.path} with href ${href}`);
             }
+            */
         } else {
             return "ok";
         }
+    }
+}
+
+////////////////  MAHAFUNCS FOR FINAL PASS
+
+/**
+ * Removes the <code>munged=yes</code> attribute that is added
+ * by <code>AnchorCleanup</code>.
+ */
+class MungedAttrRemover extends mahabhuta.Munger {
+    get selector() { return 'html body a[munged]'; }
+    get elementName() { return 'html body a[munged]'; }
+    async process($, $element, metadata, dirty, done) {
+        // console.log($element);
+        $element.removeAttr('munged');
     }
 }

@@ -22,6 +22,15 @@
 const util     = require('util');
 const path     = require('path');
 const HTMLRenderer = require('./HTMLRenderer');
+const partialFuncs = import('./partial-funcs.mjs');
+
+let partial;
+let partialSync;
+
+(async () => {
+    partial = (await partialFuncs).partial;
+    partialSync = (await partialFuncs).partialSync;
+})();
 
 module.exports = class JSONRenderer extends HTMLRenderer {
     constructor() {
@@ -29,16 +38,18 @@ module.exports = class JSONRenderer extends HTMLRenderer {
     }
 
     renderSync(text, metadata) {
-        var json = JSON.parse(text);
-        return this.akasha.partialSync(metadata.config, metadata.JSONFormatter, { data: json });
+        let json = JSON.parse(text);
+        // console.log(`JSONRenderer renderSync ${text} ==> ${util.inspect(json)}`);
+        // console.log(`JSONRenderer renderSync JSONFormatter ${metadata.JSONFormatter}`);
+        return partialSync(metadata.config, metadata.JSONFormatter, { data: json });
     }
 
     async render(text, metadata) {
         try {
-            var json = JSON.parse(text);
+            let json = JSON.parse(text);
             // console.log(`JSONRenderer ${text} ==> ${util.inspect(json)}`);
             // console.log(`JSONRenderer JSONFormatter ${metadata.JSONFormatter}`);
-            return await this.akasha.partial(metadata.config, metadata.JSONFormatter, { data: json });
+            return await partial(metadata.config, metadata.JSONFormatter, { data: json });
         } catch(e) {
             var docpath = metadata.document ? metadata.document.path : "unknown";
             var errstack = e.stack ? e.stack : e;

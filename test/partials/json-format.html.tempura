@@ -1,0 +1,5 @@
+{{#expect data}}
+<ul class="json-data">
+{{#each data as datum,index }}
+    <li>{{{ index }}} :- {{{ datum }}}</li>
+{{/each}}

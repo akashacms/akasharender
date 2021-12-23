@@ -6,7 +6,11 @@ publicationDate: June 25, 2017
 
 AkashaRender's purpose is easy generation of HTML and related files for use on websites or EPUB3 documents.  It's meant that the files you'll edit will be in an easy-to-use-or-edit format, like Markdown, which AkashaRender converts to correctly formatted HTML (or whatever) files for your website or eBook.
 
-We touched on this briefly in the previous chapter, [](2-setup.html).  Now it's time to dive deeply down the rabbit hole.
+In the _Getting Started_ guide, see the following:
+
+* [Project configuration](https://akashacms.com/quick-start/configuration.html)
+* [AkashaCMS project directories](https://akashacms.com/quick-start/directories.html)
+* [Content files](https://akashacms.com/quick-start/content.html)
 
 Given a configuration like so:
 
@@ -18,24 +22,21 @@ config
 config.setRenderDestination('out');
 ```
 
-This says to render files stored in `documents` and in `archive` into the rendering destination (`out`) directory, using the same directory hierarchy in both.  A file, `documents/romania/vlad-tepes/history.html.md`, is rendered to `out/romania/vlad-tepes/history.html`.  
+This says to render files stored in `documents` and in `archive` into the rendering destination (`out`) directory, using the same directory hierarchy in both.  That means the following are true:
 
-A file, `archive/1989/ceaucescu/revolution.html.md` would be rendered as `out/1989/ceaucescu/revolution.html`.
+* A file, `documents/romania/vlad-tepes/history.html.md`, is rendered to `out/romania/vlad-tepes/history.html`.  
+* A file, `archive/1989/ceaucescu/revolution.html.md` would be rendered as `out/1989/ceaucescu/revolution.html`.
+* If two files existed `archive/romania/vlad-tepes/history.html.md`, and `documents/romania/vlad-tepes/history.html.md`, the result at `out/romania/vlad-tepes/history.html` will come from the copy inside the `archive` directory.
 
-What would it mean if two files existed `archive/romania/vlad-tepes/history.html.md`, and `documents/romania/vlad-tepes/history.html.md`?
+In this last case, we have two files at the same virtual path, `romania/vlad-tepes/history.html`.  What AkashaRender does is it structures all _Documents_ directories as a stack.  When looking for a file matching a virtual path, the first one found is the one which is used.
 
-In such a case, both files will be rendered, but since they render to the same file the last one processed by AkashaRender will be the result.  Since the document directories are processed in the order they appear in the file, you can easily predict which file will be the final result.
-
-Document | Rendered To
----------|--------------
-`documents/romania/vlad-tepes/history.html.md` | `out/romania/vlad-tepes/history.html`
-`archive/romania/vlad-tepes/history.html.md` | `out/romania/vlad-tepes/history.html`
-
-Both files are rendered to `out` but because the file in `archive` is processed second the final product will be derived from that file.  You could reverse this behavior by reversing the order of the `addDocumentsDir` calls, reversing the processing order.  The copy under `documents` would then be the version to appear on the rendered website.
+You could reverse this behavior by reversing the order of the `addDocumentsDir` calls, reversing the processing order.  The copy under `documents` would then be the version to appear on the rendered website.
 
 # Renderers, Rendering and File Extensions
 
-AkashaRender's flexibility comes from the variety of Renderer classes we can use.  Each Renderer processes one or more file-types, as determined by the file extension.  For each file AkashaRender processes, it searches the registered Renderer's for one which will process that file.  File extension matching is used in determining the Renderer to use.
+The file extension, `.html.md`, is part of a convention followed in AkashaRender.  It's meant to indicate that the native format is Markdown (`.md`), and that it produces HTML (`.html`).  The implementation is in the _Renderer_ classes, and is based on settings stored in each Renderer instance.
+
+Each Renderer processes one or more file-types, as determined by the file extension.  For each file AkashaRender processes, it searches the registered Renderer's for one which will process that file.  File extension matching is used in determining the Renderer to use.
 
 Type | Extension | Description
 -----|-----------|------------
@@ -150,7 +151,7 @@ YAML is a full fledged text format to describe data objects in a simple-to-write
 
 For AkashaRender content files it'll be rare to use anything more than the simplest of YAML.  Namely, something like this:
 
-```
+```yaml
 ---
 title: Gettysburg Address
 layout: page.html.ejs
@@ -166,7 +167,7 @@ The metadata is made available during the rendering process, so that metadata va
 
 For example:
 
-```
+```yaml
 ---
 layout: video-page.html.ejs
 title: Race 4, Buenos Aires pre-race driver interviews (Formula E)
@@ -242,7 +243,7 @@ Partials are little snippets of template, which can be rendered into any locatio
 
 An example is
 
-```
+```html
 <%- partial('helloworld.html') %>
 ```
 
@@ -250,7 +251,7 @@ Because this is a simple `.html` file, its content is simply copied verbatim int
 
 You can pass data to a partial as so:
 
-```
+```html
 <%- partial('listrender.html.ejs',
     {
         items: {
@@ -265,7 +266,7 @@ You can pass data to a partial as so:
 
 The named partial template is searched for in the directories named in the configuration object.
 
-```
+```js
 config.addPartialsDir('partials')
 ```
 
@@ -273,7 +274,7 @@ As for layout templates, you can have multiple `.addPartialsDir` directories.  T
 
 Consider this implementation of `listrender.html.ejs`
 
-```
+```html
 <ul><%
     for (item in items) {
         %><li><%= item %>: <%= items[item] %></li><%

@@ -1,49 +1,100 @@
 
+const fs = require('fs').promises;
+const path = require('path');
 const { promisify } = require('util');
 const akasha   = require('../index');
+const mahabhuta = akasha.mahabhuta;
 const { assert } = require('chai');
 const sizeOf = promisify(require('image-size'));
+// Note this is an ES6 module and to use it we must 
+// use an async function along with the await keyword
+const _filecache = import('../cache/file-cache.mjs');
 
 
-const config = new akasha.Configuration();
-config.rootURL("https://example.akashacms.com");
-config.configDir = __dirname;
-config.addLayoutsDir('layouts')
-      .addLayoutsDir('layouts-extra')
-      .addDocumentsDir('documents')
-      .addDocumentsDir({
-          src: 'mounted',
-          dest: 'mounted'
-      })
-      .addPartialsDir('partials');
-config.setMahabhutaConfig({
-    recognizeSelfClosing: true,
-    recognizeCDATA: true,
-    decodeEntities: true
-});
-config
-    .addFooterJavaScript({ href: "/vendor/jquery/jquery.min.js" })
-    .addFooterJavaScript({ 
-        href: "/vendor/popper.js/umd/popper.min.js",
-        lang: 'no-known-lang'
-    })
-    .addFooterJavaScript({ href: "/vendor/bootstrap/js/bootstrap.min.js" })
-    .addHeaderJavaScript({ href: "/vendor/header-js.js"})
-    .addHeaderJavaScript({ 
-        href: "/vendor/popper.js/popper.min.js",
-        lang: 'no-known-lang'
-    })
-    .addHeaderJavaScript({
-        script: "alert('in header with inline script');"
-    })
-    .addStylesheet({ href: "/vendor/bootstrap/css/bootstrap.min.css" })
-    .addStylesheet({       href: "/style.css" })
-    .addStylesheet({       href: "/print.css", media: "print" });
-config.prepare();
+let config;
 
 describe('build site', function() {
+    it('should construct configuration', async function() {
+        this.timeout(75000);
+        config = new akasha.Configuration();
+        config.rootURL("https://example.akashacms.com");
+        config.configDir = __dirname;
+        config.use(require('./test-plugin/plugin.js'));
+        config
+            .addAssetsDir('assets2')
+            .addAssetsDir('assets')
+            .addLayoutsDir('layouts')
+            .addLayoutsDir('layouts-extra')
+            .addDocumentsDir('documents')
+            .addDocumentsDir({
+                src: 'mounted',
+                dest: 'mounted'
+            })
+            .addPartialsDir('partials');
+        config.setMahabhutaConfig({
+            recognizeSelfClosing: true,
+            recognizeCDATA: true,
+            decodeEntities: true
+        });
+        config
+            .addFooterJavaScript({ href: "/vendor/jquery/jquery.min.js" })
+            .addFooterJavaScript({ 
+                href: "/vendor/popper.js/umd/popper.min.js",
+                lang: 'no-known-lang'
+            })
+            .addFooterJavaScript({ href: "/vendor/bootstrap/js/bootstrap.min.js" })
+            .addHeaderJavaScript({ href: "/vendor/header-js.js"})
+            .addHeaderJavaScript({ 
+                href: "/vendor/popper.js/popper.min.js",
+                lang: 'no-known-lang'
+            })
+            .addHeaderJavaScript({
+                script: "alert('in header with inline script');"
+            })
+            .addStylesheet({ href: "/vendor/bootstrap/css/bootstrap.min.css" })
+            .addStylesheet({       href: "/style.css" })
+            .addStylesheet({       href: "/print.css", media: "print" });
+        config.setConcurrency(5);
+        config.prepare();
+
+        require('./final-mahabhuta.js').addFinalMahabhuta(config, mahabhuta);
+    });
+
+    it('should run setup', async function() {
+        this.timeout(75000);
+        await akasha.cacheSetupComplete(config);
+        /* await Promise.all([
+            akasha.setupDocuments(config),
+            akasha.setupAssets(config),
+            akasha.setupLayouts(config),
+            akasha.setupPartials(config)
+        ])
+        let filecache = await _filecache;
+        await Promise.all([
+            filecache.documents.isReady(),
+            filecache.assets.isReady(),
+            filecache.layouts.isReady(),
+            filecache.partials.isReady()
+        ]); */
+    });
+
+    it('should have called onPluginCacheSetup', function() {
+        assert.isOk(config.plugin('akashacms-test-plugin')
+                            .onPluginCacheSetupCalled);
+    });
+
+    it('should copy assets', async function() {
+        this.timeout(75000);
+        await config.copyAssets();
+    });
+
+    it('should overwrite file from stacked directory', async function() {
+        let { html, $ } = await akasha.readRenderedFile(config, 'file.txt');
+        assert.include(html, 'overriding');
+    });
+
     it('should build site', async function() {
-        this.timeout(25000);
+        this.timeout(75000);
         let failed = false;
         let results = await akasha.render(config);
         for (let result of results) {
@@ -53,6 +104,11 @@ describe('build site', function() {
             }
         }
         assert.isFalse(failed);
+    });
+
+    it('should close the configuration', async function() {
+        this.timeout(75000);
+        await akasha.closeCaches();
     });
 });
 
@@ -116,6 +172,12 @@ describe('stylesheets, javascripts', function() {
         it('should find stylesheets, javascript from metadata values IN njk-func.html', async function() {
             let { html, $ } = await akasha.readRenderedFile(config, 'njk-func.html');
             checkMetadataStyleJS(html, $);
+        });
+
+        it('should find style.css', async function() {
+            let style = path.join(config.renderDestination, 'style.css');
+            let stats = await fs.stat(style);
+            assert.isOk(stats);
         });
     });
 });
@@ -292,6 +354,16 @@ describe('teaser, content', function() {
         assert.include($('body article#duplicate').html(), 'This is content text');
     });
 
+    it('should find teaser, using nunjucks macro', async function() {
+        let { html, $ } = await akasha.readRenderedFile(config, 'teaser-njk-macro.html');
+
+        assert.exists(html, 'result exists');
+        assert.isString(html, 'result isString');
+
+        assert.include($('body section#teaser').html(), 'This is teaser text w/ NJK macro');
+        assert.include($('body article#original').html(), 'This is content text');
+    });
+
     const checkBodyClass = (html, $) => {
 
         assert.exists(html, 'result exists');
@@ -319,6 +391,11 @@ describe('teaser, content', function() {
         let { html, $ } = await akasha.readRenderedFile(config, 'body-class-handlebars.html');
         checkBodyClass(html, $);
     });
+
+    /* it('should find added body class values with Tempura', async function() {
+        let { html, $ } = await akasha.readRenderedFile(config, 'body-class-tempura.html');
+        checkBodyClass(html, $);
+    }); */
 
     const checkFigImg = (html, $) => {
 
@@ -354,6 +431,11 @@ describe('teaser, content', function() {
         let { html, $ } = await akasha.readRenderedFile(config, 'fig-img-handlebars.html');
         checkFigImg(html, $);
     });
+
+    /* it('should render fig-img with Tempura', async function() {
+        let { html, $ } = await akasha.readRenderedFile(config, 'fig-img-tempura.html');
+        checkFigImg(html, $);
+    }); */
 
     const checkIMG2FigIMG = (html, $) => {
         assert.exists(html, 'result exists');
@@ -410,23 +492,26 @@ describe('teaser, content', function() {
         // console.log(html);
 
         assert.equal($('body #resizeto50').length, 1);
-        assert.include($('body #resizeto50').attr('src'), "img/Human-Skeleton.jpg");
+        assert.include([
+            "img/Human-Skeleton-50.jpg",
+            "img/Human-Skeleton.jpg"
+        ], $('body #resizeto50').attr('src'));
         assert.notExists($('body #resizeto50').attr('resize-width'));
 
         assert.equal($('body #resizeto150').length, 1);
-        assert.include($('body #resizeto150').attr('src'), "img/Human-Skeleton-150.jpg");
+        assert.include("img/Human-Skeleton-150.jpg", $('body #resizeto150').attr('src'));
         assert.notExists($('body #resizeto150').attr('resize-width'));
         assert.notExists($('body #resizeto150').attr('resize-to'));
 
         assert.equal($('body #resizeto250figure').length, 1);
         assert.equal($('body #resizeto250figure figcaption').length, 1);
-        assert.include($('body #resizeto250figure img').attr('src'), "img/Human-Skeleton-250-figure.jpg");
+        assert.include("img/Human-Skeleton-250-figure.jpg", $('body #resizeto250figure img').attr('src'));
         assert.notExists($('body #resizeto250figure img').attr('resize-width'));
         assert.notExists($('body #resizeto250figure img').attr('resize-to'));
-        assert.include($('body #resizeto250figure figcaption').html(), "Image caption");
+        assert.include("Image caption", $('body #resizeto250figure figcaption').html());
 
         assert.equal($('body #resizerss').length, 1);
-        assert.include($('body #resizerss').attr('src'), "rss_button.png");
+        assert.include("rss_button.png", $('body #resizerss').attr('src'));
         assert.notExists($('body #resizerss').attr('resize-width'));
         assert.notExists($('body #resizerss').attr('resize-to'));
 
@@ -436,15 +521,32 @@ describe('teaser, content', function() {
         assert.notExists($('body #png2jpg').attr('resize-to'));
 
         // console.log(config.plugin('akashacms-builtin').resizequeue);
-        assert.equal(config.plugin('akashacms-builtin').resizequeue.length, 30);
+        assert.equal(config.plugin('akashacms-builtin').resizequeue.length, 0);
+        /*
+        const checkItem = (item, _item) => {
+            if (_item.src === item.src
+             && _item.resizewidth === item.resizewidth
+             && _item.resizeto === item.resizeto
+             && _item.docPath === item.docPath) {
+                return true;
+            } else {
+                return false;
+            }
+        }
         const queueContains = (queue, item) => {
             let found = false;
             for (let _item of queue) {
-                if (_item.src === item.src
-                 && _item.resizewidth === item.resizewidth
-                 && _item.resizeto === item.resizeto
-                 && _item.docPath === item.docPath) {
-                    found = true;
+                if (Array.isArray(item)) {
+                    let found = false;
+                    for (let i of item) {
+                        if (checkItem(i, _item)) {
+                            found = true;
+                            break;
+                        }
+                    }
+                } else {
+                    found = checkItem(item, _item);
+                    if (found) break;
                 }
             }
             return found;
@@ -573,12 +675,23 @@ describe('teaser, content', function() {
             "resizewidth": "100",
             "src": "/mounted/img/Human-Skeleton.jpg"
         }));
-        assert.isTrue(queueContains(config.plugin('akashacms-builtin').resizequeue, {
+        // console.log(config.plugin('akashacms-builtin').resizequeue);
+        assert.isTrue(queueContains(config.plugin('akashacms-builtin').resizequeue, /* [ {
+            src: 'img/Human-Skeleton-50.jpg',
+            resizewidth: '50',
+            resizeto: undefined,
+            docPath: "img2resize.html"
+        }, {
             src: 'img/Human-Skeleton.jpg',
             resizewidth: '50',
             resizeto: undefined,
             docPath: "img2resize.html"
-        }));
+        }, * / {
+            src: 'img/Human-Skeleton.jpg',
+            resizewidth: '50',
+            resizeto: 'img/Human-Skeleton-50.jpg',
+            docPath: "img2resize.html"
+        }/*  ] * /));
         assert.isTrue(queueContains(config.plugin('akashacms-builtin').resizequeue, {
             src: 'img/Human-Skeleton.jpg',
             resizewidth: '150',
@@ -633,8 +746,9 @@ describe('teaser, content', function() {
             "resizewidth": "100",
             "src": "/mounted/img/Human-Skeleton.jpg",
         }));
+        */
 
-        let size50 = await sizeOf('out/img/Human-Skeleton.jpg');
+        let size50 = await sizeOf('out/img/Human-Skeleton-50.jpg');
         assert.equal(size50.width, 50);
 
         let size150 = await sizeOf('out/img/Human-Skeleton-150.jpg');
@@ -669,6 +783,11 @@ describe('teaser, content', function() {
         let { html, $ } = await akasha.readRenderedFile(config, 'img2resize-handlebars.html');
         await checkImg2Resize(html, $, config);
     });
+
+    /* it('should resize img with Tempura', async function() {
+        let { html, $ } = await akasha.readRenderedFile(config, 'img2resize-tempura.html');
+        await checkImg2Resize(html, $, config);
+    }); */
 
     const checkShowContent = (html, $) => {
         assert.exists(html, 'result exists');
@@ -814,6 +933,11 @@ describe('teaser, content', function() {
         checkAnchorCleanups(html, $);
     });
 
+    /* it('should process anchor cleanups with tempura', async function() {
+        let { html, $ } = await akasha.readRenderedFile(config, 'anchor-cleanups-tempura.html');
+        checkAnchorCleanups(html, $);
+    }); */
+
     describe('/mounted/img2resize.html', function() {
         let html;
         let $;
@@ -954,6 +1078,26 @@ describe('Select Elements', function() {
 });
 
 describe('Index Chain', function() {
+    before(async function() {
+        await akasha.cacheSetup(config);
+        await Promise.all([
+            akasha.setupDocuments(config),
+            akasha.setupAssets(config),
+            akasha.setupLayouts(config),
+            akasha.setupPartials(config)
+        ])
+        let filecache = await _filecache;
+        // console.log(filecache.documents);
+        await Promise.all([
+            filecache.documents.isReady(),
+            filecache.assets.isReady(),
+            filecache.layouts.isReady(),
+            filecache.partials.isReady()
+        ]);
+        // console.log(`before documents.isReady`);
+        // await documents.isReady();
+    });
+
     it('should generate correct index chain for /hier/dir1/dir2/sibling.html', async function() {
         let chain = await akasha.indexChain(config, '/hier/dir1/dir2/sibling.html');
 
@@ -1069,6 +1213,11 @@ describe('Index Chain', function() {
         assert.include(chain[0].foundPath, 'index.html');
         assert.include(chain[0].filename, '/index.html');
     });
+
+    it('should close configuration', async function() {
+        await akasha.closeCaches();
+    });
+
 });
 
 describe('Nunjucks Include', function() {
@@ -1132,10 +1281,31 @@ describe('Partials', function() {
                 'This is to be included');
     });
 
+    /* it('should render HTML and EJS partials with Tempura', async function() {
+        let { html, $ } = await akasha.readRenderedFile(config, 'partials-tempura.html');
+        checkPartials(html, $);
+    }); */
+
     it('should render HTML and EJS partials with Handlebars', async function() {
         let { html, $ } = await akasha.readRenderedFile(config, 'partials-handlebars.html');
         checkPartials(html, $);
     });
+});
+
+// This was an attempt to support the EJS include function
+describe('EJS Include', function() {
+    it('should render EJS include functions', async function() {
+        let { html, $ } = await akasha.readRenderedFile(config, 'ejs-include.html');
+        
+        assert.exists(html, 'result exists');
+        assert.isString(html, 'result isString');
+
+        assert.include($('article #hello-include #html-partial').html(), 'tiny partial');
+        assert.include($('article #hello-partial #html-partial').html(), 'tiny partial');
+        assert.include($('article #strong-include #strong').html(), 'Include Body');
+        assert.include($('article #strong-partial #strong').html(), 'Include Partials');
+    });
+
 });
 
 describe('JSON document', function() {
@@ -1172,6 +1342,11 @@ describe('JSON document', function() {
         let { html, $ } = await akasha.readRenderedFile(config, 'json-data-handlebars.html');
         checkJSONdata(html, $);
     });
+
+    /* it('should render JSON document with Tempura', async function() {
+        let { html, $ } = await akasha.readRenderedFile(config, 'json-data-tempura.html');
+        checkJSONdata(html, $);
+    }); */
 });
 
 describe('AsciiDoc document', function() {
@@ -1206,6 +1381,11 @@ describe('AsciiDoc document', function() {
         let { html, $ } = await akasha.readRenderedFile(config, 'asciidoctor-handlebars.html');
         checkAsciidoc(html, $);
     });
+
+    /* it('should render AsciiDoc document with Tempura', async function() {
+        let { html, $ } = await akasha.readRenderedFile(config, 'asciidoctor-tempura.html');
+        checkAsciidoc(html, $);
+    }); */
 });
 
 describe('code-embed element', function() {
@@ -1253,6 +1433,35 @@ describe('code-embed element', function() {
     it('should render code-embed document rendered with Handlebars', async function() {
         let { html, $ } = await akasha.readRenderedFile(config, 'code-embed-handlebars.html');
         checkCodeEmbed(html, $);
+    });
+
+    /* it('should render code-embed document rendered with Tempura', async function() {
+        let { html, $ } = await akasha.readRenderedFile(config, 'code-embed-tempura.html');
+        checkCodeEmbed(html, $);
+    }); */
+});
+
+describe('final funcs', function() {
+
+    const files2check = [
+        'index.html', 'teaser-content.html', 'show-content.html',
+        'partials.html', 'img2resize.html', 'img2figimg.html',
+        'fig-img.html', 'ejs-include.html', 'code-embed.html',
+        'body-class.html', 'asciidoctor.html', 'anchor-cleanups.html'
+    ];
+
+    it('should have removed munged attributes', async function() {
+        for (let fn of files2check) {
+            let { html, $ } = await akasha.readRenderedFile(config, fn);
+            assert.isTrue($('a[munged]').length <= 0);
+        }
+    });
+
+    it('should have body final=ran', async function() {
+        for (let fn of files2check) {
+            let { html, $ } = await akasha.readRenderedFile(config, fn);
+            assert.equal($('body').attr('final'), 'ran');
+        }
     });
 });
 

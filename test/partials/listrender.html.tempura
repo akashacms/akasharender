@@ -1,0 +1,6 @@
+{{#expect data}}
+<ul id="listrender">
+    {{#each data as datum}}
+    <li>{{{ datum }}}</li>
+    {{/each}}
+</ul>

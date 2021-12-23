@@ -27,9 +27,12 @@ const path      = require('path');
 const util      = require('util');
 const matter    = require('gray-matter');
 const mahabhuta = require('mahabhuta');
-const cache     = require('./caching');
-const globfs    = require('globfs');
 const data = require('./data');
+
+const cache = import('./cache/cache-forerunner.mjs');
+const filecache = import('./cache/file-cache.mjs');
+
+const partialFuncs = import('./partial-funcs.mjs');
 
 /**
  * Rendering support for any file that produces HTML when rendered.
@@ -77,61 +80,42 @@ module.exports = class HTMLRenderer extends Renderer {
 
             // const layoutStart = new Date();
 
-            var fnLayout;
-            var layouttext;
             var layoutcontent;
             var layoutdata;
             var layoutrendered;
             var metadocpath = metadata.document ? metadata.document.path : "unknown";
 
-            // console.log(`renderForLayout find ${util.inspect(config.layoutDirs)} ${metadata.layout}`);
-            var foundDir = await globfs.findAsync(config.layoutDirs, metadata.layout);
-            if (!foundDir) throw new Error(`No layout directory found in ${util.inspect(config.layoutDirs)} ${metadata.layout} in file ${metadata.document.path}`);
-            foundDir = foundDir[0];
-            if (!foundDir) throw new Error(`No layout directory found in ${util.inspect(config.layoutDirs)} ${metadata.layout} in file ${metadata.document.path}`);
-            var layoutFname = path.join(foundDir.basedir, foundDir.path);
-            var layout = await fs.readFile(layoutFname, 'utf8');
-            layouttext = layout;
-            var fm = matter(layout);
-            layoutcontent = fm.content;
-            layoutdata    = this.copyMetadataProperties(metadata, fm.data);
+            const layouts = (await filecache).layouts;
+            await layouts.isReady();
+
+            let found = await layouts.find(metadata.layout);
+            if (!found) {
+                throw new Error(`No layout found in ${util.inspect(config.layoutDirs)} for ${metadata.layout} in file ${metadata.document.path}`);
+            }
+
+            if (found.docContent) {
+                layoutcontent = found.docContent;
+                layoutdata = this.copyMetadataProperties(metadata, found.metadata);
+            } else {
+                let layout = await fs.readFile(found.fspath, 'utf8');
+                let fm = matter(layout);
+                layoutcontent = fm.content;
+                layoutdata    = this.copyMetadataProperties(metadata, fm.data);
+            }
             layoutdata.content = rendered;
-            // if (!fm.data.layout) layoutdata.layout = undefined;
             const renderer = config.findRendererPath(metadata.layout);
-            /* if (!renderer && metadata.layout.match(/\.html$/) != null) {
-                return filez.readFile(partialDir, partial);
-            } */
-            if (!renderer) throw new Error(`No renderer for ${metadata.layout}`);
-            // log(`renderForLayout rendering ${metadocpath} with ${metadata.layout}`);
-            // console.log(`HTMLRenderer before render plugin=${util.inspect(metadata.plugin)}`);
-            // const layoutPrepared = new Date();
-            // console.log(`renderForLayout PREPARED ${metadocpath} ${layoutFname} ${(layoutPrepared - layoutStart) / 1000} seconds`);
+            if (!renderer) {
+                throw new Error(`No renderer for ${metadata.layout}`);
+            }
             try {
-                layoutrendered = await renderer.render(layoutcontent, layoutdata);
+                layoutrendered = await renderer.render(layoutcontent, layoutdata, found);
             } catch (e) {
                 let ee = new Error(`Error rendering ${metadocpath} with ${metadata.layout} ${e.stack ? e.stack : e}`);
                 console.error(ee);
                 throw ee;
             }
-            // const layoutFirstRender = new Date();
-            // console.log(`renderForLayout FIRST RENDER ${metadocpath} ${layoutFname} ${(layoutFirstRender - layoutStart) / 1000} seconds`);
-            // log('maharun '+ metadata.layout +' '+ util.inspect(layoutdata.config.headerScripts));
-            // log(`renderForLayout maharun ${metadocpath} with ${metadata.layout}`);
-            if (false && this.doMahabhuta(metadocpath)) {
-                try {
-                    layoutrendered = await this.maharun(layoutrendered, layoutdata, config.mahafuncs);
-                } catch (e2) {
-                    let eee = new Error(`Error with Mahabhuta ${metadocpath} with ${metadata.layout} ${e2.stack ? e2.stack : e2}`);
-                    console.error(eee);
-                    throw eee;
-                }
-            } else {
-                // console.log(`renderForLayout mahabhuta not allowed ${layoutrendered}`);
-            }
-            // const layoutFinishMahabhuta = new Date();
-            // console.log(`renderForLayout FINISH MAHABHUTA ${metadocpath} ${layoutFname} ${(layoutFinishMahabhuta - layoutStart) / 1000} seconds`);
-            // log(`renderForLayout FINI ${metadocpath} with ${metadata.layout}`);
             return layoutrendered;
+
         } else return rendered;
     }
 
@@ -140,186 +124,58 @@ module.exports = class HTMLRenderer extends Renderer {
      */
     async renderForLayout(rendered, metadata, config) {
         // console.log('renderForLayout '+ util.inspect(metadata));
-        if (metadata.layout) {
-            // find layout
-            // read layout
-            // split out frontmatter & content
-            // find renderer
-            // renderer.render
-            // mahabhuta
+        throw new Error(`******** DEPRECATED renderForLayout`);
 
-            // const layoutStart = new Date();
-
-            var fnLayout;
-            var layouttext;
-            var layoutcontent;
-            var layoutdata;
-            var layoutrendered;
-            var metadocpath = metadata.document ? metadata.document.path : "unknown";
-
-            // console.log(`renderForLayout find ${util.inspect(config.layoutDirs)} ${metadata.layout}`);
-            var foundDir = await globfs.findAsync(config.layoutDirs, metadata.layout);
-            if (!foundDir) throw new Error(`No layout directory found in ${util.inspect(config.layoutDirs)} ${metadata.layout} in file ${metadata.document.path}`);
-            foundDir = foundDir[0];
-            if (!foundDir) throw new Error(`No layout directory found in ${util.inspect(config.layoutDirs)} ${metadata.layout} in file ${metadata.document.path}`);
-            var layoutFname = path.join(foundDir.basedir, foundDir.path);
-            var layout = await fs.readFile(layoutFname, 'utf8');
-            layouttext = layout;
-            var fm = matter(layout);
-            layoutcontent = fm.content;
-            layoutdata    = this.copyMetadataProperties(metadata, fm.data);
-            layoutdata.content = rendered;
-            // if (!fm.data.layout) layoutdata.layout = undefined;
-            const renderer = config.findRendererPath(metadata.layout);
-            /* if (!renderer && metadata.layout.match(/\.html$/) != null) {
-                return filez.readFile(partialDir, partial);
-            } */
-            if (!renderer) throw new Error(`No renderer for ${metadata.layout}`);
-            // log(`renderForLayout rendering ${metadocpath} with ${metadata.layout}`);
-            // console.log(`HTMLRenderer before render plugin=${util.inspect(metadata.plugin)}`);
-            // const layoutPrepared = new Date();
-            // console.log(`renderForLayout PREPARED ${metadocpath} ${layoutFname} ${(layoutPrepared - layoutStart) / 1000} seconds`);
-            try {
-                layoutrendered = await renderer.render(layoutcontent, layoutdata);
-            } catch (e) {
-                let ee = new Error(`Error rendering ${metadocpath} with ${metadata.layout} ${e.stack ? e.stack : e}`);
-                console.error(ee);
-                throw ee;
-            }
-            // const layoutFirstRender = new Date();
-            // console.log(`renderForLayout FIRST RENDER ${metadocpath} ${layoutFname} ${(layoutFirstRender - layoutStart) / 1000} seconds`);
-            // log('maharun '+ metadata.layout +' '+ util.inspect(layoutdata.config.headerScripts));
-            // log(`renderForLayout maharun ${metadocpath} with ${metadata.layout}`);
-            if (this.doMahabhuta(metadocpath)) {
-                try {
-                    layoutrendered = await this.maharun(layoutrendered, layoutdata, config.mahafuncs);
-                } catch (e2) {
-                    let eee = new Error(`Error with Mahabhuta ${metadocpath} with ${metadata.layout} ${e2.stack ? e2.stack : e2}`);
-                    console.error(eee);
-                    throw eee;
-                }
-            } else {
-                // console.log(`renderForLayout mahabhuta not allowed ${layoutrendered}`);
-            }
-            // const layoutFinishMahabhuta = new Date();
-            // console.log(`renderForLayout FINISH MAHABHUTA ${metadocpath} ${layoutFname} ${(layoutFinishMahabhuta - layoutStart) / 1000} seconds`);
-            // log(`renderForLayout FINI ${metadocpath} with ${metadata.layout}`);
-            return layoutrendered;
-        } else return rendered;
     }
 
-    async renderToFile(basedir, fpath, renderTo, renderToPlus, metadata, config) {
+    async newRenderToFile(config, docInfo) {
 
         const renderStart = new Date();
+        const doc = await this.readContent(docInfo.mounted, docInfo.pathInMounted);
+        const fm = this.parseFrontmatter(doc);
+        const doccontent = fm.content;
+        data.report(docInfo.mountPoint, docInfo.vpath, config.renderTo, 
+                            "FRONTMATTER", renderStart);
 
-        // console.log(`renderToFile ${basedir} ${fpath} ${renderTo} ${renderToPlus} ${util.inspect(metadata)}`);
-        // var doctext;
-        var doccontent;
-        var docdata = metadata;
-        var docrendered;
-
-        var fm = await this.frontmatter(basedir, fpath);
-        doccontent = fm.content;
-        // const renderFrontmatter = new Date();
-        // console.log(`renderToFile FRONTMATTER ${basedir} ${fpath} ${renderTo} ${(renderFrontmatter - renderStart) / 1000} seconds`);
-        // console.log(`renderToFile ${basedir} ${fpath} ${renderTo} ${renderToPlus} ${doccontent}`);
-        data.report(basedir, fpath, renderTo, "FRONTMATTER", renderStart);
-
-        var metadata = await this.initMetadata(config, basedir, fpath, renderToPlus, docdata, fm.data);
-        docdata = metadata;
-        // console.log('about to render '+ fpath);
-        // console.log(`metadata before render ${util.inspect(docdata)}`);
+        const metadata = await this.newInitMetadata(config, docInfo);
+        const docdata = metadata;
+        let docrendered;
         try {
-            docrendered = await this.render(doccontent, docdata);
+            docrendered = await this.render(doccontent, docdata, docInfo);
         } catch (err) {
-            console.error("Error rendering "+ fpath +" "+ (err.stack ? err.stack : err));
-            throw new Error("Error rendering "+ fpath +" "+ (err.stack ? err.stack : err));
+            console.error(`Error rendering ${docInfo.vpath} ${(err.stack ? err.stack : err)}`);
+            throw new Error(`Error rendering ${docInfo.vpath} ${(err.stack ? err.stack : err)}`);
         }
-        // const renderFirstRender = new Date();
-        // console.log(`renderToFile FIRST RENDER ${basedir} ${fpath} ${renderTo} ${(renderFirstRender - renderStart) / 1000} seconds`);
-        data.report(basedir, fpath, renderTo, "FIRST RENDER", renderStart);
+        data.report(docInfo.mountPoint, docInfo.vpath, config.renderTo, 
+                            "FIRST RENDER", renderStart);
 
         docrendered = await this.renderForLayoutNew(docrendered, docdata, config);
         const renderSecondRender = new Date();
-        // console.log(`renderToFile SECOND RENDER ${basedir} ${fpath} ${renderTo} ${(renderSecondRender - renderStart) / 1000} seconds`);
-        data.report(basedir, fpath, renderTo, "SECOND RENDER", renderStart);
-
-        // log('maharun '+ metadata.layout +' '+ util.inspect(layoutdata.config.headerScripts));
-        // log(`renderForLayout maharun ${metadocpath} with ${metadata.layout}`);
-        if (this.doMahabhuta(fpath)) {
+        data.report(docInfo.mountPoint, docInfo.vpath, config.renderTo, 
+                            "SECOND RENDER", renderStart);
+        if (this.doMahabhuta(docInfo.vpath)) {
             try {
                 docrendered = await this.maharun(docrendered, docdata, config.mahafuncs);
             } catch (e2) {
-                let eee = new Error(`Error with Mahabhuta ${fpath} with ${metadata.layout} ${e2.stack ? e2.stack : e2}`);
+                let eee = new Error(`Error with Mahabhuta ${docInfo.vpath} with ${metadata.layout} ${e2.stack ? e2.stack : e2}`);
                 console.error(eee);
                 throw eee;
             }
         } else {
             // console.log(`renderForLayout mahabhuta not allowed ${layoutrendered}`);
         }
-        data.report(basedir, fpath, renderTo, "MAHABHUTA", renderStart);
-        await fs.outputFile(path.join(renderTo, this.filePath(fpath)), docrendered, 'utf8');
+        data.report(docInfo.mountPoint, docInfo.vpath, config.renderTo, 
+                            "MAHABHUTA", renderStart);
+        const renderDest = path.join(config.renderTo, this.filePath(docInfo.vpath));
+        await fs.ensureDir(path.dirname(renderDest));
+        await fs.writeFile(renderDest, docrendered, 'utf8');
     }
 
-    /**
-     * Render the document file, through a template if necessary, producing
-     * an output file.
-     */
-    /*
-    async renderToFileOld(basedir, fpath, renderTo, renderToPlus, metadata, config) {
+    async renderToFile(basedir, fpath, renderTo, renderToPlus, metadata, config) {
 
-        const renderStart = new Date();
-
-        // console.log(`renderToFile ${basedir} ${fpath} ${renderTo} ${renderToPlus} ${util.inspect(metadata)}`);
-        // var doctext;
-        var doccontent;
-        var docdata = metadata;
-        var docrendered;
-
-        var fm = await this.frontmatter(basedir, fpath);
-        doccontent = fm.content;
-        // const renderFrontmatter = new Date();
-        // console.log(`renderToFile FRONTMATTER ${basedir} ${fpath} ${renderTo} ${(renderFrontmatter - renderStart) / 1000} seconds`);
-        // console.log(`renderToFile ${basedir} ${fpath} ${renderTo} ${renderToPlus} ${doccontent}`);
-        data.report(basedir, fpath, renderTo, "FRONTMATTER", renderStart);
-
-        var metadata = await this.initMetadata(config, basedir, fpath, renderToPlus, docdata, fm.data);
-        docdata = metadata;
-        // console.log('about to render '+ fpath);
-        // console.log(`metadata before render ${util.inspect(docdata)}`);
-        try {
-            docrendered = await this.render(doccontent, docdata);
-        } catch (err) {
-            console.error("Error rendering "+ fpath +" "+ (err.stack ? err.stack : err));
-            throw new Error("Error rendering "+ fpath +" "+ (err.stack ? err.stack : err));
-        }
-        // const renderFirstRender = new Date();
-        // console.log(`renderToFile FIRST RENDER ${basedir} ${fpath} ${renderTo} ${(renderFirstRender - renderStart) / 1000} seconds`);
-        data.report(basedir, fpath, renderTo, "FIRST RENDER", renderStart);
-        // console.log('rendered to maharun '+ fpath);
-        if (this.doMahabhuta(fpath)) {
-            try {
-                docrendered = await this.maharun(docrendered, docdata, config.mahafuncs);
-            } catch (err2) {
-                console.error("Error in Mahabhuta for "+ fpath +" "+ (err2.stack ? err2.stack : err2));
-                throw new Error("Error in Mahabhuta for "+ fpath +" "+ (err2.stack ? err2.stack : err2));
-            }
-        }
-        const renderFirstMahabhuta = new Date();
-        // console.log(`renderToFile FIRST MAHABHUTA ${basedir} ${fpath} ${renderTo} ${(renderFirstMahabhuta - renderStart) / 1000} seconds`);
-        data.report(basedir, fpath, renderTo, "FIRST MAHABHUTA", renderStart);
-        // console.log('maharun to renderForLayout '+ fpath);
-        docrendered = await this.renderForLayout(docrendered, docdata, config);
-        const renderSecondRender = new Date();
-        // console.log(`renderToFile SECOND RENDER ${basedir} ${fpath} ${renderTo} ${(renderSecondRender - renderStart) / 1000} seconds`);
-        data.report(basedir, fpath, renderTo, "SECOND RENDER", renderStart);
-        // console.log(`renderToFile ${basedir} ${fpath} ==> ${renderTo} ${this.filePath(fpath)}`);
-        // console.log(docrendered);
-        await fs.outputFile(path.join(renderTo, this.filePath(fpath)), docrendered, 'utf8');
-        // remove circular dependency
-        // await filez.writeFile(renderTo, this.filePath(fpath), docrendered);
+        throw new Error(`******** renderToFile renderForLayout`);
+        
     }
-    */
 
     /**
      * Determine whether it's allowed to run Mahabhuta.  Some rendering types
@@ -330,6 +186,11 @@ module.exports = class HTMLRenderer extends Renderer {
         return true;
     }
 
+    async readContent(basedir, fpath) {
+        const text = await fs.readFile(path.join(basedir, fpath), 'utf8');
+        return text;
+    }
+
     parseFrontmatter(content) {
         return matter(content);
     }
@@ -338,28 +199,37 @@ module.exports = class HTMLRenderer extends Renderer {
      * Extract the frontmatter for the given file.
      */
     async frontmatter(basedir, fpath) {
-        var cachekey = `fm-${basedir}-${fpath}`;
-        var cachedFrontmatter = cache.get("htmlrenderer", cachekey);
-        if (cachedFrontmatter) {
+        // console.log(`HTMLRenderer frontmatter ${basedir} ${fpath}`);
+        let coll = (await cache).getCache('frontmatter', { create: true });
+        let cached = coll.find({
+            basedir: { $eq: basedir },
+            fpath: { $eq: fpath }
+        });
+        if (cached && cached.frontmatter) {
             // TODO
             // Add check here that stat's file, if file is newer
             // than the cache'd version then delete the cach entry
             // and proceed to the rest of the function, otherwise
             // return the cached data
-            return cachedFrontmatter;
+            // console.log(`HTMLRenderer frontmatter found cached ${basedir} ${fpath}`);
+            return cached.frontmatter;
         }
-        var text = await fs.readFile(path.join(basedir, fpath), 'utf8');
+        const text = await fs.readFile(path.join(basedir, fpath), 'utf8');
         // console.log(`frontmatter ${path.join(basedir, fpath)} ${text}`);
-        var fm;
+        let fm;
         try {
             fm = matter(text);
+            // console.log(`HTMLRenderer frontmatter parsed frontmatter ${basedir} ${fpath}`);
         } catch (e) {
             console.log(`HTMLRenderer.frontmatter FAIL to read frontmatter in ${fpath} because ${e.stack}`);
             fm = {};
         }
         // console.log(`frontmatter ${path.join(basedir, fpath)} ${util.inspect(fm)}`);
-        cache.set("htmlrenderer", cachekey, fm);
-        // log(`frontmatter ${cachekey} ${util.inspect(fm)}`);
+        coll.insert({
+            basedir, fpath, frontmatter: fm
+        });
+        await coll.save();
+        // console.log(`HTMLRenderer frontmatter FINI ${basedir} ${fpath}`);
         return fm;
     }
 
@@ -375,47 +245,56 @@ module.exports = class HTMLRenderer extends Renderer {
         return fm.data;
     }
 
-    /**
-     * Initialize the metadata object which is passed around with the Document object.
-     * This metadata is formed by adding together the document metadata, potential metadata
-     * associated with the document directory, some data about the source file and where it's
-     * supposed to be rendered, as well as some useful functions.
-     */
-    async initMetadata(config, basedir, fpath, renderToPlus, baseMetadata, fmMetadata) {
+    async newInitMetadata(config, docInfo) {
 
-        // console.log(`initMetadata ${basedir} ${fpath} ${renderToPlus} ${util.inspect(baseMetadata)} ${util.inspect(fmMetadata)}`);
         const renderer = this;
-
         // Start with a base object that will be passed into the template
         var metadata = { };
 
         // Copy data from frontmatter
-        for (var yprop in baseMetadata) {
+        for (let yprop in docInfo.baseMetadata) {
             // console.log(`initMetadata ${basedir} ${fpath} baseMetadata ${baseMetadata[yprop]}`);
-            metadata[yprop] = baseMetadata[yprop];
+            metadata[yprop] = docInfo.baseMetadata[yprop];
         }
-        for (var yprop in config.metadata) {
+        for (let yprop in config.metadata) {
             metadata[yprop] = config.metadata[yprop];
         }
-        var fmmcount = 0;
-        for (var yprop in fmMetadata) {
-            metadata[yprop] = fmMetadata[yprop];
+        let fmmcount = 0;
+        for (let yprop in docInfo.docMetadata) {
+            metadata[yprop] = docInfo.docMetadata[yprop];
             fmmcount++;
         }
-        if (fmmcount <= 0) console.error('WARNING: No metadata discovered in '+ basedir +' '+ fpath);
+        /* if (fmmcount <= 0) {
+            console.error(`WARNING: No metadata discovered in ${docInfo.vpath}`);
+        } */
 
         metadata.content = "";
         metadata.document = {};
-        metadata.document.basedir = basedir;
-        metadata.document.relpath = fpath;
-        metadata.document.relrender = renderer.filePath(fpath);
-        metadata.document.path = path.join(renderToPlus, fpath);
-        // console.log(`initMetadata ${renderToPlus} ${fpath} ${renderer.filePath(fpath)}`);
-        metadata.document.renderTo = path.join(renderToPlus, renderer.filePath(fpath));
+        metadata.document.basedir = docInfo.mountPoint;
+        metadata.document.relpath = docInfo.pathInMounted;
+        metadata.document.relrender = renderer.filePath(docInfo.pathInMounted);
+        metadata.document.path = docInfo.vpath;
+        metadata.document.renderTo = docInfo.renderPath;
+
+        // Ensure the <em>tags</em> field is an array
+        if (!(metadata.tags)) {
+            metadata.tags = [];
+        } else if (typeof (metadata.tags) === 'string') {
+            let taglist = [];
+            const re = /\s*,\s*/;
+            metadata.tags.split(re).forEach(tag => {
+                taglist.push(tag.trim());
+            });
+            metadata.tags = taglist;
+        } else if (!Array.isArray(metadata.tags)) {
+            throw new Error(
+                `FORMAT ERROR - ${docInfo.vpath} has badly formatted tags `,
+                metadata.tags);
+        }
 
         metadata.config      = config;
-        metadata.partialSync = this.akasha.partialSync.bind(renderer, config);
-        metadata.partial     = this.akasha.partial.bind(renderer, config);
+        metadata.partialSync = (await partialFuncs).partialSync.bind(renderer, config);
+        metadata.partial     = (await partialFuncs).partial.bind(renderer, config);
 
         metadata.root_url = config.root_url;
 
@@ -429,30 +308,22 @@ module.exports = class HTMLRenderer extends Renderer {
             metadata.rendered_url = metadata.document.renderTo;
         }
 
-        // console.log('initMetadata '+ basedir +' '+ fpath +' '+ util.inspect(metadata));
-
         metadata.akasha = this.akasha;
         metadata.plugin = config.plugin;
-
-        // console.log(`HTMLRenderer before path.join ${path.join(basedir, fpath)}`);
-        const stats = await fs.stat(path.join(basedir, fpath));
-        if (!stats) {
-            metadata.rendered_date = new Date();
-        } else {
-            metadata.rendered_date = stats.mtime;
-        }
+        // console.log(`newInitMetadata`, docInfo);
+        metadata.rendered_date = docInfo.stats.mtime;
 
         if (!metadata.publicationDate) {
             var dateSet = false;
-            if (fmMetadata && fmMetadata.publDate) {
-                var parsed = Date.parse(fmMetadata.publDate);
+            if (docInfo.docMetadata && docInfo.docMetadata.publDate) {
+                const parsed = Date.parse(docInfo.docMetadata.publDate);
                 if (! isNaN(parsed)) {
                     metadata.publicationDate = new Date(parsed);
                 }
                 dateSet = true;
             }
-            if (! dateSet && stats && stats.mtime) {
-                metadata.publicationDate = stats.mtime;
+            if (! dateSet && docInfo.stats && docInfo.stats.mtime) {
+                metadata.publicationDate = docInfo.stats.mtime;
             }
             if (!metadata.publicationDate) {
                 metadata.publicationDate = new Date();
@@ -460,6 +331,16 @@ module.exports = class HTMLRenderer extends Renderer {
         }
 
         return metadata;
-    };
+    }
 
+    /**
+     * Initialize the metadata object which is passed around with the Document object.
+     * This metadata is formed by adding together the document metadata, potential metadata
+     * associated with the document directory, some data about the source file and where it's
+     * supposed to be rendered, as well as some useful functions.
+     */
+    async initMetadata(config, basedir, fpath, renderToPlus, baseMetadata, fmMetadata) {
+
+        throw new Error('DEPRECATED');
+    }
 }
