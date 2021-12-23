@@ -26,6 +26,7 @@ const path  = require('path');
 const _renderer_name = Symbol('name');
 const _renderer_regex = Symbol('regex');
 const _renderer_akasha = Symbol('akasha');
+const _renderer_config = Symbol('config');
 
 
 module.exports = class Renderer {
@@ -38,10 +39,14 @@ module.exports = class Renderer {
         } else {
             throw new Error('regex must be RegExp or Array of RegExp');
         }
+        this[_renderer_akasha] = undefined;
+        this[_renderer_config] = undefined;
     }
 
     get akasha() { return this[_renderer_akasha]; }
     set akasha(_akasha) { this[_renderer_akasha] = _akasha; }
+    get config() { return this[_renderer_config]; }
+    set config(_config) { this[_renderer_config] = _config; }
     get name() { return this[_renderer_name]; }
     get regex() { return this[_renderer_regex]; }
 

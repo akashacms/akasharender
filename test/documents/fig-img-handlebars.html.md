@@ -1,5 +1,5 @@
 ---
-layout: default-once.html.njk
+layout: default-once.html.handlebars
 title: Figure/Image Formatted with Liquid template
 ---
 

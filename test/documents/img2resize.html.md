@@ -9,7 +9,9 @@ This image should be left alone
 
 This image should be resized to 50px
 
-<img id="resizeto50" resize-width="50" src="img/Human-Skeleton.jpg">
+<img id="resizeto50" resize-width="50" 
+    src="img/Human-Skeleton.jpg"
+    resize-to="img/Human-Skeleton-50.jpg">
 
 This image should be resized to 150px, to a new file name, and `<img src>` attribute rewritten
 

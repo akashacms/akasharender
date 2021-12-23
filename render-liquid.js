@@ -22,8 +22,12 @@
 const path      = require('path');
 const HTMLRenderer = require('./HTMLRenderer');
 
-const Liquid = require('liquid');
-const engine = new Liquid.Engine();
+const { Liquid } = require('liquidjs');
+
+const getMounted = (dir) => {
+    if (typeof dir === 'string') return dir;
+    else return dir.src;
+};
 
 module.exports = class LiquidRenderer extends HTMLRenderer {
     constructor() {
@@ -32,9 +36,12 @@ module.exports = class LiquidRenderer extends HTMLRenderer {
 
     async render(text, metadata) {
         try {
-            let template = await engine.parse(text);
-            let result = await template.render(metadata);
-            return result;
+            const partialsMounted = metadata.config.partialsDirs.map(getMounted);
+            const engine    = new Liquid({
+                partials: partialsMounted,
+                extname: '.liquid'
+            });
+            return await engine.parseAndRender(text, metadata);
         } catch(e) { 
             var docpath = metadata.document ? metadata.document.path : "unknown";
             var errstack = e.stack ? e.stack : e;

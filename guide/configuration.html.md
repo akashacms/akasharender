@@ -5,6 +5,11 @@ title: Configuring an AkashaCMS/AkashaRender project
 
 The `Configuration` object contains everything AkashaRender requires to render an AkashaCMS project.  The project creator uses the Configuration API to create this object.  It is intended this object is created in a Node.js module, and that the filename for that module is passed on the `akasharender` command-line.
 
+In the _Getting Started_ guide, see the following:
+
+* [Project configuration](https://akashacms.com/quick-start/configuration.html)
+* [AkashaCMS project directories](https://akashacms.com/quick-start/directories.html)
+
 For example, the `package.json` for the project can include these `script` tags:
 
 ```
@@ -51,6 +56,8 @@ module.exports = config;
 ```
 
 This is just a normal every-day Node.js module.  At the top we create a `Configuration` object, in the middle we call methods on that object to make settings, at the bottom we call `config.prepare()` and then assign the Configuration object to `module.exports`.  That last step makes the Configuration object available to AkashaRender.
+
+When we run `akasharender copy-assets config-file.js`, the file (`config-file.js`) is processed using `require`.  It is expected that the export from the config file is as shown here, an instance of the `Configuration` class containing project configuration.
 
 # Project rootURL
 
@@ -152,15 +159,14 @@ config.addDocumentsDir('documents3');
 
 In addition to declaring a documents directory using a String, you can pass an Object declaring where the documents are rendered in the output directory.
 
-
 ```js
 config.addDocumentsDir('documents');
 config.addDocumentsDir({
     src: 'archive',
     dest: 'archive',
     baseMetadata: {
-        meaningOfLife: "42",
-        me: "Ashildr Einarrsdottir"
+        meaningOfLife: '42',
+        me: 'Ashildr Einarrsdottir'
     }
 });
 ```
@@ -222,15 +228,21 @@ Partials are little snippets of template, which can be rendered into any locatio
 
 An example is
 
-```
+```html
 <%- partial('helloworld.html') %>
 ```
 
 Because this is a simple `.html` file, its content is simply copied verbatim into the rendering.
 
+Another variant of this is:
+
+```html
+<partial file-name='helloworld.html'/>
+```
+
 You can pass data to a partial as so:
 
-```
+```html
 <%- partial('listrender.html.ejs',
     {
         items: {
@@ -269,6 +281,26 @@ config
 The difference between FooterJavaScript and HeaderJavaScript is whether the code is placed in the `<head>` section, or just before the closing `</body>` tag.  Some recommend that JavaScript be placed at the bottom of the page, and this allows you to do so.
 
 The declarations shown here correspond to the asset directory declarations shown earlier.  Together they are a method to initialize jQuery and Bootstrap on your site.  Then the last, `/style.css`, gives you the opportunity for your customizations.
+
+For these declarations to show up in the rendered HTML files, the following tags must be present in the layout templates:
+
+```html
+<html>
+    <head>
+        ...
+        <ak-stylesheets></ak-stylesheets>
+        <ak-headerJavaScript></ak-headerJavaScript>
+        ...
+    </head>
+    <body>
+        ...
+        <ak-footerJavaScript></ak-footerJavaScript>
+        ...
+    </body>
+</html>
+```
+
+These custom tags are processed by the `built-in` plugin that is automatically included by AkashaRender.  Each expands to the appropriate `<link>` and `<script>` tags required for bringing in CSS and JavaScript files.
 
 # Mahabhuta functions
 
@@ -320,7 +352,6 @@ Built-in to AkashaRender is one additional plugin, called `built-in`, that provi
 
 Plugins typically call the `addPartialsDir` and other similar methods we've just discussed.  This way a Plugin can provide partials and other functionality.
 
-
 ## Plugin Configuration
 
 Some plugins offer methods to configure their behavior.
@@ -333,13 +364,15 @@ config.use(require('akashacms-base'), {
 })
 ```
 
+Be careful with the parenthesis and make sure the configuration object is passed to the `use` method rather than to `require`.  Any such object is passed to the `configure` method of the Plugin.
+
 Some plugins also offer an API, that can be accessed using this pattern:
 
 ```js
 config.plugin("akashacms-base").generateSitemap(config, true);
 ```
 
-The `config.plugin("plugin-name")` method returns the Plugin object, and then you can call its methods as shown.  You should consult the documentation of each plugin for further details.
+The `config.plugin("plugin-name")` method returns the named Plugin object.  You can then call its methods as shown.  You should consult the documentation of each plugin for further details.  Many of the plugins have a long list of methods.
 
 ## Plugin data
 

@@ -46,4 +46,28 @@ module.exports = class Plugin {
      */
     get name() { return this[_plugin_name]; }
 
+    /**
+     * Getter for object describing the additional FileCache fields
+     * to index.  Plugins may be interested in specific data that must
+     * be indexed.
+     *
+     * This function returns an empty object.  Any plugin wishing to
+     * have an indexed field should implement this, and modify this object
+     * appropriately.
+     *
+     * The object returned has four fields, <code>documents</code>,
+     * <code>assets</code>, <code>layouts</code>, and <code>partials</code>.
+     *
+     * Any field that is <code>undefined</code> is to be ignored.  Otherwise
+     * the field must be an object listing the fields to index.  This
+     * mechanism does not support setting the index type.
+     */
+    get cacheIndexes() {
+        return {
+            documents: undefined, // {},
+            assets: undefined, // {},
+            layouts: undefined, // {},
+            partials: undefined, // {}
+        };
+    }
 };

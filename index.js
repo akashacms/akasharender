@@ -30,14 +30,118 @@ const fs     = require('fs-extra');
 const path   = require('path');
 const oembetter = require('oembetter')();
 const RSS    = require('rss');
-const globfs = require('globfs');
+const fastq = require('fastq');
 const mahabhuta = require('mahabhuta');
 exports.mahabhuta = mahabhuta;
 const cheerio = require('cheerio');
 const mahaPartial = require('mahabhuta/maha/partial');
-const documents = require('./documents');
 
-exports.cache = require('./caching');
+const mime = require('mime');
+
+// There doesn't seem to be an official registration
+// per: https://asciidoctor.org/docs/faq/
+// per: https://github.com/asciidoctor/asciidoctor/issues/2502
+mime.define({'text/x-asciidoc': ['adoc', 'asciidoc']});
+
+exports.cache = import('./cache/cache-forerunner.mjs');
+exports.filecache = import('./cache/file-cache.mjs');
+
+exports.cacheSetup = async function(config) {
+    try {
+        let cache = (await exports.cache);
+        await cache.setup(config);
+    } catch (err) {
+        console.error(`INITIALIZATION FAILURE COULD NOT INITIALIZE CACHE `, err);
+        process.exit(1);
+    }
+}
+
+exports.closeCaches = async function() {
+    try {
+        let cache = (await exports.cache);
+        let filecache = (await exports.filecache);
+        await filecache.close();
+        await cache.close();
+    } catch (err) {
+        console.error(`INITIALIZATION FAILURE COULD NOT CLOSE CACHES `, err);
+        process.exit(1);
+    }
+}
+
+exports.setupDocuments = async function(config) {
+    try {
+        let filecache = (await exports.filecache);
+        await filecache.setupDocuments(config);
+    } catch (err) {
+        console.error(`INITIALIZATION FAILURE COULD NOT INITIALIZE DOCUMENTS CACHE `, err);
+        process.exit(1);
+    }
+}
+
+exports.setupAssets = async function(config) {
+    try {
+        let filecache = (await exports.filecache);
+        await filecache.setupAssets(config);
+    } catch (err) {
+        console.error(`INITIALIZATION FAILURE COULD NOT INITIALIZE ASSETS CACHE `, err);
+        process.exit(1);
+    }
+}
+
+exports.setupLayouts = async function(config) {
+    try {
+        let filecache = (await exports.filecache);
+        await filecache.setupLayouts(config);
+    } catch (err) {
+        console.error(`INITIALIZATION FAILURE COULD NOT INITIALIZE LAYOUTS CACHE `, err);
+        process.exit(1);
+    }
+}
+
+exports.setupPartials = async function(config) {
+    try {
+        let filecache = (await exports.filecache);
+        await filecache.setupPartials(config);
+        // console.log(`setupPartials SUCCESS`);
+    } catch (err) {
+        console.error(`INITIALIZATION FAILURE COULD NOT INITIALIZE PARTIALS CACHE `, err);
+        process.exit(1);
+    }
+}
+
+exports.setupPluginCaches = async function(config) {
+    try {
+        await config.hookPluginCacheSetup();
+    } catch (err) {
+        console.error(`INITIALIZATION FAILURE COULD NOT INITIALIZE PLUGINS CACHES `, err);
+        process.exit(1);
+    }
+}
+
+exports.cacheSetupComplete = async function(config) {
+    try {
+        let cache = (await exports.cache)
+        await cache.setup(config);
+        let filecache = (await exports.filecache);
+        await Promise.all([
+            filecache.setupDocuments(config),
+            filecache.setupAssets(config),
+            filecache.setupLayouts(config),
+            filecache.setupPartials(config),
+            exports.setupPluginCaches(config)
+        ])
+        await Promise.all([
+            filecache.documents.isReady(),
+            filecache.assets.isReady(),
+            filecache.layouts.isReady(),
+            filecache.partials.isReady()
+        ]);
+    } catch (err) {
+        console.error(`INITIALIZATION FAILURE COULD NOT INITIALIZE CACHE SYSTEM `, err);
+        process.exit(1);
+    }
+}
+
 exports.Plugin = require('./Plugin');
 
 const render = require('./render');
@@ -49,26 +153,65 @@ module.exports.EJSRenderer = require('./render-ejs');
 module.exports.LiquidRenderer = require('./render-liquid');
 module.exports.NunjucksRenderer = require('./render-nunjucks');
 module.exports.HandlebarsRenderer = require('./render-handlebars');
+// module.exports.TempuraRenderer = require('./render-tempura');
 module.exports.MarkdownRenderer = require('./render-md');
 module.exports.JSONRenderer = require('./render-json');
 module.exports.CSSLESSRenderer = require('./render-cssless');
 
-exports.render = render.newrender;
+exports.render = render.newerrender; //  render.newrender;
 exports.renderDocument = render.renderDocument;
 
-exports.renderPath = async (config, path) => {
+exports.renderPath = async (config, path2r) => {
+    const documents = (await exports.filecache).documents;
+    let found;
+    let count = 0;
+    while (count < 20) {
+        /* What's happening is this might be called from cli.js
+         * in render-document, and we might be asked to render the
+         * last document that will be ADD'd to the FileCache.
+         *
+         * In such a case <code>isReady</code> might return <code>true</code>
+         * but not all files will have been ADD'd to the FileCache.
+         * In that case <code>documents.find</code> returns
+         * <code>undefined</code>
+         *
+         * What this does is try up to 20 times to load the document,
+         * sleeping for 100 milliseconds each time.
+         *
+         * The cleaner alternative would be to wait for not only
+         * the <code>ready</code> from the <code>documents</code> FileCache,
+         * but also for all the initial ADD events to be handled.  But
+         * that second condition seems difficult to detect reliably.
+         */
+        found = await documents.find(path2r);
+        if (found) break;
+        else {
+            await new Promise((resolve, reject) => {
+                setTimeout(() => {
+                    resolve();
+                }, 100);
+            });
+            count++;
+        }
+    }
 
-    let found = await exports.findRendersTo(config, path);
-    let result = await exports.renderDocument(
-                config,
-                found.foundDir,
-                found.foundPathWithinDir,
-                config.renderTo,
-                found.foundMountedOn,
-                found.foundBaseMetadata);
+    // console.log(`renderPath ${path2r}`, found);
+    if (!found) {
+        throw new Error(`Did not find document for ${path2r}`);
+    }
+    let result = await render.newRenderDocument(config, found);
     return result;
 }
 
+/**
+ * Reads a file from the rendering directory.  It is primarily to be
+ * used in test cases, where we'll run a build then read the individual
+ * files to make sure they've rendered correctly.
+ * 
+ * @param {*} config 
+ * @param {*} fpath 
+ * @returns 
+ */
 exports.readRenderedFile = async(config, fpath) => {
 
     let html = await fs.readFile(path.join(config.renderDestination, fpath), 'utf8');
@@ -101,72 +244,61 @@ exports.findRendererPath = function(p) {
  * @params {string} rendersTo The full path of the rendered file
  * @return {Object} Description of the source file
  */
-exports.findRendersTo = filez.findRendersTo;
 
-/**
- *
- *
- * @param dir
- * @param fpath
- */
-exports.readFile = filez.readFile;
-exports.createNewFile = filez.createNewFile;
+const partialFuncs = import('./partial-funcs.mjs');
 
-exports.Document = documents.Document;
-exports.HTMLDocument = documents.HTMLDocument;
-exports.documentTree = documents.documentTree;
-exports.documentSearch = documents.documentSearch;
-exports.readDocument   = documents.readDocument;
-
-exports.partial = render.partial;
-
-exports.partialSync = render.partialSync; 
+exports.partial = undefined;
+exports.partialSync = undefined;
+(async () => {
+    exports.partial = (await partialFuncs).partial;
+    exports.partialSync = (await partialFuncs).partialSync;
+})();
 
 exports.indexChain = async function(config, fname) {
 
     var ret = [];
     const parsed = path.parse(fname);
 
-    var findParents = async function(config, fileName) {
-        // var newFileName;
-        var parentDir;
-        // console.log(`findParents ${fileName}`);
-        if (path.dirname(fileName) === '.'
-         || path.dirname(fileName) === parsed.root) {
-            return;
+    const documents = (await exports.filecache).documents;
+    let found = await documents.find(fname);
+    if (found) {
+        ret.push({
+            foundDir: found.mountPoint,
+            foundPath: found.renderPath,
+            filename: fname
+        });
+    }
+
+    let fileName = found.renderPath;
+    let parentDir;
+    let dn = path.dirname(fileName);
+    let done = false;
+    while (!(dn === '.' || dn === parsed.root)) {
+        if (path.basename(fileName) === "index.html") {
+            parentDir = path.dirname(path.dirname(fileName));
         } else {
-            if (path.basename(fileName) === "index.html") {
-                parentDir = path.dirname(path.dirname(fileName));
-            } else {
-                parentDir = path.dirname(fileName);
-            }
-            var lookFor = path.join(parentDir, "index.html");
-            return filez.findRendersTo(config, lookFor)
-            .then(found => {
-                // console.log(util.inspect(found));
-                if (typeof found !== 'undefined') {
-                    ret.push({ foundDir: found.foundDir, foundPath: found.foundPath, filename: lookFor });
-                }
-                return findParents(config, lookFor);
+            parentDir = path.dirname(fileName);
+        }
+        let lookFor = path.join(parentDir, "index.html");
+
+        let found = await documents.find(lookFor);
+        if (found) {
+            ret.push({
+                foundDir: found.mountPoint,
+                foundPath: found.renderPath,
+                // The test case is expecting all filename field values
+                // to start with a '/' charater.  Not sure why.
+                filename: '/' + lookFor
             });
         }
-    };
-
-    let renderer = config.findRendererPath(fname);
-    if (renderer) {
-        fname = renderer.filePath(fname);
+    
+        // Loop control
+        fileName = lookFor;
+        dn = path.dirname(lookFor);
     }
 
-    var found = await filez.findRendersTo(config, fname);
-    if (typeof found === 'undefined') {
-        throw new Error(`Did not find directory for ${fname}`);
-    }
-    ret.push({ foundDir: found.foundDir, foundPath: found.foundPath, filename: fname });
-    await findParents(config, fname);
-
-    // console.log(`indexChain FINI ${util.inspect(ret.reverse)}`);
     return ret.reverse();
-};
+}
 
 exports.relative = require('relative');
 
@@ -275,8 +407,8 @@ const _config_scripts = Symbol('scripts');
 const _config_plugins = Symbol('plugins');
 const _config_cheerio = Symbol('cheerio');
 const _config_configdir = Symbol('configdir');
+const _config_cachedir  = Symbol('cachedir');
 const _config_concurrency = Symbol('concurrency');
-const _config_akasha = Symbol('akasha');
 const _config_renderers = Symbol('renderers');
 
 /**
@@ -292,7 +424,6 @@ module.exports.Configuration = class Configuration {
     constructor(modulepath) {
 
         this[_config_renderers] = [];
-        this[_config_akasha] = module.exports;
 
         /*
          * Is this the best place for this?  It is necessary to
@@ -326,12 +457,11 @@ module.exports.Configuration = class Configuration {
         let config = this;
         this.addMahabhuta(mahaPartial.mahabhutaArray({
             renderPartial: function(fname, metadata) {
-                return render.partial(config, fname, metadata);
+                return exports.partial(config, fname, metadata);
             }
         }));
     }
 
-    get akasha() { return this[_config_akasha]; }
 
     /**
      * Initialize default configuration values for anything which has not
@@ -359,7 +489,25 @@ module.exports.Configuration = class Configuration {
             return configPath;
         }
 
-        var stat;
+        let stat;
+
+        const cacheDirsPath = configDirPath('cache');
+        if (!this[_config_cachedir]) {
+            if (fs.existsSync(cacheDirsPath)
+             && (stat = fs.statSync(cacheDirsPath))) {
+                if (stat.isDirectory()) {
+                    this.cacheDir = 'cache';
+                } else {
+                    throw new Error("'cache' is not a directory");
+                }
+            } else {
+                fs.mkdirsSync(cacheDirsPath);
+                this.cacheDir = 'cache';
+            }
+        } else if (this[_config_cachedir] && !fs.existsSync(this[_config_cachedir])) {
+            fs.mkdirsSync(this[_config_cachedir]);
+        }
+
         const assetsDirsPath = configDirPath('assets');
         if (!this[_config_assetsDirs]) {
             if (fs.existsSync(assetsDirsPath) && (stat = fs.statSync(assetsDirsPath))) {
@@ -445,6 +593,27 @@ module.exports.Configuration = class Configuration {
         return this;
     }
 
+    // Moved these to standalone functions
+
+    /* async setup() {
+        try {
+            // console.log(`before cache`);
+            await (await exports.cache).setup(this);
+            // await (await exports.cache()).save();
+            // console.log(`before filecache`);
+            await (await exports.filecache).setup(this);
+            // console.log(`after filecache`);
+        } catch (err) {
+            console.error(`INITIALIZATION FAILURE COULD NOT INITIALIZE CACHE `, err);
+            process.exit(1);
+        }
+    } */
+
+    /* async close() {
+        await (await exports.filecache).close();
+        await (await exports.cache).close();
+    } */
+
     /**
      * Record the configuration directory so that we can correctly interpolate
      * the pathnames we're provided.
@@ -452,8 +621,11 @@ module.exports.Configuration = class Configuration {
     set configDir(cfgdir) { this[_config_configdir] = cfgdir; }
     get configDir() { return this[_config_configdir]; }
 
-    set akasha(_akasha)  { this[_config_akasha] = _akasha; }
-    get akasha() { return this[_config_akasha]; }
+    set cacheDir(dirnm) { this[_config_cachedir] = dirnm; }
+    get cacheDir() { return this[_config_cachedir]; }
+
+    // set akasha(_akasha)  { this[_config_akasha] = _akasha; }
+    get akasha() { return module.exports }
 
     /**
      * Add a directory to the documentDirs configuration array
@@ -471,10 +643,13 @@ module.exports.Configuration = class Configuration {
             }
         }
         this[_config_documentDirs].push(dir);
+        // console.log(`addDocumentsDir ${util.inspect(dir)} ==> ${util.inspect(this[_config_documentDirs])}`);
         return this;
     }
 
-    get documentDirs() { return this[_config_documentDirs] ? this[_config_documentDirs] : []; }
+    get documentDirs() {
+        return this[_config_documentDirs] ? this[_config_documentDirs] : [];
+    }
 
     /**
      * Look up the document directory information for a given document directory.
@@ -503,6 +678,8 @@ module.exports.Configuration = class Configuration {
         if (this.configDir != null) {
             if (typeof dir === 'string' && !path.isAbsolute(dir)) {
                 dir = path.join(this.configDir, dir);
+            } else if (typeof dir === 'object' && !path.isAbsolute(dir.src)) {
+                dir.src = path.join(this.configDir, dir.src);
             }
         }
         this[_config_layoutDirs].push(dir);
@@ -523,8 +700,11 @@ module.exports.Configuration = class Configuration {
         if (this.configDir != null) {
             if (typeof dir === 'string' && !path.isAbsolute(dir)) {
                 dir = path.join(this.configDir, dir);
+            } else if (typeof dir === 'object' && !path.isAbsolute(dir.src)) {
+                dir.src = path.join(this.configDir, dir.src);
             }
         }
+        // console.log(`addPartialsDir `, dir);
         this[_config_partialDirs].push(dir);
         return this;
     }
@@ -690,6 +870,17 @@ module.exports.Configuration = class Configuration {
 
     setMahabhutaConfig(cheerio) {
         this[_config_cheerio] = cheerio;
+
+        // For cheerio 1.0.0-rc.10 we need to use this setting.
+        // If the configuration has set this, we must not
+        // override their setting.  But, generally, for correct
+        // operation and handling of Mahabhuta tags, we need
+        // this setting to be <code>true</code>
+        if (!('_useHtmlParser2' in this[_config_cheerio])) {
+            this[_config_cheerio]._useHtmlParser2 = true;
+        }
+
+        // console.log(this[_config_cheerio]);
     }
 
     get mahabhutaConfig() { return this[_config_cheerio]; }
@@ -697,35 +888,57 @@ module.exports.Configuration = class Configuration {
     /**
      * Copy the contents of all directories in assetDirs to the render destination.
      */
-    copyAssets() {
+    async copyAssets() {
         // console.log('copyAssets START');
 
-        return Promise.all(this.assetDirs.map(assetsdir => {
-            var copyTo;
-            var copyFrom;
-            if (typeof assetsdir === 'string') {
-                copyFrom = assetsdir;
-                copyTo = this.renderTo;
-            } else {
-                copyFrom = assetsdir.src;
-                copyTo = path.join(this.renderTo, assetsdir.dest);
+        const config = this;
+        const assets = (await exports.filecache).assets;
+        await assets.isReady();
+        // Fetch the list of all assets files
+        const paths = assets.paths();
+
+        // The work task is to copy each file
+        const queue = fastq.promise(async function(item) {
+            try {
+                let destFN = path.join(config.renderTo, item.renderPath);
+                // Make sure the destination directory exists
+                await fs.ensureDir(path.dirname(destFN));
+                // Copy from the absolute pathname, to the computed 
+                // location within the destination directory
+                // console.log(`copyAssets ${item.fspath} ==> ${destFN}`);
+                await fs.copy(item.fspath, destFN, {
+                    overwrite: true,
+                    preserveTimestamps: true
+                });
+                return "ok";
+            } catch (err) {
+                throw new Error(`copyAssets FAIL to copy ${item.fspath} because ${err.stack}`);
             }
-            return globfs.copyAsync(copyFrom, [ "**/*", '**/.*/*', '**/.*' ], copyTo,
-                    err => {
-                        if (err) reject(err);
-                        else resolve();
-                    });
-        }));
+        }, 10);
+
+        // Push the list of asset files into the queue
+        // Because queue.push returns Promise's we end up with
+        // an array of Promise objects
+        const waitFor = [];
+        for (let entry of paths) {
+            waitFor.push(queue.push(entry));
+        }
+        // This waits for all Promise's to finish
+        // But if there were no Promise's, no need to wait
+        if (waitFor.length > 0) await Promise.all(waitFor);
+        // There are no results in this case to care about
+        // const results = [];
+        // for (let result of waitFor) {
+        //    results.push(await result);
+        // }
     }
-
-
 
     /**
      * Call the beforeSiteRendered function of any plugin which has that function.
      */
     async hookBeforeSiteRendered() {
         // console.log('hookBeforeSiteRendered');
-        var config = this;
+        const config = this;
         for (let plugin of config.plugins) {
             if (typeof plugin.beforeSiteRendered !== 'undefined') {
                 // console.log(`CALLING plugin ${plugin.name} beforeSiteRendered`);
@@ -739,11 +952,59 @@ module.exports.Configuration = class Configuration {
      */
     async hookSiteRendered() {
         // console.log('hookSiteRendered');
-        var config = this;
+        const config = this;
         for (let plugin of config.plugins) {
             if (typeof plugin.onSiteRendered !== 'undefined') {
                 // console.log(`CALLING plugin ${plugin.name} onSiteRendered`);
                 await plugin.onSiteRendered(config);
+            }
+        }
+    }
+
+    async hookFileAdded(collection, vpinfo) {
+        const config = this;
+        for (let plugin of config.plugins) {
+            if (typeof plugin.onFileAdded !== 'undefined') {
+                // console.log(`CALLING plugin ${plugin.name} onFileAdded`);
+                await plugin.onFileAdded(config, collection, vpinfo);
+            }
+        }
+    }
+
+    async hookFileChanged(collection, vpinfo) {
+        const config = this;
+        for (let plugin of config.plugins) {
+            if (typeof plugin.onFileChanged !== 'undefined') {
+                // console.log(`CALLING plugin ${plugin.name} onFileChanged`);
+                await plugin.onFileChanged(config, collection, vpinfo);
+            }
+        }
+    }
+
+    async hookFileUnlinked(collection, vpinfo) {
+        const config = this;
+        for (let plugin of config.plugins) {
+            if (typeof plugin.onFileUnlinked !== 'undefined') {
+                // console.log(`CALLING plugin ${plugin.name} onFileUnlinked`);
+                await plugin.onFileUnlinked(config, collection, vpinfo);
+            }
+        }
+    }
+
+    async hookFileCacheSetup(collectionnm, collection) {
+        const config = this;
+        for (let plugin of config.plugins) {
+            if (typeof plugin.onFileCacheSetup !== 'undefined') {
+                await plugin.onFileCacheSetup(config, collectionnm, collection);
+            }
+        }
+    }
+
+    async hookPluginCacheSetup() {
+        const config = this;
+        for (let plugin of config.plugins) {
+            if (typeof plugin.onPluginCacheSetup !== 'undefined') {
+                await plugin.onPluginCacheSetup(config);
             }
         }
     }
@@ -843,11 +1104,13 @@ module.exports.Configuration = class Configuration {
     registerRenderer(renderer) {
         if (!(renderer instanceof module.exports.Renderer)) {
             console.error('Not A Renderer '+ util.inspect(renderer));
-            throw new Error('Not a Renderer');
+            throw new Error(`Not a Renderer ${renderer.name}`);
         }
         if (!this.findRendererName(renderer.name)) {
-            this[_config_renderers].push(renderer);
             renderer.akasha = this.akasha;
+            renderer.config = this;
+            // console.log(`registerRenderer `, renderer);
+            this[_config_renderers].push(renderer);
         }
     }
 
@@ -864,8 +1127,9 @@ module.exports.Configuration = class Configuration {
             console.error('Not A Renderer '+ util.inspect(renderer));
             throw new Error('Not a Renderer');
         }
-        this[_config_renderers].unshift(renderer);
         renderer.akasha = this.akasha;
+        renderer.config = this;
+        this[_config_renderers].unshift(renderer);
     }
 
     findRendererName(name) {
@@ -892,6 +1156,7 @@ module.exports.Configuration = class Configuration {
         this.registerRenderer(new module.exports.LiquidRenderer());
         this.registerRenderer(new module.exports.NunjucksRenderer());
         this.registerRenderer(new module.exports.HandlebarsRenderer());
+        // this.registerRenderer(new module.exports.TempuraRenderer());
         this.registerRenderer(new module.exports.CSSLESSRenderer());
         this.registerRenderer(new module.exports.JSONRenderer());
     }
