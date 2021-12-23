@@ -16,11 +16,37 @@ Options:
 Commands:
   copy-assets <configFN>                   Copy assets into output directory
   document <configFN> <documentFN>         Show information about a document
-  renderto <configFN> <documentFN>         Call renderTo for a document
   render-document <configFN> <documentFN>  Render a document into output directory
   render [options] <configFN>              Render a site into output directory
-  gh-pages-publish [options] <configFN>    Publish a site using Github Pages.  Takes the rendering destination, adds it into a branch, and pushes that to Github
+  explain <configFN>                       Explain a cache query
+  watch <configFN>                         Track changes to files in a site, and rebuild
+                                           anything that changes
+  gh-pages-publish [options] <configFN>    Publish a site using Github Pages.  Takes the
+                                           rendering destination, adds it into a branch,
+                                           and pushes that to Github
   config <configFN>                        Print a site configuration
+  docdirs <configFN>                       List the documents directories in a site
+                                           configuration
+  assetdirs <configFN>                     List the assets directories in a site
+                                           configuration
+  partialdirs <configFN>                   List the partials directories in a site
+                                           configuration
+  layoutsdirs <configFN>                   List the layouts directories in a site
+                                           configuration
+  documents <configFN>                     List the documents in a site configuration
+  docinfo <configFN> <docFN>               Show information about a document in a site
+                                           configuration
+  tags <configFN>                          List the tags
+  search [options] <configFN>              Search for documents
+  assets <configFN>                        List the assets in a site configuration
+  assetinfo <configFN> <docFN>             Show information about an asset in a site
+                                           configuration
+  layouts <configFN>                       List the layouts in a site configuration
+  layoutinfo <configFN> <docFN>            Show information about a layout in a site
+                                           configuration
+  partials <configFN>                      List the partials in a site configuration
+  partialinfo <configFN> <docFN>           Show information about a partial in a site
+                                           configuration
   help [command]                           display help for command
 ```
 
@@ -57,26 +83,3 @@ For more information see:
 * Website matching the example: https://example.akashacms.com/
 
 
-
-
-* caching.js:    return cache.getKey(`${module}-${key}`);
-* documents.js:        let fileData = cache.get("documents-search", fullFilePath);
-    * Wants the data for a pathname
-* documents.js:    var doc = cache.get("documents-readDocument", documentPath);
-    * Wants the data for a pathname
-* filez.js:    var cached = cache.get("filez-findAsset", filename);
-* filez.js:    var cached = cache.get("filez-findRendersTo", rendersTo);
-    * Wants the data for a pathname
-
-TODO:
-
-* DONE Rewrite watcher/watcher to only send out events
-    * TODO - move find function to an appropriate place
-    * TODO - add methods to add a directory to watch, or remove a directory from being watched.
-* In the Configuration object:
-    * set up the watcher instances
-    * As addDocumentsDir/etc are called, add to the corresponding watcher
-    * Add corresponding removeDocumentsDir/etc functions, and also remove from corresponding watcher
-* Create cache-filez - listens to those events - using cache-forerunner, set up data storage for file data
-* Rewrite the code in documents.js to match
-* Rewrite the code which uses functions in filez.js to match
