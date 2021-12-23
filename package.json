@@ -57,8 +57,7 @@
   },
   "devDependencies": {},
   "scripts": {
-    "gendocs": "cd guide && npm run build",
-    "gendocssetup": "cd guide && npm install",
+    "dotest": "cd test && npm test",
     "dopublish": "npm publish --access public"
   },
   "author": {
