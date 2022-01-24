@@ -46,7 +46,6 @@
     "liquidjs": "^9.28.x",
     "mahabhuta": "0.7.9",
     "markdown-it": "^12.x",
-    "mime": "^2.5.2",
     "minimatch": "^3.0.4",
     "nunjucks": "^3.2.x",
     "oembetter": "^1.0.x",

@@ -31,17 +31,39 @@ const path   = require('path');
 const oembetter = require('oembetter')();
 const RSS    = require('rss');
 const fastq = require('fastq');
+const { DirsWatcher, mimedefine } = require('@akashacms/stacked-dirs');
 const mahabhuta = require('mahabhuta');
 exports.mahabhuta = mahabhuta;
 const cheerio = require('cheerio');
 const mahaPartial = require('mahabhuta/maha/partial');
 
-const mime = require('mime');
-
 // There doesn't seem to be an official registration
 // per: https://asciidoctor.org/docs/faq/
 // per: https://github.com/asciidoctor/asciidoctor/issues/2502
-mime.define({'text/x-asciidoc': ['adoc', 'asciidoc']});
+//
+// This also seems to be true for the other file types.  We've made up
+// some MIME types to go with each.
+//
+// The MIME package had previously been installed with AkashaRender.
+// But, it seems to not be used, and instead we compute the MIME type
+// for files in Stacked Directories.
+//
+// The required task is to register some MIME types with the
+// MIME package.  It isn't appropriate to do this in
+// the Stacked Directories package.  Instead that's left
+// for code which uses Stacked Directories to determine which
+// (if any) added MIME types are required.  Ergo, AkashaRender
+// needs to register the MIME types it is interested in.
+// That's what is happening here.
+//
+// There's a thought that this should be handled in the Renderer
+// implementations.  But it's not certain that's correct.
+
+mimedefine({'text/x-asciidoc': [ 'adoc', 'asciidoc' ]});
+mimedefine({'text/x-ejs': [ 'ejs']});
+mimedefine({'text/x-nunjucks': [ 'njk' ]});
+mimedefine({'text/x-handlebars': [ 'handlebars' ]});
+mimedefine({'text/x-liquid': [ 'liquid' ]});
 
 exports.cache = import('./cache/cache-forerunner.mjs');
 exports.filecache = import('./cache/file-cache.mjs');
