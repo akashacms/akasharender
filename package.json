@@ -1,6 +1,6 @@
 {
   "name": "akasharender",
-  "version": "0.8.1",
+  "version": "0.8.2",
   "description": "Rendering support for generating static HTML websites or EPUB eBooks",
   "keywords": [
     "content management system",
@@ -44,7 +44,7 @@
     "highlight.js": "^11.3.x",
     "less": ">=3.12.x",
     "liquidjs": "^9.28.x",
-    "mahabhuta": "0.7.9",
+    "mahabhuta": "0.8.x",
     "markdown-it": "^12.x",
     "minimatch": "^3.0.4",
     "nunjucks": "^3.2.x",
