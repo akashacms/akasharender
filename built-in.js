@@ -53,7 +53,16 @@ module.exports = class BuiltInPlugin extends Plugin {
 
 	configure(config, options) {
         this[_plugin_config] = config;
-        this[_plugin_options] = options;
+        this[_plugin_options] = options ? options : {};
+        if (typeof this[_plugin_options].relativizeHeadLinks === 'undefined') {
+            this[_plugin_options].relativizeHeadLinks = true;
+        }
+        if (typeof this[_plugin_options].relativizeScriptLinks === 'undefined') {
+            this[_plugin_options].relativizeScriptLinks = true;
+        }
+        if (typeof this[_plugin_options].relativizeBodyLinks === 'undefined') {
+            this[_plugin_options].relativizeBodyLinks = true;
+        }
         options.config = config;
         let moduleDirname;
         try {
@@ -93,6 +102,30 @@ module.exports = class BuiltInPlugin extends Plugin {
     get config() { return this[_plugin_config]; }
     get options() { return this[_plugin_options]; }
     get resizequeue() { return this[_plugin_resizequeue]; }
+
+    /**
+     * Determine whether <link> tags in the <head> for local
+     * URLs are relativized or absolutized.
+     */
+    set relativizeHeadLinks(rel) {
+        this[_plugin_options].relativizeHeadLinks = rel;
+    }
+
+    /**
+     * Determine whether <script> tags for local
+     * URLs are relativized or absolutized.
+     */
+    set relativizeScriptLinks(rel) {
+        this[_plugin_options].relativizeScriptLinks = rel;
+    }
+
+    /**
+     * Determine whether <A> tags for local
+     * URLs are relativized or absolutized.
+     */
+    set relativizeBodyLinks(rel) {
+        this[_plugin_options].relativizeBodyLinks = rel;
+    }
 
     doStylesheets(metadata) {
     	return _doStylesheets(metadata, this.options);
@@ -213,7 +246,9 @@ function _doStylesheets(metadata, options) {
             // console.log(`_doStylesheets process ${stylehref}`);
             if (!pHref.protocol && !pHref.hostname && !pHref.slashes) {
                 // This is a local URL
-                if (path.isAbsolute(stylehref)) {
+                // Only relativize if desired
+                if (options.relativizeHeadLinks
+                 && path.isAbsolute(stylehref)) {
                     /* if (!metadata) {
                         console.log(`_doStylesheets NO METADATA`);
                     } else if (!metadata.document) {
@@ -259,7 +294,9 @@ function _doJavaScripts(metadata, scripts, options) {
             let pHref = url.parse(script.href, true, true);
             if (!pHref.protocol && !pHref.hostname && !pHref.slashes) {
                 // This is a local URL
-                if (path.isAbsolute(scripthref)) {
+                // Only relativize if desired
+                if (options.relativizeScriptLinks
+                 && path.isAbsolute(scripthref)) {
                     let newHref = relative(`/${metadata.document.renderTo}`, scripthref);
                     // console.log(`_doJavaScripts absolute scripthref ${scripthref} in ${util.inspect(metadata.document)} rewrote to ${newHref}`);
                     scripthref = newHref;
@@ -333,6 +370,8 @@ class HeadLinkRelativizer extends mahabhuta.Munger {
     get selector() { return "html head link"; }
     get elementName() { return "html head link"; }
     async process($, $link, metadata, dirty) {
+        // Only relativize if desired
+        if (!this.array.options.relativizeHeadLinks) return;
         let href = $link.attr('href');
 
         let pHref = url.parse(href, true, true);
@@ -351,6 +390,8 @@ class ScriptRelativizer extends mahabhuta.Munger {
     get selector() { return "script"; }
     get elementName() { return "script"; }
     async process($, $link, metadata, dirty) {
+        // Only relativize if desired
+        if (!this.array.options.relativizeScriptLinks) return;
         let href = $link.attr('src');
 
         if (href) {
@@ -730,7 +771,10 @@ class AnchorCleanup extends mahabhuta.Munger {
             //  renderTo: 'hier/dir1/dir2/nested-anchor.html'
             // } to ../../../index.html
             //
-            if (path.isAbsolute(href)) {
+
+            // Only relativize if desired
+            if (this.array.options.relativizeBodyLinks
+             && path.isAbsolute(href)) {
                 let newHref = relative(`/${metadata.document.renderTo}`, href);
                 $link.attr('href', newHref);
                 // console.log(`AnchorCleanup de-absolute href ${href} in ${util.inspect(metadata.document)} to ${newHref}`);

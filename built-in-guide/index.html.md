@@ -273,4 +273,25 @@ For the purpose of deployment to a subdirectory, rewriting the URL's to include 
 
 And then we run a local webserver to preview the rendered site, none of these links will work.  The biggest problem is CSS and JavaScript for theming will not load.
 
-As a result the built-in plugin now rewrites those to use relative links instead of absolute links.
+Therefore, for most cases, it is desired to use relative links rather than absolute.
+
+```html
+<a href="./index.html"></a>
+<img src="./images/logo.jpg">
+<link rel="stylesheet" type="text/css" href="../vendor/bootstrap/css/bootstrap.min.css">
+<script src="../vendor/jquery/jquery.min.js">
+```
+
+For that purpose, by default, the built-in plugin automatically computes a relative path from the source page to the destination local URL.
+
+But this is not desired in all cases.  In some cases it is desired to use absolute paths for local URLs.  To enable this behavior, use the following in the configuration:
+
+```js
+config.prepare();
+
+config.plugin('akashacms-builtin').relativizeHeadLinks = false;
+config.plugin('akashacms-builtin').relativizeScriptLinks = false;
+config.plugin('akashacms-builtin').relativizeBodyLinks = false;
+```
+
+Because the `akashacms-builtin` plugin is installed in `config.prepare`, you cannot reference the plugin until after that function is executed.  These three options control whether to relativize those types of local URLs.
