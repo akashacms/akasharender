@@ -9,6 +9,7 @@
     "test-rebased": "mocha ./rebased",
     "test-cache": "mocha ./test-cache.mjs",
     "test-bad-formatting": "mocha ./bad-formatting.js",
+    "test-absolute": "mocha ./test-relative.js",
     "build": "npm-run-all build:copy build:render",
     "build:copy": "node ../cli.js copy-assets config-normal.js",
     "build:render": "node ../cli.js render config-normal.js",

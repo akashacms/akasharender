@@ -2,6 +2,14 @@
 
 This should probably be kept in GitHub issues -- eventually
 
+# Highlight.JS using JS in the browser
+
+The current practice for code highlighting isn't working well.  The highlighting often looks bad.  Further, when Medium imports articles, it chokes badly on the highlighted code.
+
+https://highlightjs.org/usage/ -- It can be configured to run JavaScript in the browser to perform the highlighting.
+
+Alternatively there might be other tools that do a better job of code highlighting.
+
 # Using gh-pages w/ GitHub token, or GitHub actions
 
 Publishing from a headless Jenkins slave means setting up a Personal Access Token.
