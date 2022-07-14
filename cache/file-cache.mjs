@@ -50,7 +50,9 @@ const remapdirs = dirz => {
 
 export async function setupDocuments(config) {
     try {
+        // console.log(`filecache setup documents ${util.inspect(config)}`);
         // console.log(`filecache setup documents ${util.inspect(config.documentDirs)}`);
+        // console.log(typeof config.documentDirs);
         const docsDirs = remapdirs(config.documentDirs);
         documents = new FileCache(config, docsDirs, 'documents');
         documents.mapRenderPath = true;
