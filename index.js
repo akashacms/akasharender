@@ -142,22 +142,27 @@ exports.setupPluginCaches = async function(config) {
 
 exports.cacheSetupComplete = async function(config) {
     try {
+        // console.log(`start cache setup`);
         let cache = (await exports.cache)
-        await cache.setup(config);
+        // await cache.setup(config);
         let filecache = (await exports.filecache);
+        console.log(config);
+        // console.log(filecache);
         await Promise.all([
             filecache.setupDocuments(config),
             filecache.setupAssets(config),
             filecache.setupLayouts(config),
             filecache.setupPartials(config),
             exports.setupPluginCaches(config)
-        ])
+        ]);
+        // console.log(`caches setups`);
         await Promise.all([
             filecache.documents.isReady(),
             filecache.assets.isReady(),
             filecache.layouts.isReady(),
             filecache.partials.isReady()
         ]);
+        // console.log(`all ready`);
     } catch (err) {
         console.error(`INITIALIZATION FAILURE COULD NOT INITIALIZE CACHE SYSTEM `, err);
         process.exit(1);
