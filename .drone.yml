@@ -1,0 +1,15 @@
+---
+kind: pipeline
+type: docker
+name: default
+
+steps:
+  - name: test
+    image: node
+    commands:
+      - npm install
+      - cd test
+      - npm install
+      - npm test
+  
+  

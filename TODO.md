@@ -10,6 +10,38 @@ https://highlightjs.org/usage/ -- It can be configured to run JavaScript in the 
 
 Alternatively there might be other tools that do a better job of code highlighting.
 
+# Minimal metadata for social media
+
+https://meiert.com/en/blog/minimal-social-markup/
+
+https://cards-dev.twitter.com/validator
+
+https://www.linkedin.com/post-inspector/
+
+https://developers.facebook.com/tools/debug/
+
+
+```html
+<!-- <head> (and <body>) needed for LinkedIn -->
+<head>
+  <!-- “twitter:card” and title needed for Twitter -->
+  <meta name=twitter:card content=summary_large_image>
+  <meta property=og:title content="This is a test title">
+  <!-- Quotes needed for WhatsApp and Signal -->
+  <meta property="og:description" name="description" content="This is a test description.">
+  <meta property="og:image" content="https://hell.meiert.org/core/png/test.png">
+</head>
+```
+
+# Icons
+
+https://humbleicons.com/
+
+# Front end build tool
+
+https://vitejs.dev/
+
+
 # Using gh-pages w/ GitHub token, or GitHub actions
 
 Publishing from a headless Jenkins slave means setting up a Personal Access Token.
