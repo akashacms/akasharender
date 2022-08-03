@@ -32,8 +32,8 @@ const data      = require('./data');
 
 // Note this is an ES6 module and to use it we must 
 // use an async function along with the await keyword
+const _cache = import('./cache/cache-forerunner.mjs');
 const _filecache = import('./cache/file-cache.mjs');
-
 const _watchman = import('./cache/watchman.mjs');
 
 process.title = 'akasharender';
@@ -119,6 +119,9 @@ program
         try {
             const config = require(path.join(process.cwd(), configFN));
             let akasha = config.akasha;
+            const cache = await _cache;
+            const filecache = await _filecache;
+            await cache.setup(config);
             await akasha.cacheSetupComplete(config);
             data.init();
             let results = await akasha.render(config);
