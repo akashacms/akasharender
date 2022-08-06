@@ -34,7 +34,7 @@
     "asciidoctor.js": "^1.5.x",
     "commander": "^7.1.x",
     "debug": "^4.3.x",
-    "ejs": "^3.1.x",
+    "ejs": "3.1.8",
     "fastq": "^1.11.x",
     "forerunnerdb": "^2.0.22",
     "fs-extra": ">=7.0.x",
@@ -44,6 +44,7 @@
     "highlight.js": "^11.3.x",
     "less": ">=3.12.x",
     "liquidjs": "^9.28.x",
+    "lokijs": "^1.5.12",
     "mahabhuta": "0.8.x",
     "markdown-it": "^12.x",
     "minimatch": "^3.0.4",
@@ -51,10 +52,9 @@
     "oembetter": "^1.0.x",
     "relative": "^3.0.x",
     "rss": "^1.2.x",
-    "sharp": "^0.29.x",
+    "sharp": "^0.30.x",
     "uuid": "^8.3.x"
   },
-  "devDependencies": {},
   "scripts": {
     "dotest": "cd test && npm test",
     "dopublish": "npm publish --access public"
