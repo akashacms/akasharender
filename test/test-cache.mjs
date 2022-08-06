@@ -1,11 +1,11 @@
 import util   from 'util';
 import path   from 'path';
-import fse    from 'fs-extra';
+import { promises as fsp } from 'fs';
 import akasha from '../index.js';
-import * as filecache from '../cache/file-cache.mjs';
-import * as cache from '../cache/cache-forerunner.mjs';
+import * as filecache from '../cache/file-cache-lokijs.mjs';
 import minimatch from 'minimatch';
 import Chai   from 'chai';
+
 const assert = Chai.assert;
 
 // See https://techsparx.com/nodejs/esnext/dirname-es-modules.html
@@ -121,7 +121,9 @@ describe('Initialize cache test configuration', function() {
 describe('Setup cache', function() {
     it('should delete cache DB dir', async function() {
         try {
-            await fse.remove(config.cacheDir);
+            await fsp.rm(config.cacheDir, {
+                recursive: true
+            });
         } catch (e) {
             console.error(e);
             throw e;
@@ -140,12 +142,12 @@ describe('Setup cache', function() {
     it('should successfully setup file caches', async function() {
         this.timeout(75000);
         try {
-            await Promise.all([
+            /* await Promise.all([
                 akasha.setupDocuments(config),
                 akasha.setupAssets(config),
                 akasha.setupLayouts(config),
                 akasha.setupPartials(config)
-            ])
+            ]); */
             await Promise.all([
                 filecache.documents.isReady(),
                 filecache.assets.isReady(),
@@ -160,355 +162,14 @@ describe('Setup cache', function() {
 
 });
 
-describe('Test cache', function() {
-
-    const cachenm = 'test';
-    
-    it('should not have test cache', async function() {
-        try {
-            assert.isFalse(await cache.cacheExists(cachenm));
-        } catch (e) {
-            console.error(`FAIL should not have test cache ${e}`);
-            throw e;
-        }
-    });
-
-    it('should create test cache', async function() {
-        try {
-            await cache.addCache(cachenm);
-        } catch (e) {
-            console.error(`FAIL should create test cache ${e}`);
-            throw e;
-        }
-    });
-
-    it('should have test cache', async function() {
-        try {
-            assert.isTrue(await cache.cacheExists(cachenm));
-        } catch (e) {
-            console.error(`FAIL should have test cache ${e}`);
-            throw e;
-        }
-    });
-
-    it('should add item to cache', async function() {
-        try {
-            const c = await cache.getCache(cachenm);
-            assert.isDefined(c);
-            c.insert({ meaning: 42, something: 'completely different' });
-            // await cache.save();
-        } catch (e) {
-            console.error(`FAIL should add item to cache ${e}`);
-            throw e;
-        }
-    });
-    
-    it('should find item in cache', async function() {
-        try {
-            const c = await cache.getCache(cachenm);
-            assert.isDefined(c);
-            let found = c.find({ meaning: 42 });
-            assert.isArray(found);
-            assert.equal(found.length, 1);
-            assert.deepEqual({
-                    meaning: found[0].meaning,
-                    something: found[0].something
-                }, {
-                    meaning: 42,
-                    something: 'completely different'
-                });
-            found = c.find({ something: 'completely different' });
-            assert.isArray(found);
-            assert.equal(found.length, 1);
-            assert.deepEqual({
-                    meaning: found[0].meaning,
-                    something: found[0].something
-                }, {
-                    meaning: 42,
-                    something: 'completely different'
-                });
-            found = cache.find(cachenm, { meaning: 42 });
-            assert.isArray(found);
-            assert.equal(found.length, 1);
-            assert.deepEqual({
-                    meaning: found[0].meaning,
-                    something: found[0].something
-                }, {
-                    meaning: 42,
-                    something: 'completely different'
-                });
-            found = cache.find(cachenm,
-                { something: 'completely different' });
-            assert.isArray(found);
-            assert.equal(found.length, 1);
-            assert.deepEqual({
-                    meaning: found[0].meaning,
-                    something: found[0].something
-                }, {
-                    meaning: 42,
-                    something: 'completely different'
-                });
-        } catch (e) {
-            console.error(`FAIL should find item in cache ${e}`);
-            throw e;
-        }
-    });
-
-    it('should not find bad item', async function() {
-        try {
-            const notfound = cache.find(cachenm, {
-                doesnotexist: true
-            });
-            assert.isArray(notfound);
-            assert.equal(notfound.length, 0);
-        } catch (e) {
-            console.error(e);
-            throw e;
-        }
-    });
-
-    it('should upsert item', async function() {
-        try {
-            await cache.upsert(cachenm, {
-                meaning: 55,
-                upsert: 'rocks'
-            });
-        } catch (e) {
-            console.error(e);
-            throw e;
-        }
-    });
-
-    it('should find upserted item in cache', async function() {
-        try {
-            const c = await cache.getCache(cachenm);
-            assert.isDefined(c);
-            let found = c.find({ meaning: 55 });
-            assert.isArray(found);
-            assert.equal(found.length, 1);
-            assert.deepEqual({
-                    meaning: found[0].meaning,
-                    upsert: found[0].upsert
-                }, {
-                    meaning: 55,
-                    upsert: 'rocks'
-                });
-            found = c.find({ upsert: 'rocks' });
-            assert.isArray(found);
-            assert.equal(found.length, 1);
-            assert.deepEqual({
-                    meaning: found[0].meaning,
-                    upsert: found[0].upsert
-                }, {
-                    meaning: 55,
-                    upsert: 'rocks'
-                });
-            found = cache.find(cachenm, { meaning: 55 });
-            assert.isArray(found);
-            assert.equal(found.length, 1);
-            assert.deepEqual({
-                    meaning: found[0].meaning,
-                    upsert: found[0].upsert
-                }, {
-                    meaning: 55,
-                    upsert: 'rocks'
-                });
-            found = cache.find(cachenm, { upsert: 'rocks' });
-            assert.deepEqual({
-                    meaning: found[0].meaning,
-                    upsert: found[0].upsert
-                }, {
-                    meaning: 55,
-                    upsert: 'rocks'
-                });
-        } catch (e) {
-            console.error(e);
-            throw e;
-        }
-    });
-
-    it('should remove item', async function() {
-        try {
-            (await cache.getCache(cachenm)).remove({
-                upsert: 'rocks'
-            });
-        } catch (e) {
-            console.error(e);
-            throw e;
-        }
-    });
-
-    it('should not find removed item', async function() {
-        try {
-            const c = await cache.getCache(cachenm);
-            assert.isDefined(c);
-            let found = c.find({ meaning: 55 });
-            assert.isArray(found);
-            assert.equal(found.length, 0);
-            found = c.find({ upsert: 'rocks' });
-            assert.isArray(found);
-            assert.equal(found.length, 0);
-            found = cache.find(cachenm, { meaning: 55 });
-            assert.isArray(found);
-            assert.equal(found.length, 0);
-            found = cache.find(cachenm, { upsert: 'rocks' });
-            assert.isArray(found);
-            assert.equal(found.length, 0);
-        } catch (e) {
-            console.error(e);
-            throw e;
-        }
-    });
-
-    describe('Unknown cache', function() {
-
-        it('shound not find unknown cache', async function() {
-            try {
-                assert.isFalse(await cache.cacheExists('unknown'));
-            } catch (e) {
-                console.error(e);
-                throw e;
-            }
-        });
-
-        it('should not find item in unknown cache', async function() {
-            try {
-                let notfound = cache.find('unknown', {
-                    meaning: 42
-                });
-                assert.isArray(notfound);
-                assert.equal(notfound.length, 0);
-            } catch (e) {
-                console.error(e);
-                throw e;
-            }
-        });
-
-    });
-
-    describe('Close cache', function() {
-        it('should close cache', function() {
-            cache.close();
-        });
-    });
-
-    describe('Reopen cache', function() {
-
-        it('should successfully reopen cache database', async function() {
-            try {
-                await cache.setup(config);
-            } catch (e) {
-                console.error(e);
-                throw e;
-            }
-        });
-
-        it('should have cache dir', async function() {
-            try {
-                assert.isTrue(await fse.pathExists(config.cacheDir));
-            } catch (e) {
-                console.error(e);
-                throw e;
-            }
-        });
-
-        it('should find item in cache', async function() {
-            try {
-                const c = await cache.getCache(cachenm);
-                assert.isDefined(c);
-                let found = c.find({ meaning: 42 });
-                assert.isArray(found);
-                assert.equal(found.length, 1);
-                assert.deepEqual({
-                        meaning: found[0].meaning,
-                        something: found[0].something
-                    }, {
-                        meaning: 42,
-                        something: 'completely different'
-                    });
-                found = c.find({ something: 'completely different' });
-                assert.isArray(found);
-                assert.equal(found.length, 1);
-                assert.deepEqual({
-                        meaning: found[0].meaning,
-                        something: found[0].something
-                    }, {
-                        meaning: 42,
-                        something: 'completely different'
-                    });
-                found = cache.find(cachenm, { meaning: 42 });
-                assert.isArray(found);
-                assert.equal(found.length, 1);
-                assert.deepEqual({
-                        meaning: found[0].meaning,
-                        something: found[0].something
-                    }, {
-                        meaning: 42,
-                        something: 'completely different'
-                    });
-                found = cache.find(cachenm,
-                    { something: 'completely different' });
-                assert.isArray(found);
-                assert.equal(found.length, 1);
-                assert.deepEqual({
-                        meaning: found[0].meaning,
-                        something: found[0].something
-                    }, {
-                        meaning: 42,
-                        something: 'completely different'
-                    });
-            } catch (e) {
-                console.error(`FAIL should find item in cache ${e}`);
-                throw e;
-            }
-        });
-
-        it('should not find bad item', async function() {
-            try {
-                const notfound = cache.find(cachenm, {
-                    doesnotexist: true
-                });
-                assert.isArray(notfound);
-                assert.equal(notfound.length, 0);
-            } catch (e) {
-                console.error(e);
-                throw e;
-            }
-        });
-
-        it('should not find removed item', async function() {
-            try {
-                const c = await cache.getCache(cachenm);
-                assert.isDefined(c);
-                let found = c.find({ meaning: 55 });
-                assert.isArray(found);
-                assert.equal(found.length, 0);
-                found = c.find({ upsert: 'rocks' });
-                assert.isArray(found);
-                assert.equal(found.length, 0);
-                found = cache.find(cachenm, { meaning: 55 });
-                assert.isArray(found);
-                assert.equal(found.length, 0);
-                found = cache.find(cachenm, { upsert: 'rocks' });
-                assert.isArray(found);
-                assert.equal(found.length, 0);
-            } catch (e) {
-                console.error(e);
-                throw e;
-            }
-        });
-
-    });
-});
-
 function isPathAllowed(pathinfo, allowed_paths) {
-    for (let allowed of allowed_paths) {
-        // console.log(`pathinfo ${util.inspect(pathinfo)} allowed ${util.inspect(allowed)}`);
+    for (const allowed of allowed_paths) {
+        // console.log(`isPathAllowed pathinfo ${util.inspect(pathinfo)} allowed ${util.inspect(allowed)}`);
         if (minimatch(pathinfo.fspath, allowed.fspath)
-            && pathinfo.renderPath === allowed.renderPath
-            && pathinfo.vpath === allowed.vpath) {
+         && pathinfo.renderPath === allowed.renderPath
+         && pathinfo.vpath === allowed.vpath) {
                 return true;
-            }
+        }
     }
     return false;
 }
@@ -931,24 +592,32 @@ describe('Documents cache', function() {
             renderPath: 'teaser-njk-macro.html'
         }
     ];
-
+    
     it('should find only allowed document paths', async function() {
         this.timeout(75000);
-        const documents = (await akasha.filecache).documents;
+        const documents = filecache.documents;
         await documents.isReady();
 
-        let found = filecache.documents.paths();
+        // console.log(`allowed documents pre paths`);
+
+        const found = filecache.documents.paths();
 
         assert.isDefined(found);
         assert.isArray(found);
 
-        for (let pathinfo of found) {
+        // console.log(`allowed documents length ${found.length}`);
+
+        const vpathseen = new Set();
+
+        for (const pathinfo of found) {
+            assert.isFalse(vpathseen.has(pathinfo.vpath), `Two or more entries for ${pathinfo.vpath}`);
+            vpathseen.add(pathinfo.vpath);
             assert.isTrue(isPathAllowed(pathinfo, allowed_paths), util.inspect(pathinfo));
         }
     });
 
     it('should find /index.html.md', function() {
-        let found = filecache.documents.find('/index.html.md');
+        const found = filecache.documents.find('/index.html.md');
 
         assert.isDefined(found);
         assert.equal(found.mime, 'text/markdown');
@@ -960,7 +629,7 @@ describe('Documents cache', function() {
     });
 
     it('should find index.html.md', function() {
-        let found = filecache.documents.find('index.html.md');
+        const found = filecache.documents.find('index.html.md');
 
         assert.isDefined(found);
         assert.equal(found.mime, 'text/markdown');
@@ -972,7 +641,7 @@ describe('Documents cache', function() {
     });
 
     it('should find index.html', function() {
-        let found = filecache.documents.find('index.html');
+        const found = filecache.documents.find('index.html');
 
         assert.isDefined(found);
         assert.equal(found.mime, 'text/markdown');
@@ -985,7 +654,7 @@ describe('Documents cache', function() {
 
     function filezContains(siblings, vpath) {
         let ret = false;
-        for (let sibling of siblings) {
+        for (const sibling of siblings) {
             if (sibling.vpath === vpath) {
                 ret = true;
                 break;
@@ -995,8 +664,8 @@ describe('Documents cache', function() {
     }
     
     it('should find siblings for index.html', function() {
-        let siblings = filecache.documents.siblings('index.html.md');
-        for (let sibling of siblings) {
+        const siblings = filecache.documents.siblings('index.html.md');
+        for (const sibling of siblings) {
             assert.equal(sibling.dirname, '/');
         }
         assert.isOk(filezContains(siblings, 'img2figimg-liquid.html.md'));
@@ -1032,7 +701,7 @@ describe('Documents cache', function() {
     describe('tags', function() {
 
         it('should not find tags in show-content.html', function() {
-            let found = filecache.documents.find('show-content.html');
+            const found = filecache.documents.find('show-content.html');
 
             assert.isDefined(found);
             assert.equal(found.mime, 'text/markdown');
@@ -1045,7 +714,7 @@ describe('Documents cache', function() {
         });
 
         it('should find tags in tags-array.html', function() {
-            let found = filecache.documents.find('tags-array.html');
+            const found = filecache.documents.find('tags-array.html');
 
             assert.isDefined(found);
             assert.equal(found.mime, 'text/markdown');
@@ -1079,7 +748,7 @@ describe('Documents cache', function() {
         });
 
         it('should find tags in tags-string.html', function() {
-            let found = filecache.documents.find('/tags-string.html.md');
+            const found = filecache.documents.find('/tags-string.html.md');
 
             assert.isDefined(found);
             assert.equal(found.mime, 'text/markdown');
@@ -1113,9 +782,12 @@ describe('Documents cache', function() {
         });
 
         it('should find documents with Tag1', function() {
-            let found = filecache.documents.search(config, {
+            const found = filecache.documents.search({
                 tag: 'Tag1'
             });
+            /* console.log(`test Tag1 found `, found.map(f => {
+                return f.vpath;
+            })); */
 
             assert.isDefined(found);
             assert.isArray(found);
@@ -1125,9 +797,12 @@ describe('Documents cache', function() {
         });
 
         it('should find documents with Tag-string-2', function() {
-            let found = filecache.documents.search(config, {
+            const found = filecache.documents.search({
                 tag: 'Tag-string-2'
             });
+            /* console.log(`test Tag-string-2 found `, found.map(f => {
+                return f.vpath;
+            })); */
 
             assert.isDefined(found);
             assert.isArray(found);
@@ -1137,9 +812,12 @@ describe('Documents cache', function() {
         });
 
         it('should not find documents with foober', function() {
-            let found = filecache.documents.search(config, {
+            const found = filecache.documents.search({
                 tag: 'foober'
             });
+            /* console.log(`test foober found `, found.map(f => {
+                return f.vpath;
+            })); */
 
             assert.isDefined(found);
             assert.isArray(found);
@@ -1147,7 +825,7 @@ describe('Documents cache', function() {
         });
 
         it('should find all tags', function() {
-            let found = filecache.documents.tags();
+            const found = filecache.documents.tags();
 
             assert.isDefined(found);
             assert.isArray(found);
@@ -1165,7 +843,7 @@ describe('Documents cache', function() {
 
 
         it('should find documents with tags', function() {
-            let found = filecache.documents.documentsWithTags();
+            const found = filecache.documents.documentsWithTags();
 
             assert.isDefined(found);
             assert.isArray(found);
@@ -1183,7 +861,7 @@ describe('Documents cache', function() {
     });
 
     it('should find /subdir/show-content-local.html', function() {
-        let found = filecache.documents.find('/subdir/show-content-local.html');
+        const found = filecache.documents.find('/subdir/show-content-local.html');
 
         assert.isDefined(found);
         assert.equal(found.mime, 'text/markdown');
@@ -1195,7 +873,7 @@ describe('Documents cache', function() {
     });
     
     it('should find subdir/show-content-local.html.md', function() {
-        let found = filecache.documents.find('/subdir/show-content-local.html.md');
+        const found = filecache.documents.find('/subdir/show-content-local.html.md');
 
         assert.isDefined(found);
         assert.equal(found.mime, 'text/markdown');
@@ -1207,17 +885,17 @@ describe('Documents cache', function() {
     });
     
     it('should find siblings for /subdir/show-content-local.html.md', function() {
-        let siblings = filecache.documents.siblings('subdir/show-content-local.html.md');
+        const siblings = filecache.documents.siblings('subdir/show-content-local.html.md');
         assert.isOk(filezContains(siblings, 'subdir/index.html.md'));
         assert.isNotOk(filezContains(siblings, 'subdir/show-content-local.html.md'));
         assert.isOk(filezContains(siblings, 'subdir/shown-content-local.html.md'));
-        for (let sibling of siblings) {
+        for (const sibling of siblings) {
             assert.equal(sibling.dirname, 'subdir');
         }
     });
 
     it('should find /mounted/img2resize.html.md', function() {
-        let found = filecache.documents.find('/mounted/img2resize.html.md');
+        const found = filecache.documents.find('/mounted/img2resize.html.md');
 
         // console.log(found);
         assert.isDefined(found);
@@ -1231,7 +909,7 @@ describe('Documents cache', function() {
     });
     
     it('should find mounted/img2resize.html', function() {
-        let found = filecache.documents.find('mounted/img2resize.html');
+        const found = filecache.documents.find('mounted/img2resize.html');
 
         assert.isDefined(found);
         assert.equal(found.mime, 'text/markdown');
@@ -1244,15 +922,15 @@ describe('Documents cache', function() {
     });
     
     it('should find siblings for mounted/img2resize.html', function() {
-        let siblings = filecache.documents.siblings('mounted/img2resize.html');
+        const siblings = filecache.documents.siblings('mounted/img2resize.html');
         assert.isOk(filezContains(siblings, 'mounted/img2resize.html.md'));
-        for (let sibling of siblings) {
+        for (const sibling of siblings) {
             assert.equal(sibling.dirname, 'mounted');
         }
     });
 
     it('should find /mounted/img/Human-Skeleton.jpg', function() {
-        let found = filecache.documents.find('/mounted/img/Human-Skeleton.jpg');
+        const found = filecache.documents.find('/mounted/img/Human-Skeleton.jpg');
 
         assert.isDefined(found);
         assert.equal(found.mime, 'image/jpeg');
@@ -1265,7 +943,7 @@ describe('Documents cache', function() {
     });
     
     it('should find mounted/img/Human-Skeleton.jpg', function() {
-        let found = filecache.documents.find('mounted/img/Human-Skeleton.jpg');
+        const found = filecache.documents.find('mounted/img/Human-Skeleton.jpg');
 
         // console.log(found);
         assert.isDefined(found);
@@ -1279,17 +957,17 @@ describe('Documents cache', function() {
     });
     
     it('should find siblings for /mounted/img/Human-Skeleton.jpg', function() {
-        let siblings = filecache.documents.siblings('/mounted/img/Human-Skeleton.jpg');
+        const siblings = filecache.documents.siblings('/mounted/img/Human-Skeleton.jpg');
         assert.isNotOk(filezContains(siblings, 'mounted/img/Human-Skeleton.jpg'));
-        for (let sibling of siblings) {
+        for (const sibling of siblings) {
             assert.equal(sibling.dirname, 'mounted/img');
         }
     });
 
     it('should find siblings for mounted/img/Human-Skeleton.jpg', function() {
-        let siblings = filecache.documents.siblings('mounted/img/Human-Skeleton.jpg');
+        const siblings = filecache.documents.siblings('mounted/img/Human-Skeleton.jpg');
         assert.isNotOk(filezContains(siblings, 'mounted/img/Human-Skeleton.jpg'));
-        for (let sibling of siblings) {
+        for (const sibling of siblings) {
             assert.equal(sibling.dirname, 'mounted/img');
         }
     });
@@ -1297,25 +975,25 @@ describe('Documents cache', function() {
     describe('Unknown files', function() {
 
         it('should not find mounted/unknown-Skeleton.jpg', function() {
-            let found = filecache.documents.find('mounted/unknown-Skeleton.jpg');
+            const found = filecache.documents.find('mounted/unknown-Skeleton.jpg');
 
             assert.isUndefined(found);
         });
 
         it('should not find /mounted/unknown-Skeleton.jpg', function() {
-            let found = filecache.documents.find('/mounted/unknown-Skeleton.jpg');
+            const found = filecache.documents.find('/mounted/unknown-Skeleton.jpg');
 
             assert.isUndefined(found);
         });
 
         it('should not find unknown-Skeleton.jpg', function() {
-            let found = filecache.documents.find('unknown-Skeleton.jpg');
+            const found = filecache.documents.find('unknown-Skeleton.jpg');
 
             assert.isUndefined(found);
         });
 
         it('should not find /unknown-Skeleton.jpg', function() {
-            let found = filecache.documents.find('/unknown-Skeleton.jpg');
+            const found = filecache.documents.find('/unknown-Skeleton.jpg');
 
             assert.isUndefined(found);
         });
@@ -1325,7 +1003,7 @@ describe('Documents cache', function() {
     describe('Index files', function() {
 
         it('should find index files for /', function() {
-            let indexes = filecache.documents.indexFiles('/');
+            const indexes = filecache.documents.indexFiles('/');
 
             assert.isOk(filezContains(indexes, 'index.html.md'));
             assert.isOk(filezContains(indexes, 'subdir/index.html.md'));
@@ -1337,7 +1015,7 @@ describe('Documents cache', function() {
         });
 
         it('should find index files for undefined', function() {
-            let indexes = filecache.documents.indexFiles();
+            const indexes = filecache.documents.indexFiles();
 
             assert.isOk(filezContains(indexes, 'index.html.md'));
             assert.isOk(filezContains(indexes, 'subdir/index.html.md'));
@@ -1349,7 +1027,7 @@ describe('Documents cache', function() {
         });
 
         it('should find index files for hier', function() {
-            let indexes = filecache.documents.indexFiles('hier/');
+            const indexes = filecache.documents.indexFiles('hier/');
             assert.isOk(filezContains(indexes, 'hier/index.html.md'));
             assert.isOk(filezContains(indexes, 'hier/dir1/index.html.md'));
             assert.isOk(filezContains(indexes, 'hier/dir1/dir2/index.html.md'));
@@ -1361,7 +1039,7 @@ describe('Documents cache', function() {
         });
 
         it('should find index files for hier/dir1', function() {
-            let indexes = filecache.documents.indexFiles('hier/dir1');
+            const indexes = filecache.documents.indexFiles('hier/dir1');
             assert.isFalse(filezContains(indexes, 'hier/index.html.md'));
             assert.isOk(filezContains(indexes, 'hier/dir1/index.html.md'));
             assert.isOk(filezContains(indexes, 'hier/dir1/dir2/index.html.md'));
@@ -1369,7 +1047,7 @@ describe('Documents cache', function() {
         });
 
         it('should find index files for hier-broke', function() {
-            let indexes = filecache.documents.indexFiles('hier-broke');
+            const indexes = filecache.documents.indexFiles('hier-broke');
             assert.isOk(filezContains(indexes, 'hier-broke/dir1/dir2/index.html.md'));
 
 
@@ -1386,6 +1064,7 @@ describe('Documents cache', function() {
 });
 
 describe('Layouts cache', function() {
+    
     const allowed_paths = [
         {
             fspath: '**/layouts-extra/inclusion2.html',
@@ -1458,9 +1137,9 @@ describe('Layouts cache', function() {
             renderPath: 'default-once-teaser.html.njk'
         }
     ];
-
+    
     it('should find only allowed layouts paths', async function() {
-        const layouts = (await akasha.filecache).layouts;
+        const layouts = filecache.layouts;
         await layouts.isReady();
 
         let found = filecache.layouts.paths();
@@ -1487,6 +1166,7 @@ describe('Layouts cache', function() {
 });
 
 describe('Partials cache', function() {
+    
     const allowed_paths = [
         {
             fspath: '**/partials2/helloworld.html',
@@ -1589,9 +1269,9 @@ describe('Partials cache', function() {
             renderPath: 'ak_teaser.html.njk'
         }
     ];
-
+    
     it('should find only allowed partial paths', async function() {
-        const partials = (await akasha.filecache).partials;
+        const partials = filecache.partials;
         await partials.isReady();
 
         let found = filecache.partials.paths();
@@ -1618,6 +1298,7 @@ describe('Partials cache', function() {
 });
 
 describe('Assets cache', function() {
+    
     const allowed_paths = [
         {
             fspath: '**/assets2/file.txt',
@@ -1632,7 +1313,7 @@ describe('Assets cache', function() {
     ];
 
     it('should find only allowed assets paths', async function() {
-        const assets = (await akasha.filecache).assets;
+        const assets = filecache.assets;
         await assets.isReady();
 
         let found = filecache.assets.paths();
@@ -1646,7 +1327,7 @@ describe('Assets cache', function() {
     });
 
     it('should find rss_button.png', function() {
-        let found = filecache.assets.find('rss_button.png');
+        const found = filecache.assets.find('rss_button.png');
 
         assert.isDefined(found);
         assert.equal(found.mime, 'image/png');
@@ -1657,7 +1338,7 @@ describe('Assets cache', function() {
     });
 
     it('should find file.txt', function() {
-        let found = filecache.assets.find('file.txt');
+        const found = filecache.assets.find('file.txt');
 
         assert.isDefined(found);
         assert.equal(found.mime, 'text/plain');
@@ -1671,7 +1352,7 @@ describe('Assets cache', function() {
 
 describe('Search', function() {
     it('should select by rootPath', function() {
-        let found = filecache.assets.search(config, {
+        const found = filecache.assets.search({
             rootPath: 'hier/dir1'
         });
 
@@ -1683,97 +1364,97 @@ describe('Search', function() {
     });
 
     it('should select by pathmatch string', function() {
-        let found = filecache.assets.search(config, {
+        const found = filecache.assets.search({
             pathmatch: '.jpg$'
         });
 
         assert.isDefined(found);
         assert.isArray(found);
-        for (let doc of found) {
+        for (const doc of found) {
             assert.isOk(doc.path.match(/\.jpg$/));
         }
     });
 
     it('should select by pathmatch RegExp', function() {
-        let found = filecache.assets.search(config, {
+        const found = filecache.assets.search({
             pathmatch: /.json$/
         });
 
         assert.isDefined(found);
         assert.isArray(found);
-        for (let doc of found) {
+        for (const doc of found) {
             assert.isOk(doc.path.match(/\.json$/));
         }
     });
 
     it('should select by renderpathmatch string', function() {
-        let found = filecache.assets.search(config, {
+        const found = filecache.assets.search({
             renderpathmatch: '.html$'
         });
 
         assert.isDefined(found);
         assert.isArray(found);
-        for (let doc of found) {
+        for (const doc of found) {
             assert.isOk(doc.renderPath.match(/\.html$/));
         }
     });
 
     it('should select by renderpathmatch RegExp', function() {
-        let found = filecache.assets.search(config, {
+        const found = filecache.assets.search({
             renderpathmatch: /.html$/
         });
 
         assert.isDefined(found);
         assert.isArray(found);
-        for (let doc of found) {
+        for (const doc of found) {
             assert.isOk(doc.renderPath.match(/\.html$/));
         }
     });
 
     it('should select by GLOB', function() {
-        let found = filecache.assets.search(config, {
+        const found = filecache.assets.search({
             glob: '**/*.json'
         });
 
         assert.isDefined(found);
         assert.isArray(found);
-        for (let doc of found) {
+        for (const doc of found) {
             assert.isOk(doc.path.match(/\.json$/));
         }
     });
 
     it('should select renderPath by GLOB', function() {
-        let found = filecache.assets.search(config, {
+        const found = filecache.assets.search({
             renderglob: '**/*.html'
         });
 
         assert.isDefined(found);
         assert.isArray(found);
-        for (let doc of found) {
+        for (const doc of found) {
             assert.isOk(doc.renderPath.match(/\.html$/));
         }
     });
 
     it('should select by MIME', function() {
-        let found = filecache.assets.search(config, {
+        const found = filecache.assets.search({
             mime: 'image/jpeg'
         });
 
         assert.isDefined(found);
         assert.isArray(found);
-        for (let doc of found) {
+        for (const doc of found) {
             assert.equal(doc.mime, "image/jpeg");
         }
     });
 
     it('should select by layout string', function() {
-        let found = filecache.assets.search(config, {
+        const found = filecache.assets.search({
             layouts: 'default-once.html.liquid'
         });
 
         assert.isDefined(found);
         assert.isArray(found);
-        for (let doc of found) {
+        for (const doc of found) {
             assert.isDefined(doc.docMetadata);
             assert.isDefined(doc.docMetadata.layout);
             assert.equal(doc.docMetadata.layout, 'default-once.html.liquid');
@@ -1781,13 +1462,13 @@ describe('Search', function() {
     });
 
     it('should select by layout array', function() {
-        let found = filecache.assets.search(config, {
+        const found = filecache.assets.search({
             layouts: [ 'default-once.html.liquid', 'default-once.html.njk' ]
         });
 
         assert.isDefined(found);
         assert.isArray(found);
-        for (let doc of found) {
+        for (const doc of found) {
             assert.isDefined(doc.docMetadata);
             assert.isDefined(doc.docMetadata.layout);
             assert.match(doc.docMetadata.layout,
@@ -1796,13 +1477,13 @@ describe('Search', function() {
     });
 
     it('should select by renderer', function() {
-        let found = filecache.assets.search(config, {
+        const found = filecache.assets.search({
             renderers: [ akasha.HTMLRenderer ]
         });
 
         assert.isDefined(found);
         assert.isArray(found);
-        for (let doc of found) {
+        for (const doc of found) {
             assert.isDefined(doc.docMetadata);
             assert.isDefined(doc.docMetadata.layout);
             assert.match(doc.path,
@@ -1811,7 +1492,7 @@ describe('Search', function() {
     });
 
     it('should select by custom function', function() {
-        let found = filecache.assets.search(config, {
+        const found = filecache.assets.search({
             filterfunc: (config, options, doc) => {
                 return doc.isDirectory === false
                     && doc.mountPoint === 'mounted'
@@ -1820,7 +1501,7 @@ describe('Search', function() {
 
         assert.isDefined(found);
         assert.isArray(found);
-        for (let doc of found) {
+        for (const doc of found) {
             assert.isFalse(doc.isDirectory);
             assert.match(doc.path, /^mounted\// );
         }
@@ -1833,11 +1514,6 @@ describe('Search', function() {
 describe('Close caches', function() {
 
     it('should close caches', async function() {
-        try {
-            await akasha.closeCaches();
-        } catch (e) {
-            console.error(e);
-            throw e;
-        }
+        await filecache.close();
     });
 });

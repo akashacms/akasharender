@@ -65,13 +65,13 @@ mimedefine({'text/x-nunjucks': [ 'njk' ]});
 mimedefine({'text/x-handlebars': [ 'handlebars' ]});
 mimedefine({'text/x-liquid': [ 'liquid' ]});
 
-exports.cache = import('./cache/cache-forerunner.mjs');
-exports.filecache = import('./cache/file-cache.mjs');
+// exports.cache = import('./cache/cache-forerunner.mjs');
+exports.filecache = import('./cache/file-cache-lokijs.mjs');
 
 exports.cacheSetup = async function(config) {
     try {
-        let cache = (await exports.cache);
-        await cache.setup(config);
+        let filecache = (await exports.filecache);
+        await filecache.setup(config);
     } catch (err) {
         console.error(`INITIALIZATION FAILURE COULD NOT INITIALIZE CACHE `, err);
         process.exit(1);
@@ -80,10 +80,8 @@ exports.cacheSetup = async function(config) {
 
 exports.closeCaches = async function() {
     try {
-        let cache = (await exports.cache);
         let filecache = (await exports.filecache);
         await filecache.close();
-        await cache.close();
     } catch (err) {
         console.error(`INITIALIZATION FAILURE COULD NOT CLOSE CACHES `, err);
         process.exit(1);
@@ -143,7 +141,7 @@ exports.setupPluginCaches = async function(config) {
 exports.cacheSetupComplete = async function(config) {
     try {
         // console.log(`start cache setup`);
-        let cache = (await exports.cache)
+        // let cache = (await exports.cache)
         // await cache.setup(config);
         let filecache = (await exports.filecache);
         console.log(config);
