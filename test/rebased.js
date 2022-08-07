@@ -62,7 +62,9 @@ describe('build rebased site', function() {
 
     it('should run setup', async function() {
         this.timeout(75000);
-        await akasha.cacheSetupComplete(config_rebase);
+        await akasha.cacheSetup(config_rebase);
+        await akasha.fileCachesReady(config_rebase);
+        // await akasha.cacheSetupComplete(config_rebase);
         /* await akasha.cacheSetup(config_rebase);
         await Promise.all([
             akasha.setupDocuments(config_rebase),
@@ -899,7 +901,8 @@ describe('rebased teaser, content', function() {
 
 describe('Rebased index Chain', function() {
     before(async function() {
-        await akasha.cacheSetupComplete(config_rebase);
+        await akasha.cacheSetup(config_rebase);
+        await akasha.fileCachesReady(config_rebase);
         /* await Promise.all([
             akasha.setupDocuments(config),
             akasha.setupAssets(config),

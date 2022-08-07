@@ -133,12 +133,14 @@ describe('Setup cache', function() {
     it('should successfully setup cache database', async function() {
         try {
             await akasha.cacheSetup(config);
+            await akasha.fileCachesReady(config);
         } catch (e) {
             console.error(e);
             throw e;
         }
     });
 
+    /*
     it('should successfully setup file caches', async function() {
         this.timeout(75000);
         try {
@@ -147,7 +149,7 @@ describe('Setup cache', function() {
                 akasha.setupAssets(config),
                 akasha.setupLayouts(config),
                 akasha.setupPartials(config)
-            ]); */
+            ]); * /
             await Promise.all([
                 filecache.documents.isReady(),
                 filecache.assets.isReady(),
@@ -159,7 +161,199 @@ describe('Setup cache', function() {
             throw e;
         }
     });
+    */
 
+});
+
+/*
+ * The issue behind these tests had to do with:
+ *   1) Running multiple suites in a row
+ *   2) Some suites using `ignore` clauses, and others not
+ *   3) The configuration using autosave/autoload
+ * 
+ * In that scenario - one suite not using `ignore` clauses will
+ * load data for files which other suites say to ignore because
+ * of `ignore` clauses.  If the cache is autosaved, then autoloaded,
+ * the cache then has files in it that some suites will say to
+ * ignore.
+ * 
+ * The purpose of this section is to test when the cache has
+ * items it would not normally have.  In the normal case, the ignore
+ * clause makes StackedDirs ignore certain files, and avoid emitting
+ * events for matching file info objects.  But in the case of
+ * sometimes having ignore clauses, and other times not, then an
+ * autosaved cache will have file info objects for files it should 
+ * ignore.
+ * 
+ * The solution is for the FileCache to also check if files are to
+ * be ignored and to prevent telling the application about files
+ * covered by the ignore clauses.
+ * 
+ * Such an application can use getCollection() to access the underlying
+ * collection object, if desired, and bypass the checks for files
+ * that should be ignored. 
+ *
+ */
+
+describe('Disallowed files', function() {
+
+    // Somehow files which are supposed to be ignored have
+    // made it into the documents cache
+    it('should not find files which should be ignored', async function() {
+
+        const documents = filecache.documents;
+        await documents.isReady();
+
+        for (const info of documents.getCollection().find()) {
+            assert.isFalse(filecache.documents.ignoreFile(info),
+                `Found file ${util.inspect(info)} which must be ignored`);
+        }
+    });
+
+    it('should be able to add an ignorable file', async function() {
+
+        const documents = filecache.documents;
+        await documents.isReady();
+
+        documents.getCollection().insert({
+            fspath: '/home/david/Projects/akasharender/akasharender/test/documents/subdir/toignore.html',
+            vpath: 'subdir/toignore.html',
+            mime: null,
+            mounted: '/home/david/Projects/akasharender/akasharender/test/documents',
+            mountPoint: '/',
+            pathInMounted: 'subdir/toignore.html',
+            renderPath: 'subdir/toignore.html',
+            dirname: 'subdir',
+            baseMetadata: {},
+            basedir: '/home/david/Projects/akasharender/akasharender/test/documents',
+            dirMountedOn: '/',
+            mountedDirMetadata: {},
+            metadata: {
+                tags: [ 'IgnoreTag' ]
+            },
+            docpath: 'subdir/toignore.html',
+            docdestpath: 'subdir/toignore.html',
+            renderpath: 'subdir/toignore.html'
+        });
+
+    });
+
+    it('should find ignorable file in collection', async function() {
+
+        const documents = filecache.documents;
+        await documents.isReady();
+
+        let found = false;
+        documents.getCollection().chain()
+        .where(function(obj) {
+            if (obj.vpath === 'subdir/toignore.html') found = true;
+        });
+
+        assert.isTrue(found);
+    });
+
+    it('should not find ignorable file in find', async function() {
+
+        const documents = filecache.documents;
+        await documents.isReady();
+
+        const found = documents.find('subdir/toignore.html');
+
+        // console.log(found);
+        assert.isTrue(typeof found === 'undefined');
+    });
+
+    it('should not find ignorable file in siblings', async function() {
+
+        const documents = filecache.documents;
+        await documents.isReady();
+
+        const siblings = documents.siblings('subdir/shown-content-local.html.md');
+
+        // console.log(siblings);
+        for (const sibling of siblings) {
+            assert.notEqual(sibling.vpath, 'subdir/toignore.html');
+        }
+    });
+
+    it('should not find ignorable file in documentsWithTags', async function() {
+
+        const documents = filecache.documents;
+        await documents.isReady();
+
+        const withtags = documents.documentsWithTags();
+        for (const doc of withtags) {
+            assert.notEqual(doc.vpath, 'subdir/toignore.html');
+
+        }
+    });
+
+    it('should not find ignorable tag in tags', async function() {
+
+        const documents = filecache.documents;
+        await documents.isReady();
+
+        const tags = documents.tags();
+        for (const tag of tags) {
+            assert.notEqual(tag, 'IgnoreTag');
+
+        }
+    });
+
+    it('should not find ignorable file in search', async function() {
+
+        const documents = filecache.documents;
+        await documents.isReady();
+
+        const found1 = documents.search({
+            pathmatch: 'subdir/toignore.html'
+        });
+
+        for (const doc of found1) {
+            assert.notEqual(doc.vpath, 'subdir/toignore.html');
+        }
+
+        const found2 = documents.search({
+            tag: 'IgnoreTag'
+        });
+
+        for (const doc of found2) {
+            assert.notEqual(doc.vpath, 'subdir/toignore.html');
+        }
+    });
+
+    it('should not find ignorable file in paths', async function() {
+
+        const documents = filecache.documents;
+        await documents.isReady();
+
+        let found = false;
+        const docs = documents.paths();
+        for (const doc of docs) {
+            if (doc.vpath === 'subdir/toignore.html') found = true;
+        }
+
+        assert.isFalse(found);
+    });
+
+    it('should remove ignorable file using collection', async function() {
+
+        const documents = filecache.documents;
+        await documents.isReady();
+
+        documents.getCollection().findAndRemove({
+            vpath: 'subdir/toignore.html'
+        });
+
+        let found = false;
+        documents.getCollection().chain()
+        .where(function(obj) {
+            if (obj.vpath === 'subdir/toignore.html') found = true;
+        });
+
+        assert.isFalse(found);
+
+    });
 });
 
 function isPathAllowed(pathinfo, allowed_paths) {
@@ -387,6 +581,16 @@ describe('Documents cache', function() {
             vpath: 'select-elements.html.md'
         },
         {
+            fspath: '**/documents/anchor-cleanups.html.md',
+            renderPath: 'anchor-cleanups-nunjucks.html',
+            vpath: 'anchor-cleanups-nunjucks.html.md'
+        },
+        {
+            fspath: '**/documents/show-content-nunjucks.html.md',
+            renderPath: 'show-content-nunjucks.html',
+            vpath: 'show-content-nunjucks.html.md'
+        },
+        {
             fspath: '**/documents/show-content-handlebars.html.md',
             renderPath: 'show-content-handlebars.html',
             vpath: 'show-content-handlebars.html.md'
@@ -395,11 +599,6 @@ describe('Documents cache', function() {
             fspath: '**/documents/show-content-liquid.html.md',
             renderPath: 'show-content-liquid.html',
             vpath: 'show-content-liquid.html.md'
-        },
-        {
-            fspath: '**/documents/show-content-nunjucks.html.md',
-            renderPath: 'show-content-nunjucks.html',
-            vpath: 'show-content-nunjucks.html.md'
         },
         {
             fspath: '**/documents/show-content.html.md',
@@ -615,6 +814,19 @@ describe('Documents cache', function() {
             assert.isTrue(isPathAllowed(pathinfo, allowed_paths), util.inspect(pathinfo));
         }
     });
+
+    // Somehow files which are supposed to be ignored have
+    // made it into the documents cache
+    it('should not find files which should be ignored', async function() {
+
+        const documents = filecache.documents;
+        await documents.isReady();
+
+        for (const info of documents.getCollection().find()) {
+            assert.isFalse(filecache.documents.ignoreFile(info),
+                `Found file ${util.inspect(info)} which must be ignored`);
+        }
+    })
 
     it('should find /index.html.md', function() {
         const found = filecache.documents.find('/index.html.md');

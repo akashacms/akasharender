@@ -69,7 +69,8 @@ describe('build site', function() {
 
     it('should run setup', async function() {
         this.timeout(75000);
-        await akasha.cacheSetupComplete(config);
+        await akasha.cacheSetup(config);
+        await akasha.fileCachesReady(config);
         /* await Promise.all([
             akasha.setupDocuments(config),
             akasha.setupAssets(config),

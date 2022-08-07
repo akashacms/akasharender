@@ -72,6 +72,7 @@ exports.cacheSetup = async function(config) {
     try {
         let filecache = (await exports.filecache);
         await filecache.setup(config);
+        exports.setupPluginCaches(config)
     } catch (err) {
         console.error(`INITIALIZATION FAILURE COULD NOT INITIALIZE CACHE `, err);
         process.exit(1);
@@ -138,21 +139,21 @@ exports.setupPluginCaches = async function(config) {
     }
 }
 
-exports.cacheSetupComplete = async function(config) {
+exports.fileCachesReady = async function(config) {
     try {
         // console.log(`start cache setup`);
         // let cache = (await exports.cache)
         // await cache.setup(config);
         let filecache = (await exports.filecache);
-        console.log(config);
+        // console.log(config);
         // console.log(filecache);
-        await Promise.all([
+        /* await Promise.all([
             filecache.setupDocuments(config),
             filecache.setupAssets(config),
             filecache.setupLayouts(config),
             filecache.setupPartials(config),
             exports.setupPluginCaches(config)
-        ]);
+        ]); */
         // console.log(`caches setups`);
         await Promise.all([
             filecache.documents.isReady(),
@@ -433,6 +434,8 @@ const _config_plugins = Symbol('plugins');
 const _config_cheerio = Symbol('cheerio');
 const _config_configdir = Symbol('configdir');
 const _config_cachedir  = Symbol('cachedir');
+const _config_autoload  = Symbol('autoload');
+const _config_autosave  = Symbol('autosave');
 const _config_concurrency = Symbol('concurrency');
 const _config_renderers = Symbol('renderers');
 
@@ -449,6 +452,9 @@ module.exports.Configuration = class Configuration {
     constructor(modulepath) {
 
         this[_config_renderers] = [];
+
+        this[_config_autoload] = false;
+        this[_config_autosave] = false;
 
         /*
          * Is this the best place for this?  It is necessary to
@@ -648,6 +654,12 @@ module.exports.Configuration = class Configuration {
 
     set cacheDir(dirnm) { this[_config_cachedir] = dirnm; }
     get cacheDir() { return this[_config_cachedir]; }
+
+    get cacheAutosave() { return this[_config_autosave]; }
+    set cacheAutosave(auto) { this[_config_autosave] = auto; }
+
+    get cacheAutoload() { return this[_config_autoload]; }
+    set cacheAutoload(auto) { this[_config_autoload] = auto; }
 
     // set akasha(_akasha)  { this[_config_akasha] = _akasha; }
     get akasha() { return module.exports }
