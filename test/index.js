@@ -62,7 +62,8 @@ describe('build site', function() {
 
     it('should run setup', async function() {
         this.timeout(75000);
-        await akasha.cacheSetupComplete(config);
+        await akasha.cacheSetup(config);
+        await akasha.fileCachesReady(config);
         /* await Promise.all([
             akasha.setupDocuments(config),
             akasha.setupAssets(config),
@@ -1080,7 +1081,8 @@ describe('Select Elements', function() {
 describe('Index Chain', function() {
     before(async function() {
         await akasha.cacheSetup(config);
-        await Promise.all([
+        await akasha.fileCachesReady(config);
+        /* await Promise.all([
             akasha.setupDocuments(config),
             akasha.setupAssets(config),
             akasha.setupLayouts(config),
@@ -1093,9 +1095,7 @@ describe('Index Chain', function() {
             filecache.assets.isReady(),
             filecache.layouts.isReady(),
             filecache.partials.isReady()
-        ]);
-        // console.log(`before documents.isReady`);
-        // await documents.isReady();
+        ]); */
     });
 
     it('should generate correct index chain for /hier/dir1/dir2/sibling.html', async function() {

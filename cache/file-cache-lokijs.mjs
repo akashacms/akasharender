@@ -2,6 +2,7 @@
 import loki from 'lokijs';
 import { DirsWatcher } from '@akashacms/stacked-dirs';
 import path from 'path';
+import util from 'util';
 import { promises as fs } from 'fs';
 import EventEmitter from 'events';
 import minimatch from 'minimatch';
@@ -18,8 +19,9 @@ export async function setup(config) {
     try {
         // console.log(`cache setup ${config.cacheDir}`);
         db = new loki('akasharender', {
-            autosave: true,
-            autoload: true
+            autosave: config.cacheAutosave,
+            autoload: config.cacheAutoload,
+            // verbose: true
         });
 
         coll_documents = db.getCollection('documents');
@@ -56,22 +58,6 @@ export async function setup(config) {
 
 export async function close() {
 
-    /* if (coll_documents) {
-        await coll_documents.close();
-        coll_documents = undefined;
-    }
-    if (coll_assets) {
-        await coll_assets.close();
-        coll_assets = undefined;
-    }
-    if (coll_layouts) {
-        await coll_layouts.close();
-        coll_layouts = undefined;
-    }
-    if (coll_partials) {
-        await coll_partials.close();
-        coll_partials = undefined;
-    } */
     await closeFileCaches();
 
     db.close();
@@ -127,6 +113,7 @@ export async function setupDocuments(config) {
         // console.log(`filecache setup documents ${util.inspect(config.documentDirs)}`);
         // console.log(typeof config.documentDirs);
         const docsDirs = remapdirs(config.documentDirs);
+        // console.log(`setupDocuments `, docsDirs);
         documents = new FileCache(config, docsDirs, 'documents');
         documents.mapRenderPath = true;
         documents.on('error', err => {
@@ -315,25 +302,53 @@ export class FileCache extends EventEmitter {
         this[_symb_watcher] = new DirsWatcher(this.collection);
 
         this[_symb_watcher].on('change', async (collection, info) => {
-            // console.log(`${collection} changed ${info.vpath}`);
-            this[_symb_queue].push({
-                code: 'changed',
-                collection, info
-            });
+            // console.log(`${collection} changed ${info.mountPoint} ${info.vpath}`);
+            try {
+                if (!this.ignoreFile(info)) {
+                    // console.log(`PUSH ${collection} changed ${info.mountPoint} ${info.vpath}`);
+
+                    this[_symb_queue].push({
+                        code: 'changed',
+                        collection, info
+                    });
+                } else {
+                    console.log(`Ignored 'change' for ${info.vpath}`);
+                }
+            } catch (err) {
+                console.error(`FAIL change ${info.vpath} because ${err.stack}`);
+            }
         })
         .on('add', async (collection, info) => {
-            // console.log(`new ${collection} ${info.vpath}`);
-            this[_symb_queue].push({
-                code: 'added',
-                collection, info
-            });
+            try {
+                // console.log(`${collection} add ${info.mountPoint} ${info.vpath}`);
+                if (!this.ignoreFile(info)) {
+                    // console.log(`PUSH ${collection} add ${info.mountPoint} ${info.vpath}`);
+
+                    this[_symb_queue].push({
+                        code: 'added',
+                        collection, info
+                    });
+                } else {
+                    console.log(`Ignored 'add' for ${info.vpath}`);
+                }
+            } catch (err) {
+                console.error(`FAIL add ${info.vpath} because ${err.stack}`);
+            }
         })
         .on('unlink', async (collection, info) => {
             // console.log(`unlink ${collection} ${info.vpath}`);
-            this[_symb_queue].push({
-                code: 'unlinked',
-                collection, info
-            });
+            try {
+                if (!this.ignoreFile(info)) {
+                    this[_symb_queue].push({
+                        code: 'unlinked',
+                        collection, info
+                    });
+                } else {
+                    console.log(`Ignored 'unlink' for ${info.vpath}`);
+                }
+             } catch (err) {
+                console.error(`FAIL unlink ${info.vpath} because ${err.stack}`);
+            }
         })
         .on('ready', async (collection) => {
             // console.log(`${collection} ready`);
@@ -346,6 +361,56 @@ export class FileCache extends EventEmitter {
         // console.log(this[_symb_watcher]);
 
         await this[_symb_watcher].watch(this.dirs);
+    }
+
+    /**
+     * Find the directory mount corresponding to the file.
+     * 
+     * @param {*} info 
+     * @returns 
+     */
+    fileDirMount(info) {
+        for (const dir of this.dirs) {
+            // console.log(`dirMount for ${info.vpath} -- ${util.inspect(info)} === ${util.inspect(dir)}`);
+            if (info.mountPoint === dir.mountPoint) {
+                return dir;
+            }
+        }
+        return undefined;
+    }
+
+    /**
+     * Should this file be ignored, based on the `ignore` field
+     * in the matching `dir` mount entry.
+     * 
+     * @param {*} info 
+     * @returns 
+     */
+    ignoreFile(info) {
+        // console.log(`ignoreFile ${info.vpath}`);
+        const dirMount = this.fileDirMount(info);
+        let ignore = false;
+        if (dirMount) {
+
+            let ignores;
+            if (typeof dirMount.ignore === 'string') {
+                ignores = [ dirMount.ignore ];
+            } else if (Array.isArray(dirMount.ignore)) {
+                ignores = dirMount.ignore;
+            } else {
+                ignores = [];
+            }
+            for (const i of ignores) {
+                if (minimatch(info.vpath, i)) ignore = true;
+                // console.log(`dirMount.ignore ${fspath} ${i} => ${ignore}`);
+            }
+            // if (ignore) console.log(`ignoreFile ${info.vpath}`);
+            return ignore;
+        } else {
+            // no mount?  that means something strange
+            // console.error(`No dirMount found for ${info.vpath} / ${info.dirMountedOn}`);
+            return true;
+        }
     }
 
     /**
@@ -461,6 +526,10 @@ export class FileCache extends EventEmitter {
 
     async handleChanged(collection, info) {
         // console.log(`PROCESS ${collection} handleChanged`, info.vpath);
+        if (this.ignoreFile(info)) {
+            // console.log(`OOOOOOOOGA!!! Received a file that should be ingored `, info);
+            return;
+        }
         if (collection !== this.collection) {
             throw new Error(`handleChanged event for wrong collection; got ${collection}, expected ${this.collection}`);
         }
@@ -502,7 +571,11 @@ export class FileCache extends EventEmitter {
      */
 
      async handleAdded(collection, info) {
-        // console.log(`PROCESS ${collection} handleAdded`, info.vpath);
+       //  console.log(`PROCESS ${collection} handleAdded`, info.vpath);
+        if (this.ignoreFile(info)) {
+            // console.log(`OOOOOOOOGA!!! Received a file that should be ingored `, info);
+            return;
+        }
         if (collection !== this.collection) {
             throw new Error(`handleAdded event for wrong collection; got ${collection}, expected ${this.collection}`);
         }
@@ -549,8 +622,10 @@ export class FileCache extends EventEmitter {
                     ? _fpath.substring(1) 
                     : _fpath;
 
+        const fcache = this;
         const coll = this.getCollection();
         const results = coll.where(function(obj) {
+            if (fcache.ignoreFile(obj)) return false;
             return obj.vpath === fpath || obj.renderPath === fpath;
         });
         let ret;
@@ -573,9 +648,13 @@ export class FileCache extends EventEmitter {
         let dirname = path.dirname(vpath);
         if (dirname === '.') dirname = '/';
 
+        // console.log(`siblings ${_fpath} ${vpath} ${dirname}`);
+
+        const fcache = this;
         const coll = this.getCollection();
         ret = coll.chain()
         .where(function(obj) {
+            if (fcache.ignoreFile(obj)) return false;
             return obj.dirname === dirname
                 && obj.vpath !== vpath
                 && obj.renderPath.endsWith('.html');
@@ -619,6 +698,7 @@ export class FileCache extends EventEmitter {
     // TODO reusable function for distinct vpaths
 
     paths() {
+        const fcache = this;
         const vpathsSeen = new Set();
         const coll = this.getCollection();
         const ret = coll.chain()
@@ -626,10 +706,15 @@ export class FileCache extends EventEmitter {
             return {
                 fspath: obj.fspath,
                 vpath: obj.vpath,
-                renderPath: obj.renderPath
+                renderPath: obj.renderPath,
+                mountPoint: obj.dirMountedOn
             };
         })
         .where(function(obj) {
+            if (fcache.ignoreFile(obj)) {
+                console.log(`OOOOGA!  In paths  MUST IGNORE ${obj.vpath}`);
+                return false;
+            }
             if (vpathsSeen.has(obj.vpath)) {
                 return false;
             } else {
@@ -642,7 +727,8 @@ export class FileCache extends EventEmitter {
             return  {
                 fspath: obj.fspath,
                 vpath: obj.vpath,
-                renderPath: obj.renderPath
+                renderPath: obj.renderPath,
+                mountPoint: obj.dirMountedOn
             };
         });
 
@@ -654,6 +740,7 @@ export class FileCache extends EventEmitter {
 
     documentsWithTags() {
         let coll = this.getCollection();
+        const fcache = this;
         const vpathsSeen = new Set();
         const ret = coll.chain()
         .where(function(obj) {
@@ -665,6 +752,7 @@ export class FileCache extends EventEmitter {
             }
         })
         .where(function (obj) {
+            if (fcache.ignoreFile(obj)) return false;
             return obj.renderPath.endsWith('.html')
                 && obj.metadata
                 && obj.metadata.tags
@@ -722,6 +810,8 @@ export class FileCache extends EventEmitter {
             }
         })
         .where(function(obj) {
+
+            if (fcache.ignoreFile(obj)) return false;
 
             if (options.pathmatch) {
                 let matcher;
