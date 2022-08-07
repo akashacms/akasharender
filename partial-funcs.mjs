@@ -1,7 +1,8 @@
 
 import { promises as fsp } from 'fs';
 import fs from 'fs';
-import { documents, assets, layouts, partials } from './cache/file-cache.mjs';
+// import { documents, assets, layouts, partials } from './cache/file-cache.mjs';
+import * as filecache from './cache/file-cache-lokijs.mjs';
 import util from 'util';
 
 export async function partial(config, fname, metadata) {
@@ -11,7 +12,7 @@ export async function partial(config, fname, metadata) {
     }
 
     // console.log(`partial ${fname}`);
-    const found = partials.find(fname);
+    const found = filecache.partials.find(fname);
     if (!found) {
         throw new Error(`No partial found for ${fname} in ${util.inspect(config.partialsDirs)}`);
     }
@@ -70,7 +71,7 @@ export function partialSync(config, fname, metadata) {
         throw new Error(`partial fname not a string ${util.inspect(fname)}`);
     }
 
-    const found = partials.find(fname);
+    const found = filecache.partials.find(fname);
     if (!found) new Error(`No partial found for ${fname} in ${util.inspect(config.partialsDirs)}`);
 
     /* No longer necessary to <code>stat</code> these files, because

@@ -24,8 +24,9 @@ const fs        = require('fs-extra');
 const util      = require('util');
 const data      = require('./data');
 
-const cache     = import('./cache/cache-forerunner.mjs');
-const filecache = import('./cache/file-cache.mjs');
+// const cache     = import('./cache/cache-forerunner.mjs');
+// const filecache = import('./cache/file-cache.mjs');
+const filecache = import('./cache/file-cache-lokijs.mjs');
 
 const fastq     = require('fastq');
 
