@@ -32,8 +32,9 @@ const data      = require('./data');
 
 // Note this is an ES6 module and to use it we must 
 // use an async function along with the await keyword
-const _cache = import('./cache/cache-forerunner.mjs');
-const _filecache = import('./cache/file-cache.mjs');
+// const _cache = import('./cache/cache-forerunner.mjs');
+// const _filecache = import('./cache/file-cache.mjs');
+const _filecache = import('./cache/file-cache-lokijs.mjs');
 const _watchman = import('./cache/watchman.mjs');
 
 process.title = 'akasharender';
