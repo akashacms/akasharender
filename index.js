@@ -282,48 +282,12 @@ exports.partialSync = undefined;
 
 exports.indexChain = async function(config, fname) {
 
-    var ret = [];
-    const parsed = path.parse(fname);
+    // This used to be a full function here, but has moved
+    // into the FileCache class.  Requiring a `config` option
+    // is for backwards compatibility with the former API.
 
     const documents = (await exports.filecache).documents;
-    let found = await documents.find(fname);
-    if (found) {
-        ret.push({
-            foundDir: found.mountPoint,
-            foundPath: found.renderPath,
-            filename: fname
-        });
-    }
-
-    let fileName = found.renderPath;
-    let parentDir;
-    let dn = path.dirname(fileName);
-    let done = false;
-    while (!(dn === '.' || dn === parsed.root)) {
-        if (path.basename(fileName) === "index.html") {
-            parentDir = path.dirname(path.dirname(fileName));
-        } else {
-            parentDir = path.dirname(fileName);
-        }
-        let lookFor = path.join(parentDir, "index.html");
-
-        let found = await documents.find(lookFor);
-        if (found) {
-            ret.push({
-                foundDir: found.mountPoint,
-                foundPath: found.renderPath,
-                // The test case is expecting all filename field values
-                // to start with a '/' charater.  Not sure why.
-                filename: '/' + lookFor
-            });
-        }
-    
-        // Loop control
-        fileName = lookFor;
-        dn = path.dirname(lookFor);
-    }
-
-    return ret.reverse();
+    return documents.indexChain(fname);
 }
 
 exports.relative = require('relative');

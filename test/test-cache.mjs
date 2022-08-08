@@ -910,6 +910,77 @@ describe('Documents cache', function() {
         assert.isOk(filezContains(siblings, 'partials-nunjucks.html.njk'));
     });
 
+    it('should find indexes', async function() {
+
+        /* const found = [
+            filecache.documents.find('hier/dir1/dir2/index.html'),
+            filecache.documents.find('hier/dir1/index.html'),
+            filecache.documents.find('hier/index.html'),
+            filecache.documents.find('index.html')
+        ];
+        console.log(`index chain `, found.map(f => {
+            return f.vpath;
+        }));
+
+        const foundColl = 
+            filecache.documents.getCollection().find({
+                '$or': [
+                    { '$or': [
+                        { vpath: 'hier/dir1/dir2/index.html' },
+                        { renderPath: 'hier/dir1/dir2/index.html' },
+                    ]},
+                    { '$or': [
+                        { vpath: 'hier/dir1/index.html' },
+                        { renderPath: 'hier/dir1/index.html'},
+                    ]},
+                    { '$or': [
+                        { vpath: 'hier/index.html' },
+                        { renderPath: 'hier/index.html'},
+                    ]},
+                    { '$or': [
+                        { vpath: 'hier/non-existant.html' },
+                        { renderPath: 'hier/non-existant.html'},
+                    ]},
+                    { '$or': [
+                        { vpath: 'index.html' },
+                        { renderPath: 'index.html'}
+                    ]}
+                ]
+            });
+        console.log(`index chain collection `, foundColl.map(f => {
+            return f.vpath;
+        })); */
+
+        const foundChain = await filecache.documents.indexChain('hier/dir1/dir2/nested-anchor.html.md');
+        /* console.log(`index chain foundChain `, foundChain.map(item => {
+            return item.vpath;
+        })); */
+
+        assert.deepEqual([
+            'index.html.md',
+            'hier/index.html.md',
+            'hier/dir1/index.html.md',
+            'hier/dir1/dir2/index.html.md',
+            'hier/dir1/dir2/nested-anchor.html.md'
+        ],
+        foundChain.map(item => {
+            return item.vpath;
+        }))
+
+        /* const list = filecache.documents.getCollection().find({
+            '$or': [
+                { vpath: 'hier/dir1/dir2/index.html' },
+                { vpath: 'hier/dir1/index.html' },
+                { vpath: 'hier/index.html' },
+                { vpath: 'index.html' },
+            ]
+        });
+
+        console.log(`index chain list `, list /*.map(item => {
+            return item.vpath;
+        }) * /); */
+    });
+
     describe('tags', function() {
 
         it('should not find tags in show-content.html', function() {
