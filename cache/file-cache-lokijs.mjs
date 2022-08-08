@@ -765,7 +765,8 @@ export class FileCache extends EventEmitter {
                 fspath: obj.fspath,
                 vpath: obj.vpath,
                 renderPath: obj.renderPath,
-                mountPoint: obj.dirMountedOn
+                mountPoint: obj.mountPoint,
+                dirMountedOn: obj.dirMountedOn
             };
         })
         .where(function(obj) {
@@ -786,7 +787,8 @@ export class FileCache extends EventEmitter {
                 fspath: obj.fspath,
                 vpath: obj.vpath,
                 renderPath: obj.renderPath,
-                mountPoint: obj.dirMountedOn
+                mountPoint: obj.mountPoint,
+                dirMountedOn: obj.dirMountedOn
             };
         });
 
