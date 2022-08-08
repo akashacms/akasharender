@@ -441,7 +441,7 @@ export class FileCache extends EventEmitter {
             this[_symb_queue] = undefined;
         }
         if (this[_symb_watcher]) {
-            console.log(`CLOSING ${this.collection}`);
+            // console.log(`CLOSING ${this.collection}`);
             await this[_symb_watcher].close();
             this[_symb_watcher] = undefined;
         }
@@ -639,6 +639,63 @@ export class FileCache extends EventEmitter {
         return ret;
     }
 
+    async indexChain(_fpath) {
+
+        const fpath = _fpath.startsWith('/')
+                    ? _fpath.substring(1) 
+                    : _fpath;
+        const parsed = path.parse(fpath);
+        const selector = {
+            '$or': [
+                {
+                    '$or': [
+                        { vpath: fpath },
+                        { renderPath: fpath }
+                    ]
+                }
+            ]
+        };
+
+        let fileName;
+        let found = await documents.find(fpath);
+        if (found) {
+            fileName = found.renderPath;
+        } else {
+            fileName = fpath;
+        }
+        let parentDir;
+        let dirName = path.dirname(fpath);
+        let done = false;
+        while (!(dirName === '.' || dirName === parsed.root)) {
+            if (path.basename(fileName) === 'index.html') {
+                parentDir = path.dirname(path.dirname(fileName));
+            } else {
+                parentDir = path.dirname(fileName);
+            }
+            let lookFor = path.join(parentDir, "index.html");
+            selector['$or'].push({
+                '$or': [
+                    { vpath: lookFor },
+                    { renderPath: lookFor }
+                ]
+            });
+
+            fileName = lookFor;
+            dirName = path.dirname(lookFor);
+        }
+
+        // console.log(`indexChain ${fpath} selector ${JSON.stringify(selector)}`);
+
+        return documents.getCollection().find(selector)
+                .map(function(obj) {
+                    obj.foundDir = obj.mountPoint;
+                    obj.foundPath = obj.renderPath;
+                    obj.filename = '/' + obj.renderPath;
+                    return obj;
+                })
+                .reverse();
+    }
+
     siblings(_fpath) {
         let ret;
         let vpath;
@@ -652,12 +709,13 @@ export class FileCache extends EventEmitter {
 
         const fcache = this;
         const coll = this.getCollection();
-        ret = coll.chain()
+        ret = coll.chain().find({
+            dirname: dirname,
+            vpath: { '$ne': vpath }
+        })
         .where(function(obj) {
             if (fcache.ignoreFile(obj)) return false;
-            return obj.dirname === dirname
-                && obj.vpath !== vpath
-                && obj.renderPath.endsWith('.html');
+            else return obj.renderPath.endsWith('.html');
             
         })
         .simplesort('vpath')
@@ -712,7 +770,7 @@ export class FileCache extends EventEmitter {
         })
         .where(function(obj) {
             if (fcache.ignoreFile(obj)) {
-                console.log(`OOOOGA!  In paths  MUST IGNORE ${obj.vpath}`);
+                // console.log(`OOOOGA!  In paths  MUST IGNORE ${obj.vpath}`);
                 return false;
             }
             if (vpathsSeen.has(obj.vpath)) {

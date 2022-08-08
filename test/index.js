@@ -8,7 +8,7 @@ const { assert } = require('chai');
 const sizeOf = promisify(require('image-size'));
 // Note this is an ES6 module and to use it we must 
 // use an async function along with the await keyword
-const _filecache = import('../cache/file-cache.mjs');
+const _filecache = import('../cache/file-cache-lokijs.mjs');
 
 
 let config;
@@ -107,10 +107,10 @@ describe('build site', function() {
         assert.isFalse(failed);
     });
 
-    it('should close the configuration', async function() {
+    /* it('should close the configuration', async function() {
         this.timeout(75000);
         await akasha.closeCaches();
-    });
+    }); */
 });
 
 describe('stylesheets, javascripts', function() {
@@ -1079,143 +1079,261 @@ describe('Select Elements', function() {
 });
 
 describe('Index Chain', function() {
-    before(async function() {
-        await akasha.cacheSetup(config);
-        await akasha.fileCachesReady(config);
-        /* await Promise.all([
-            akasha.setupDocuments(config),
-            akasha.setupAssets(config),
-            akasha.setupLayouts(config),
-            akasha.setupPartials(config)
-        ])
-        let filecache = await _filecache;
-        // console.log(filecache.documents);
-        await Promise.all([
-            filecache.documents.isReady(),
-            filecache.assets.isReady(),
-            filecache.layouts.isReady(),
-            filecache.partials.isReady()
-        ]); */
-    });
 
     it('should generate correct index chain for /hier/dir1/dir2/sibling.html', async function() {
-        let chain = await akasha.indexChain(config, '/hier/dir1/dir2/sibling.html');
+        const filecache = await _filecache;
+        let chain = await filecache.documents.indexChain('/hier/dir1/dir2/sibling.html');
 
         assert.equal(chain.length, 5);
-        assert.include(chain[0].foundPath, 'index.html');
-        assert.include(chain[0].filename, '/index.html');
-
-        assert.include(chain[1].foundPath, 'hier/index.html');
-        assert.include(chain[1].filename, '/hier/index.html');
-
-        assert.include(chain[2].foundPath, 'hier/dir1/index.html');
-        assert.include(chain[2].filename, '/hier/dir1/index.html');
-
-        assert.include(chain[3].foundPath, 'hier/dir1/dir2/index.html');
-        assert.include(chain[3].filename, '/hier/dir1/dir2/index.html');
-
-        assert.include(chain[4].foundPath, 'hier/dir1/dir2/sibling.html');
-        assert.include(chain[4].filename, '/hier/dir1/dir2/sibling.html');
+        assert.deepEqual([
+            {
+                foundPath: 'index.html',
+                filename: '/index.html'
+            },
+            {
+                foundPath: 'hier/index.html',
+                filename: '/hier/index.html'
+            },
+            {
+                foundPath: 'hier/dir1/index.html',
+                filename: '/hier/dir1/index.html'
+            },
+            {
+                foundPath: 'hier/dir1/dir2/index.html',
+                filename: '/hier/dir1/dir2/index.html'
+            },
+            {
+                foundPath: 'hier/dir1/dir2/sibling.html',
+                filename: '/hier/dir1/dir2/sibling.html'
+            }
+        ],
+        chain.map(item => {
+            return { foundPath: item.foundPath, filename: item.filename }
+        }));
     });
 
-    it('should generate correct index chain for /hier-broke/dir1/dir2/sibling.html', async function() {
+    it('should generate correct AKASHACMS index chain for /hier-broke/dir1/dir2/sibling.html', async function() {
+        const filecache = await _filecache;
         let chain = await akasha.indexChain(config, '/hier-broke/dir1/dir2/sibling.html');
 
         assert.equal(chain.length, 3);
-        assert.include(chain[0].foundPath, 'index.html');
-        assert.include(chain[0].filename, '/index.html');
 
-        assert.include(chain[1].foundPath, 'hier-broke/dir1/dir2/index.html');
-        assert.include(chain[1].filename, '/hier-broke/dir1/dir2/index.html');
-
-        assert.include(chain[2].foundPath, 'hier-broke/dir1/dir2/sibling.html');
-        assert.include(chain[2].filename, '/hier-broke/dir1/dir2/sibling.html');
+        assert.deepEqual([
+            {
+                foundPath: 'index.html',
+                filename: '/index.html'
+            },
+            {
+                foundPath: 'hier-broke/dir1/dir2/index.html',
+                filename: '/hier-broke/dir1/dir2/index.html'
+            },
+            {
+                foundPath: 'hier-broke/dir1/dir2/sibling.html',
+                filename: '/hier-broke/dir1/dir2/sibling.html'
+            }
+        ],
+        chain.map(item => {
+            return { foundPath: item.foundPath, filename: item.filename }
+        }));
     });
 
-    it('should generate correct index chain for /hier/dir1/dir2/index.html', async function() {
+    it('should generate correct index chain for /hier-broke/dir1/dir2/sibling.html', async function() {
+        const filecache = await _filecache;
+        let chain = await filecache.documents.indexChain('/hier-broke/dir1/dir2/sibling.html');
+
+        assert.equal(chain.length, 3);
+
+        assert.deepEqual([
+            {
+                foundPath: 'index.html',
+                filename: '/index.html'
+            },
+            {
+                foundPath: 'hier-broke/dir1/dir2/index.html',
+                filename: '/hier-broke/dir1/dir2/index.html'
+            },
+            {
+                foundPath: 'hier-broke/dir1/dir2/sibling.html',
+                filename: '/hier-broke/dir1/dir2/sibling.html'
+            }
+        ],
+        chain.map(item => {
+            return { foundPath: item.foundPath, filename: item.filename }
+        }));
+    });
+
+    it('should generate correct AKASHACMS index chain for /hier/dir1/dir2/index.html', async function() {
+        const filecache = await _filecache;
         let chain = await akasha.indexChain(config, '/hier/dir1/dir2/index.html');
 
         assert.equal(chain.length, 4);
-        assert.include(chain[0].foundPath, 'index.html');
-        assert.include(chain[0].filename, '/index.html');
+        assert.deepEqual([
+            {
+                foundPath: 'index.html',
+                filename: '/index.html'
+            },
+            {
+                foundPath: 'hier/index.html',
+                filename: '/hier/index.html'
+            },
+            {
+                foundPath: 'hier/dir1/index.html',
+                filename: '/hier/dir1/index.html'
+            },
+            {
+                foundPath: 'hier/dir1/dir2/index.html',
+                filename: '/hier/dir1/dir2/index.html'
+            }
+        ],
+        chain.map(item => {
+            return { foundPath: item.foundPath, filename: item.filename }
+        }));
 
-        assert.include(chain[1].foundPath, 'hier/index.html');
-        assert.include(chain[1].filename, '/hier/index.html');
+    });
 
-        assert.include(chain[2].foundPath, 'hier/dir1/index.html');
-        assert.include(chain[2].filename, '/hier/dir1/index.html');
+    it('should generate correct index chain for /hier/dir1/dir2/index.html', async function() {
+        const filecache = await _filecache;
+        let chain = await filecache.documents.indexChain('/hier/dir1/dir2/index.html');
 
-        assert.include(chain[3].foundPath, 'hier/dir1/dir2/index.html');
-        assert.include(chain[3].filename, '/hier/dir1/dir2/index.html');
+        assert.equal(chain.length, 4);
+        assert.deepEqual([
+            {
+                foundPath: 'index.html',
+                filename: '/index.html'
+            },
+            {
+                foundPath: 'hier/index.html',
+                filename: '/hier/index.html'
+            },
+            {
+                foundPath: 'hier/dir1/index.html',
+                filename: '/hier/dir1/index.html'
+            },
+            {
+                foundPath: 'hier/dir1/dir2/index.html',
+                filename: '/hier/dir1/dir2/index.html'
+            }
+        ],
+        chain.map(item => {
+            return { foundPath: item.foundPath, filename: item.filename }
+        }));
 
     });
 
     it('should generate correct index chain for /hier/dir1/sibling.html', async function() {
-        let chain = await akasha.indexChain(config, '/hier/dir1/sibling.html');
+        const filecache = await _filecache;
+        let chain = await filecache.documents.indexChain('/hier/dir1/sibling.html');
 
         assert.equal(chain.length, 4);
-        assert.include(chain[0].foundPath, 'index.html');
-        assert.include(chain[0].filename, '/index.html');
 
-        assert.include(chain[1].foundPath, 'hier/index.html');
-        assert.include(chain[1].filename, '/hier/index.html');
-
-        assert.include(chain[2].foundPath, 'hier/dir1/index.html');
-        assert.include(chain[2].filename, '/hier/dir1/index.html');
-
-        assert.include(chain[3].foundPath, 'hier/dir1/sibling.html');
-        assert.include(chain[3].filename, '/hier/dir1/sibling.html');
+        assert.deepEqual([
+            {
+                foundPath: 'index.html',
+                filename: '/index.html'
+            },
+            {
+                foundPath: 'hier/index.html',
+                filename: '/hier/index.html'
+            },
+            {
+                foundPath: 'hier/dir1/index.html',
+                filename: '/hier/dir1/index.html'
+            },
+            {
+                foundPath: 'hier/dir1/sibling.html',
+                filename: '/hier/dir1/sibling.html'
+            }
+        ],
+        chain.map(item => {
+            return { foundPath: item.foundPath, filename: item.filename }
+        }));
 
     });
 
     it('should generate correct index chain for /hier-broke/dir1/sibling.html', async function() {
-        let chain = await akasha.indexChain(config, '/hier-broke/dir1/sibling.html');
+        const filecache = await _filecache;
+        let chain = await filecache.documents.indexChain('/hier-broke/dir1/sibling.html');
 
         assert.equal(chain.length, 2);
-        assert.include(chain[0].foundPath, 'index.html');
-        assert.include(chain[0].filename, '/index.html');
 
-        assert.include(chain[1].foundPath, 'hier-broke/dir1/sibling.html');
-        assert.include(chain[1].filename, '/hier-broke/dir1/sibling.html');
+        assert.deepEqual([
+            {
+                foundPath: 'index.html',
+                filename: '/index.html'
+            },
+            {
+                foundPath: 'hier-broke/dir1/sibling.html',
+                filename: '/hier-broke/dir1/sibling.html'
+            }
+        ],
+        chain.map(item => {
+            return { foundPath: item.foundPath, filename: item.filename }
+        }));
 
     });
 
     it('should generate correct index chain for /hier/dir1/index.html', async function() {
-        let chain = await akasha.indexChain(config, '/hier/dir1/index.html');
+        const filecache = await _filecache;
+        let chain = await filecache.documents.indexChain('/hier/dir1/index.html');
 
         assert.equal(chain.length, 3);
-        assert.include(chain[0].foundPath, 'index.html');
-        assert.include(chain[0].filename, '/index.html');
 
-        assert.include(chain[1].foundPath, 'hier/index.html');
-        assert.include(chain[1].filename, '/hier/index.html');
-
-        assert.include(chain[2].foundPath, 'hier/dir1/index.html');
-        assert.include(chain[2].filename, '/hier/dir1/index.html');
+        assert.deepEqual([
+            {
+                foundPath: 'index.html',
+                filename: '/index.html'
+            },
+            {
+                foundPath: 'hier/index.html',
+                filename: '/hier/index.html'
+            },
+            {
+                foundPath: 'hier/dir1/index.html',
+                filename: '/hier/dir1/index.html'
+            }
+        ],
+        chain.map(item => {
+            return { foundPath: item.foundPath, filename: item.filename }
+        }));
 
     });
 
     it('should generate correct index chain for /hier/index.html', async function() {
-        let chain = await akasha.indexChain(config, '/hier/index.html');
+        const filecache = await _filecache;
+        let chain = await filecache.documents.indexChain('/hier/index.html');
 
         assert.equal(chain.length, 2);
-        assert.include(chain[0].foundPath, 'index.html');
-        assert.include(chain[0].filename, '/index.html');
 
-        assert.include(chain[1].foundPath, 'hier/index.html');
-        assert.include(chain[1].filename, '/hier/index.html');
+        assert.deepEqual([
+            {
+                foundPath: 'index.html',
+                filename: '/index.html'
+            },
+            {
+                foundPath: 'hier/index.html',
+                filename: '/hier/index.html'
+            }
+        ],
+        chain.map(item => {
+            return { foundPath: item.foundPath, filename: item.filename }
+        }));
     });
 
     it('should generate correct index chain for /index.html', async function() {
-        let chain = await akasha.indexChain(config, '/index.html');
+        const filecache = await _filecache;
+        let chain = await filecache.documents.indexChain('/index.html');
 
         assert.equal(chain.length, 1);
-        assert.include(chain[0].foundPath, 'index.html');
-        assert.include(chain[0].filename, '/index.html');
-    });
 
-    it('should close configuration', async function() {
-        await akasha.closeCaches();
+        assert.deepEqual([
+            {
+                foundPath: 'index.html',
+                filename: '/index.html'
+            }
+        ],
+        chain.map(item => {
+            return { foundPath: item.foundPath, filename: item.filename }
+        }));
     });
 
 });
@@ -1472,6 +1590,14 @@ describe('final funcs', function() {
 // partial using HBS
 
 // Anchor cleanups
+
+
+describe('Close caches', function() {
+
+    it('should close caches', async function() {
+        await (await _filecache).close();
+    });
+});
 
 
 

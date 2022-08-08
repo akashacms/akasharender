@@ -898,7 +898,6 @@ describe('rebased teaser, content', function() {
     });
 });
 
-
 describe('Rebased index Chain', function() {
     before(async function() {
         await akasha.cacheSetup(config_rebase);
@@ -919,6 +918,11 @@ describe('Rebased index Chain', function() {
         // console.log(`before documents.isReady`);
         // await documents.isReady();
     });
+
+    // NOTE The indexChain function has moved into FileCache class.
+    // Therefore the following tests should be rewritten to match.
+    // However, leaving them this way tests the backwards-compatibility
+    // API function that was left in place.
 
     it('should generate correct index chain for /hier/dir1/dir2/sibling.html', async function() {
         let chain = await akasha.indexChain(config_rebase, '/hier/dir1/dir2/sibling.html');
