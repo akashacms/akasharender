@@ -709,6 +709,8 @@ export class FileCache extends EventEmitter {
 
         const fcache = this;
         const coll = this.getCollection();
+        // Looks for files in the directory containing _fpath
+        // that are not _fpath
         ret = coll.chain().find({
             dirname: dirname,
             vpath: { '$ne': vpath }
@@ -859,8 +861,42 @@ export class FileCache extends EventEmitter {
 
         try {
 
+        // For the search options that can be expressed using
+        // the find(selector), we construct a suitable selector.
+        // For others, there is a where clause below.
+
+        const selector = {};
+
+        if (options.pathmatch) {
+            selector.vpath = {
+                '$regex': options.pathmatch
+            }
+        }
+
+        if (options.renderpathmatch) {
+            selector.renderPath = {
+                '$regex': options.renderpathmatch
+            }
+        }
+
+        if (options.mime) {
+            if (typeof options.mime === 'string') {
+                selector.mime = {
+                    '$eq': options.mime
+                };
+            } else if (Array.isArray(options.mime)) {
+                selector.mime = {
+                    '$in': options.mime
+                };
+            } /* else {
+                throw new Error(`Incorrect MIME check ${options.mime}`);
+            } */
+        }
+
+        // console.log(`search `, selector);
+
         let coll = this.getCollection();
-        const ret = coll.chain()
+        const ret = coll.chain().find(selector)
         .where(function(obj) {
             if (vpathsSeen.has(obj.vpath)) {
                 return false;
@@ -873,106 +909,113 @@ export class FileCache extends EventEmitter {
 
             if (fcache.ignoreFile(obj)) return false;
 
-            if (options.pathmatch) {
-                let matcher;
-                if (typeof options.pathmatch === 'string') {
-                    matcher = new RegExp(options.pathmatch);
-                } else if (options.pathmatch instanceof RegExp) {
-                    matcher = options.pathmatch;
-                } else {
-                    throw new Error(`Incorrect PATH check ${options.pathmatch}`);
-                }
+            // console.log(`search where ${obj.vpath}`);
 
-                const found = obj.vpath.match(matcher);
-                /* if (typeof found === 'undefined' || found === null) {
-                    return false;
-                } */
-                if (found) return true;
-            }
-
-            if (options.renderpathmatch) {
-                let matcher;
-                if (typeof options.renderpathmatch === 'string') {
-                    matcher = new RegExp(options.renderpathmatch);
-                } else if (options.renderpathmatch instanceof RegExp) {
-                    matcher = options.renderpathmatch;
-                } else {
-                    throw new Error(`Incorrect PATH check ${options.renderpathmatch}`);
-                }
-
-                const found = obj.renderPath.match(matcher);
-                /* if (typeof found === 'undefined' || found === null) {
-                    return false;
-                } */
-                if (found) return true;
-            }
-
-            if (options.mime) {
-                if (typeof options.mime === 'string') {
-                    if (obj.mime === options.mime) return true;
-                } else if (Array.isArray(options.mime)) {
-                    if (options.mime.includes(obj.mime)) return true;
-                } else {
-                    throw new Error(`Incorrect MIME check ${options.mime}`);
-                }
-            }
-
+            // console.log(`search where layouts ${util.inspect(options.layouts)}`);
             if (options.layouts) {
+                let layouts;
+                if (Array.isArray(options.layouts)) {
+                    layouts = options.layouts;
+                } else {
+                    layouts = [ options.layouts ];
+                }
                 if (obj.vpath
                  && obj.docMetadata
-                 && options.layouts.includes(obj.docMetadata.layout)) {
-                    return true;
+                 && obj.docMetadata.layout) {
+                    if (!layouts.includes(obj.docMetadata.layout)) {
+                        // console.log(`REJECT ${obj.vpath} ${util.inspect(options.layouts)} did not include ${obj.docMetadata.layout}`);
+                        return false;
+                    } else {
+                        // console.log(`INCLUDE ${obj.vpath}  ${util.inspect(options.layouts)} did include ${obj.docMetadata.layout}`);
+                    }
+                } else {
+                    // console.log(`REJECT ${obj.vpath} specified layouts ${util.inspect(options.layouts)} but no layout in document`);
+                    return false;
                 }
             }
 
             if (options.tag) {
                 if (obj.vpath
-                 && obj.docMetadata) {
-                    let found = false;
-                    if (obj.docMetadata.tags.includes(options.tag)) {
-                        found = true;
+                 && obj.docMetadata
+                 && obj.docMetadata.tags
+                 && Array.isArray(obj.docMetadata.tags)) {
+                    if (!obj.docMetadata.tags.includes(options.tag)) {
+                        return false;
                     }
                     // console.log(`obj ${obj.vpath} found=${found} tag ${options.tag} in `, obj.docMetadata.tags);
-                    if (found) return true;
+                    // if (found) return true;
+                } else {
+                    // Cannot possibly have the tag
+                    return false;
                 }
             }
 
             if (options.rootPath) {
                 if (obj.vpath && obj.renderPath) {
-                    if (obj.renderPath.startsWith(options.rootPath)) return true;
+                    // console.log(`rootPath ${options.rootPath} matches ${obj.renderPath}`);
+                    if (!obj.renderPath.startsWith(options.rootPath)) {
+                        // console.log(`NO MATCH AT ALL rootPath ${options.rootPath} matches ${obj.renderPath}`);
+
+                        return false;
+                    }
                 }
             }
 
             if (options.glob) {
                 if (obj.vpath) {
-                    if (minimatch(obj.vpath, options.glob)) return true;
+                    if (!minimatch(obj.vpath, options.glob)) {
+                        return false;
+                    }
                 }
             }
 
             if (options.renderglob) {
                 if (obj.renderPath) {
-                    if (minimatch(obj.renderPath, options.renderglob)) return true;
+                    if (!minimatch(obj.renderPath, options.renderglob)) {
+                        return false;
+                    }
                 }
             }
 
-            if (options.renderers) {
+            if (options.renderers && Array.isArray(options.renderers)) {
                 let renderer = fcache.config.findRendererPath(obj.vpath);
-                if (renderer
-                 && options.renderers.includes(renderer.name)) {
-                    return true;
+                // console.log(`renderer for ${obj.vpath} `, renderer);
+                if (!renderer) return false;
+                let found = false;
+                for (const r of options.renderers) {
+                    // console.log(`check renderer ${typeof r} ${renderer.name} ${renderer instanceof r}`);
+                    if (typeof r === 'string' && r === renderer.name) {
+                        found = true;
+                    } else if ((typeof r === 'object' || typeof r === 'function')
+                             && renderer instanceof r) {
+                        found = true;
+                    }
                 }
+                if (!found) return false;
             }
 
             if (options.filterfunc) {
-                if (options.filterfunc(fcache.config, options, obj)) return true;
+                if (!options.filterfunc(fcache.config, options, obj)) {
+                    return false;
+                }
             }
 
-            return false;
+            return true;
         })
-        .data();
+        .data()
+        .map(item => {
+            delete item.meta;
+            delete item['$loki']
+            // delete item.docContent;
+            // delete item.stats;
+            // delete item.stack;
+            return item;
+        });
 
         return ret;
-        } catch (err) { console.error(`search ${options} gave error ${err.stack}`); }
+        } catch (err) {
+            console.error(`search ${options} gave error ${err.stack}`);
+        }
     }
 
     async readDocument(info) { throw new Error('Do not use readDocument'); }
