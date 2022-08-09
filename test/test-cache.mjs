@@ -1635,84 +1635,94 @@ describe('Assets cache', function() {
 
 describe('Search', function() {
     it('should select by rootPath', function() {
-        const found = filecache.assets.search({
+        const found = filecache.documents.search({
             rootPath: 'hier/dir1'
         });
 
         assert.isDefined(found);
         assert.isArray(found);
+        assert.isTrue(found.length > 0);
+        // console.log(`search rootpath hier/dir1 gives `, found.map(f => { return f.vpath; }));
         for (let doc of found) {
-            assert.equal(doc.path.indexOf('hier/dir1'), 0);
+            assert.equal(doc.vpath.indexOf('hier/dir1'), 0);
         }
     });
 
     it('should select by pathmatch string', function() {
         const found = filecache.assets.search({
-            pathmatch: '.jpg$'
+            pathmatch: '.png$'
         });
+        // console.log(`search pathmatch /.png$/ gives `, found.map(f => { return f.vpath; }));
 
         assert.isDefined(found);
         assert.isArray(found);
+        assert.isTrue(found.length > 0);
+
         for (const doc of found) {
-            assert.isOk(doc.path.match(/\.jpg$/));
+            assert.isOk(doc.vpath.match(/\.png$/));
         }
     });
 
     it('should select by pathmatch RegExp', function() {
-        const found = filecache.assets.search({
+        const found = filecache.documents.search({
             pathmatch: /.json$/
         });
 
         assert.isDefined(found);
         assert.isArray(found);
+        assert.isTrue(found.length > 0);
         for (const doc of found) {
-            assert.isOk(doc.path.match(/\.json$/));
+            assert.isOk(doc.vpath.match(/\.json$/));
         }
     });
 
     it('should select by renderpathmatch string', function() {
-        const found = filecache.assets.search({
+        const found = filecache.documents.search({
             renderpathmatch: '.html$'
         });
 
         assert.isDefined(found);
         assert.isArray(found);
+        assert.isTrue(found.length > 0);
         for (const doc of found) {
             assert.isOk(doc.renderPath.match(/\.html$/));
         }
     });
 
     it('should select by renderpathmatch RegExp', function() {
-        const found = filecache.assets.search({
+        const found = filecache.documents.search({
             renderpathmatch: /.html$/
         });
 
         assert.isDefined(found);
         assert.isArray(found);
+        assert.isTrue(found.length > 0);
         for (const doc of found) {
             assert.isOk(doc.renderPath.match(/\.html$/));
         }
     });
 
     it('should select by GLOB', function() {
-        const found = filecache.assets.search({
+        const found = filecache.documents.search({
             glob: '**/*.json'
         });
 
         assert.isDefined(found);
         assert.isArray(found);
+        assert.isTrue(found.length > 0);
         for (const doc of found) {
-            assert.isOk(doc.path.match(/\.json$/));
+            assert.isOk(doc.vpath.match(/\.json$/));
         }
     });
 
     it('should select renderPath by GLOB', function() {
-        const found = filecache.assets.search({
+        const found = filecache.documents.search({
             renderglob: '**/*.html'
         });
 
         assert.isDefined(found);
         assert.isArray(found);
+        assert.isTrue(found.length > 0);
         for (const doc of found) {
             assert.isOk(doc.renderPath.match(/\.html$/));
         }
@@ -1720,23 +1730,25 @@ describe('Search', function() {
 
     it('should select by MIME', function() {
         const found = filecache.assets.search({
-            mime: 'image/jpeg'
+            mime: 'image/png'
         });
 
         assert.isDefined(found);
         assert.isArray(found);
+        assert.isTrue(found.length > 0);
         for (const doc of found) {
-            assert.equal(doc.mime, "image/jpeg");
+            assert.equal(doc.mime, "image/png");
         }
     });
 
     it('should select by layout string', function() {
-        const found = filecache.assets.search({
+        const found = filecache.documents.search({
             layouts: 'default-once.html.liquid'
         });
 
         assert.isDefined(found);
         assert.isArray(found);
+        assert.isTrue(found.length > 0);
         for (const doc of found) {
             assert.isDefined(doc.docMetadata);
             assert.isDefined(doc.docMetadata.layout);
@@ -1745,12 +1757,13 @@ describe('Search', function() {
     });
 
     it('should select by layout array', function() {
-        const found = filecache.assets.search({
+        const found = filecache.documents.search({
             layouts: [ 'default-once.html.liquid', 'default-once.html.njk' ]
         });
 
         assert.isDefined(found);
         assert.isArray(found);
+        assert.isTrue(found.length > 0);
         for (const doc of found) {
             assert.isDefined(doc.docMetadata);
             assert.isDefined(doc.docMetadata.layout);
@@ -1760,33 +1773,40 @@ describe('Search', function() {
     });
 
     it('should select by renderer', function() {
-        const found = filecache.assets.search({
+        const found = filecache.documents.search({
             renderers: [ akasha.HTMLRenderer ]
         });
 
+        // console.log(`renderers `, found.map(f => { return f.vpath }));
+
         assert.isDefined(found);
         assert.isArray(found);
+        assert.isTrue(found.length > 0);
         for (const doc of found) {
             assert.isDefined(doc.docMetadata);
             assert.isDefined(doc.docMetadata.layout);
-            assert.match(doc.path,
-                /.html.md$|.html.adoc$|.html.json$|.html.handlebars|.html.liquid$|.html.njk$/ );
+            assert.match(doc.vpath,
+                /.html.md$|.html.adoc$|.html.ejs$|.html.json$|.html.handlebars|.html.liquid$|.html.njk$/ );
         }
     });
 
     it('should select by custom function', function() {
-        const found = filecache.assets.search({
+        const found = filecache.documents.search({
             filterfunc: (config, options, doc) => {
-                return doc.isDirectory === false
+                // console.log(`filterfunc ${doc.vpath} ${doc.isDirectory} ${doc.mountPoint}`, doc);
+                return doc.stats.isDirectory() === false
                     && doc.mountPoint === 'mounted'
             }
         });
 
+        // console.log(`custom function `, found.map(f => { return f.vpath }));
+
         assert.isDefined(found);
         assert.isArray(found);
+        assert.isTrue(found.length > 0);
         for (const doc of found) {
-            assert.isFalse(doc.isDirectory);
-            assert.match(doc.path, /^mounted\// );
+            assert.isFalse(doc.stats.isDirectory());
+            assert.match(doc.vpath, /^mounted\// );
         }
     });
 
