@@ -1648,6 +1648,16 @@ describe('Search', function() {
         }
     });
 
+    it('should select nothing for nonexistent rootPath', function() {
+        const found = filecache.documents.search({
+            rootPath: 'hier/dir1/nowhere'
+        });
+
+        assert.isDefined(found);
+        assert.isArray(found);
+        assert.equal(found.length, 0);
+    });
+
     it('should select by pathmatch string', function() {
         const found = filecache.assets.search({
             pathmatch: '.png$'
@@ -1676,6 +1686,16 @@ describe('Search', function() {
         }
     });
 
+    it('should select nothing for nonexistent pathmatch RegExp', function() {
+        const found = filecache.documents.search({
+            pathmatch: /.json.nowhere$/
+        });
+
+        assert.isDefined(found);
+        assert.isArray(found);
+        assert.equal(found.length, 0);
+    });
+
     it('should select by renderpathmatch string', function() {
         const found = filecache.documents.search({
             renderpathmatch: '.html$'
@@ -1702,6 +1722,16 @@ describe('Search', function() {
         }
     });
 
+    it('should select nothing with nonexistent renderpathmatch RegExp', function() {
+        const found = filecache.documents.search({
+            renderpathmatch: /.html.nowhere$/
+        });
+
+        assert.isDefined(found);
+        assert.isArray(found);
+        assert.equal(found.length, 0);
+    });
+
     it('should select by GLOB', function() {
         const found = filecache.documents.search({
             glob: '**/*.json'
@@ -1713,6 +1743,16 @@ describe('Search', function() {
         for (const doc of found) {
             assert.isOk(doc.vpath.match(/\.json$/));
         }
+    });
+
+    it('should select nothing with nonexistent GLOB', function() {
+        const found = filecache.documents.search({
+            glob: '**/*.nowhere'
+        });
+
+        assert.isDefined(found);
+        assert.isArray(found);
+        assert.equal(found.length, 0);
     });
 
     it('should select renderPath by GLOB', function() {
@@ -1728,6 +1768,16 @@ describe('Search', function() {
         }
     });
 
+    it('should select nothing with nonexistent renderPath GLOB', function() {
+        const found = filecache.documents.search({
+            renderglob: '**/*.nowhere'
+        });
+
+        assert.isDefined(found);
+        assert.isArray(found);
+        assert.equal(found.length, 0);
+    });
+
     it('should select by MIME', function() {
         const found = filecache.assets.search({
             mime: 'image/png'
@@ -1739,6 +1789,16 @@ describe('Search', function() {
         for (const doc of found) {
             assert.equal(doc.mime, "image/png");
         }
+    });
+
+    it('should select nothing with nonexistent MIME', function() {
+        const found = filecache.assets.search({
+            mime: 'image/nowhere'
+        });
+
+        assert.isDefined(found);
+        assert.isArray(found);
+        assert.equal(found.length, 0);
     });
 
     it('should select by layout string', function() {
@@ -1754,6 +1814,16 @@ describe('Search', function() {
             assert.isDefined(doc.docMetadata.layout);
             assert.equal(doc.docMetadata.layout, 'default-once.html.liquid');
         }
+    });
+
+    it('should select nothing with nonexistent layout string', function() {
+        const found = filecache.documents.search({
+            layouts: 'default-once.html.nowhere'
+        });
+
+        assert.isDefined(found);
+        assert.isArray(found);
+        assert.equal(found.length, 0);
     });
 
     it('should select by layout array', function() {
@@ -1772,6 +1842,16 @@ describe('Search', function() {
         }
     });
 
+    it('should select nothing with nonexistent layout array', function() {
+        const found = filecache.documents.search({
+            layouts: [ 'default-once.html.nowhere', 'default-once.html.nowhere-else' ]
+        });
+
+        assert.isDefined(found);
+        assert.isArray(found);
+        assert.equal(found.length, 0);
+    });
+
     it('should select by renderer', function() {
         const found = filecache.documents.search({
             renderers: [ akasha.HTMLRenderer ]
@@ -1788,6 +1868,36 @@ describe('Search', function() {
             assert.match(doc.vpath,
                 /.html.md$|.html.adoc$|.html.ejs$|.html.json$|.html.handlebars|.html.liquid$|.html.njk$/ );
         }
+    });
+
+    it('should select by renderer name', function() {
+        const found = filecache.documents.search({
+            renderers: [ '.html.md' ]
+        });
+
+        // console.log(`renderers `, found.map(f => { return f.vpath }));
+
+        assert.isDefined(found);
+        assert.isArray(found);
+        assert.isTrue(found.length > 0);
+        for (const doc of found) {
+            assert.isDefined(doc.docMetadata);
+            assert.isDefined(doc.docMetadata.layout);
+            assert.match(doc.vpath,
+                /.html.md$|.html.adoc$|.html.ejs$|.html.json$|.html.handlebars|.html.liquid$|.html.njk$/ );
+        }
+    });
+
+    it('should select nothing with nonexistent renderer name', function() {
+        const found = filecache.documents.search({
+            renderers: [ '.html.nowhere' ]
+        });
+
+        // console.log(`renderers `, found.map(f => { return f.vpath }));
+
+        assert.isDefined(found);
+        assert.isArray(found);
+        assert.equal(found.length, 0);
     });
 
     it('should select by custom function', function() {
