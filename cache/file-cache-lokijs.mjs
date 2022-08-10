@@ -24,21 +24,22 @@ export async function setup(config) {
             // verbose: true
         });
 
-        coll_documents = db.getCollection('documents');
-        if (!coll_documents) coll_documents = db.addCollection('documents');
+        coll_documents = this.getCollection('documents');
+        // if (!coll_documents) coll_documents = db.addCollection('documents');
 
-        coll_assets = db.getCollection('assets');
-        if (!coll_assets) coll_assets = db.addCollection('assets');
+        coll_assets = this.getCollection('assets');
+        // if (!coll_assets) coll_assets = db.addCollection('assets');
 
-        coll_layouts = db.getCollection('layouts');
-        if (!coll_layouts) coll_layouts = db.addCollection('layouts');
+        coll_layouts = this.getCollection('layouts');
+        // if (!coll_layouts) coll_layouts = db.addCollection('layouts');
 
-        coll_partials = db.getCollection('partials');
-        if (!coll_partials) coll_partials = db.addCollection('partials');
+        coll_partials = this.getCollection('partials');
+        // if (!coll_partials) coll_partials = db.addCollection('partials');
 
 
         // console.log(`filecache setup documents ${util.inspect(config.documentDirs)}`);
         await setupDocuments(config);
+        await config.hookPluginCacheSetup();
 
         // console.log(`filecache setup assets ${util.inspect(config.assetDirs)}`);
         await setupAssets(config);
@@ -62,6 +63,14 @@ export async function close() {
 
     db.close();
     db = undefined;
+}
+
+export function getCollection(coll_name) {
+    let coll = db.getCollection(coll_name);
+    if (!coll) {
+        coll = db.addCollection(coll_name, { disableMeta: true });
+    }
+    return coll;
 }
 
 // Convert AkashaCMS mount points into the mountpoint

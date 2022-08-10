@@ -72,7 +72,7 @@ exports.cacheSetup = async function(config) {
     try {
         let filecache = (await exports.filecache);
         await filecache.setup(config);
-        exports.setupPluginCaches(config)
+        // exports.setupPluginCaches(config)
     } catch (err) {
         console.error(`INITIALIZATION FAILURE COULD NOT INITIALIZE CACHE `, err);
         process.exit(1);
