@@ -2007,17 +2007,17 @@ describe('Search', function() {
     
 
     const sortFunc = async (a, b) => {
-        if (!a.stat) a.stat = await fsp.stat(a.fspath);
+        //  if (!a.stat) a.stat = await fsp.stat(a.fspath);
         let publA = a.docMetadata && a.docMetadata.publicationDate 
-                ? a.docMetadata.publicationDate : a.stat.mtime;
+                ? a.docMetadata.publicationDate : a.stats.mtime;
         let aPublicationDate = Date.parse(publA);
         /* if (isNaN(aPublicationDate)) {
             dateErrors.push(`findBlogDocs ${a.renderPath} BAD DATE publA ${publA}`);
         } */
 
-        if (!b.stat) b.stat = await fsp.stat(b.fspath);
+        // if (!b.stat) b.stat = await fsp.stat(b.fspath);
         let publB = b.docMetadata && b.docMetadata.publicationDate 
-                ? b.docMetadata.publicationDate : b.stat.mtime;
+                ? b.docMetadata.publicationDate : b.stats.mtime;
         let bPublicationDate = Date.parse(publB);
         // console.log(`findBlogDocs publA ${publA} aPublicationDate ${aPublicationDate} publB ${publB} bPublicationDate ${bPublicationDate}`);
         /* if (isNaN(bPublicationDate)) {
@@ -2050,6 +2050,67 @@ describe('Search', function() {
             lastpublDate = docPublicationDate;
         }
     });
+
+    it('should select limit elements sort by custom sort function', async function() {
+        const found = filecache.documents.search({
+            sortFunc: sortFunc,
+            rendersToHTML: true,
+            limit: 20
+        });
+
+        // console.log(`renderers `, found.map(f => { return f.vpath }));
+
+        assert.isDefined(found);
+        assert.isArray(found);
+        assert.isTrue(found.length > 0 && found.length <= 20);
+        let lastpublDate = 0;
+        for (const doc of found) {
+            if (!doc.stat) doc.stat = await fsp.stat(doc.fspath);
+            let publDoc = doc.docMetadata && doc.docMetadata.publicationDate 
+                ? doc.docMetadata.publicationDate : doc.stat.mtime;
+            let docPublicationDate = Date.parse(publDoc);
+            assert.isTrue(docPublicationDate >= lastpublDate);
+            lastpublDate = docPublicationDate;
+        }
+    });
+
+    it('should select offset and limit elements sort by custom sort function', async function() {
+        const foundLimit = filecache.documents.search({
+            sortFunc: sortFunc,
+            rendersToHTML: true,
+            limit: 20
+        });
+        const foundOffset = filecache.documents.search({
+            sortFunc: sortFunc,
+            rendersToHTML: true,
+            limit: 20,
+            offset: 10
+        });
+
+        // console.log(`renderers `, found.map(f => { return f.vpath }));
+
+        assert.isDefined(foundLimit);
+        assert.isArray(foundLimit);
+        assert.isTrue(foundLimit.length > 0 && foundLimit.length <= 20);
+
+        assert.isDefined(foundOffset);
+        assert.isArray(foundOffset);
+        assert.isTrue(foundOffset.length > 0 && foundOffset.length <= 20);
+
+        // console.log(foundLimit.map(f => { return f.vpath }));
+        // console.log(foundOffset.map(f => { return f.vpath }));
+
+        assert.notEqual(foundLimit.at(0).vpath, foundOffset.at(0).vpath);
+        assert.notEqual(foundLimit.at(1).vpath, foundOffset.at(0).vpath);
+        assert.notEqual(foundLimit.at(2).vpath, foundOffset.at(0).vpath);
+        assert.notEqual(foundLimit.at(3).vpath, foundOffset.at(0).vpath);
+        assert.notEqual(foundLimit.at(4).vpath, foundOffset.at(0).vpath);
+
+        // offset: 10 means to start with the item at index 10
+        assert.equal(foundLimit.at(10).vpath, foundOffset.at(0).vpath);
+
+    });
+
 
 
     it('should select by custom function', function() {
