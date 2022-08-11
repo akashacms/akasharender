@@ -707,10 +707,9 @@ export class FileCache extends EventEmitter {
 
     siblings(_fpath) {
         let ret;
-        let vpath;
-        vpath = _fpath.startsWith('/')
-                    ? _fpath.substring(1)
-                    : _fpath;
+        let vpath = _fpath.startsWith('/')
+                  ? _fpath.substring(1)
+                  : _fpath;
         let dirname = path.dirname(vpath);
         if (dirname === '.') dirname = '/';
 
@@ -722,15 +721,19 @@ export class FileCache extends EventEmitter {
         // that are not _fpath
         ret = coll.chain().find({
             dirname: dirname,
-            vpath: { '$ne': vpath }
+            '$and': [
+                { vpath: { '$ne': vpath } },
+                { renderPath: { '$ne': vpath } },
+            ],
+            rendersToHTML: true
         })
         .where(function(obj) {
-            if (fcache.ignoreFile(obj)) return false;
-            else return obj.renderPath.endsWith('.html');
-            
+            return ! fcache.ignoreFile(obj);
         })
         .simplesort('vpath')
-        .data();
+        .data({
+            removeMeta: true
+        });
 
         return ret;
     }
@@ -748,9 +751,15 @@ export class FileCache extends EventEmitter {
 
         const coll = this.getCollection();
         const ret = coll.chain()
+        .find({
+            '$or': [
+                { renderPath: { '$regex': '/index\.html$' } },
+                { renderPath: { '$eq': 'index.html' }}
+            ]
+        })
         .where(function(obj) {
-            const renderP = obj.renderPath === 'index.html' || obj.renderPath.endsWith('/index.html');
-            if (!renderP) return false;
+            /* const renderP = obj.renderPath === 'index.html' || obj.renderPath.endsWith('/index.html');
+            if (!renderP) return false; */
             if (dirname !== '/') {
                 if (obj.vpath.startsWith(dirname)) return true;
                 else return false;
@@ -759,7 +768,9 @@ export class FileCache extends EventEmitter {
             }
         })
         .simplesort('dirname')
-        .data();
+        .data({
+            removeMeta: true
+        });
         // console.log(`indexFiles ${ret.length}`);
         return ret;
     }
@@ -792,7 +803,9 @@ export class FileCache extends EventEmitter {
                 return true;
             }
         })
-        .data()
+        .data({
+            removeMeta: true
+        })
         .map(obj => {
             return  {
                 fspath: obj.fspath,
@@ -830,7 +843,9 @@ export class FileCache extends EventEmitter {
                 && Array.isArray(obj.metadata.tags)
                 && obj.metadata.tags.length >= 1;
         })
-        .data();
+        .data({
+            removeMeta: true
+        });
         return ret;
     }
 
@@ -900,6 +915,10 @@ export class FileCache extends EventEmitter {
             } /* else {
                 throw new Error(`Incorrect MIME check ${options.mime}`);
             } */
+        }
+
+        if (typeof options.rendersToHTML !== 'undefined') {
+            selector.rendersToHTML = { '$eq': options.rendersToHTML };
         }
 
         // console.log(`search `, selector);
@@ -1010,18 +1029,24 @@ export class FileCache extends EventEmitter {
             }
 
             return true;
-        })
-        .data()
-        .map(item => {
-            delete item.meta;
-            delete item['$loki']
-            // delete item.docContent;
-            // delete item.stats;
-            // delete item.stack;
-            return item;
         });
 
-        return ret;
+        let ret2;
+        if (typeof options.sortBy === 'string') {
+            ret2 = ret.simplesort(options.sortBy);
+        } else if (typeof options.sortFunc === 'function') {
+            ret2 = ret.sort(options.sortFunc);
+        } else {
+            ret2 = ret;
+        }
+        let ret3 = ret2.data({
+            removeMeta: true
+        });
+        if (options.reverse === true) {
+            return ret3.reverse();
+        } else {
+            return ret3;
+        }
         } catch (err) {
             console.error(`search ${options} gave error ${err.stack}`);
         }
