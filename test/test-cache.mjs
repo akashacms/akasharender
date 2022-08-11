@@ -1678,6 +1678,25 @@ describe('Search', function() {
         }
     });
 
+    it('should select by multiple pathmatch strings', function() {
+        const found = filecache.documents.search({
+            pathmatch: [
+                '.*anchor-cleanups.*',
+                '.*body-class.*',
+                /.*fig-img.*/
+            ]
+        });
+        // console.log(`search pathmatch /.png$/ gives `, found.map(f => { return f.vpath; }));
+
+        assert.isDefined(found);
+        assert.isArray(found);
+        assert.isTrue(found.length > 0);
+
+        for (const doc of found) {
+            assert.isOk(doc.vpath.match(/anchor-cleanups|body-class|fig-img/));
+        }
+    });
+
     it('should select by pathmatch RegExp', function() {
         const found = filecache.documents.search({
             pathmatch: /.json$/
@@ -1711,6 +1730,23 @@ describe('Search', function() {
         assert.isTrue(found.length > 0);
         for (const doc of found) {
             assert.isOk(doc.renderPath.match(/\.html$/));
+        }
+    });
+
+    it('should select by multiple renderpathmatch strings', function() {
+        const found = filecache.documents.search({
+            renderpathmatch: [
+                '.*asciidoctor.*',
+                '.*code-embed.*',
+                /.*img2figimg.*/
+            ]
+        });
+
+        assert.isDefined(found);
+        assert.isArray(found);
+        assert.isTrue(found.length > 0);
+        for (const doc of found) {
+            assert.isOk(doc.renderPath.match(/asciidoctor|code-embed|img2figimg/));
         }
     });
 
@@ -2100,6 +2136,10 @@ describe('Search', function() {
         // console.log(foundLimit.map(f => { return f.vpath }));
         // console.log(foundOffset.map(f => { return f.vpath }));
 
+        // This is two searches configured the same, except that
+        // foundOffset starts at index 10.  This first set of
+        // assertions checks that the first few items do not match.
+
         assert.notEqual(foundLimit.at(0).vpath, foundOffset.at(0).vpath);
         assert.notEqual(foundLimit.at(1).vpath, foundOffset.at(0).vpath);
         assert.notEqual(foundLimit.at(2).vpath, foundOffset.at(0).vpath);
@@ -2107,7 +2147,14 @@ describe('Search', function() {
         assert.notEqual(foundLimit.at(4).vpath, foundOffset.at(0).vpath);
 
         // offset: 10 means to start with the item at index 10
+        // This second set of assertions ensure that the matching
+        // items are offset from each other
+
         assert.equal(foundLimit.at(10).vpath, foundOffset.at(0).vpath);
+        assert.equal(foundLimit.at(11).vpath, foundOffset.at(1).vpath);
+        assert.equal(foundLimit.at(12).vpath, foundOffset.at(2).vpath);
+        assert.equal(foundLimit.at(13).vpath, foundOffset.at(3).vpath);
+        assert.equal(foundLimit.at(14).vpath, foundOffset.at(4).vpath);
 
     });
 

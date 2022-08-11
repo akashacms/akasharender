@@ -892,14 +892,39 @@ export class FileCache extends EventEmitter {
         const selector = {};
 
         if (options.pathmatch) {
-            selector.vpath = {
-                '$regex': options.pathmatch
+            if (typeof options.pathmatch === 'string'
+                 || (typeof options.pathmatch === 'object'
+                  && options.pathmatch instanceof RegExp)) {
+                selector.vpath = {
+                    '$regex': options.pathmatch
+                }
+            } else if (Array.isArray(options.pathmatch)) {
+                selector['$or'] = [];
+                for (const match of options.pathmatch) {
+                    selector['$or'].push({ vpath: { '$regex': match } });
+                }
+            } else {
+                throw new Error(`FileCache search invalid pathmatch ${typeof options.pathmatch} ${util.inspect(options.pathmatch)}`);
             }
         }
 
         if (options.renderpathmatch) {
-            selector.renderPath = {
-                '$regex': options.renderpathmatch
+
+            if (typeof options.renderpathmatch === 'string'
+            || (typeof options.renderpathmatch === 'object'
+              && options.renderpathmatch instanceof RegExp)) {
+                selector.renderPath = {
+                    '$regex': options.renderpathmatch
+                }
+            } else if (Array.isArray(options.renderpathmatch)) {
+                if (typeof selector['$or'] === 'undefined') {
+                    selector['$or'] = [];
+                }
+                for (const match of options.renderpathmatch) {
+                    selector['$or'].push({ renderPath: { '$regex': match } });
+                }
+            } else {
+                throw new Error(`FileCache search invalid renderpathmatch ${util.inspect(options.renderpathmatch)}`);
             }
         }
 
@@ -1050,6 +1075,7 @@ export class FileCache extends EventEmitter {
             removeMeta: true
         });
         if (options.reverse === true) {
+            // console.log(`select return reverse`);
             return ret2.reverse();
         } else {
             return ret2;
