@@ -1039,13 +1039,20 @@ export class FileCache extends EventEmitter {
         } else {
             ret2 = ret;
         }
-        let ret3 = ret2.data({
+
+        if (typeof options.offset === 'number') {
+            ret2 = ret2.offset(options.offset);
+        }
+        if (typeof options.limit === 'number') {
+            ret2 = ret2.limit(options.limit);
+        }
+        ret2 = ret2.data({
             removeMeta: true
         });
         if (options.reverse === true) {
-            return ret3.reverse();
+            return ret2.reverse();
         } else {
-            return ret3;
+            return ret2;
         }
         } catch (err) {
             console.error(`search ${options} gave error ${err.stack}`);
