@@ -1204,12 +1204,17 @@ describe('Documents cache', function() {
         assert.equal(found.dirname, 'mounted');
     });
     
-    it('should find siblings for mounted/img2resize.html', function() {
+    it('should find no siblings for mounted/img2resize.html', function() {
         const siblings = filecache.documents.siblings('mounted/img2resize.html');
-        assert.isOk(filezContains(siblings, 'mounted/img2resize.html.md'));
-        for (const sibling of siblings) {
-            assert.equal(sibling.dirname, 'mounted');
-        }
+        assert.isDefined(siblings);
+        assert.isTrue(Array.isArray(siblings));
+
+        /* console.log(siblings.map(s => {
+            return {
+                vpath: s.vpath, dirname: s.dirname
+            }
+        })) */
+        assert.equal(siblings.length, 0);
     });
 
     it('should find /mounted/img/Human-Skeleton.jpg', function() {
@@ -1778,6 +1783,36 @@ describe('Search', function() {
         assert.equal(found.length, 0);
     });
 
+    it('should select rendersToHTML true', function() {
+        const found = filecache.documents.search({
+            rendersToHTML: true
+        });
+
+        assert.isDefined(found);
+        assert.isArray(found);
+        assert.isTrue(found.length > 0);
+        for (const doc of found) {
+            assert.isTrue(doc.rendersToHTML);
+            assert.isOk(doc.renderPath.match(/\.html$/));
+        }
+    });
+
+    it('should select rendersToHTML false', function() {
+        const found = filecache.documents.search({
+            rendersToHTML: false
+        });
+
+        // console.log(`rendersToHTML false `, found.map(f => { return f.vpath; }));
+
+        assert.isDefined(found);
+        assert.isArray(found);
+        assert.isTrue(found.length > 0);
+        for (const doc of found) {
+            assert.isFalse(doc.rendersToHTML);
+            assert.isNotOk(doc.renderPath.match(/\.html$/));
+        }
+    });
+
     it('should select by MIME', function() {
         const found = filecache.assets.search({
             mime: 'image/png'
@@ -1883,8 +1918,7 @@ describe('Search', function() {
         for (const doc of found) {
             assert.isDefined(doc.docMetadata);
             assert.isDefined(doc.docMetadata.layout);
-            assert.match(doc.vpath,
-                /.html.md$|.html.adoc$|.html.ejs$|.html.json$|.html.handlebars|.html.liquid$|.html.njk$/ );
+            assert.match(doc.vpath, /\.html\.md$/);
         }
     });
 
@@ -1899,6 +1933,124 @@ describe('Search', function() {
         assert.isArray(found);
         assert.equal(found.length, 0);
     });
+
+    it('should select sort by vpath field', function() {
+        const found = filecache.documents.search({
+            sortBy: 'vpath'
+        });
+
+        // console.log(`renderers `, found.map(f => { return f.vpath }));
+
+        assert.isDefined(found);
+        assert.isArray(found);
+        assert.isTrue(found.length > 0);
+        let lastVpath = '';
+        for (const doc of found) {
+            assert.isTrue(doc.vpath >= lastVpath);
+            lastVpath = doc.vpath;
+        }
+    });
+
+    it('should select reverse sort by vpath field', function() {
+        const found = filecache.documents.search({
+            sortBy: 'vpath',
+            reverse: true
+        });
+
+        // console.log(`renderers `, found.map(f => { return f.vpath }));
+
+        assert.isDefined(found);
+        assert.isArray(found);
+        assert.isTrue(found.length > 0);
+        let lastVpath = '';
+        for (const doc of found) {
+            assert.isTrue(lastVpath === '' || doc.vpath <= lastVpath);
+            lastVpath = doc.vpath;
+        }
+    });
+
+
+    it('should select sort by dirname field', function() {
+        const found = filecache.documents.search({
+            sortBy: 'dirname'
+        });
+
+        // console.log(`renderers `, found.map(f => { return f.vpath }));
+
+        assert.isDefined(found);
+        assert.isArray(found);
+        assert.isTrue(found.length > 0);
+        let lastDirname = '';
+        for (const doc of found) {
+            assert.isTrue(doc.dirname >= lastDirname);
+            lastDirname = doc.dirname;
+        }
+    });
+
+    it('should select reverse sort by dirname field', function() {
+        const found = filecache.documents.search({
+            sortBy: 'dirname',
+            reverse: true
+        });
+
+        // console.log(`renderers `, found.map(f => { return f.vpath }));
+
+        assert.isDefined(found);
+        assert.isArray(found);
+        assert.isTrue(found.length > 0);
+        let lastDirname = '';
+        for (const doc of found) {
+            assert.isTrue(lastDirname === '' || doc.dirname <= lastDirname);
+            lastDirname = doc.dirname;
+        }
+    });
+    
+
+    const sortFunc = async (a, b) => {
+        if (!a.stat) a.stat = await fsp.stat(a.fspath);
+        let publA = a.docMetadata && a.docMetadata.publicationDate 
+                ? a.docMetadata.publicationDate : a.stat.mtime;
+        let aPublicationDate = Date.parse(publA);
+        /* if (isNaN(aPublicationDate)) {
+            dateErrors.push(`findBlogDocs ${a.renderPath} BAD DATE publA ${publA}`);
+        } */
+
+        if (!b.stat) b.stat = await fsp.stat(b.fspath);
+        let publB = b.docMetadata && b.docMetadata.publicationDate 
+                ? b.docMetadata.publicationDate : b.stat.mtime;
+        let bPublicationDate = Date.parse(publB);
+        // console.log(`findBlogDocs publA ${publA} aPublicationDate ${aPublicationDate} publB ${publB} bPublicationDate ${bPublicationDate}`);
+        /* if (isNaN(bPublicationDate)) {
+            dateErrors.push(`findBlogDocs ${b.renderPath} BAD DATE publB ${publB}`);
+        } */
+
+        if (aPublicationDate < bPublicationDate) return -1;
+        else if (aPublicationDate === bPublicationDate) return 0;
+        else return 1;
+    };
+
+    it('should select sort by custom sort function', async function() {
+        const found = filecache.documents.search({
+            sortFunc: sortFunc,
+            rendersToHTML: true
+        });
+
+        // console.log(`renderers `, found.map(f => { return f.vpath }));
+
+        assert.isDefined(found);
+        assert.isArray(found);
+        assert.isTrue(found.length > 0);
+        let lastpublDate = 0;
+        for (const doc of found) {
+            if (!doc.stat) doc.stat = await fsp.stat(doc.fspath);
+            let publDoc = doc.docMetadata && doc.docMetadata.publicationDate 
+                ? doc.docMetadata.publicationDate : doc.stat.mtime;
+            let docPublicationDate = Date.parse(publDoc);
+            assert.isTrue(docPublicationDate >= lastpublDate);
+            lastpublDate = docPublicationDate;
+        }
+    });
+
 
     it('should select by custom function', function() {
         const found = filecache.documents.search({
