@@ -23,7 +23,7 @@ const path      = require('path');
 const util      = require('util');
 const HTMLRenderer = require('./HTMLRenderer');
 
-const asciidoctor = require('asciidoctor.js')();
+const asciidoctor = require('@asciidoctor/core')();
 
 const _renderer_doctype = Symbol('doctype');
 
