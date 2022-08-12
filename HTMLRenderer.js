@@ -21,7 +21,7 @@
 
 const Renderer  = require('./Renderer');
 // const render    = require('./render');
-const fs        = require('fs-extra');
+const fsp       = require('fs/promises');
 const url       = require('url');
 const path      = require('path');
 const util      = require('util');
@@ -98,7 +98,7 @@ module.exports = class HTMLRenderer extends Renderer {
                 layoutcontent = found.docContent;
                 layoutdata = this.copyMetadataProperties(metadata, found.metadata);
             } else {
-                let layout = await fs.readFile(found.fspath, 'utf8');
+                let layout = await fsp.readFile(found.fspath, 'utf8');
                 let fm = matter(layout);
                 layoutcontent = fm.content;
                 layoutdata    = this.copyMetadataProperties(metadata, fm.data);
@@ -168,8 +168,8 @@ module.exports = class HTMLRenderer extends Renderer {
         data.report(docInfo.mountPoint, docInfo.vpath, config.renderTo, 
                             "MAHABHUTA", renderStart);
         const renderDest = path.join(config.renderTo, this.filePath(docInfo.vpath));
-        await fs.ensureDir(path.dirname(renderDest));
-        await fs.writeFile(renderDest, docrendered, 'utf8');
+        await fsp.mkdir(path.dirname(renderDest), { recursive: true });
+        await fsp.writeFile(renderDest, docrendered, 'utf8');
     }
 
     async renderToFile(basedir, fpath, renderTo, renderToPlus, metadata, config) {
@@ -188,7 +188,7 @@ module.exports = class HTMLRenderer extends Renderer {
     }
 
     async readContent(basedir, fpath) {
-        const text = await fs.readFile(path.join(basedir, fpath), 'utf8');
+        const text = await fsp.readFile(path.join(basedir, fpath), 'utf8');
         return text;
     }
 
@@ -215,7 +215,7 @@ module.exports = class HTMLRenderer extends Renderer {
             // console.log(`HTMLRenderer frontmatter found cached ${basedir} ${fpath}`);
             return cached.frontmatter;
         }
-        const text = await fs.readFile(path.join(basedir, fpath), 'utf8');
+        const text = await fsp.readFile(path.join(basedir, fpath), 'utf8');
         // console.log(`frontmatter ${path.join(basedir, fpath)} ${text}`);
         let fm;
         try {
