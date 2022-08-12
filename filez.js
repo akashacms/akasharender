@@ -19,7 +19,7 @@
 
  'use strict';
 
-const fs         = require('fs-extra');
+const fsp        = require('fs/promises');
 const util       = require('util');
 const path       = require('path');
 
@@ -37,11 +37,12 @@ const path       = require('path');
 }; */
 
 exports.writeFile = async function(dir, fpath, text) {
+    console.error(`DEPRECATED filez.writeFile should be replaced with fsp.writeFile`);
     try {
         var renderToFile = path.join(dir, fpath);
-        await fs.ensureDir(path.dirname(renderToFile));
+        await fsp.mkdir(path.dirname(renderToFile), { recursive: true });
         // console.log(`filez.writeFile ${dir} ${fpath} ==> ${renderToFile}`);
-        await fs.writeFile(renderToFile, text, 'utf8');
+        await fsp.writeFile(renderToFile, text, 'utf8');
     } catch (e) {
         throw new Error(`writeFile FAIL because ${e.stack}`);
     }

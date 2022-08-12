@@ -639,9 +639,18 @@ export class FileCache extends EventEmitter {
 
         const fcache = this;
         const coll = this.getCollection();
-        const results = coll.where(function(obj) {
-            if (fcache.ignoreFile(obj)) return false;
-            return obj.vpath === fpath || obj.renderPath === fpath;
+        const results = coll.chain().find({
+            '$or': [
+                { vpath: { '$eq': fpath }},
+                { renderPath: { '$eq': fpath }}
+            ]
+        })
+        .where(function(obj) {
+            return ! fcache.ignoreFile(obj);
+            // return obj.vpath === fpath || obj.renderPath === fpath;
+        })
+        .data({
+            removeMeta: true
         });
         let ret;
         if (Array.isArray(results) && results.length > 0) {
@@ -660,6 +669,11 @@ export class FileCache extends EventEmitter {
                     ? _fpath.substring(1) 
                     : _fpath;
         const parsed = path.parse(fpath);
+
+        // The selector is a long list of '$or' entries each of
+        // which is a '$or' on both vpath and renderPath.
+        // Some of the entries are added below
+
         const selector = {
             '$or': [
                 {
@@ -688,6 +702,10 @@ export class FileCache extends EventEmitter {
                 parentDir = path.dirname(fileName);
             }
             let lookFor = path.join(parentDir, "index.html");
+
+            // These selector entries are added to the selector
+            // which was started above here.
+            
             selector['$or'].push({
                 '$or': [
                     { vpath: lookFor },
@@ -788,15 +806,6 @@ export class FileCache extends EventEmitter {
         const vpathsSeen = new Set();
         const coll = this.getCollection();
         const ret = coll.chain()
-        .map(function(obj) {
-            return {
-                fspath: obj.fspath,
-                vpath: obj.vpath,
-                renderPath: obj.renderPath,
-                mountPoint: obj.mountPoint,
-                dirMountedOn: obj.dirMountedOn
-            };
-        })
         .where(function(obj) {
             if (fcache.ignoreFile(obj)) {
                 // console.log(`OOOOGA!  In paths  MUST IGNORE ${obj.vpath}`);
@@ -833,6 +842,9 @@ export class FileCache extends EventEmitter {
         const fcache = this;
         const vpathsSeen = new Set();
         const ret = coll.chain()
+        .find({
+            rendersToHTML: true
+        })
         .where(function(obj) {
             if (vpathsSeen.has(obj.vpath)) {
                 return false;
@@ -843,8 +855,7 @@ export class FileCache extends EventEmitter {
         })
         .where(function (obj) {
             if (fcache.ignoreFile(obj)) return false;
-            return obj.renderPath.endsWith('.html')
-                && obj.metadata
+            return obj.metadata
                 && obj.metadata.tags
                 && Array.isArray(obj.metadata.tags)
                 && obj.metadata.tags.length >= 1;

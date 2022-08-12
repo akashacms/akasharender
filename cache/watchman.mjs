@@ -5,7 +5,7 @@ import fastq from 'fastq';
 import data from '../data.js';
 import {
     documents, assets, layouts, partials
-} from './file-cache.mjs';
+} from './file-cache-lokijs.mjs';
 
 async function renderVPath(config, info) {
     data.remove(info.mountPoint, info.vpath);
@@ -22,7 +22,7 @@ async function renderVPath(config, info) {
  * @param info 
  */
 async function renderForLayout(config, info) {
-    const docs = documents.search(config, {
+    const docs = documents.search({
         layouts: [ info.vpath ]
     });
 

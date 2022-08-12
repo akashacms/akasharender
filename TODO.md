@@ -2,6 +2,17 @@
 
 This should probably be kept in GitHub issues -- eventually
 
+
+# Replace sightmap
+
+This is an ancient package, that basically see's zero usage.  Surely there is a better package.
+
+Bonus points for something that builds Google News XML files
+
+https://www.npmjs.com/package/sitemap - Looks very modern and comprehensive
+
+https://www.npmjs.com/package/easy-sitemap - Much lighter weight
+
 # Highlight.JS using JS in the browser
 
 The current practice for code highlighting isn't working well.  The highlighting often looks bad.  Further, when Medium imports articles, it chokes badly on the highlighted code.
@@ -97,16 +108,6 @@ The goal is:
 * `create-epub` uses `epub-skeleton`
 * etc
 
-
-# Replace sightmap
-
-This is an ancient package, that basically see's zero usage.  Surely there is a better package.
-
-Bonus points for something that builds Google News XML files
-
-https://www.npmjs.com/package/sitemap - Looks very modern and comprehensive
-
-https://www.npmjs.com/package/easy-sitemap - Much lighter weight
 
 # Convert some or all code to TypeScript and/or ES6
 

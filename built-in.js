@@ -26,7 +26,6 @@ const util  = require('util');
 const sharp = require('sharp');
 const uuid  = require('uuid');
 const uuidv1 = uuid.v1;
-const filez = require('./filez');
 const render = require('./render');
 const partialFuncs = import('./partial-funcs.mjs');
 const Plugin = require('./Plugin');
@@ -809,7 +808,6 @@ class AnchorCleanup extends mahabhuta.Munger {
             } catch (e) {
                 foundAsset = undefined;
             }
-            // var foundAsset = await filez.findAsset(this.array.options.config.assetDirs, absolutePath);
             if (foundAsset) { // && foundAsset.length > 0) {
                 return "ok";
             }
@@ -830,7 +828,6 @@ class AnchorCleanup extends mahabhuta.Munger {
 
             // Does it exist in documents dir?
             let found = documents.find(absolutePath);
-            // var found = await filez.findRendersTo(this.array.options.config, absolutePath);
             // console.log(`AnchorCleanup findRendersTo ${absolutePath} ${util.inspect(found)}`);
             if (!found) {
                 console.log(`WARNING: Did not find ${href} in ${util.inspect(this.array.options.config.documentDirs)} in ${metadata.document.path} absolutePath ${absolutePath}`);
@@ -843,7 +840,6 @@ class AnchorCleanup extends mahabhuta.Munger {
             // on /path/to/index.html
             if (found.isDirectory) {
                 found = documents.find(path.join(absolutePath, "index.html"));
-                // found = await filez.findRendersTo(this.array.options.config, path.join(absolutePath, "index.html"));
                 if (!found) {
                     throw new Error(`Did not find ${href} in ${util.inspect(this.array.options.config.documentDirs)} in ${metadata.document.path}`);
                 }
