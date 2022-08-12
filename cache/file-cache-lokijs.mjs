@@ -24,16 +24,16 @@ export async function setup(config) {
             // verbose: true
         });
 
-        coll_documents = this.getCollection('documents');
+        coll_documents = getCollection('documents');
         // if (!coll_documents) coll_documents = db.addCollection('documents');
 
-        coll_assets = this.getCollection('assets');
+        coll_assets = getCollection('assets');
         // if (!coll_assets) coll_assets = db.addCollection('assets');
 
-        coll_layouts = this.getCollection('layouts');
+        coll_layouts = getCollection('layouts');
         // if (!coll_layouts) coll_layouts = db.addCollection('layouts');
 
-        coll_partials = this.getCollection('partials');
+        coll_partials = getCollection('partials');
         // if (!coll_partials) coll_partials = db.addCollection('partials');
 
 
@@ -68,7 +68,13 @@ export async function close() {
 export function getCollection(coll_name) {
     let coll = db.getCollection(coll_name);
     if (!coll) {
-        coll = db.addCollection(coll_name, { disableMeta: true });
+        coll = db.addCollection(coll_name, {
+            disableMeta: true,
+            indices: [ 
+                'vpath', 'renderPath', 'basedir', 'mountPoint', 'mounted',
+                'dirname'
+            ]
+        });
     }
     return coll;
 }
@@ -605,7 +611,7 @@ export class FileCache extends EventEmitter {
 
         await this.config.hookFileUnlinked(collection, info);
 
-        let coll = this.getCollection(collection);
+        let coll = this.getCollection();
         coll.findAndRemove({
             vpath: {
                 $eq: info.vpath
