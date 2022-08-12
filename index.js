@@ -28,7 +28,7 @@ const util   = require('util');
 const fsp    = require('fs/promises');
 const fs     = require('fs');
 const path   = require('path');
-const oembetter = require('oembetter')();
+// const oembetter = require('oembetter')();
 const RSS    = require('rss');
 const fastq = require('fastq');
 const { DirsWatcher, mimedefine } = require('@akashacms/stacked-dirs');
@@ -367,14 +367,15 @@ exports.generateRSS = async function(config, configrss, feedData, items, renderT
 //    of the akashacms-embeddables plugin
 //
 module.exports.oEmbedData = function(url) {
-    return new Promise((resolve, reject) => {
+    throw new Error('Do not use oEmbedData, switch ti akashacms-embeddables')
+    /* return new Promise((resolve, reject) => {
         oembetter.fetch(url,
         (err, result) => {
             if (err) return reject(err);
             else resolve(result);
         }
         );
-    });
+    }); */
 };
 
 
