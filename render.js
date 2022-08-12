@@ -20,7 +20,7 @@
  'use strict';
 
 const path      = require('path');
-const fs        = require('fs-extra');
+const fsp       = require('fs/promises');
 const util      = require('util');
 const data      = require('./data');
 
@@ -35,7 +35,8 @@ const fastq     = require('fastq');
 exports.newRenderDocument = async function(config, docInfo) {
     const renderStart = new Date();
     const renderBaseMetadata = docInfo.baseMetadata;
-    const stats = await fs.stat(docInfo.fspath);
+    // console.log(`newRenderDocument `, docInfo);
+    const stats = await fsp.stat(docInfo.fspath);
     if (stats && stats.isFile()) {
     } else { return `SKIP DIRECTORY ${docInfo.vpath}`; }
 
@@ -63,8 +64,8 @@ exports.newRenderDocument = async function(config, docInfo) {
         try {
             const renderToFpath = path.join(config.renderTo, docInfo.renderPath);
             const renderToDir = path.dirname(renderToFpath);
-            await fs.ensureDir(renderToDir);
-            await fs.copy(docInfo.fspath, renderToFpath);
+            await fsp.mkdir(renderToDir, { recursive: true });
+            await fsp.copyFile(docInfo.fspath, renderToFpath);
             // console.log(`COPIED ${docInfo.path} ==> ${renderToFpath}`);
             const renderEndCopied = new Date();
             return `COPY ${docInfo.vpath} ==> ${renderToFpath} (${(renderEndCopied - renderStart) / 1000} seconds)`;
@@ -108,7 +109,7 @@ exports.newerrender = async function(config) {
         // console.log(entry);
         let stats;
         try {
-            stats = await fs.stat(entry.fspath);
+            stats = await fsp.stat(entry.fspath);
         } catch (err) { stats = undefined; }
         if (!entry) include = false;
         else if (!stats || stats.isDirectory()) include = false;
@@ -187,16 +188,4 @@ exports.newerrender = async function(config) {
 
     // 5. return results
     return results;
-};
-
-exports.newrender = async function(config) {
-
-    throw new Error('DEPRECATED');
-
-};
-
-exports.render = async function(config) {
-
-    throw new Error('DEPRECATED');
-
 };

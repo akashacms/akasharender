@@ -24,7 +24,6 @@
 
 'use strict';
 
-const filez  = require('./filez');
 const util   = require('util');
 const fs     = require('fs-extra');
 const path   = require('path');
@@ -184,7 +183,7 @@ module.exports.MarkdownRenderer = require('./render-md');
 module.exports.JSONRenderer = require('./render-json');
 module.exports.CSSLESSRenderer = require('./render-cssless');
 
-exports.render = render.newerrender; //  render.newrender;
+exports.render = render.newerrender;
 exports.renderDocument = render.renderDocument;
 
 exports.renderPath = async (config, path2r) => {

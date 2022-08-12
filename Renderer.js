@@ -19,8 +19,7 @@
 
  'use strict';
 
-// const filez = require('./filez');
-const fs    = require('fs-extra');
+const fsp   = require('fs/promises');
 const path  = require('path');
 
 const _renderer_name = Symbol('name');
@@ -103,14 +102,12 @@ module.exports = class Renderer {
         return null;
     }
 
-    readFile(basedir, fpath) {
-        return fs.readFile(path.join(basedir, fpath), 'utf8');
+    async readFile(basedir, fpath) {
+        return fsp.readFile(path.join(basedir, fpath), 'utf8');
     }
 
-    writeFile(renderTo, fpath, text) {
-        return fs.outputFile(path.join(renderTo, fpath), text, 'utf8');
-        // remove circular dependency
-        // return filez.writeFile(renderTo, fpath, text);
+    async writeFile(renderTo, fpath, text) {
+        return fsp.outputFile(path.join(renderTo, fpath), text, 'utf8');
     }
 
     render(text, metadata) {
