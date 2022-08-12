@@ -25,7 +25,8 @@
 'use strict';
 
 const util   = require('util');
-const fs     = require('fs-extra');
+const fsp    = require('fs/promises');
+const fs     = require('fs');
 const path   = require('path');
 const oembetter = require('oembetter')();
 const RSS    = require('rss');
@@ -239,7 +240,7 @@ exports.renderPath = async (config, path2r) => {
  */
 exports.readRenderedFile = async(config, fpath) => {
 
-    let html = await fs.readFile(path.join(config.renderDestination, fpath), 'utf8');
+    let html = await fsp.readFile(path.join(config.renderDestination, fpath), 'utf8');
     let $ = config.mahabhutaConfig 
             ? cheerio.load(html, config.mahabhutaConfig) 
             : cheerio.load(html);
@@ -351,8 +352,8 @@ exports.generateRSS = async function(config, configrss, feedData, items, renderT
     var xml = rssfeed.xml();
     var renderOut = path.join(config.renderDestination, renderTo);
 
-    await fs.mkdirs(path.dirname(renderOut))
-    await fs.writeFile(renderOut, xml, { encoding: 'utf8' });
+    await fsp.mkdir(path.dirname(renderOut), { recursive: true })
+    await fsp.writeFile(renderOut, xml, { encoding: 'utf8' });
 
 };
 
@@ -495,11 +496,11 @@ module.exports.Configuration = class Configuration {
                     throw new Error("'cache' is not a directory");
                 }
             } else {
-                fs.mkdirsSync(cacheDirsPath);
+                fs.mkdirSync(cacheDirsPath, { recursive: true });
                 this.cacheDir = 'cache';
             }
         } else if (this[_config_cachedir] && !fs.existsSync(this[_config_cachedir])) {
-            fs.mkdirsSync(this[_config_cachedir]);
+            fs.mkdirSync(this[_config_cachedir], { recursive: true });
         }
 
         const assetsDirsPath = configDirPath('assets');
@@ -554,11 +555,11 @@ module.exports.Configuration = class Configuration {
                     throw new Error("'out' is not a directory");
                 }
             } else {
-                fs.mkdirsSync(renderToPath);
+                fs.mkdirSync(renderToPath, { recursive: true });
                 this.setRenderDestination('out');
             }
         } else if (this[_config_renderTo] && !fs.existsSync(this[_config_renderTo])) {
-            fs.mkdirsSync(this[_config_renderTo]);
+            fs.mkdirSync(this[_config_renderTo], { recursive: true });
         }
 
         if (!this[_config_scripts])                  { this[_config_scripts] = { }; }
@@ -902,12 +903,12 @@ module.exports.Configuration = class Configuration {
             try {
                 let destFN = path.join(config.renderTo, item.renderPath);
                 // Make sure the destination directory exists
-                await fs.ensureDir(path.dirname(destFN));
+                await fsp.mkdir(path.dirname(destFN), { recursive: true });
                 // Copy from the absolute pathname, to the computed 
                 // location within the destination directory
                 // console.log(`copyAssets ${item.fspath} ==> ${destFN}`);
-                await fs.copy(item.fspath, destFN, {
-                    overwrite: true,
+                await fsp.cp(item.fspath, destFN, {
+                    force: true,
                     preserveTimestamps: true
                 });
                 return "ok";
