@@ -31,7 +31,7 @@
   },
   "dependencies": {
     "@akashacms/stacked-dirs": "akashacms/stacked-directories",
-    "asciidoctor.js": "^1.5.x",
+    "@asciidoctor/core": "^2.2.6",
     "commander": "^7.1.x",
     "debug": "^4.3.x",
     "ejs": "3.1.8",
