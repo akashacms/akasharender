@@ -62,14 +62,15 @@ module.exports = class NunjucksRenderer extends HTMLRenderer {
             new nunjucks.FileSystemLoader(loadFrom, { watch: false }),
                 // config.layoutDirs.concat(config.partialsDirs), { watch: false }),
             {
-                autoescape: false
+                autoescape: false,
+                noCache: false
             }
         );
         // console.log(`njkenv`, this[_nunjuck_env]);
         return this[_nunjuck_env];
     }
 
-    async render(text, metadata) {
+    async render(text, metadata, vpinfo) {
         try {
             let env = this.njkenv(metadata.config);
             return env.renderString(text, metadata);
@@ -82,7 +83,7 @@ module.exports = class NunjucksRenderer extends HTMLRenderer {
         }
     }
 
-    renderSync(text, metadata) {
+    renderSync(text, metadata, vpinfo) {
         try {
             if (!metadata.config) {
                 // This condition can cause a problem in this.njkenv

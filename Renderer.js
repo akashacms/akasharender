@@ -27,7 +27,6 @@ const _renderer_regex = Symbol('regex');
 const _renderer_akasha = Symbol('akasha');
 const _renderer_config = Symbol('config');
 
-
 module.exports = class Renderer {
     constructor(name, regex) {
         this[_renderer_name]  = name;
