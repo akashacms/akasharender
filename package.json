@@ -41,7 +41,7 @@
     "gray-matter": "^4.x",
     "handlebars": "^4.7.x",
     "highlight.js": "^11.3.x",
-    "less": ">=3.12.x",
+    "less": ">=4.1.x",
     "liquidjs": "^9.28.x",
     "lokijs": "^1.5.12",
     "mahabhuta": "0.8.x",
