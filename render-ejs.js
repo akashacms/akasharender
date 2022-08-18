@@ -82,20 +82,23 @@ module.exports = class EJSRenderer extends HTMLRenderer {
     }
 
     renderSync(text, metadata, vpinfo) {
-        // let opts = this.getEJSOptions(vpinfo ? vpinfo.fspath : undefined);
+        let opts = this.getEJSOptions(vpinfo ? vpinfo.fspath : undefined);
         // console.log(`render  ${text} ${metadata} ${opts}`);
-        const { template, opts } = this.compiledTemplate(text, vpinfo);
-        return template(metadata, opts);
+        return ejs.render(text, metadata, opts);
+
+        // const { template, opts } = this.compiledTemplate(text, vpinfo);
+        // return template(metadata, opts);
     }
 
     render(text, metadata, vpinfo) {
         /* return Promise.resolve(ejs.render(text, metadata)); */
         return new Promise((resolve, reject) => {
             try {
-                // let opts = this.getEJSOptions(vpinfo ? vpinfo.fspath : undefined);
+                let opts = this.getEJSOptions(vpinfo ? vpinfo.fspath : undefined);
                 // console.log(`render async ${text} ${metadata} ${opts}`);
-                const { template, opts } = this.compiledTemplate(text, vpinfo);
-                resolve(template(metadata, opts));
+                resolve(ejs.render(text, metadata, opts));
+                // const { template, opts } = this.compiledTemplate(text, vpinfo);
+                // resolve(template(metadata, opts));
             } catch(e) {
                 var docpath = metadata.document ? metadata.document.path : "unknown";
                 var errstack = e.stack ? e.stack : e;

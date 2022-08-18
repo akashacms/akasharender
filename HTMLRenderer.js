@@ -324,7 +324,7 @@ module.exports = class HTMLRenderer extends Renderer {
                 dateSet = true;
             }
             if (! dateSet && docInfo.stats && docInfo.stats.mtime) {
-                metadata.publicationDate = docInfo.stats.mtime;
+                metadata.publicationDate = new Date(docInfo.stats.mtime);
             }
             if (!metadata.publicationDate) {
                 metadata.publicationDate = new Date();

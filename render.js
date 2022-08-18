@@ -101,6 +101,7 @@ exports.newerrender = async function(config) {
     
     // 1. Gather list of files from RenderFileCache
     const filez = documents.paths();
+    // console.log(`newerrender filez ${filez.length}`);
 
     // 2. Exclude any that we want to ignore
     const filez2 = [];
@@ -126,7 +127,8 @@ exports.newerrender = async function(config) {
             });
         }
     }
-    
+    // console.log(`newerrender filez2 after ignore ${filez2.length}`);
+
 
     // 3. Make a fastq to process using renderDocument, pushing results
     //    to the results array
@@ -180,6 +182,7 @@ exports.newerrender = async function(config) {
     // 4. Invoke hookSiteRendered
 
     try {
+        // console.log('Invoking hookSiteRendered');
         await config.hookSiteRendered();
     } catch (e) {
         console.error(e.stack);
