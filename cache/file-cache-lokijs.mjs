@@ -981,7 +981,7 @@ export class FileCache extends EventEmitter {
 
             // console.log(`search where ${obj.vpath}`);
 
-            // console.log(`search where layouts ${util.inspect(options.layouts)}`);
+            // console.log(`search where layouts ${obj.vpath} ${obj?.docMetadata?.layout} ${util.inspect(options.layouts)}`);
             if (options.layouts) {
                 let layouts;
                 if (Array.isArray(options.layouts)) {
@@ -1061,16 +1061,28 @@ export class FileCache extends EventEmitter {
                         found = true;
                     }
                 }
-                if (!found) return false;
+                if (!found) {
+                    // console.log(`search ${renderer.name} not in ${util.inspect(options.renderers)} ${obj.vpath}`);
+                    return false;
+                }
             }
 
             if (options.filterfunc) {
                 if (!options.filterfunc(fcache.config, options, obj)) {
+                    // console.log(`filterfunc rejected ${obj.vpath}`);
                     return false;
                 }
             }
 
             return true;
+        })
+        .update(function(obj) {
+
+            if (obj.docMetadata && obj.docMetadata.publicationDate) {
+                obj.publicationMTIME = Date.parse(obj.docMetadata.publicationDate);
+            } else {
+                obj.publicationMTIME = a.stats.mtime;
+            }
         });
 
         let ret2;
@@ -1088,15 +1100,29 @@ export class FileCache extends EventEmitter {
         if (typeof options.limit === 'number') {
             ret2 = ret2.limit(options.limit);
         }
-        ret2 = ret2.data({
+        let ret3 = ret2.data({
             removeMeta: true
         });
+
+        /* console.log(`select before sort ${ret3.length} is array ${Array.isArray(ret3)}`, ret3.map(item => {
+            return { vpath: item.vpath, date: item.docMetadata.publicationDate } 
+        }));
+        /* if (typeof options.sortFunc === 'function') {
+            ret3.sort(options.sortFunc);
+        }
+
+        console.log(`select after sort ${ret3.length} is array ${Array.isArray(ret3)}`, ret3.map(item => {
+            return { vpath: item.vpath, date: item.docMetadata.publicationDate } 
+         })); */
         if (options.reverse === true) {
             // console.log(`select return reverse`);
-            return ret2.reverse();
-        } else {
-            return ret2;
+            ret3.reverse();
+
+            /* console.log(`select after reverse ${ret3.length}  is array ${Array.isArray(ret3)}`, ret3.map(item => {
+                return { vpath: item.vpath, date: item.docMetadata.publicationDate } 
+            })); */
         }
+        return ret3;
         } catch (err) {
             console.error(`search ${options} gave error ${err.stack}`);
         }
