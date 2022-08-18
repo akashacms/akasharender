@@ -72,7 +72,7 @@ module.exports = class EJSRenderer extends HTMLRenderer {
 
     // According to the EJS documentation, the template will
     // be automatically cached by EJS.
-    
+
     compiledTemplate(text, vpinfo) {
         let opts = this.getEJSOptions(vpinfo ? vpinfo.fspath : undefined);
         return {
