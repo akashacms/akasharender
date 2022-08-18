@@ -500,6 +500,15 @@ export class FileCache extends EventEmitter {
         info.docpath = info.pathInMounted;
         info.docdestpath = info.vpath;
 
+        // info.publicationDate is a unix/JavaScript timestamp
+        // we can use to sort documents on date
+
+        if (info.stats && info.stats.mtime) {
+            info.publicationDate = new Date(info.stats.mtime);
+            info.publicationTime = info.publicationDate.getTime();
+
+        }
+
         let renderer = this.config.findRendererPath(info.vpath);
         info.renderer = renderer;
         if (renderer) {
@@ -532,6 +541,8 @@ export class FileCache extends EventEmitter {
                 // doc.metadata.tags holds an array.  This line makes
                 // sure that doc.docMetadata.tags is in agreement.
                 info.docMetadata.tags = info.metadata.tags;
+                info.publicationDate = info.metadata.publicationDate;
+                info.publicationTime = new Date(info.metadata.publicationDate).getTime();
             }
         } else {
             info.renderPath = info.vpath;
@@ -1076,18 +1087,14 @@ export class FileCache extends EventEmitter {
 
             return true;
         })
-        .update(function(obj) {
-
-            if (obj.docMetadata && obj.docMetadata.publicationDate) {
-                obj.publicationMTIME = Date.parse(obj.docMetadata.publicationDate);
-            } else {
-                obj.publicationMTIME = a.stats.mtime;
-            }
-        });
 
         let ret2;
         if (typeof options.sortBy === 'string') {
-            ret2 = ret.simplesort(options.sortBy);
+            const sortDesc = options.sortByDescending === true
+                        ? [ [ options.sortBy, true ] ]
+                        : [ options.sortBy ];
+            // console.log(`search sortBy ${options.sortBy} desc ${options.sortByDescending}`, sortDesc);
+            ret2 = ret.compoundsort(sortDesc);
         } else if (typeof options.sortFunc === 'function') {
             ret2 = ret.sort(options.sortFunc);
         } else {
@@ -1095,25 +1102,24 @@ export class FileCache extends EventEmitter {
         }
 
         if (typeof options.offset === 'number') {
+            // console.log(`search offset ${options.offset}`);
             ret2 = ret2.offset(options.offset);
         }
         if (typeof options.limit === 'number') {
+            // console.log(`search limit ${options.limit}`);
             ret2 = ret2.limit(options.limit);
         }
         let ret3 = ret2.data({
             removeMeta: true
         });
 
-        /* console.log(`select before sort ${ret3.length} is array ${Array.isArray(ret3)}`, ret3.map(item => {
-            return { vpath: item.vpath, date: item.docMetadata.publicationDate } 
-        }));
-        /* if (typeof options.sortFunc === 'function') {
-            ret3.sort(options.sortFunc);
-        }
-
-        console.log(`select after sort ${ret3.length} is array ${Array.isArray(ret3)}`, ret3.map(item => {
-            return { vpath: item.vpath, date: item.docMetadata.publicationDate } 
-         })); */
+        /* console.log(`select after data() ${ret3.length} is array ${Array.isArray(ret3)}`, ret3.map(item => {
+            return {
+                vpath: item.vpath,
+                date: new Date(item.publicationDate).toISOString(),
+                time: new Date(item.publicationDate).getTime()
+            };
+        })); */
         if (options.reverse === true) {
             // console.log(`select return reverse`);
             ret3.reverse();
