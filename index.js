@@ -629,6 +629,11 @@ module.exports.Configuration = class Configuration {
     // set akasha(_akasha)  { this[_config_akasha] = _akasha; }
     get akasha() { return module.exports }
 
+    async documentsCache() { return (await exports.filecache).documents; }
+    async assetsCache()    { return (await exports.filecache).assets; }
+    async layoutsCache()   { return (await exports.filecache).layouts; }
+    async partialsCache()  { return (await exports.filecache).partials; }
+
     /**
      * Add a directory to the documentDirs configuration array
      * @param {string} dir The pathname to use

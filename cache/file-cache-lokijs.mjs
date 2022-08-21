@@ -253,17 +253,40 @@ export class FileCache extends EventEmitter {
     get mapRenderPath() { return this[_symb_map_renderpath]; }
 
     /**
+     * Add a LokiJS dynamic view to the collection for this FileCache.
+     * It is up to the caller of this function to configure the
+     * dynamic view.  This function first calls <code>getDynamicView</code>
+     * to see if there is an existing view, and if not it calls
+     * <code>addDynmicView</code> to add it.  If adding a view, the
+     * <code>options</code> parameter is passed in to configure the
+     * behavior of the view.
+     * 
+     * See: http://techfort.github.io/LokiJS/DynamicView.html
+     * 
+     * @param {*} vname 
+     * @param {*} options 
+     * @returns 
+     */
+    getDynamicView(vname, options) {
+        if (typeof vname !== 'string') {
+            throw new Error(`getDynamicView invalid view name ${util.inspect(vname)}`);
+        }
+        const vw = this.collection.getDynamicView(vname);
+        if (vw) return vw;
+        else return this.collection.addDynamicView(vname, options);
+    }
+
+    /**
      * Set up receiving events from DirsWatcher, and dispatching to
      * the handler methods.
      */
     async setup() {
+        const fcache = this;
 
-        // Set up the Chokidar instance.
         if (this[_symb_watcher]) {
             await this[_symb_watcher].close();
         }
 
-        const fcache = this;
         this[_symb_queue] = fastq.promise(async function(event) {
             if (event.collection !== fcache.collection) {
                 throw new Error(`handleChanged event for wrong collection; got ${event.collection}, expected ${that.collection}`);
@@ -376,6 +399,7 @@ export class FileCache extends EventEmitter {
         // console.log(this[_symb_watcher]);
 
         await this[_symb_watcher].watch(this.dirs);
+
     }
 
     /**
@@ -752,6 +776,57 @@ export class FileCache extends EventEmitter {
 
         const fcache = this;
         const coll = this.getCollection();
+
+        let dvSiblings = coll.getDynamicView('siblings');
+        if (!dvSiblings) {
+            dvSiblings = coll.addDynamicView('siblings');
+            dvSiblings.applyFind({
+                /* dirname: dirname,
+                '$and': [
+                    { vpath: { '$ne': vpath } },
+                    { renderPath: { '$ne': vpath } },
+                ], */
+                rendersToHTML: true
+            });
+            dvSiblings.applyWhere(function(obj) {
+                return ! fcache.ignoreFile(obj);
+            });
+            dvSiblings.applySimpleSort('vpath');
+        }
+        ret = dvSiblings.branchResultset()
+        .find({
+            dirname: dirname,
+            '$and': [
+                { vpath: { '$ne': vpath } },
+                { renderPath: { '$ne': vpath } },
+            ],
+            rendersToHTML: true
+        })
+        .data({
+            removeMeta: true
+        });
+
+        return ret;
+    }
+
+    // Original implementation.  The above implementation
+    // uses DynamicView and is significantly faster
+    
+    //   random siblings       125.85 µs/iter   (8.29 µs … 743.01 µs)
+    //   random siblings-view  102.23 µs/iter  (88.25 µs … 623.99 µs)
+
+    /* siblings(_fpath) {
+        let ret;
+        let vpath = _fpath.startsWith('/')
+                  ? _fpath.substring(1)
+                  : _fpath;
+        let dirname = path.dirname(vpath);
+        if (dirname === '.') dirname = '/';
+
+        // console.log(`siblings ${_fpath} ${vpath} ${dirname}`);
+
+        const fcache = this;
+        const coll = this.getCollection();
         // Looks for files in the directory containing _fpath
         // that are not _fpath
         ret = coll.chain().find({
@@ -771,10 +846,59 @@ export class FileCache extends EventEmitter {
         });
 
         return ret;
-    }
-
+    } */
 
     indexFiles(_dirname) {
+        let dirname = _dirname && _dirname.startsWith('/')
+                    ? _dirname.substring(1)
+                    : _dirname;
+        if (dirname === '.'
+         || dirname === ''
+         || typeof dirname === 'undefined') {
+            dirname = '/';
+        }
+
+        const coll = this.getCollection();
+        let dvIndexFiles = coll.getDynamicView('index-files');
+        if (!dvIndexFiles) {
+            dvIndexFiles = coll.addDynamicView('index-files');
+            dvIndexFiles.applyFind({
+                '$or': [
+                    { renderPath: { '$regex': '/index\.html$' } },
+                    { renderPath: { '$eq': 'index.html' }}
+                ]
+            });
+            dvIndexFiles.applySimpleSort('dirname');
+        }
+        if (!dvIndexFiles) throw new Error(`Did not find view index-files`);
+        // console.log(dvIndexFiles);
+        // console.log(dvIndexFiles.branchResultset);
+
+        const ret = dvIndexFiles.branchResultset()
+        .where(function(obj) {
+            /* const renderP = obj.renderPath === 'index.html' || obj.renderPath.endsWith('/index.html');
+            if (!renderP) return false; */
+            if (dirname !== '/') {
+                if (obj.vpath.startsWith(dirname)) return true;
+                else return false;
+            } else {
+                return true;
+            }
+        })
+        .data({
+            removeMeta: true
+        });
+        return ret;
+    }
+
+    // Original implementation.  The version above uses a
+    // DynamicView and is significantly faster
+    // 
+    //  random indexes           1.3 ms/iter     (1.15 ms … 2.77 ms)
+    //  random indexes-view     1.02 ms/iter   (909.46 µs … 2.39 ms)
+
+
+    /* indexFiles(_dirname) {
         let dirname = _dirname && _dirname.startsWith('/')
                     ? _dirname.substring(1)
                     : _dirname;
@@ -794,7 +918,7 @@ export class FileCache extends EventEmitter {
         })
         .where(function(obj) {
             /* const renderP = obj.renderPath === 'index.html' || obj.renderPath.endsWith('/index.html');
-            if (!renderP) return false; */
+            if (!renderP) return false; *--/
             if (dirname !== '/') {
                 if (obj.vpath.startsWith(dirname)) return true;
                 else return false;
@@ -808,9 +932,58 @@ export class FileCache extends EventEmitter {
         });
         // console.log(`indexFiles ${ret.length}`);
         return ret;
-    }
+    } */
 
     // TODO reusable function for distinct vpaths
+
+    // This was no faster in benchmark testing.  Testing showed
+    // that ret was an empty array, which seems to have required
+    // using the fallback code that is a duplicate of the 
+    // non-View implementation.
+
+    /* pathsView() {
+        const fcache = this;
+        const coll = this.getCollection();
+        let dvPaths = coll.getDynamicView('paths');
+        if (!dvPaths) {
+            dvPaths = coll.addDynamicView('paths');
+            dvPaths.applyFind();
+            dvPaths.applyWhere(function (obj) {
+                if (fcache.ignoreFile(obj)) return false;
+            });
+            dvPaths.applySimpleSort('vpath');
+        }
+        let ret = dvPaths.branchResultset().data({ removeMeta: true, forceClones: true });
+        if (!ret || ret.length === 0) {
+            const vpathsSeen = new Set();
+            ret = coll.chain()
+            .where(function(obj) {
+                if (fcache.ignoreFile(obj)) {
+                    // console.log(`OOOOGA!  In paths  MUST IGNORE ${obj.vpath}`);
+                    return false;
+                }
+                if (vpathsSeen.has(obj.vpath)) {
+                    return false;
+                } else {
+                    vpathsSeen.add(obj.vpath);
+                    return true;
+                }
+            })
+            .data({
+                removeMeta: true
+            });
+        }
+        const mapped = ret.map(obj => {
+                return  {
+                    fspath: obj.fspath,
+                    vpath: obj.vpath,
+                    renderPath: obj.renderPath,
+                    mountPoint: obj.mountPoint,
+                    dirMountedOn: obj.dirMountedOn
+                };
+            });
+        return mapped;
+    } */
 
     paths() {
         const fcache = this;
@@ -849,6 +1022,35 @@ export class FileCache extends EventEmitter {
     }
 
     documentsWithTags() {
+        const fcache = this;
+        let coll = this.getCollection();
+        let dvTags = coll.getDynamicView('docs-with-tags');
+        if (!dvTags) {
+            dvTags = coll.addDynamicView('docs-with-tags');
+            dvTags.applyFind({
+                rendersToHTML: true
+            });
+            dvTags.applyWhere(function (obj) {
+                if (fcache.ignoreFile(obj)) return false;
+                return obj.metadata
+                    && obj.metadata.tags
+                    && Array.isArray(obj.metadata.tags)
+                    && obj.metadata.tags.length >= 1;
+            });
+        }
+        return dvTags.data({
+            removeMeta: true
+        });
+    }
+
+    // Original implementation.  The above implementation uses
+    // a DynamicView and is significantly faster
+    //
+    //    tags             618.77 µs/iter   (530.68 µs … 1.79 ms)
+    //    tags-view         54.94 µs/iter  (48.18 µs … 777.88 µs)
+
+
+    /* documentsWithTags() {
         let coll = this.getCollection();
         const fcache = this;
         const vpathsSeen = new Set();
@@ -875,7 +1077,7 @@ export class FileCache extends EventEmitter {
             removeMeta: true
         });
         return ret;
-    }
+    } */
 
     tags() {
         /* let coll = this.getCollection(this.collection);
@@ -910,6 +1112,8 @@ export class FileCache extends EventEmitter {
 
         const fcache = this;
         const vpathsSeen = new Set();
+
+        // console.log(`FileCacheLoki search `, options);
 
         try {
 

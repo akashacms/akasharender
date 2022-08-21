@@ -815,6 +815,26 @@ describe('Documents cache', function() {
         }
     });
 
+    /* it('should have same for paths and pathsViews', async function() {
+
+        this.timeout(75000);
+        const documents = filecache.documents;
+        await documents.isReady();
+
+        // console.log(`allowed documents pre paths`);
+
+        const found = filecache.documents.paths();
+        const foundV = filecache.documents.pathsView();
+
+        assert.isDefined(found);
+        assert.isArray(found);
+
+        assert.isDefined(foundV);
+        assert.isArray(foundV);
+
+        assert.equal(found.length, foundV.length);
+    }); */
+
     // Somehow files which are supposed to be ignored have
     // made it into the documents cache
     it('should not find files which should be ignored', async function() {
@@ -909,6 +929,41 @@ describe('Documents cache', function() {
         assert.isOk(filezContains(siblings, 'show-content-liquid.html.md'));
         assert.isOk(filezContains(siblings, 'partials-nunjucks.html.njk'));
     });
+
+    /* it('should find siblings for index.html with View', function() {
+        const siblings = filecache.documents.siblingsView('index.html.md');
+        for (const sibling of siblings) {
+            assert.equal(sibling.dirname, '/');
+        }
+        assert.isOk(filezContains(siblings, 'img2figimg-liquid.html.md'));
+        assert.isOk(filezContains(siblings, 'img2figimg-handlebars.html.md'));
+        assert.isOk(filezContains(siblings, 'img2resize-handlebars.html.md'));
+        assert.isOk(filezContains(siblings, 'img2resize-nunjucks.html.md'));
+        assert.isOk(filezContains(siblings, 'img2figimg.html.md'));
+        assert.isNotOk(filezContains(siblings, 'index.html.md'));
+        assert.isOk(filezContains(siblings, 'fig-img.html.md'));
+        assert.isOk(filezContains(siblings, 'json-data-handlebars.html.json'));
+        assert.isOk(filezContains(siblings, 'json-data-nunjucks.html.json'));
+        assert.isOk(filezContains(siblings, 'json-data-liquid.html.json'));
+        assert.isOk(filezContains(siblings, 'json-data.html.json'));
+        assert.isOk(filezContains(siblings, 'metadata-style-javascript.html.md'));
+        assert.isOk(filezContains(siblings, 'njk-incl.html.md'));
+        assert.isOk(filezContains(siblings, 'img2resize.html.md'));
+        assert.isOk(filezContains(siblings, 'img2resize-liquid.html.md'));
+        assert.isOk(filezContains(siblings, 'njk-func.html.md'));
+        assert.isOk(filezContains(siblings, 'partials.html.md'));
+        assert.isOk(filezContains(siblings, 'partials-handlebars.html.handlebars'));
+        assert.isOk(filezContains(siblings, 'select-elements.html.md'));
+        assert.isOk(filezContains(siblings, 'show-content-handlebars.html.md'));
+        assert.isOk(filezContains(siblings, 'show-content-nunjucks.html.md'));
+        assert.isOk(filezContains(siblings, 'show-content.html.md'));
+        assert.isOk(filezContains(siblings, 'shown-content.html.md'));
+        assert.isOk(filezContains(siblings, 'simple-style-javascript.html.md'));
+        assert.isOk(filezContains(siblings, 'teaser-content.html.md'));
+        assert.isOk(filezContains(siblings, 'partials-liquid.html.liquid'));
+        assert.isOk(filezContains(siblings, 'show-content-liquid.html.md'));
+        assert.isOk(filezContains(siblings, 'partials-nunjucks.html.njk'));
+    }); */
 
     it('should find indexes', async function() {
 
@@ -1141,6 +1196,30 @@ describe('Documents cache', function() {
             assert.isTrue(goodvpath(found[1].vpath));
         });
 
+        /* it('should find documents with tags and with View', function() {
+            const found = filecache.documents.documentsWithTags();
+            const foundV = filecache.documents.documentsWithTagsView();
+
+            assert.isDefined(found);
+            assert.isArray(found);
+            assert.equal(found.length, 2);
+
+            assert.isDefined(foundV);
+            assert.isArray(foundV);
+            assert.equal(foundV.length, 2);
+
+            const goodvpath = (vp) => {
+                return (vp === 'tags-array.html.md')
+                    || (vp === 'tags-string.html.md');
+            };
+
+            assert.isTrue(goodvpath(found[0].vpath));
+            assert.isTrue(goodvpath(found[1].vpath));
+
+            assert.isTrue(goodvpath(foundV[0].vpath));
+            assert.isTrue(goodvpath(foundV[1].vpath));
+        }); */
+
     });
 
     it('should find /subdir/show-content-local.html', function() {
@@ -1302,6 +1381,18 @@ describe('Documents cache', function() {
             assert.isOk(filezContains(indexes, 'hier/imgdir/index.html.md'));
         });
 
+        /* it('should find index files for / with View', function() {
+            const indexes = filecache.documents.indexFilesView('/');
+
+            assert.isOk(filezContains(indexes, 'index.html.md'));
+            assert.isOk(filezContains(indexes, 'subdir/index.html.md'));
+            assert.isOk(filezContains(indexes, 'hier-broke/dir1/dir2/index.html.md'));
+            assert.isOk(filezContains(indexes, 'hier/index.html.md'));
+            assert.isOk(filezContains(indexes, 'hier/dir1/index.html.md'));
+            assert.isOk(filezContains(indexes, 'hier/dir1/dir2/index.html.md'));
+            assert.isOk(filezContains(indexes, 'hier/imgdir/index.html.md'));
+        }); */
+
         it('should find index files for undefined', function() {
             const indexes = filecache.documents.indexFiles();
 
@@ -1313,6 +1404,18 @@ describe('Documents cache', function() {
             assert.isOk(filezContains(indexes, 'hier/dir1/dir2/index.html.md'));
             assert.isOk(filezContains(indexes, 'hier/imgdir/index.html.md'));
         });
+
+        /* it('should find index files for undefined with View', function() {
+            const indexes = filecache.documents.indexFilesView();
+
+            assert.isOk(filezContains(indexes, 'index.html.md'));
+            assert.isOk(filezContains(indexes, 'subdir/index.html.md'));
+            assert.isOk(filezContains(indexes, 'hier-broke/dir1/dir2/index.html.md'));
+            assert.isOk(filezContains(indexes, 'hier/index.html.md'));
+            assert.isOk(filezContains(indexes, 'hier/dir1/index.html.md'));
+            assert.isOk(filezContains(indexes, 'hier/dir1/dir2/index.html.md'));
+            assert.isOk(filezContains(indexes, 'hier/imgdir/index.html.md'));
+        }); */
 
         it('should find index files for hier', function() {
             const indexes = filecache.documents.indexFiles('hier/');
@@ -1326,6 +1429,18 @@ describe('Documents cache', function() {
             assert.isFalse(filezContains(indexes, 'hier-broke/dir1/dir2/index.html.md'));
         });
 
+        /* it('should find index files for hier with View', function() {
+            const indexes = filecache.documents.indexFilesView('hier/');
+            assert.isOk(filezContains(indexes, 'hier/index.html.md'));
+            assert.isOk(filezContains(indexes, 'hier/dir1/index.html.md'));
+            assert.isOk(filezContains(indexes, 'hier/dir1/dir2/index.html.md'));
+            assert.isOk(filezContains(indexes, 'hier/imgdir/index.html.md'));
+
+            assert.isFalse(filezContains(indexes, 'index.html.md'));
+            assert.isFalse(filezContains(indexes, 'subdir/index.html.md'));
+            assert.isFalse(filezContains(indexes, 'hier-broke/dir1/dir2/index.html.md'));
+        }); */
+
         it('should find index files for hier/dir1', function() {
             const indexes = filecache.documents.indexFiles('hier/dir1');
             assert.isFalse(filezContains(indexes, 'hier/index.html.md'));
@@ -1333,6 +1448,14 @@ describe('Documents cache', function() {
             assert.isOk(filezContains(indexes, 'hier/dir1/dir2/index.html.md'));
             assert.isFalse(filezContains(indexes, 'hier/imgdir/index.html.md'));
         });
+
+        /* it('should find index files for hier/dir1 with View', function() {
+            const indexes = filecache.documents.indexFilesView('hier/dir1');
+            assert.isFalse(filezContains(indexes, 'hier/index.html.md'));
+            assert.isOk(filezContains(indexes, 'hier/dir1/index.html.md'));
+            assert.isOk(filezContains(indexes, 'hier/dir1/dir2/index.html.md'));
+            assert.isFalse(filezContains(indexes, 'hier/imgdir/index.html.md'));
+        }); */
 
         it('should find index files for hier-broke', function() {
             const indexes = filecache.documents.indexFiles('hier-broke');
@@ -1346,6 +1469,19 @@ describe('Documents cache', function() {
             assert.isFalse(filezContains(indexes, 'hier/dir1/dir2/index.html.md'));
             assert.isFalse(filezContains(indexes, 'hier/imgdir/index.html.md'));
         });
+
+        /* it('should find index files for hier-broke with View', function() {
+            const indexes = filecache.documents.indexFilesView('hier-broke');
+            assert.isOk(filezContains(indexes, 'hier-broke/dir1/dir2/index.html.md'));
+
+
+            assert.isFalse(filezContains(indexes, 'index.html.md'));
+            assert.isFalse(filezContains(indexes, 'subdir/index.html.md'));
+            assert.isFalse(filezContains(indexes, 'hier/index.html.md'));
+            assert.isFalse(filezContains(indexes, 'hier/dir1/index.html.md'));
+            assert.isFalse(filezContains(indexes, 'hier/dir1/dir2/index.html.md'));
+            assert.isFalse(filezContains(indexes, 'hier/imgdir/index.html.md'));
+        }); */
 
     });
 
