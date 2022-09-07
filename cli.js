@@ -27,7 +27,6 @@ const fs        = require('fs');
 const fsp       = require('fs/promises');
 const path      = require('path');
 const util      = require('util');
-const filez     = require('./filez');
 const data      = require('./data');
 
 // Note this is an ES6 module and to use it we must 
