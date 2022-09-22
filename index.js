@@ -71,11 +71,33 @@ mimedefine({'text/x-handlebars': [ 'handlebars' ]});
 mimedefine({'text/x-liquid': [ 'liquid' ]});
 
 // exports.cache = import('./cache/cache-forerunner.mjs');
-exports.filecache = import('./cache/file-cache-lokijs.mjs');
+exports.filecache = undefined;
+
+/**
+ * Performs setup of things so that AkashaRender can function.
+ * The correct initialization of AkashaRender is to
+ * 1. Generate the Configuration object
+ * 2. Call config.prepare
+ * 3. Call akasharender.setup
+ * 
+ * This function ensures all objects that initialize asynchronously
+ * are correctly setup.
+ * 
+ * @param {*} config 
+ */
+exports.setup = async function setup(config) {
+    exports.filecache = await import('./cache/file-cache-lokijs.mjs');
+
+    config.renderers.partialFunc = exports.partial.bind(exports.partial, config);
+    config.renderers.partialSyncFunc = exports.partialSync.bind(exports.partialSync, config);
+
+    await exports.cacheSetup(config);
+    await exports.fileCachesReady(config);
+}
 
 exports.cacheSetup = async function(config) {
     try {
-        let filecache = (await exports.filecache);
+        let filecache = exports.filecache;
         await filecache.setup(config);
         // exports.setupPluginCaches(config)
     } catch (err) {
@@ -86,7 +108,7 @@ exports.cacheSetup = async function(config) {
 
 exports.closeCaches = async function() {
     try {
-        let filecache = (await exports.filecache);
+        let filecache = exports.filecache;
         await filecache.close();
     } catch (err) {
         console.error(`INITIALIZATION FAILURE COULD NOT CLOSE CACHES `, err);
@@ -96,7 +118,7 @@ exports.closeCaches = async function() {
 
 exports.setupDocuments = async function(config) {
     try {
-        let filecache = (await exports.filecache);
+        let filecache = exports.filecache;
         await filecache.setupDocuments(config);
     } catch (err) {
         console.error(`INITIALIZATION FAILURE COULD NOT INITIALIZE DOCUMENTS CACHE `, err);
@@ -106,7 +128,7 @@ exports.setupDocuments = async function(config) {
 
 exports.setupAssets = async function(config) {
     try {
-        let filecache = (await exports.filecache);
+        let filecache = exports.filecache;
         await filecache.setupAssets(config);
     } catch (err) {
         console.error(`INITIALIZATION FAILURE COULD NOT INITIALIZE ASSETS CACHE `, err);
@@ -116,7 +138,7 @@ exports.setupAssets = async function(config) {
 
 exports.setupLayouts = async function(config) {
     try {
-        let filecache = (await exports.filecache);
+        let filecache = exports.filecache;
         await filecache.setupLayouts(config);
     } catch (err) {
         console.error(`INITIALIZATION FAILURE COULD NOT INITIALIZE LAYOUTS CACHE `, err);
@@ -126,7 +148,7 @@ exports.setupLayouts = async function(config) {
 
 exports.setupPartials = async function(config) {
     try {
-        let filecache = (await exports.filecache);
+        let filecache = exports.filecache;
         await filecache.setupPartials(config);
         // console.log(`setupPartials SUCCESS`);
     } catch (err) {
@@ -149,7 +171,7 @@ exports.fileCachesReady = async function(config) {
         // console.log(`start cache setup`);
         // let cache = (await exports.cache)
         // await cache.setup(config);
-        let filecache = (await exports.filecache);
+        let filecache = exports.filecache;
         // console.log(config);
         // console.log(filecache);
         /* await Promise.all([
@@ -181,7 +203,7 @@ exports.render = render.render;
 exports.renderDocument = render.renderDocument;
 
 exports.renderPath = async (config, path2r) => {
-    const documents = (await exports.filecache).documents;
+    const documents = exports.filecache.documents;
     let found;
     let count = 0;
     while (count < 20) {
@@ -267,7 +289,7 @@ exports.partial = async function partial(config, fname, metadata) {
     }
 
     // console.log(`partial ${fname}`);
-    const found = (await exports.filecache).partials.find(fname);
+    const found = exports.filecache.partials.find(fname);
     if (!found) {
         throw new Error(`No partial found for ${fname} in ${util.inspect(config.partialsDirs)}`);
     }
@@ -292,9 +314,7 @@ exports.partial = async function partial(config, fname, metadata) {
             mdata[prop] = metadata[prop];
         }
         mdata.config = config;
-        // partialSync is initialized using a Promise, so we must
-        // wait for tht Promise to be resolved.
-        mdata.partialSync = (await exports.partialSync).bind(renderer, config);
+        mdata.partialSync = exports.partialSync.bind(renderer, config);
         mdata.partial     = exports.partial.bind(renderer, config);
         // console.log(`partial-funcs render ${renderer.name} ${found.vpath}`);
         return renderer.render({
@@ -311,56 +331,50 @@ exports.partial = async function partial(config, fname, metadata) {
     }
 }
 
-exports.partialSync = (async () => {
+exports.partialSync = function partialSync(config, fname, metadata) {
 
-    const filecache = await exports.filecache;
-
-    return function partialSync(config, fname, metadata) {
-
-        if (!fname || typeof fname !== 'string') {
-            throw new Error(`partial fname not a string ${util.inspect(fname)}`);
-        }
-    
-        const found = filecache.partials.find(fname);
-        if (!found) new Error(`No partial found for ${fname} in ${util.inspect(config.partialsDirs)}`);
-    
-        var renderer = config.findRendererPath(found.vpath);
-        if (renderer) {
-            // Some renderers (Nunjuks) require that metadata.config
-            // point to the config object.  This block of code
-            // duplicates the metadata object, then sets the
-            // config field in the duplicate, passing that to the partial.
-            let mdata = {};
-            let prop;
-    
-            for (prop in metadata) {
-                mdata[prop] = metadata[prop];
-            }
-            mdata.config = config;
-            // In this context, partialSync is directly available
-            // as a function that we can directly use.
-            // console.log(`partialSync `, partialSync);
-            mdata.partialSync = partialSync.bind(renderer, config);
-            let partialText;
-            if (found.docBody) partialText = found.docBody;
-            else if (found.docContent) partialText = found.docContent;
-            else partialText = fs.readFileSync(found.fspath, 'utf8');
-            
-            // console.log(`partial-funcs renderSync ${renderer.name} ${found.vpath}`);
-            return renderer.renderSync({
-                fspath: found.fspath,
-                content: partialText,
-                metadata: mdata
-                // partialText, mdata, found
-            });
-        } else if (found.vpath.endsWith('.html') || found.vpath.endsWith('.xhtml')) {
-            return fs.readFileSync(found.fspath, 'utf8');
-        } else {
-            throw new Error(`renderPartial no Renderer found for ${fname} - ${found.vpath}`);
-        }
+    if (!fname || typeof fname !== 'string') {
+        throw new Error(`partial fname not a string ${util.inspect(fname)}`);
     }
-    
-})();
+
+    const found = exports.filecache.partials.find(fname);
+    if (!found) new Error(`No partial found for ${fname} in ${util.inspect(config.partialsDirs)}`);
+
+    var renderer = config.findRendererPath(found.vpath);
+    if (renderer) {
+        // Some renderers (Nunjuks) require that metadata.config
+        // point to the config object.  This block of code
+        // duplicates the metadata object, then sets the
+        // config field in the duplicate, passing that to the partial.
+        let mdata = {};
+        let prop;
+
+        for (prop in metadata) {
+            mdata[prop] = metadata[prop];
+        }
+        mdata.config = config;
+        // In this context, partialSync is directly available
+        // as a function that we can directly use.
+        // console.log(`partialSync `, partialSync);
+        mdata.partialSync = exports.partialSync.bind(renderer, config);
+        let partialText;
+        if (found.docBody) partialText = found.docBody;
+        else if (found.docContent) partialText = found.docContent;
+        else partialText = fs.readFileSync(found.fspath, 'utf8');
+        
+        // console.log(`partial-funcs renderSync ${renderer.name} ${found.vpath}`);
+        return renderer.renderSync({
+            fspath: found.fspath,
+            content: partialText,
+            metadata: mdata
+            // partialText, mdata, found
+        });
+    } else if (found.vpath.endsWith('.html') || found.vpath.endsWith('.xhtml')) {
+        return fs.readFileSync(found.fspath, 'utf8');
+    } else {
+        throw new Error(`renderPartial no Renderer found for ${fname} - ${found.vpath}`);
+    }
+}
 
 exports.indexChain = async function(config, fname) {
 
@@ -368,7 +382,7 @@ exports.indexChain = async function(config, fname) {
     // into the FileCache class.  Requiring a `config` option
     // is for backwards compatibility with the former API.
 
-    const documents = (await exports.filecache).documents;
+    const documents = exports.filecache.documents;
     return documents.indexChain(fname);
 }
 
@@ -563,20 +577,6 @@ module.exports.Configuration = class Configuration {
 
         const CONFIG = this;
 
-        this[_config_renderers].partialFunc = exports.partial.bind(exports.partial, CONFIG);
-        // As currently implemented partialSync contains a Promise.
-        // This is because it depends on filecache, which is also
-        // a Promise.
-        // Hence we can initialize this by waiting for the Promise
-        // to be resolved.  It means partialSyncFunc won't be
-        // initialized until "later" but maybe that will be okay.
-        exports.partialSync.then(f => {
-            this[_config_renderers].partialSyncFunc = f.bind(f, CONFIG);
-        })
-        .catch(err => {
-            console.error(`Could not initialize partialSyncFunc because ${err.stack}`);
-        });
-
         const configDirPath = function(dirnm) {
             let configPath = dirnm;
             if (typeof CONFIG.configDir !== 'undefined' && CONFIG.configDir != null) {
@@ -689,27 +689,6 @@ module.exports.Configuration = class Configuration {
         return this;
     }
 
-    // Moved these to standalone functions
-
-    /* async setup() {
-        try {
-            // console.log(`before cache`);
-            await (await exports.cache).setup(this);
-            // await (await exports.cache()).save();
-            // console.log(`before filecache`);
-            await (await exports.filecache).setup(this);
-            // console.log(`after filecache`);
-        } catch (err) {
-            console.error(`INITIALIZATION FAILURE COULD NOT INITIALIZE CACHE `, err);
-            process.exit(1);
-        }
-    } */
-
-    /* async close() {
-        await (await exports.filecache).close();
-        await (await exports.cache).close();
-    } */
-
     /**
      * Record the configuration directory so that we can correctly interpolate
      * the pathnames we're provided.
@@ -729,10 +708,10 @@ module.exports.Configuration = class Configuration {
     // set akasha(_akasha)  { this[_config_akasha] = _akasha; }
     get akasha() { return module.exports }
 
-    async documentsCache() { return (await exports.filecache).documents; }
-    async assetsCache()    { return (await exports.filecache).assets; }
-    async layoutsCache()   { return (await exports.filecache).layouts; }
-    async partialsCache()  { return (await exports.filecache).partials; }
+    async documentsCache() { return exports.filecache.documents; }
+    async assetsCache()    { return exports.filecache.assets; }
+    async layoutsCache()   { return exports.filecache.layouts; }
+    async partialsCache()  { return exports.filecache.partials; }
 
     /**
      * Add a directory to the documentDirs configuration array
@@ -1001,7 +980,7 @@ module.exports.Configuration = class Configuration {
         // console.log('copyAssets START');
 
         const config = this;
-        const assets = (await exports.filecache).assets;
+        const assets = exports.filecache.assets;
         await assets.isReady();
         // Fetch the list of all assets files
         const paths = assets.paths();
@@ -1009,6 +988,7 @@ module.exports.Configuration = class Configuration {
         // The work task is to copy each file
         const queue = fastq.promise(async function(item) {
             try {
+                console.log(`copyAssets ${config.renderTo} ${item.renderPath}`);
                 let destFN = path.join(config.renderTo, item.renderPath);
                 // Make sure the destination directory exists
                 await fsp.mkdir(path.dirname(destFN), { recursive: true });

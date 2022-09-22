@@ -62,8 +62,8 @@ describe('build rebased site', function() {
 
     it('should run setup', async function() {
         this.timeout(75000);
-        await akasha.cacheSetup(config_rebase);
-        await akasha.fileCachesReady(config_rebase);
+        await akasha.setup(config_rebase);
+        // await akasha.fileCachesReady(config_rebase);
         // await akasha.cacheSetupComplete(config_rebase);
         /* await akasha.cacheSetup(config_rebase);
         await Promise.all([

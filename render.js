@@ -25,8 +25,6 @@ const util      = require('util');
 const data      = require('./data');
 const mahabhuta = require('mahabhuta');
 
-const filecache = import('./cache/file-cache-lokijs.mjs');
-
 const fastq     = require('fastq');
 
 //////////////////////////////////////////////////////////
@@ -82,7 +80,7 @@ exports.renderDocument = async function(config, docInfo) {
             let layoutrendered;
             if (docInfo.metadata.layout) {
 
-                const layouts = (await filecache).layouts;
+                const layouts = config.akasha.filecache.layouts;
                 await layouts.isReady();
 
                 let found = await layouts.find(docInfo.metadata.layout);
@@ -193,7 +191,7 @@ exports.renderDocument = async function(config, docInfo) {
 
 exports.render = async function(config) {
 
-    const documents = (await filecache).documents;
+    const documents = config.akasha.filecache.documents;
     await documents.isReady();
     // console.log('CALLING config.hookBeforeSiteRendered');
     await config.hookBeforeSiteRendered();

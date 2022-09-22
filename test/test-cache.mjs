@@ -132,8 +132,8 @@ describe('Setup cache', function() {
 
     it('should successfully setup cache database', async function() {
         try {
-            await akasha.cacheSetup(config);
-            await akasha.fileCachesReady(config);
+            await akasha.setup(config);
+            // await akasha.fileCachesReady(config);
         } catch (e) {
             console.error(e);
             throw e;
