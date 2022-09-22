@@ -1,6 +1,7 @@
 ---
 layout: default.html.ejs
 title: Figure/Image
+publicationDate: 2021-10-22
 ---
 
 <fig-img href="/simple-fig-img.jpg"></fig-img>

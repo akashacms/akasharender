@@ -1,6 +1,7 @@
 ---
 layout: default-once.html.handlebars
 title: Code embed
+publicationDate: 2021-10-13
 ---
 
 Test using `file-name` only, using CSS, with relative path

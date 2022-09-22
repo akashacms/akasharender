@@ -1,6 +1,7 @@
 ---
 layout: default-once.html.liquid
 title: Anchor cleanups
+publicationDate: 2021-10-02
 ---
 
 <a href="http://external.url" id="not-affected"></a>

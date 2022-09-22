@@ -1,6 +1,7 @@
 ---
 title: nested link to somewhere else
 layout: default.html.ejs
+publicationDate: 2021-11-24
 ---
 
 This tests a link from a subdirectory to parent directory

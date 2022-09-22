@@ -1,6 +1,7 @@
 ---
 layout: default.html.ejs
 title: Partials
+publicationDate: 2021-11-10
 ---
 
 <partial file-name='helloworld.html'></partial>
@@ -34,7 +35,7 @@ And some other "quoted text"
 </partial>
 
 {{
-    config.akasha.partialSync(config, "test.html.njk", {
+    partialSync(config, "test.html.njk", {
         xyzzy: "Hello, World"
     })
 }}

@@ -1,6 +1,7 @@
 ---
 layout: default.html.ejs
 title: Show Content
+publicationDate: 2021-11-16
 ---
 
 <show-content id="simple" href="/shown-content.html"></show-content>

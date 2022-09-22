@@ -3,6 +3,7 @@ layout: default-once.html.handlebars
 title: Asciidoctor Test
 note: Cobbled together from See http://asciidoctor.org documentation
 attributeName:  attribute Value From metaData LiNe
+publicationDate: 2021-10-06
 theTeaser: |
   <p>This is a paragraph in a long attribute.</p>
 
