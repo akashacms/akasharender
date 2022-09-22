@@ -1,6 +1,6 @@
 /**
  *
- * Copyright 2014-2019 David Herron
+ * Copyright 2014-2022 David Herron
  *
  * This file is part of AkashaCMS (http://akashacms.com/).
  *
@@ -16,6 +16,7 @@
  *  See the License for the specific language governing permissions and
  *  limitations under the License.
  */
+
 
 /**
  * AkashaRender
