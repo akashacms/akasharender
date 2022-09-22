@@ -30,10 +30,6 @@ const render = require('./render');
 const Plugin = require('./Plugin');
 const relative = require('relative');
 const hljs = require('highlight.js');
-// const akasha   = require('./index');
-// const cache = import('./cache/cache-forerunner.mjs');
-// const filecache = import('./cache/file-cache.mjs');
-const filecache = import('./cache/file-cache-lokijs.mjs');
 const cheerio   = require('cheerio');
 const mahabhuta = require('mahabhuta');
 const mahaMetadata = require('mahabhuta/maha/metadata');
@@ -144,9 +140,9 @@ module.exports = class BuiltInPlugin extends Plugin {
 
     async onSiteRendered(config) {
 
-        const documents = (await filecache).documents;
+        const documents = this.akasha.filecache.documents;
         // await documents.isReady();
-        const assets = (await filecache).assets;
+        const assets = this.akasha.filecache.assets;
         // await assets.isReady();
         while (this.resizequeue.length > 0) {
 
@@ -456,7 +452,7 @@ class CodeEmbed extends mahabhuta.CustomElement {
             txtpath = path.join(path.dirname(metadata.document.renderTo), fn);
         }
 
-        const documents = (await filecache).documents;
+        const documents = this.array.options.config.akasha.filecache.documents;
         const found = documents.find(txtpath);
         if (!found) {
             throw new Error(`code-embed file-name ${fn} does not refer to usable file`);
@@ -613,7 +609,7 @@ class ShowContent extends mahabhuta.CustomElement {
             doc2read = href;
         }
         // console.log(`ShowContent ${util.inspect(metadata.document)} ${doc2read}`);
-        const documents = (await filecache).documents;
+        const documents = this.array.options.config.akasha.filecache.documents;
         const doc = await documents.find(doc2read);
         const data = {
             href, clazz, id, caption, width, style, dest, contentImage,
@@ -713,9 +709,9 @@ class AnchorCleanup extends mahabhuta.Munger {
     async process($, $link, metadata, dirty) {
         var href     = $link.attr('href');
         var linktext = $link.text();
-        const documents = (await filecache).documents;
+        const documents = this.array.options.config.akasha.filecache.documents;
         // await documents.isReady();
-        const assets = (await filecache).assets;
+        const assets = this.array.options.config.akasha.filecache.assets;
         // await assets.isReady();
         // console.log(`AnchorCleanup ${href} ${linktext}`);
         if (href && href !== '#') {

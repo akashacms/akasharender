@@ -29,13 +29,6 @@ const path      = require('path');
 const util      = require('util');
 const data      = require('./data');
 
-// Note this is an ES6 module and to use it we must 
-// use an async function along with the await keyword
-// const _cache = import('./cache/cache-forerunner.mjs');
-// const _filecache = import('./cache/file-cache.mjs');
-const _filecache = import('./cache/file-cache-lokijs.mjs');
-const _watchman = import('./cache/watchman.mjs');
-
 process.title = 'akasharender';
 program.version('0.7.5');
 
@@ -46,8 +39,7 @@ program
         try {
             const config = require(path.join(process.cwd(), configFN));
             let akasha = config.akasha;
-            await akasha.cacheSetup(config);
-            await akasha.fileCachesReady(config);
+            await akasha.setup(config);
             await config.copyAssets();
             await akasha.closeCaches();
         } catch (e) {
@@ -64,10 +56,8 @@ program
         try {
             const config = require(path.join(process.cwd(), configFN));
             let akasha = config.akasha;
-            await akasha.cacheSetup(config);
-            await akasha.fileCachesReady(config);
-            const filecache = await _filecache;
-            const documents = filecache.documents;
+            await akasha.setup(config);
+            const documents = akasha.filecache.documents;
             const doc = await documents.find(documentFN);
             // data: ${doc.data}
             // text: ${doc.text}
@@ -94,8 +84,7 @@ program
         try {
             const config = require(path.join(process.cwd(), configFN));
             let akasha = config.akasha;
-            await akasha.cacheSetup(config);
-            await akasha.fileCachesReady(config);
+            await akasha.setup(config);
             data.init();
             console.log(`render-document before renderPath ${documentFN}`);
             let result = await akasha.renderPath(config, documentFN);
@@ -117,9 +106,7 @@ program
         try {
             const config = require(path.join(process.cwd(), configFN));
             let akasha = config.akasha;
-            const filecache = await _filecache;
-            await akasha.cacheSetup(config);
-            await akasha.fileCachesReady(config);
+            await akasha.setup(config);
             data.init();
             let results = await akasha.render(config);
             if (!cmdObj.quiet) {
@@ -180,55 +167,6 @@ program
         }
     });
 
-/* program
-    .command('explain <configFN>')
-    .description('Explain a cache query')
-    .action(async (configFN) => {
-        try {
-            const config = require(path.join(process.cwd(), configFN));
-            let akasha = config.akasha;
-            await akasha.cacheSetup(config);
-            await akasha.fileCachesReady(config);
-            let filecache = await _filecache;
-            data.init();
-            let explanation = filecache.documents
-                .getCollection(filecache.documents.collection)
-                .explain(
-                    /* {
-                    $or: [
-                        { vpath: { $eeq: "archive/java.net/2005/08/findbugs.html.md" } },
-                        { renderPath: { $eeq: "archive/java.net/2005/08/findbugs.html" } }
-                    ]
-                    } *--/
-                    {
-                        renderPath: /\.html$/,
-                        vpath: /^blog\/2019\//,
-                        docMetadata: {
-                            layout: {
-                                $in: [
-                                    "blog.html.ejs",
-                                    "blog.html.njk",
-                                    "blog.html.handlebars"
-                                ]
-                            },
-                            blogtag: { $eeq: "news" }
-                        }
-                    }
-                );
-            // console.log(JSON.stringify(explanation, undefined, ' '));
-            console.log(`EXPLAINING ${explanation.operation} results: ${explanation.results}`);
-            console.log('Analysis ', explanation.analysis);
-            console.log('Analysis - query ', explanation.analysis.query);
-            console.log('Steps ', explanation.steps);
-            console.log('Time ', explanation.time);
-            console.log('Index ', explanation.index);
-            console.log('Log ', explanation.log);
-            await akasha.closeCaches();
-        } catch (e) {
-            console.error(`render command ERRORED ${e.stack}`);
-        }
-    }); */
-
 program
     .command('watch <configFN>')
     .description('Track changes to files in a site, and rebuild anything that changes')
@@ -237,8 +175,7 @@ program
         try {
             const config = require(path.join(process.cwd(), configFN));
             let akasha = config.akasha;
-            await akasha.cacheSetup(config);
-            await akasha.fileCachesReady(config);
+            await akasha.setup(config);
             data.init();
             // console.log('CALLING config.hookBeforeSiteRendered');
             await config.hookBeforeSiteRendered();
@@ -333,8 +270,7 @@ program
         try {
             const config = require(path.join(process.cwd(), configFN));
             let akasha = config.akasha;
-            await akasha.cacheSetup(config);
-            await akasha.fileCachesReady(config);
+            await akasha.setup(config);
             console.log(config.documentDirs);
             await akasha.closeCaches();
         } catch (e) {
@@ -350,8 +286,7 @@ program
         try {
             const config = require(path.join(process.cwd(), configFN));
             let akasha = config.akasha;
-            await akasha.cacheSetup(config);
-            await akasha.fileCachesReady(config);
+            await akasha.setup(config);
             console.log(config.assetDirs);
             await akasha.closeCaches();
         } catch (e) {
@@ -367,8 +302,7 @@ program
         try {
             const config = require(path.join(process.cwd(), configFN));
             let akasha = config.akasha;
-            await akasha.cacheSetup(config);
-            await akasha.fileCachesReady(config);
+            await akasha.setup(config);
             console.log(config.partialsDirs);
             await akasha.closeCaches();
         } catch (e) {
@@ -384,8 +318,7 @@ program
         try {
             const config = require(path.join(process.cwd(), configFN));
             let akasha = config.akasha;
-            await akasha.cacheSetup(config);
-            await akasha.fileCachesReady(config);
+            await akasha.setup(config);
             console.log(config.layoutDirs);
             await akasha.closeCaches();
         } catch (e) {
@@ -402,11 +335,8 @@ program
         try {
             const config = require(path.join(process.cwd(), configFN));
             let akasha = config.akasha;
-            await akasha.cacheSetup(config);
-            await akasha.fileCachesReady(config);
-            let filecache = await _filecache;
-            // console.log(filecache.documents);
-            console.log(filecache.documents.paths());
+            await akasha.setup(config);
+            console.log(akasha.filecache.documents.paths());
             await akasha.closeCaches();
         } catch (e) {
             console.error(`documents command ERRORED ${e.stack}`);
@@ -421,11 +351,8 @@ program
         try {
             const config = require(path.join(process.cwd(), configFN));
             let akasha = config.akasha;
-            await akasha.cacheSetup(config);
-            await akasha.fileCachesReady(config);
-            let filecache = await _filecache;
-            // console.log(filecache.documents);
-            const docinfo = filecache.documents.find(docFN);
+            await akasha.setup(config);
+            const docinfo = akasha.filecache.documents.find(docFN);
             delete docinfo.meta;
             delete docinfo['$loki'];
             console.log(`docFN ${docFN} `, docinfo);
@@ -443,11 +370,8 @@ program
         try {
             const config = require(path.join(process.cwd(), configFN));
             let akasha = config.akasha;
-            await akasha.cacheSetup(config);
-            await akasha.fileCachesReady(config);
-            let filecache = await _filecache;
-            // console.log(filecache.documents);
-            console.log(filecache.documents.tags());
+            await akasha.setup(config);
+            console.log(akasha.filecache.documents.tags());
             await akasha.closeCaches();
         } catch (e) {
             console.error(`docinfo command ERRORED ${e.stack}`);
@@ -470,10 +394,7 @@ program
         try {
             const config = require(path.join(process.cwd(), configFN));
             let akasha = config.akasha;
-            await akasha.cacheSetup(config);
-            await akasha.fileCachesReady(config);
-            let filecache = await _filecache;
-            // console.log(filecache.documents);
+            await akasha.setup(config);
             // console.log(cmdObj);
             let options = { };
             if (cmdObj.root) options.rootPath = cmdObj.root;
@@ -485,7 +406,7 @@ program
             if (cmdObj.mime) options.mime = cmdObj.mime;
             if (cmdObj.tag) options.tag = cmdObj.tag;
             // console.log(options);
-            let docs = filecache.documents.search(options);
+            let docs = akasha.filecache.documents.search(options);
             console.log(docs);
             await akasha.closeCaches();
         } catch (e) {
@@ -501,11 +422,8 @@ program
         try {
             const config = require(path.join(process.cwd(), configFN));
             let akasha = config.akasha;
-            await akasha.cacheSetup(config);
-            await akasha.fileCachesReady(config);
-            let filecache = await _filecache;
-            // console.log(filecache.documents);
-            console.log(filecache.assets.paths());
+            await akasha.setup(config);
+            console.log(akasha.filecache.assets.paths());
             await akasha.closeCaches();
         } catch (e) {
             console.error(`assets command ERRORED ${e.stack}`);
@@ -520,11 +438,8 @@ program
         try {
             const config = require(path.join(process.cwd(), configFN));
             let akasha = config.akasha;
-            await akasha.cacheSetup(config);
-            await akasha.fileCachesReady(config);
-            let filecache = await _filecache;
-            // console.log(filecache.documents);
-            const assetinfo = filecache.assets.find(assetFN);
+            await akasha.setup(config);
+            const assetinfo = akasha.filecache.assets.find(assetFN);
             delete assetinfo.meta;
             delete assetinfo['$loki'];
             console.log(assetinfo);
@@ -542,11 +457,8 @@ program
         try {
             const config = require(path.join(process.cwd(), configFN));
             let akasha = config.akasha;
-            await akasha.cacheSetup(config);
-            await akasha.fileCachesReady(config);
-            let filecache = await _filecache;
-            // console.log(filecache.documents);
-            console.log(filecache.layouts.paths());
+            await akasha.setup(config);
+            console.log(akasha.filecache.layouts.paths());
             await akasha.closeCaches();
         } catch (e) {
             console.error(`layouts command ERRORED ${e.stack}`);
@@ -566,11 +478,8 @@ program
         try {
             const config = require(path.join(process.cwd(), configFN));
             let akasha = config.akasha;
-            await akasha.cacheSetup(config);
-            await akasha.fileCachesReady(config);
-            let filecache = await _filecache;
-            // console.log(filecache.documents);
-            const layoutinfo = filecache.layouts.find(layoutFN);
+            await akasha.setup(config);
+            const layoutinfo = akasha.filecache.layouts.find(layoutFN);
             delete layoutinfo.meta;
             delete layoutinfo['$loki'];
             console.log(layoutinfo);
@@ -588,12 +497,9 @@ program
         try {
             const config = require(path.join(process.cwd(), configFN));
             let akasha = config.akasha;
-            await akasha.cacheSetup(config);
-            await akasha.fileCachesReady(config);
-            let filecache = await _filecache;
-            // console.log(filecache.documents);
+            await akasha.setup(config);
             await akasha.setupPluginCaches(config)
-            console.log(filecache.partials.paths());
+            console.log(akasha.filecache.partials.paths());
             await akasha.closeCaches();
         } catch (e) {
             console.error(`partials command ERRORED ${e.stack}`);
@@ -611,12 +517,8 @@ program
         try {
             const config = require(path.join(process.cwd(), configFN));
             let akasha = config.akasha;
-            // await akasha.cacheSetupComplete(config);
-            await akasha.cacheSetup(config);
-            await akasha.fileCachesReady(config);
-            let filecache = await _filecache;
-            // console.log(filecache.documents);
-            const partialinfo = filecache.partials.find(partialFN);
+            await akasha.setup(config);
+            const partialinfo = akasha.filecache.partials.find(partialFN);
             delete partialinfo.meta;
             delete partialinfo['$loki'];
             console.log(partialinfo);
