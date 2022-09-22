@@ -3,6 +3,7 @@ import loki from 'lokijs';
 import { DirsWatcher } from '@akashacms/stacked-dirs';
 import path from 'path';
 import util from 'util';
+import url  from 'url';
 import { promises as fs } from 'fs';
 import EventEmitter from 'events';
 import minimatch from 'minimatch';
@@ -548,6 +549,120 @@ export class FileCache extends EventEmitter {
             info.rendersToHTML = minimatch(info.renderPath, '**/*.html')
                         ? true : false;
             // console.log(`RenderedFileCache ${info.vpath} ==> renderPath ${info.renderPath}`);
+            if (renderer && renderer.parseMetadata) {
+
+                // Renderer.parseMetadata defaults to doing nothing.
+                // For a renderer that can read data, such as the
+                // frontmatter used with most HTML rendering files,
+                // the parseMetadata function will do something else.
+                // In such cases the rc (RenderingContext) will
+                // contain some data.
+
+                const rc = renderer.parseMetadata({
+                    fspath: info.fspath,
+                    content: await fs.readFile(info.fspath, 'utf-8')
+                });
+
+                // docMetadata is the unmodified metadata/frontmatter
+                // in the document
+                info.docMetadata = rc.metadata;
+                // docContent is the unparsed original content
+                // including any frontmatter
+                info.docContent = rc.content;
+                // docBody is the parsed body -- e.g. following the frontmatter
+                info.docBody = rc.body;
+                // This is the computed metadata that includes data from 
+                // several sources
+                info.metadata = { };
+                if (!info.docMetadata) info.docMetadata = {};
+
+                // The rest of this is adapted from the old function
+                // HTMLRenderer.newInitMetadata
+
+                // For starters the metadata is collected from several sources.
+                // 1) the metadata specified in the directory mount where
+                //    this document was found
+                // 2) metadata in the project configuration
+                // 3) the metadata in the document, as captured in docMetadata
+
+                for (let yprop in info.baseMetadata) {
+                    // console.log(`initMetadata ${basedir} ${fpath} baseMetadata ${baseMetadata[yprop]}`);
+                    metadata[yprop] = info.baseMetadata[yprop];
+                }
+                for (let yprop in this.config.metadata) {
+                    metadata[yprop] = this.config.metadata[yprop];
+                }
+                let fmmcount = 0;
+                for (let yprop in info.docMetadata) {
+                    info.metadata[yprop] = info.docMetadata[yprop];
+                    fmmcount++;
+                }
+
+                // The rendered version of the content lands here
+                info.metadata.content = "";
+                // The document object has been useful for 
+                // communicating the file path and other data.
+                info.metadata.document = {};
+                info.metadata.document.basedir = info.mountPoint;
+                info.metadata.document.relpath = info.pathInMounted;
+                info.metadata.document.relrender = renderer.filePath(info.pathInMounted);
+                info.metadata.document.path = info.vpath;
+                info.metadata.document.renderTo = info.renderPath;
+
+
+                // Ensure the <em>tags</em> field is an array
+                if (!(info.metadata.tags)) {
+                    info.metadata.tags = [];
+                } else if (typeof (info.metadata.tags) === 'string') {
+                    let taglist = [];
+                    const re = /\s*,\s*/;
+                    info.metadata.tags.split(re).forEach(tag => {
+                        taglist.push(tag.trim());
+                    });
+                    info.metadata.tags = taglist;
+                } else if (!Array.isArray(info.metadata.tags)) {
+                    throw new Error(
+                        `FORMAT ERROR - ${info.vpath} has badly formatted tags `,
+                        info.metadata.tags);
+                }
+                info.docMetadata.tags = info.metadata.tags;
+        
+                // The root URL for the project
+                info.metadata.root_url = this.config.root_url;
+
+                // Compute the URL this document will render to
+                if (this.config.root_url) {
+                    let pRootUrl = url.parse(this.config.root_url);
+                    pRootUrl.pathname = path.normalize(
+                            path.join(pRootUrl.pathname, info.metadata.document.renderTo)
+                    );
+                    info.metadata.rendered_url = url.format(pRootUrl);
+                } else {
+                    info.metadata.rendered_url = info.metadata.document.renderTo;
+                }
+
+                info.metadata.rendered_date = info.stats.mtime;
+
+                if (!info.metadata.publicationDate) {
+                    var dateSet = false;
+                    if (info.docMetadata && info.docMetadata.publDate) {
+                        const parsed = Date.parse(info.docMetadata.publDate);
+                        if (! isNaN(parsed)) {
+                            info.metadata.publicationDate = new Date(parsed);
+                        }
+                        dateSet = true;
+                    }
+                    if (! dateSet && info.stats && info.stats.mtime) {
+                        info.metadata.publicationDate = new Date(info.stats.mtime);
+                    }
+                    if (!info.metadata.publicationDate) {
+                        info.metadata.publicationDate = new Date();
+                    }
+                }
+        
+            }
+            
+            /* -- For reference, the old code
             if (renderer
              && renderer.readContent
              && renderer.parseFrontmatter) {
@@ -568,6 +683,7 @@ export class FileCache extends EventEmitter {
                 info.publicationDate = info.metadata.publicationDate;
                 info.publicationTime = new Date(info.metadata.publicationDate).getTime();
             }
+            */
         } else {
             info.renderPath = info.vpath;
             info.renderpath = info.vpath;
@@ -584,6 +700,8 @@ export class FileCache extends EventEmitter {
             throw new Error(`handleChanged event for wrong collection; got ${collection}, expected ${this.collection}`);
         }
         await this.gatherInfoData(info);
+        // console.log(`handleChanged ${info.vpath} ${info.metadata && info.metadata.publicationDate ? info.metadata.publicationDate : '???'}`);
+
         info.stack = undefined;
 
         let coll = this.getCollection();
@@ -630,6 +748,8 @@ export class FileCache extends EventEmitter {
             throw new Error(`handleAdded event for wrong collection; got ${collection}, expected ${this.collection}`);
         }
         await this.gatherInfoData(info);
+        // console.log(`handleAdded ${info.vpath} ${info.metadata && info.metadata.publicationDate ? info.metadata.publicationDate : '???'}`);
+
         info.stack = undefined;
 
         let coll = this.getCollection();
@@ -1271,10 +1391,17 @@ export class FileCache extends EventEmitter {
                     // console.log(`check renderer ${typeof r} ${renderer.name} ${renderer instanceof r}`);
                     if (typeof r === 'string' && r === renderer.name) {
                         found = true;
-                    } else if ((typeof r === 'object' || typeof r === 'function')
+                    } else if (typeof r === 'object' || typeof r === 'function') {
+                        console.error('WARNING: Matching renderer by object class is no longer supported', r);
+                    }
+
+                    // No longer support matching by object class.
+                    // Matching by renderer.name should be enough.
+
+                    /* else if ((typeof r === 'object' || typeof r === 'function')
                              && renderer instanceof r) {
                         found = true;
-                    }
+                    } */
                 }
                 if (!found) {
                     // console.log(`search ${renderer.name} not in ${util.inspect(options.renderers)} ${obj.vpath}`);
