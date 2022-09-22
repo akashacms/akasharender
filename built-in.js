@@ -27,7 +27,6 @@ const sharp = require('sharp');
 const uuid  = require('uuid');
 const uuidv1 = uuid.v1;
 const render = require('./render');
-const partialFuncs = import('./partial-funcs.mjs');
 const Plugin = require('./Plugin');
 const relative = require('relative');
 const hljs = require('highlight.js');
@@ -209,7 +208,6 @@ module.exports.mahabhutaArray = function(options) {
     ret.addMahafunc(new FooterJavaScript());
     ret.addMahafunc(new HeadLinkRelativizer());
     ret.addMahafunc(new ScriptRelativizer());
-    ret.addMahafunc(new InsertBodyContent());
     ret.addMahafunc(new InsertTeaser());
     ret.addMahafunc(new CodeEmbed());
     ret.addMahafunc(new AkBodyClassAdd());
@@ -409,22 +407,19 @@ class ScriptRelativizer extends mahabhuta.Munger {
     }
 }
 
-class InsertBodyContent extends mahabhuta.CustomElement {
-	get elementName() { return "ak-insert-body-content"; }
-	process($element, metadata, dirty) {
-		dirty();
-		return Promise.resolve(typeof metadata.content !== "undefined" ? metadata.content : "");
-	}
-}
-
 class InsertTeaser extends mahabhuta.CustomElement {
 	get elementName() { return "ak-teaser"; }
 	async process($element, metadata, dirty) {
-		return (await partialFuncs).partial(this.array.options.config,
+        try {
+		return this.array.options.config.akasha.partial(this.array.options.config,
                                             "ak_teaser.html.njk", {
 			teaser: typeof metadata["ak-teaser"] !== "undefined"
 				? metadata["ak-teaser"] : metadata.teaser
 		});
+        } catch (e) {
+            console.error(`InsertTeaser caught error `, e);
+            throw e;
+        }
 	}
 }
 
@@ -500,7 +495,8 @@ class FigureImage extends mahabhuta.CustomElement {
         const width   = $element.attr('width');
         const style   = $element.attr('style');
         const dest    = $element.attr('dest');
-        return (await partialFuncs).partial(this.array.options.config, template, {
+        return this.array.options.config.akasha.partial(
+            this.array.options.config, template, {
             href, clazz, id, caption, width, style, dest
         });
     }
@@ -525,7 +521,8 @@ class img2figureImage extends mahabhuta.CustomElement {
                 ? $element.attr('caption')
                 : "";
         
-        return (await partialFuncs).partial(this.array.options.config, template, {
+        return this.array.options.config.akasha.partial(
+            this.array.options.config, template, {
             id, clazz, style, width, href: src, dest, resizewidth, resizeto,
             caption: content
         });
@@ -622,7 +619,7 @@ class ShowContent extends mahabhuta.CustomElement {
             href, clazz, id, caption, width, style, dest, contentImage,
             document: doc
         };
-        let ret = await (await partialFuncs).partial(
+        let ret = await this.array.options.config.akasha.partial(
                 this.array.options.config, template, data);
         // console.log(`ShowContent ${href} ${util.inspect(data)} ==> ${ret}`);
         return ret;
