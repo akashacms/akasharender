@@ -16,6 +16,7 @@ let config;
 describe('build site', function() {
     it('should construct configuration', async function() {
         this.timeout(75000);
+        try {
         config = new akasha.Configuration();
         config.rootURL("https://example.akashacms.com");
         config.configDir = __dirname;
@@ -58,10 +59,14 @@ describe('build site', function() {
         config.prepare();
 
         require('./final-mahabhuta.js').addFinalMahabhuta(config, mahabhuta);
+        } catch (err) {
+            console.log(err);
+        }
     });
 
     it('should run setup', async function() {
         this.timeout(75000);
+        // console.log(config);
         await akasha.cacheSetup(config);
         await akasha.fileCachesReady(config);
         /* await Promise.all([
@@ -346,6 +351,8 @@ describe('header metadata', function() {
 describe('teaser, content', function() {
     it('should find teaser, content values', async function() {
         let { html, $ } = await akasha.readRenderedFile(config, 'teaser-content.html');
+
+        // console.log(html);
 
         assert.exists(html, 'result exists');
         assert.isString(html, 'result isString');
