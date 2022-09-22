@@ -1,6 +1,7 @@
 ---
 layout: njk-funcs.html.njk
 title: NJK template calling functions
+publicationDate: 2021-11-06
 headerJavaScriptAddTop:
     - href: '/vender/metadata-js-add-top.js'
     - href: '/vender/metadata-js-with-lang-add-top.js'

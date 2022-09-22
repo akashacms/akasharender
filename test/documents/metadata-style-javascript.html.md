@@ -1,6 +1,7 @@
 ---
 layout: default.html.ejs
 title: Metadata test style sheets and javascripts
+publicationDate: 2021-11-05
 headerJavaScriptAddTop:
     - href: '/vender/metadata-js-add-top.js'
     - href: '/vender/metadata-js-with-lang-add-top.js'

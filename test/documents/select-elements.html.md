@@ -1,6 +1,7 @@
 ---
 layout: default-once.html.ejs
 title: Select Elements
+publicationDate: 2021-11-12
 ---
 
 <select-elements id="first-select-elements" class="foobar">

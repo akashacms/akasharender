@@ -2,6 +2,7 @@
 layout: default-once.html.njk
 title: JSON example
 JSONFormatter: json-format.html.ejs
+publicationDate: 2021-11-03
 ---
 {
     "Row1": "value 1",

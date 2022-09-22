@@ -1,6 +1,7 @@
 ---
 layout: default-once.html.handlebars
 title: Figure/Image Formatted with Liquid template
+publicationDate: 2021-10-19
 ---
 
 <fig-img href="/simple-fig-img.jpg"></fig-img>
