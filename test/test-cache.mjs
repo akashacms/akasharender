@@ -2059,7 +2059,11 @@ describe('Search', function() {
         assert.equal(found.length, 0);
     });
 
-    it('should select by renderer', function() {
+    // This feature was found to not be useful.
+    // One should instead match renderers by
+    // the renderer name.
+
+    /* it('should select by renderer', function() {
         const found = filecache.documents.search({
             renderers: [ akasha.HTMLRenderer ]
         });
@@ -2075,7 +2079,7 @@ describe('Search', function() {
             assert.match(doc.vpath,
                 /.html.md$|.html.adoc$|.html.ejs$|.html.json$|.html.handlebars|.html.liquid$|.html.njk$/ );
         }
-    });
+    }); */
 
     it('should select by renderer name', function() {
         const found = filecache.documents.search({
@@ -2177,19 +2181,22 @@ describe('Search', function() {
         }
     });
     
-
-    const sortFunc = async (a, b) => {
-        //  if (!a.stat) a.stat = await fsp.stat(a.fspath);
-        let publA = a.docMetadata && a.docMetadata.publicationDate 
-                ? a.docMetadata.publicationDate : a.stats.mtime;
+    // This had been an async function.  In retrospect, how
+    // could that have ever worked correctly.  This sort
+    // relies on gatherInfoData ensuring that the
+    // DOC.metadata.publicationDate field always has a
+    // reasonable value, and that DOC.publicationDate
+    // is derived from stat'ing the file.
+    const sortFunc = (a, b) => {
+        let publA = a.metadata && a.metadata.publicationDate 
+                ? a.metadata.publicationDate : a.publicationDate;
         let aPublicationDate = Date.parse(publA);
         /* if (isNaN(aPublicationDate)) {
             dateErrors.push(`findBlogDocs ${a.renderPath} BAD DATE publA ${publA}`);
         } */
 
-        // if (!b.stat) b.stat = await fsp.stat(b.fspath);
-        let publB = b.docMetadata && b.docMetadata.publicationDate 
-                ? b.docMetadata.publicationDate : b.stats.mtime;
+        let publB = b.metadata && b.metadata.publicationDate 
+                ? b.metadata.publicationDate : b.publicationDate;
         let bPublicationDate = Date.parse(publB);
         // console.log(`findBlogDocs publA ${publA} aPublicationDate ${aPublicationDate} publB ${publB} bPublicationDate ${bPublicationDate}`);
         /* if (isNaN(bPublicationDate)) {
@@ -2213,11 +2220,17 @@ describe('Search', function() {
         assert.isArray(found);
         assert.isTrue(found.length > 0);
         let lastpublDate = 0;
+        /* console.log(found.map(f => {
+            return { vpath: f.vpath,
+                publ: f.metadata && f.metadata.publicationDate 
+                ? f.metadata.publicationDate : "???" };
+        })); */
         for (const doc of found) {
             if (!doc.stat) doc.stat = await fsp.stat(doc.fspath);
-            let publDoc = doc.docMetadata && doc.docMetadata.publicationDate 
-                ? doc.docMetadata.publicationDate : doc.stat.mtime;
+            let publDoc = doc.metadata && doc.metadata.publicationDate 
+                ? doc.metadata.publicationDate : doc.publicationDate;
             let docPublicationDate = Date.parse(publDoc);
+            // console.log(`${doc.vpath} ${docPublicationDate} >= ${lastpublDate}`);
             assert.isTrue(docPublicationDate >= lastpublDate);
             lastpublDate = docPublicationDate;
         }
