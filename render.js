@@ -17,7 +17,7 @@
  *  limitations under the License.
  */
 
- 'use strict';
+'use strict';
 
 const path      = require('path');
 const fsp       = require('fs/promises');

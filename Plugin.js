@@ -1,6 +1,6 @@
 /**
  *
- * Copyright 2014-2019 David Herron
+ * Copyright 2014-2022 David Herron
  *
  * This file is part of AkashaCMS (http://akashacms.com/).
  *
@@ -17,7 +17,7 @@
  *  limitations under the License.
  */
 
- 'use strict';
+'use strict';
 
 const _plugin_name = Symbol('name');
 const _plugin_options = Symbol('options');
