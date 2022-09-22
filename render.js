@@ -1,6 +1,6 @@
 /**
  *
- * Copyright 2014-2019 David Herron
+ * Copyright 2014-2022 David Herron
  *
  * This file is part of AkashaCMS (http://akashacms.com/).
  *
@@ -23,16 +23,15 @@ const path      = require('path');
 const fsp       = require('fs/promises');
 const util      = require('util');
 const data      = require('./data');
+const mahabhuta = require('mahabhuta');
 
-// const cache     = import('./cache/cache-forerunner.mjs');
-// const filecache = import('./cache/file-cache.mjs');
 const filecache = import('./cache/file-cache-lokijs.mjs');
 
 const fastq     = require('fastq');
 
 //////////////////////////////////////////////////////////
 
-exports.newRenderDocument = async function(config, docInfo) {
+exports.renderDocument = async function(config, docInfo) {
     const renderStart = new Date();
     const renderBaseMetadata = docInfo.baseMetadata;
     // console.log(`newRenderDocument `, docInfo);
@@ -46,10 +45,126 @@ exports.newRenderDocument = async function(config, docInfo) {
 
         // console.log(`ABOUT TO RENDER ${renderer.name} ${docInfo.vpath} ==> ${renderToFpath}`);
         try {
-            /*  OLD VERSION
-            await renderer.renderToFile(basedir, fpath, path.join(renderTo, renderToPlus), renderToPlus, renderBaseMetadata, config);
-            */
-            await renderer.newRenderToFile(config, docInfo);
+
+
+            // Set up required metadata values
+
+            docInfo.metadata.config      = config;
+            docInfo.metadata.partial = config.akasha.partial;
+            docInfo.metadata.partialSync = await config.akasha.partialSync;
+            docInfo.metadata.akasha = config.akasha;
+            docInfo.metadata.plugin = config.plugin;
+
+            // Render the document - output goes to "docrendered"
+
+            let docrendered;
+            try {
+                docrendered = await renderer.render({
+                    fspath: docInfo.fspath,
+                    content: docInfo.docContent,
+                    body: docInfo.docBody,
+                    metadata: docInfo.metadata
+                });
+            } catch (err) {
+                console.error(`Error rendering ${docInfo.vpath} ${(err.stack ? err.stack : err)}`);
+                throw new Error(`Error rendering ${docInfo.vpath} ${(err.stack ? err.stack : err)}`);
+            }
+            data.report(docInfo.mountPoint, docInfo.vpath, config.renderTo, 
+                                "FIRST RENDER", renderStart);
+            
+            // There may be a layout, which will be in metadata.layout
+            // If so, get the layout file
+            // Construct a new metadata -- and it's "content" is
+            // set from docrendered
+            // Then render the document into "layoutrendered"
+            // Otherwise cpy docrendered to layoutrendered
+
+            let layoutrendered;
+            if (docInfo.metadata.layout) {
+
+                const layouts = (await filecache).layouts;
+                await layouts.isReady();
+
+                let found = await layouts.find(docInfo.metadata.layout);
+                if (!found) {
+                    throw new Error(`No layout found in ${util.inspect(config.layoutDirs)} for ${docInfo.metadata.layout} in file ${docInfo.vpath}`);
+                }
+
+                let layoutmetadata = {};
+                for (var yprop in found.metadata) {
+                    layoutmetadata[yprop] = found.metadata[yprop];
+                }
+                for (var yprop in docInfo.metadata) {
+                    if (yprop !== 'layout') {
+                        layoutmetadata[yprop] = docInfo.metadata[yprop];
+                    }
+                }
+                layoutmetadata.content = docrendered;
+
+                const renderer = config.findRendererPath(docInfo.metadata.layout);
+
+                if (!renderer) {
+                    throw new Error(`No renderer for ${metadata.layout} in file ${docinfo.vpath}`);;
+                }
+
+                try {
+                    layoutrendered = await renderer.render({
+                        fspath: found.fspath,
+                        content: found.docContent,
+                        body: found.docBody,
+                        metadata: layoutmetadata
+                    });
+                } catch (e) {
+                    let ee = new Error(`Error rendering ${docInfo.vpath} with ${docInfo.metadata.layout} ${e.stack ? e.stack : e}`);
+                    console.error(ee);
+                    throw ee;
+                }
+            } else {
+                layoutrendered = docrendered;
+            }
+
+            const renderSecondRender = new Date();
+            data.report(docInfo.mountPoint, docInfo.vpath, config.renderTo, 
+                                "SECOND RENDER", renderStart);
+
+            // Next step is to run Mahabhuta on the rendered content
+            // Of course, Mahabhuta is not appropriate for everything
+            // because not everything is HTML
+
+            const format = renderer.renderFormat({ fspath: docInfo.fspath });
+            const doMahabhuta = (format === 'HTML') ? true :false;
+            if (doMahabhuta) {
+
+                try {
+
+                    const mahametadata = {};
+                    for (var yprop in docInfo.metadata) {
+                        mahametadata[yprop] = docInfo.metadata[yprop];
+                    }
+                    mahametadata.content = docrendered;
+
+                    if (docInfo.metadata.config.mahabhutaConfig) {
+                        mahabhuta.config(docInfo.metadata.config.mahabhutaConfig);
+                    }
+                    // console.log(`mahametadata`, mahametadata);
+                    layoutrendered = await mahabhuta.processAsync(
+                        layoutrendered, mahametadata, config.mahafuncs
+                    );
+
+                    // OLD docrendered = await this.maharun(layoutrendered, docdata, config.mahafuncs);
+                } catch (e2) {
+                    let eee = new Error(`Error with Mahabhuta ${docInfo.vpath} with ${docInfo.metadata.layout} ${e2.stack ? e2.stack : e2}`);
+                    console.error(eee);
+                    throw eee;
+                }
+            }
+
+            data.report(docInfo.mountPoint, docInfo.vpath, config.renderTo, 
+                "MAHABHUTA", renderStart);
+
+            const renderDest = path.join(config.renderTo, docInfo.renderPath);
+            await fsp.mkdir(path.dirname(renderDest), { recursive: true });
+            await fsp.writeFile(renderDest, layoutrendered, 'utf-8');
 
             // console.log(`RENDERED ${renderer.name} ${docInfo.path} ==> ${renderToFpath}`);
             const renderEndRendered = new Date();
@@ -76,23 +191,7 @@ exports.newRenderDocument = async function(config, docInfo) {
     }
 }
 
-/**
- * Render a single document
- *
- * @param config Configuration
- * @param basedir String The directory within which to find the document
- * @param fpath String The pathname within basedir for the document
- * @param renderTo String the directory into which this is to be rendered
- * @param renderToPlus String further pathname addition for the rendering.  The final pathname is renderTo/renderToPlus/flath
- * @param renderBaseMetadata Object The metadata object to start with.  Typically this is an empty object, but sometimes we'll have some metadata to start with.
- */
-exports.renderDocument = async function(config, basedir, fpath, renderTo, renderToPlus, renderBaseMetadata) {
-
-    throw new Error(`renderDocument DEPRECATED - use newRenderDocument`);
-
-};
-
-exports.newerrender = async function(config) {
+exports.render = async function(config) {
 
     const documents = (await filecache).documents;
     await documents.isReady();
@@ -140,7 +239,7 @@ exports.newerrender = async function(config) {
     async function renderDocumentInQueue(entry) {
         // console.log(`renderDocumentInQueue ${entry.info.vpath}`);
         try {
-            let result = await exports.newRenderDocument(entry.config, entry.info);
+            let result = await exports.renderDocument(entry.config, entry.info);
             // console.log(`DONE renderDocumentInQueue ${entry.info.vpath}`, result);
             return { result };
         } catch (error) {

@@ -32,10 +32,14 @@ const path   = require('path');
 const RSS    = require('rss');
 const fastq = require('fastq');
 const { DirsWatcher, mimedefine } = require('@akashacms/stacked-dirs');
+const Renderers = require('@akashacms/renderers');
 const mahabhuta = require('mahabhuta');
 exports.mahabhuta = mahabhuta;
 const cheerio = require('cheerio');
 const mahaPartial = require('mahabhuta/maha/partial');
+
+exports.Renderers = Renderers;
+exports.Renderer = Renderers.Renderer;
 
 // There doesn't seem to be an official registration
 // per: https://asciidoctor.org/docs/faq/
@@ -172,19 +176,7 @@ exports.Plugin = require('./Plugin');
 
 const render = require('./render');
 
-module.exports.Renderer = require('./Renderer');
-module.exports.HTMLRenderer = require('./HTMLRenderer');
-module.exports.AsciidocRenderer = require('./render-asciidoc');
-module.exports.EJSRenderer = require('./render-ejs');
-module.exports.LiquidRenderer = require('./render-liquid');
-module.exports.NunjucksRenderer = require('./render-nunjucks');
-module.exports.HandlebarsRenderer = require('./render-handlebars');
-// module.exports.TempuraRenderer = require('./render-tempura');
-module.exports.MarkdownRenderer = require('./render-md');
-module.exports.JSONRenderer = require('./render-json');
-module.exports.CSSLESSRenderer = require('./render-cssless');
-
-exports.render = render.newerrender;
+exports.render = render.render;
 exports.renderDocument = render.renderDocument;
 
 exports.renderPath = async (config, path2r) => {
@@ -225,7 +217,7 @@ exports.renderPath = async (config, path2r) => {
     if (!found) {
         throw new Error(`Did not find document for ${path2r}`);
     }
-    let result = await render.newRenderDocument(config, found);
+    let result = await render.renderDocument(config, found);
     return result;
 }
 
@@ -248,10 +240,6 @@ exports.readRenderedFile = async(config, fpath) => {
     return { html, $ };
 }
 
-exports.findRendererPath = function(p) {
-    throw new Error(`akasha.findRendererPath deprecated use config.findRendererPath instead for ${p}`);
-}
-
 /**
  * Finds the source document matching the filename for a rendered file.  That is, for
  * a rendered file path like {movies/wallachia/vlad-tepes/son-of-dracul.html} it will search
@@ -271,13 +259,106 @@ exports.findRendererPath = function(p) {
  * @return {Object} Description of the source file
  */
 
-const partialFuncs = import('./partial-funcs.mjs');
+exports.partial = async function partial(config, fname, metadata) {
 
-exports.partial = undefined;
-exports.partialSync = undefined;
-(async () => {
-    exports.partial = (await partialFuncs).partial;
-    exports.partialSync = (await partialFuncs).partialSync;
+    if (!fname || typeof fname !== 'string') {
+        throw new Error(`partial fname not a string ${util.inspect(fname)}`);
+    }
+
+    // console.log(`partial ${fname}`);
+    const found = (await exports.filecache).partials.find(fname);
+    if (!found) {
+        throw new Error(`No partial found for ${fname} in ${util.inspect(config.partialsDirs)}`);
+    }
+    // console.log(`partial ${fname} ==> ${found.vpath} ${found.fspath}`);
+    
+    const renderer = config.findRendererPath(found.vpath);
+    if (renderer) {
+        // console.log(`partial about to render ${util.inspect(found.vpath)}`);
+        let partialText;
+        if (found.docBody) partialText = found.docBody;
+        else if (found.docContent) partialText = found.docContent;
+        else partialText = await fsp.readFile(found.fspath, 'utf8');
+
+        // Some renderers (Nunjuks) require that metadata.config
+        // point to the config object.  This block of code
+        // duplicates the metadata object, then sets the
+        // config field in the duplicate, passing that to the partial.
+        let mdata = {};
+        let prop;
+
+        for (prop in metadata) {
+            mdata[prop] = metadata[prop];
+        }
+        mdata.config = config;
+        // partialSync is initialized using a Promise, so we must
+        // wait for tht Promise to be resolved.
+        mdata.partialSync = (await exports.partialSync).bind(renderer, config);
+        mdata.partial     = exports.partial.bind(renderer, config);
+        // console.log(`partial-funcs render ${renderer.name} ${found.vpath}`);
+        return renderer.render({
+            fspath: found.fspath,
+            content: partialText,
+            metadata: mdata
+            // partialText, mdata, found
+        });
+    } else if (found.vpath.endsWith('.html') || found.vpath.endsWith('.xhtml')) {
+        // console.log(`partial reading file ${found.vpath}`);
+        return fsp.readFile(found.fspath, 'utf8');
+    } else {
+        throw new Error(`renderPartial no Renderer found for ${fname} - ${found.vpath}`);
+    }
+}
+
+exports.partialSync = (async () => {
+
+    const filecache = await exports.filecache;
+
+    return function partialSync(config, fname, metadata) {
+
+        if (!fname || typeof fname !== 'string') {
+            throw new Error(`partial fname not a string ${util.inspect(fname)}`);
+        }
+    
+        const found = filecache.partials.find(fname);
+        if (!found) new Error(`No partial found for ${fname} in ${util.inspect(config.partialsDirs)}`);
+    
+        var renderer = config.findRendererPath(found.vpath);
+        if (renderer) {
+            // Some renderers (Nunjuks) require that metadata.config
+            // point to the config object.  This block of code
+            // duplicates the metadata object, then sets the
+            // config field in the duplicate, passing that to the partial.
+            let mdata = {};
+            let prop;
+    
+            for (prop in metadata) {
+                mdata[prop] = metadata[prop];
+            }
+            mdata.config = config;
+            // In this context, partialSync is directly available
+            // as a function that we can directly use.
+            // console.log(`partialSync `, partialSync);
+            mdata.partialSync = partialSync.bind(renderer, config);
+            let partialText;
+            if (found.docBody) partialText = found.docBody;
+            else if (found.docContent) partialText = found.docContent;
+            else partialText = fs.readFileSync(found.fspath, 'utf8');
+            
+            // console.log(`partial-funcs renderSync ${renderer.name} ${found.vpath}`);
+            return renderer.renderSync({
+                fspath: found.fspath,
+                content: partialText,
+                metadata: mdata
+                // partialText, mdata, found
+            });
+        } else if (found.vpath.endsWith('.html') || found.vpath.endsWith('.xhtml')) {
+            return fs.readFileSync(found.fspath, 'utf8');
+        } else {
+            throw new Error(`renderPartial no Renderer found for ${fname} - ${found.vpath}`);
+        }
+    }
+    
 })();
 
 exports.indexChain = async function(config, fname) {
@@ -416,7 +497,10 @@ const _config_renderers = Symbol('renderers');
 module.exports.Configuration = class Configuration {
     constructor(modulepath) {
 
-        this[_config_renderers] = [];
+        // this[_config_renderers] = [];
+        this[_config_renderers] = new Renderers.Configuration({
+            
+        });
 
         this[_config_autoload] = false;
         this[_config_autosave] = false;
@@ -428,7 +512,8 @@ module.exports.Configuration = class Configuration {
          * By being located here, it will always be called by the
          * time any Configuration is generated.
          */
-        this.registerBuiltInRenderers();
+        // This is executed in @akashacms/renderers
+        // this[_config_renderers].registerBuiltInRenderers();
 
         // Provide a mechanism to easily specify configDir
         // The path in configDir must be the path of the configuration file.
@@ -476,6 +561,20 @@ module.exports.Configuration = class Configuration {
     prepare() {
 
         const CONFIG = this;
+
+        this[_config_renderers].partialFunc = exports.partial.bind(exports.partial, CONFIG);
+        // As currently implemented partialSync contains a Promise.
+        // This is because it depends on filecache, which is also
+        // a Promise.
+        // Hence we can initialize this by waiting for the Promise
+        // to be resolved.  It means partialSyncFunc won't be
+        // initialized until "later" but maybe that will be okay.
+        exports.partialSync.then(f => {
+            this[_config_renderers].partialSyncFunc = f.bind(f, CONFIG);
+        })
+        .catch(err => {
+            console.error(`Could not initialize partialSyncFunc because ${err.stack}`);
+        });
 
         const configDirPath = function(dirnm) {
             let configPath = dirnm;
@@ -690,6 +789,7 @@ module.exports.Configuration = class Configuration {
             }
         }
         this[_config_layoutDirs].push(dir);
+        this[_config_renderers].addLayoutDir(dir.src ? dir.src : dir);
         return this;
     }
 
@@ -713,6 +813,7 @@ module.exports.Configuration = class Configuration {
         }
         // console.log(`addPartialsDir `, dir);
         this[_config_partialDirs].push(dir);
+        this[_config_renderers].addPartialDir(dir.src ? dir.src : dir);
         return this;
     }
 
@@ -919,7 +1020,7 @@ module.exports.Configuration = class Configuration {
                 });
                 return "ok";
             } catch (err) {
-                throw new Error(`copyAssets FAIL to copy ${item.fspath} because ${err.stack}`);
+                throw new Error(`copyAssets FAIL to copy ${item.fspath} ${item.vpath} ${item.renderPath} ${config.renderTo} because ${err.stack}`);
             }
         }, 10);
 
@@ -1114,10 +1215,10 @@ module.exports.Configuration = class Configuration {
             throw new Error(`Not a Renderer ${renderer.name}`);
         }
         if (!this.findRendererName(renderer.name)) {
-            renderer.akasha = this.akasha;
-            renderer.config = this;
+            // renderer.akasha = this.akasha;
+            // renderer.config = this;
             // console.log(`registerRenderer `, renderer);
-            this[_config_renderers].push(renderer);
+            this[_config_renderers].registerRenderer(renderer);
         }
     }
 
@@ -1134,28 +1235,20 @@ module.exports.Configuration = class Configuration {
             console.error('Not A Renderer '+ util.inspect(renderer));
             throw new Error('Not a Renderer');
         }
-        renderer.akasha = this.akasha;
-        renderer.config = this;
-        this[_config_renderers].unshift(renderer);
+        // renderer.akasha = this.akasha;
+        // renderer.config = this;
+        this[_config_renderers].registerOverrideRenderer(renderer);
     }
 
     findRendererName(name) {
-        for (var r of this[_config_renderers]) {
-            if (r.name === name) return r;
-        }
-        return undefined;
+        return this[_config_renderers].findRendererName(name);
     }
 
     findRendererPath(_path) {
-        // log(`findRendererPath ${_path}`);
-        for (var r of this[_config_renderers]) {
-            if (r.match(_path)) return r;
-        }
-        // console.log(`findRendererPath NO RENDERER for ${_path}`);
-        return undefined;
+        return this[_config_renderers].findRendererPath(_path);
     }
 
-    registerBuiltInRenderers() {
+    /* registerBuiltInRenderers() {
         // Register built-in renderers
         this.registerRenderer(new module.exports.MarkdownRenderer());
         this.registerRenderer(new module.exports.AsciidocRenderer());
@@ -1166,7 +1259,7 @@ module.exports.Configuration = class Configuration {
         // this.registerRenderer(new module.exports.TempuraRenderer());
         this.registerRenderer(new module.exports.CSSLESSRenderer());
         this.registerRenderer(new module.exports.JSONRenderer());
-    }
+    }*/
 
     get renderers() { return this[_config_renderers]; }
 
