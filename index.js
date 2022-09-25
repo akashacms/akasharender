@@ -88,8 +88,14 @@ exports.filecache = undefined;
 exports.setup = async function setup(config) {
     exports.filecache = await import('./cache/file-cache-lokijs.mjs');
 
-    config.renderers.partialFunc = exports.partial.bind(exports.partial, config);
-    config.renderers.partialSyncFunc = exports.partialSync.bind(exports.partialSync, config);
+    config.renderers.partialFunc = (fname, metadata) => {
+        // console.log(`calling partial ${fname}`);
+        return exports.partial(config, fname, metadata);
+    };
+    config.renderers.partialSyncFunc = (fname, metadata) => {
+        // console.log(`calling partialSync ${fname}`);
+        return exports.partialSync(config, fname, metadata);
+    }
 
     await exports.cacheSetup(config);
     await exports.fileCachesReady(config);
@@ -334,7 +340,7 @@ exports.partial = async function partial(config, fname, metadata) {
 exports.partialSync = function partialSync(config, fname, metadata) {
 
     if (!fname || typeof fname !== 'string') {
-        throw new Error(`partial fname not a string ${util.inspect(fname)}`);
+        throw new Error(`partialSync fname not a string ${util.inspect(fname)}`);
     }
 
     const found = exports.filecache.partials.find(fname);
@@ -988,7 +994,7 @@ module.exports.Configuration = class Configuration {
         // The work task is to copy each file
         const queue = fastq.promise(async function(item) {
             try {
-                console.log(`copyAssets ${config.renderTo} ${item.renderPath}`);
+                // console.log(`copyAssets ${config.renderTo} ${item.renderPath}`);
                 let destFN = path.join(config.renderTo, item.renderPath);
                 // Make sure the destination directory exists
                 await fsp.mkdir(path.dirname(destFN), { recursive: true });
