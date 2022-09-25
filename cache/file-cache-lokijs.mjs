@@ -605,10 +605,10 @@ export class FileCache extends EventEmitter {
 
                 for (let yprop in info.baseMetadata) {
                     // console.log(`initMetadata ${basedir} ${fpath} baseMetadata ${baseMetadata[yprop]}`);
-                    metadata[yprop] = info.baseMetadata[yprop];
+                    info.metadata[yprop] = info.baseMetadata[yprop];
                 }
                 for (let yprop in this.config.metadata) {
-                    metadata[yprop] = this.config.metadata[yprop];
+                    info.metadata[yprop] = this.config.metadata[yprop];
                 }
                 let fmmcount = 0;
                 for (let yprop in info.docMetadata) {

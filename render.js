@@ -48,8 +48,12 @@ exports.renderDocument = async function(config, docInfo) {
             // Set up required metadata values
 
             docInfo.metadata.config      = config;
-            docInfo.metadata.partial = config.akasha.partial;
-            docInfo.metadata.partialSync = await config.akasha.partialSync;
+            docInfo.metadata.partial = (fname, metadata) => {
+                return config.akasha.partial(config, fname, metadata);
+            }
+            docInfo.metadata.partialSync = (fname, metadata) => {
+                return config.akasha.partialSync(config, fname, metadata);
+            }
             docInfo.metadata.akasha = config.akasha;
             docInfo.metadata.plugin = config.plugin;
 
