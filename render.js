@@ -60,6 +60,12 @@ exports.renderDocument = async function(config, docInfo) {
             // Render the document - output goes to "docrendered"
 
             let docrendered;
+            /* console.log({
+                fspath: docInfo.fspath,
+                content: docInfo.docContent,
+                body: docInfo.docBody,
+                metadata: docInfo.metadata
+            }) */
             try {
                 docrendered = await renderer.render({
                     fspath: docInfo.fspath,
@@ -71,6 +77,7 @@ exports.renderDocument = async function(config, docInfo) {
                 console.error(`Error rendering ${docInfo.vpath} ${(err.stack ? err.stack : err)}`);
                 throw new Error(`Error rendering ${docInfo.vpath} ${(err.stack ? err.stack : err)}`);
             }
+            // console.log(docrendered);
             data.report(docInfo.mountPoint, docInfo.vpath, config.renderTo, 
                                 "FIRST RENDER", renderStart);
             
@@ -108,6 +115,9 @@ exports.renderDocument = async function(config, docInfo) {
                 if (!renderer) {
                     throw new Error(`No renderer for ${metadata.layout} in file ${docinfo.vpath}`);;
                 }
+
+                // console.log(`renderDocument `, found);
+                // console.log(`renderDocument `, layoutmetadata);
 
                 try {
                     layoutrendered = await renderer.render({
