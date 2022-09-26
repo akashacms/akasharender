@@ -122,7 +122,7 @@ exports.closeCaches = async function() {
     }
 }
 
-exports.setupDocuments = async function(config) {
+/* exports.setupDocuments = async function(config) {
     try {
         let filecache = exports.filecache;
         await filecache.setupDocuments(config);
@@ -170,31 +170,17 @@ exports.setupPluginCaches = async function(config) {
         console.error(`INITIALIZATION FAILURE COULD NOT INITIALIZE PLUGINS CACHES `, err);
         process.exit(1);
     }
-}
+} */
 
 exports.fileCachesReady = async function(config) {
     try {
-        // console.log(`start cache setup`);
-        // let cache = (await exports.cache)
-        // await cache.setup(config);
         let filecache = exports.filecache;
-        // console.log(config);
-        // console.log(filecache);
-        /* await Promise.all([
-            filecache.setupDocuments(config),
-            filecache.setupAssets(config),
-            filecache.setupLayouts(config),
-            filecache.setupPartials(config),
-            exports.setupPluginCaches(config)
-        ]); */
-        // console.log(`caches setups`);
         await Promise.all([
             filecache.documents.isReady(),
             filecache.assets.isReady(),
             filecache.layouts.isReady(),
             filecache.partials.isReady()
         ]);
-        // console.log(`all ready`);
     } catch (err) {
         console.error(`INITIALIZATION FAILURE COULD NOT INITIALIZE CACHE SYSTEM `, err);
         process.exit(1);
@@ -270,24 +256,15 @@ exports.readRenderedFile = async(config, fpath) => {
 }
 
 /**
- * Finds the source document matching the filename for a rendered file.  That is, for
- * a rendered file path like {movies/wallachia/vlad-tepes/son-of-dracul.html} it will search
- * for the {.html.md} file generating that rendered file.
- *
- * The returned object has at least these fields:
- *
- * * {foundDir} - The basedir within which the file was found
- * * {foundPath} - The path under basedir to that file
- * * {foundFullPath} - The path, including the full file extension, to that file
- * * {foundMountedOn} - For complex directories, the path  this directory is mounted on .. e.g. dir.dest
- * * {foundPathWithinDir} - For complex directories, the path within that directory.
- * * {foundBaseMetadata} - For complex directories, the metadata associated with that directory
- *
- * @params {Array} dirs The documentDirs directory
- * @params {string} rendersTo The full path of the rendered file
- * @return {Object} Description of the source file
+ * Renders a partial template using the supplied metadata.  This version
+ * allows for asynchronous execution, and every bit of code it
+ * executes is allowed to be async.
+ * 
+ * @param {*} config AkashaRender Configuration object
+ * @param {*} fname Path within the filecache.partials cache
+ * @param {*} metadata Object containing metadata
+ * @returns Promise that resolves to a string containing the rendered stuff
  */
-
 exports.partial = async function partial(config, fname, metadata) {
 
     if (!fname || typeof fname !== 'string') {
@@ -337,6 +314,16 @@ exports.partial = async function partial(config, fname, metadata) {
     }
 }
 
+/**
+ * Renders a partial template using the supplied metadata.  This version
+ * allows for synchronous execution, and every bit of code it
+ * executes is synchronous functions.
+ * 
+ * @param {*} config AkashaRender Configuration object
+ * @param {*} fname Path within the filecache.partials cache
+ * @param {*} metadata Object containing metadata
+ * @returns String containing the rendered stuff
+ */
 exports.partialSync = function partialSync(config, fname, metadata) {
 
     if (!fname || typeof fname !== 'string') {
@@ -382,6 +369,16 @@ exports.partialSync = function partialSync(config, fname, metadata) {
     }
 }
 
+/**
+ * Starting from a virtual path in the documents, searches upwards to
+ * the root of the documents file-space, finding files that 
+ * render to "index.html".  The "index.html" files are index files,
+ * as the name suggests.
+ * 
+ * @param {*} config 
+ * @param {*} fname 
+ * @returns 
+ */
 exports.indexChain = async function(config, fname) {
 
     // This used to be a full function here, but has moved
@@ -459,31 +456,18 @@ exports.generateRSS = async function(config, configrss, feedData, items, renderT
 
 };
 
-// Consider making an external plugin
+// For oEmbed, Consider making an external plugin
 // https://www.npmjs.com/package/oembed-all
 // https://www.npmjs.com/package/embedable
 // https://www.npmjs.com/package/media-parser
 // https://www.npmjs.com/package/oembetter
-//
-// DEPRECATED -- We should no longer need this because
-//    of the akashacms-embeddables plugin
-//
-module.exports.oEmbedData = function(url) {
-    throw new Error('Do not use oEmbedData, switch ti akashacms-embeddables')
-    /* return new Promise((resolve, reject) => {
-        oembetter.fetch(url,
-        (err, result) => {
-            if (err) return reject(err);
-            else resolve(result);
-        }
-        );
-    }); */
-};
 
 
 /**
- * The AkashaRender project configuration object.  One instantiates a Configuration
- * object, then fills it with settings and plugins.
+ * The AkashaRender project configuration object.  
+ * One instantiates a Configuration object, then fills it
+ * with settings and plugins.
+ * 
  * @see module:Configuration
  */
 
@@ -863,10 +847,6 @@ module.exports.Configuration = class Configuration {
     /** Fetch the declared destination for rendering the project. */
     get renderDestination() { return this[_config_renderTo]; }
     get renderTo() { return this[_config_renderTo]; }
-
-    /* TODO:
-
-    addMetadataObject - object */
 
     /**
      * Add a value to the project metadata.  The metadata is combined with
