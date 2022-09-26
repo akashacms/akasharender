@@ -38,7 +38,6 @@ const mahaPartial = require('mahabhuta/maha/partial');
 const pluginName = "akashacms-builtin";
 
 const _plugin_config = Symbol('config');
-const _plugin_options = Symbol('options');
 const _plugin_resizequeue = Symbol('resizequeue');
 
 module.exports = class BuiltInPlugin extends Plugin {
@@ -48,17 +47,17 @@ module.exports = class BuiltInPlugin extends Plugin {
 
 	configure(config, options) {
         this[_plugin_config] = config;
-        this[_plugin_options] = options ? options : {};
-        if (typeof this[_plugin_options].relativizeHeadLinks === 'undefined') {
-            this[_plugin_options].relativizeHeadLinks = true;
+        this.options = options ? options : {};
+        if (typeof this.options.relativizeHeadLinks === 'undefined') {
+            this.options.relativizeHeadLinks = true;
         }
-        if (typeof this[_plugin_options].relativizeScriptLinks === 'undefined') {
-            this[_plugin_options].relativizeScriptLinks = true;
+        if (typeof this.options.relativizeScriptLinks === 'undefined') {
+            this.options.relativizeScriptLinks = true;
         }
-        if (typeof this[_plugin_options].relativizeBodyLinks === 'undefined') {
-            this[_plugin_options].relativizeBodyLinks = true;
+        if (typeof this.options.relativizeBodyLinks === 'undefined') {
+            this.options.relativizeBodyLinks = true;
         }
-        options.config = config;
+        this.options.config = config;
         let moduleDirname;
         try {
             moduleDirname = path.dirname(require.resolve('akasharender'));
@@ -95,7 +94,6 @@ module.exports = class BuiltInPlugin extends Plugin {
     }
 
     get config() { return this[_plugin_config]; }
-    get options() { return this[_plugin_options]; }
     get resizequeue() { return this[_plugin_resizequeue]; }
 
     /**
@@ -103,7 +101,7 @@ module.exports = class BuiltInPlugin extends Plugin {
      * URLs are relativized or absolutized.
      */
     set relativizeHeadLinks(rel) {
-        this[_plugin_options].relativizeHeadLinks = rel;
+        this.options.relativizeHeadLinks = rel;
     }
 
     /**
@@ -111,7 +109,7 @@ module.exports = class BuiltInPlugin extends Plugin {
      * URLs are relativized or absolutized.
      */
     set relativizeScriptLinks(rel) {
-        this[_plugin_options].relativizeScriptLinks = rel;
+        this.options.relativizeScriptLinks = rel;
     }
 
     /**
@@ -119,7 +117,7 @@ module.exports = class BuiltInPlugin extends Plugin {
      * URLs are relativized or absolutized.
      */
     set relativizeBodyLinks(rel) {
-        this[_plugin_options].relativizeBodyLinks = rel;
+        this.options.relativizeBodyLinks = rel;
     }
 
     doStylesheets(metadata) {
