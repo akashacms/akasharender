@@ -248,6 +248,7 @@ describe('header metadata', function() {
         it('should find xml-sitemap values', async function() {
             checkXMLSitemap(html, $);
         });
+
     });
 
     describe('/njk-func.html', function() {
@@ -349,6 +350,16 @@ describe('header metadata', function() {
 });
 
 describe('teaser, content', function() {
+    it('should read index.html', async function() {
+        let { html, $ } = await akasha.readRenderedFile(config, 'index.html');
+
+        console.log($('body article#original').html());
+
+        assert.notMatch($('body article#original').html(), /title: Home Page/);
+        assert.notMatch($('body article#original').html(), /layout: default.html.ejs/);
+
+    });
+
     it('should find teaser, content values', async function() {
         let { html, $ } = await akasha.readRenderedFile(config, 'teaser-content.html');
 
