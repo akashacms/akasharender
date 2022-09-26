@@ -78,6 +78,22 @@ async function rebuild(config) {
     return results;
 }
 
+async function unlinkVPath(config, info) {
+    if (!config.renderDestination) {
+        console.log(`UNLINK ${collection} could not perform unlink (no renderDestination) for `, info);
+        return;
+    }
+    const renderer = config.findRendererPath(info.vpath);
+    let renderPath;
+    if (renderer) {
+        renderPath = renderer.filePath(info.vpath);
+    } else {
+        renderPath = info.vpath;
+    }
+    await fs.unlink(path.join(config.renderDestination, renderPath));
+    console.log(`UNLINK ${renderPath}`);
+}
+
 export async function watchman(config) {
     documents
     .on('change', async (collection, info) => {
@@ -107,12 +123,7 @@ export async function watchman(config) {
     .on('unlink', async (collection, info) => {
         try {
             // console.log(`UNLINK ${config.renderDestination} ${info.renderPath}`);
-            if (!config.renderDestination || !info.renderPath) {
-                console.log(`UNLINK ${collection} could not perform unlink for `, info);
-                return;
-            }
-            await fs.unlink(path.join(config.renderDestination, info.renderPath));
-            console.log(`UNLINK ${info.renderPath}`);
+            await unlinkVPath(config, info);
         } catch (e) {
             documents.emit('error', {
                 code: 'unlink',

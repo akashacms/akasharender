@@ -723,15 +723,34 @@ export class FileCache extends EventEmitter {
         info.stack = undefined;
 
         let coll = this.getCollection();
-        // This might work
-        coll.update({
+
+        // Going by the LokiJS examples, the
+        // update workflow is to:
+        // 1. retrieve a document -- which contains a $loki member
+        // 2. making changes to that document
+        // 3. call update
+        //
+        // This method is receiving a new document that is
+        // supposed to be an update to one already in the database.
+        // Because of how FileCache works, the documents will
+        // be have the same structure, and any changes are
+        // what needs to be updated.
+        //
+        // Hence, we use "findOne" to retrieve the document.
+        // We copy its $loki value into the document we're given.
+        // The update function then identifies what to update
+        // based on the $loki value we supplied.
+
+        let orig = coll.findOne({
             vpath: {
                 $eq: info.vpath
             },
             mounted: {
                 $eq: info.mounted
             }
-        }, info);
+        });
+        info.$loki = orig.$loki;
+        coll.update(info);
 
         await this.config.hookFileChanged(collection, info);
     }
