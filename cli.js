@@ -29,6 +29,8 @@ const path      = require('path');
 const util      = require('util');
 const data      = require('./data');
 
+const _watchman = import('./cache/watchman.mjs');
+
 process.title = 'akasharender';
 program.version('0.7.5');
 
