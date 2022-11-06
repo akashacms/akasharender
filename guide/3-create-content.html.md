@@ -41,6 +41,7 @@ Each Renderer processes one or more file-types, as determined by the file extens
 Type | Extension | Description
 -----|-----------|------------
 Markdown | `example.html.md` | A Markdown file, that produces HTML.
+Markdoc | `example.html.markdoc` | Markdown syntax, extended with other tags, produces HTML.
 AsciiDoc | `example.html.adoc` | An AsciiDoc file, that produces HTML.
 EJS | `example.html.ejs` or `example.php.ejs` | for HTML, or PHP, with EJS markup, that produces HTML or PHP.
 Liquid | `example.html.liquid` | For HTML, with Liquid markup, produces HTML
@@ -189,6 +190,7 @@ With a suitable page layout template (see below) this renders these YouTube vide
 Support for metadata variables in renderer
 
 * MarkdownRenderer: No
+* MarkdocRenderer: Yes - using `{% $variable %}`
 * EJSRenderer: Can substitute variables into rendered output
 * LiquidRenderer: Can substitute variables into rendered output
 * NunjucksRenderer: Can substitute variables into rendered output
