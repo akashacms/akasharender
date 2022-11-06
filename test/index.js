@@ -1485,6 +1485,27 @@ describe('JSON document', function() {
     }); */
 });
 
+describe('Markdoc document', function() {
+    const checkMarkdoc = (html, $) => {
+
+        assert.exists(html, 'result exists');
+        assert.isString(html, 'result isString');
+
+        assert.equal($('article#original').length, 1);
+        assert.equal($('h1#overview').length, 1);
+        assert.include($('h1#overview').html(), 'Markdoc test using the standard Markdown test');
+        assert.equal($('ul li:contains("If True")').length, 1);
+        assert.equal($('pre[data-language="bash"]:contains("WORLD")').length, 1);
+        assert.equal($('pre:contains("A longfence")').length, 1);
+    };
+
+    it('should render Markdoc document', async function() {
+        let { html, $ } = await akasha.readRenderedFile(config, 'markdoc-test.html');
+        checkMarkdoc(html, $);
+    });
+
+});
+
 describe('AsciiDoc document', function() {
     const checkAsciidoc = (html, $) => {
 
