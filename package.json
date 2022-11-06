@@ -41,7 +41,7 @@
     "mahabhuta": "0.8.x",
     "minimatch": "^3.0.4",
     "relative": "^3.0.x",
-    "@akashacms/renderers": "^0.9.x",
+    "@akashacms/renderers": "0.9.3",
     "rss": "^1.2.x",
     "sharp": "^0.30.x",
     "uuid": "^8.3.x"
