@@ -346,6 +346,22 @@ program
     });
 
 program
+    .command('docs-set-dates <configFN>')
+    .description('Set the aTime and mTime for documents in a site configuration')
+    .action(async (configFN) => {
+        // console.log(`render: akasha: ${util.inspect(akasha)}`);
+        try {
+            const config = require(path.join(process.cwd(), configFN));
+            let akasha = config.akasha;
+            await akasha.setup(config);
+            console.log(akasha.filecache.documents.setTimes());
+            await akasha.closeCaches();
+        } catch (e) {
+            console.error(`docs-set-dates command ERRORED ${e.stack}`);
+        }
+    });
+
+program
     .command('docinfo <configFN> <docFN>')
     .description('Show information about a document in a site configuration')
     .action(async (configFN, docFN) => {
