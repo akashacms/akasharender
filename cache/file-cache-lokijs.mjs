@@ -23,6 +23,7 @@ import path from 'path';
 import util from 'util';
 import url  from 'url';
 import { promises as fs } from 'fs';
+import FS from 'fs';
 import EventEmitter from 'events';
 import minimatch from 'minimatch';
 import fastq from 'fastq';
@@ -661,20 +662,41 @@ export class FileCache extends EventEmitter {
 
                 info.metadata.rendered_date = info.stats.mtime;
 
+                const parsePublDate = (date) => {
+                    const parsed = Date.parse(date);
+                    if (! isNaN(parsed)) {
+                        info.metadata.publicationDate = new Date(parsed);
+                        info.publicationDate = info.metadata.publicationDate;
+                    }
+                };
+
+                if (info.docMetadata
+                 && typeof info.docMetadata.publDate === 'string') {
+                    parsePublDate(info.docMetadata.publDate);
+                }
+                if (info.docMetadata
+                 && typeof info.docMetadata.publicationDate === 'string') {
+                    parsePublDate(info.docMetadata.publicationDate);
+                }
+
                 if (!info.metadata.publicationDate) {
                     var dateSet = false;
                     if (info.docMetadata && info.docMetadata.publDate) {
-                        const parsed = Date.parse(info.docMetadata.publDate);
-                        if (! isNaN(parsed)) {
-                            info.metadata.publicationDate = new Date(parsed);
-                        }
+                        parsePublDate(info.docMetadata.publDate);
+                        dateSet = true;
+                    }
+                    if (info.docMetadata
+                     && typeof info.docMetadata.publicationDate === 'string') {
+                        parsePublDate(info.docMetadata.publicationDate);
                         dateSet = true;
                     }
                     if (! dateSet && info.stats && info.stats.mtime) {
                         info.metadata.publicationDate = new Date(info.stats.mtime);
+                        console.log(`${info.vpath} metadata.publicationDate ${info.metadata.publicationDate} set from stats.mtime`);
                     }
                     if (!info.metadata.publicationDate) {
                         info.metadata.publicationDate = new Date();
+                        console.log(`${info.vpath} metadata.publicationDate ${info.metadata.publicationDate} set from current time`);
                     }
                 }
         
@@ -1142,6 +1164,47 @@ export class FileCache extends EventEmitter {
         return mapped;
     } */
 
+    setTimes() {
+        const fcache = this;
+        const vpathsSeen = new Set();
+        const coll = this.getCollection();
+        const ret = coll.chain()
+        .where(function(obj) {
+            if (fcache.ignoreFile(obj)) {
+                // console.log(`OOOOGA!  In paths  MUST IGNORE ${obj.vpath}`);
+                return false;
+            }
+            if (vpathsSeen.has(obj.vpath)) {
+                return false;
+            } else {
+                vpathsSeen.add(obj.vpath);
+                return true;
+            }
+        })
+        .data({
+            removeMeta: true
+        });
+        for (const obj of ret) {
+
+            const setter = async (date) => {
+                const parsed = new Date(Date.parse(date));
+                if (! isNaN(parsed)) {
+                    FS.utimesSync(
+                        obj.fspath,
+                        parsed,
+                        parsed
+                    );
+                } 
+            }
+            if (obj.docMetadata && obj.docMetadata.publDate) {
+                setter(obj.docMetadata.publDate);
+            }
+            if (obj.docMetadata && obj.docMetadata.publicationDate) {
+                setter(obj.docMetadata.publicationDate);
+            }
+        }
+    }
+
     paths() {
         const fcache = this;
         const vpathsSeen = new Set();
@@ -1335,7 +1398,8 @@ export class FileCache extends EventEmitter {
             selector.rendersToHTML = { '$eq': options.rendersToHTML };
         }
 
-        // console.log(`search `, selector);
+        console.log(`search `, selector);
+        let counter1 = 0;
 
         let coll = this.getCollection();
         const ret = coll.chain().find(selector)
@@ -1455,19 +1519,38 @@ export class FileCache extends EventEmitter {
 
             return true;
         })
+        // .where(function(obj) {
+        //     if (counter1 > 150) return true;
+        //     counter1++
+        //     console.log(`BEFORE SORT ${obj.vpath} ${obj.publicationDate}`);
+        //     return true;
+        // });
+
+        
 
         let ret2;
         if (typeof options.sortBy === 'string') {
-            const sortDesc = options.sortByDescending === true
-                        ? [ [ options.sortBy, true ] ]
-                        : [ options.sortBy ];
-            // console.log(`search sortBy ${options.sortBy} desc ${options.sortByDescending}`, sortDesc);
-            ret2 = ret.compoundsort(sortDesc);
+            ret2 = ret.simplesort(options.sortBy, {
+                desc: options.sortByDescending === true ? true : false
+            });
+            // const sortDesc = options.sortByDescending === true
+            //             ? [ [ options.sortBy, true ] ]
+            //             : [ options.sortBy ];
+            // // console.log(`search sortBy ${options.sortBy} desc ${options.sortByDescending}`, sortDesc);
+            // ret2 = ret.compoundsort(sortDesc);
         } else if (typeof options.sortFunc === 'function') {
             ret2 = ret.sort(options.sortFunc);
         } else {
             ret2 = ret;
         }
+
+        // counter1 = 0;
+        // ret2.where(function(obj) {
+        //     if (counter1 > 150) return true;
+        //     counter1++
+        //     console.log(`AFTER SORT ${obj.vpath} ${obj.publicationDate}`);
+        //     return true;
+        // });
 
         if (typeof options.offset === 'number') {
             // console.log(`search offset ${options.offset}`);

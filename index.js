@@ -42,9 +42,14 @@ const mahaPartial = require('mahabhuta/maha/partial');
 exports.Renderers = Renderers;
 exports.Renderer = Renderers.Renderer;
 
-// There doesn't seem to be an official registration
+// There doesn't seem to be an official MIME type registered
+// for AsciiDoctor
 // per: https://asciidoctor.org/docs/faq/
 // per: https://github.com/asciidoctor/asciidoctor/issues/2502
+//
+// As of November 6, 2022, the AsciiDoctor FAQ said they are
+// in the process of registering a MIME type for `text/asciidoc`.
+// The MIME type we supply has been updated.
 //
 // This also seems to be true for the other file types.  We've made up
 // some MIME types to go with each.
@@ -63,8 +68,12 @@ exports.Renderer = Renderers.Renderer;
 //
 // There's a thought that this should be handled in the Renderer
 // implementations.  But it's not certain that's correct.
+//
+// Now that the Renderers are in `@akashacms/renderers` should
+// these definitions move to that package?
 
-mimedefine({'text/x-asciidoc': [ 'adoc', 'asciidoc' ]});
+mimedefine({'text/asciidoc': [ 'adoc', 'asciidoc' ]});
+mimedefine({'text/x-markdoc': [ 'markdoc' ]});
 mimedefine({'text/x-ejs': [ 'ejs']});
 mimedefine({'text/x-nunjucks': [ 'njk' ]});
 mimedefine({'text/x-handlebars': [ 'handlebars' ]});

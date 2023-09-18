@@ -119,6 +119,12 @@ Perhaps "yargs" is better?
 
 Maybe cli.js can be rewritten as a zx script?
 
+# Image rewriting with Sharp
+
+Make sure we can rewrite to WEBP
+
+Simple script interface that turns into Sharp commands - e.g. for compositing - Maybe this can be a separate tool.
+
 # Supporting responsive image formats
 
 Nowadays we can write something like the following to instruct web browsers to use optional image sizes or formats.
