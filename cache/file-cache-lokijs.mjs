@@ -1214,14 +1214,14 @@ export class FileCache extends EventEmitter {
         const vpathsSeen = new Set();
         const coll = this.getCollection();
         const ret = coll.chain()
-        .find({
-            'renderPath': { '$regex': /\.html$/ }
-        })
-        // .simplesort('publicationTime' /* , { desc: false } */)
-        .where(function(obj) {
-            return obj.renderPath.endsWith('index.html')
-                ? false : true;
-        })
+        // .find({
+        //     'renderPath': { '$regex': /\.html$/ }
+        // })
+        // // .simplesort('publicationTime' /* , { desc: false } */)
+        // .where(function(obj) {
+        //     return obj.renderPath.endsWith('index.html')
+        //         ? false : true;
+        // })
         .where(function(obj) {
             if (fcache.ignoreFile(obj)) {
                 // console.log(`OOOOGA!  In paths  MUST IGNORE ${obj.vpath}`);
