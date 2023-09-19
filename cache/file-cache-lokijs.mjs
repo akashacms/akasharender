@@ -550,7 +550,7 @@ export class FileCache extends EventEmitter {
         if (info.stats && info.stats.mtime) {
             info.publicationDate = new Date(info.stats.mtime);
             info.publicationTime = info.publicationDate.getTime();
-
+            info.mtime = info.publicationDate;
         }
 
         let renderer = this.config.findRendererPath(info.vpath);
@@ -667,6 +667,7 @@ export class FileCache extends EventEmitter {
                     if (! isNaN(parsed)) {
                         info.metadata.publicationDate = new Date(parsed);
                         info.publicationDate = info.metadata.publicationDate;
+                        info.publicationTime = info.publicationDate.getTime();
                     }
                 };
 
@@ -692,14 +693,17 @@ export class FileCache extends EventEmitter {
                     }
                     if (! dateSet && info.stats && info.stats.mtime) {
                         info.metadata.publicationDate = new Date(info.stats.mtime);
-                        console.log(`${info.vpath} metadata.publicationDate ${info.metadata.publicationDate} set from stats.mtime`);
+                        info.publicationDate = info.metadata.publicationDate;
+                        info.publicationTime = info.publicationDate.getTime();
+                        // console.log(`${info.vpath} metadata.publicationDate ${info.metadata.publicationDate} set from stats.mtime`);
                     }
                     if (!info.metadata.publicationDate) {
                         info.metadata.publicationDate = new Date();
-                        console.log(`${info.vpath} metadata.publicationDate ${info.metadata.publicationDate} set from current time`);
+                        info.publicationDate = info.metadata.publicationDate;
+                        info.publicationTime = info.publicationDate.getTime();
+                        // console.log(`${info.vpath} metadata.publicationDate ${info.metadata.publicationDate} set from current time`);
                     }
                 }
-        
             }
             
             /* -- For reference, the old code
@@ -1210,6 +1214,14 @@ export class FileCache extends EventEmitter {
         const vpathsSeen = new Set();
         const coll = this.getCollection();
         const ret = coll.chain()
+        .find({
+            'renderPath': { '$regex': /\.html$/ }
+        })
+        // .simplesort('publicationTime' /* , { desc: false } */)
+        .where(function(obj) {
+            return obj.renderPath.endsWith('index.html')
+                ? false : true;
+        })
         .where(function(obj) {
             if (fcache.ignoreFile(obj)) {
                 // console.log(`OOOOGA!  In paths  MUST IGNORE ${obj.vpath}`);
@@ -1225,15 +1237,39 @@ export class FileCache extends EventEmitter {
         .data({
             removeMeta: true
         })
+        .sort((a, b) => {
+            let aDate = a.metadata && a.metadata.publicationDate
+                ? a.metadata.publicationDate
+                : a.publicationDate;
+            let bDate = b.metadata && b.metadata.publicationDate
+                ? b.metadata.publicationDate
+                : b.publicationDate;
+            if (aDate === bDate) return 0;
+            if (aDate > bDate) return -1;
+            if (aDate < bDate) return 1;
+            // if (a.metadata.publicationDate === b.metadata.publicationDate) return 0;
+            // if (a.metadata.publicationDate > b.metadata.publicationDate) return -1;
+            // if (a.metadata.publicationDate < b.metadata.publicationDate) return 1;
+        })
         .map(obj => {
             return  {
                 fspath: obj.fspath,
                 vpath: obj.vpath,
                 renderPath: obj.renderPath,
                 mountPoint: obj.mountPoint,
-                dirMountedOn: obj.dirMountedOn
+                dirMountedOn: obj.dirMountedOn,
+                // title: obj.metadata.title,
+                docMetadata: obj.docMetadata,
+                metadata: obj.metadata,
+                // docMetadataDate: obj.docMetadata && obj.docMetadata.publicationDate 
+                //         ? obj.docMetadata.publicationDate.toISOString()
+                //         : '?????',
+                // metadataDate: obj.metadata.publicationDate.toISOString(),
+                publicationDate: obj.publicationDate.toISOString(),
+                publicationTime: obj.publicationTime
             };
         });
+        // .reverse();
 
         // console.log(`dbpaths ${ret.length}`);
         // console.log(`dbpaths ${util.inspect(ret)}`);
@@ -1398,7 +1434,7 @@ export class FileCache extends EventEmitter {
             selector.rendersToHTML = { '$eq': options.rendersToHTML };
         }
 
-        console.log(`search `, selector);
+        // console.log(`search `, selector);
         let counter1 = 0;
 
         let coll = this.getCollection();
@@ -1530,14 +1566,23 @@ export class FileCache extends EventEmitter {
 
         let ret2;
         if (typeof options.sortBy === 'string') {
-            ret2 = ret.simplesort(options.sortBy, {
-                desc: options.sortByDescending === true ? true : false
-            });
-            // const sortDesc = options.sortByDescending === true
-            //             ? [ [ options.sortBy, true ] ]
-            //             : [ options.sortBy ];
-            // // console.log(`search sortBy ${options.sortBy} desc ${options.sortByDescending}`, sortDesc);
-            // ret2 = ret.compoundsort(sortDesc);
+            // ret2 = ret.simplesort(options.sortBy, {
+            //     desc: options.sortByDescending === true ? true : false
+            // });
+            // ret2 = ret.sort(function(a, b) {
+            //     if (a[options.sortBy] === b[options.sortBy]) return 0;
+            //     if (a[options.sortBy] > b[options.sortBy]) {
+            //         return options.sortByDescending === true ? 1 : -1;
+            //     }
+            //     if (a[options.sortBy] < b[options.sortBy]) {
+            //         return options.sortByDescending === false ? -1 : 1;
+            //     }
+            // });
+            const sortDesc = options.sortByDescending === true
+                        ? [ [ options.sortBy, true ] ]
+                        : [ options.sortBy ];
+            // console.log(`search sortBy ${options.sortBy} desc ${options.sortByDescending}`, sortDesc);
+            ret2 = ret.compoundsort(sortDesc);
         } else if (typeof options.sortFunc === 'function') {
             ret2 = ret.sort(options.sortFunc);
         } else {
@@ -1563,6 +1608,26 @@ export class FileCache extends EventEmitter {
         let ret3 = ret2.data({
             removeMeta: true
         });
+
+        if (typeof options.sortBy === 'string'
+         && (options.sortBy === 'publicationDate'
+           || options.sortBy === 'publicationTime')) {
+
+            ret3 = ret3.sort((a, b) => {
+                let aDate = a.metadata && a.metadata.publicationDate
+                    ? a.metadata.publicationDate
+                    : a.publicationDate;
+                let bDate = b.metadata && b.metadata.publicationDate
+                    ? b.metadata.publicationDate
+                    : b.publicationDate;
+                if (aDate === bDate) return 0;
+                if (aDate > bDate) return -1;
+                if (aDate < bDate) return 1;
+                // if (a.metadata.publicationDate === b.metadata.publicationDate) return 0;
+                // if (a.metadata.publicationDate > b.metadata.publicationDate) return -1;
+                // if (a.metadata.publicationDate < b.metadata.publicationDate) return 1;
+            })
+        }
 
         /* console.log(`select after data() ${ret3.length} is array ${Array.isArray(ret3)}`, ret3.map(item => {
             return {
