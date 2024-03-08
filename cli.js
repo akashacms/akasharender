@@ -200,6 +200,7 @@ program
     .option('--username <username>', 'Github user name to use')
     .option('--email <email>', 'Github user email to use')
     .option('--nopush', 'Do not push to Github, only commit')
+    .option('--cname <domain>', 'Write out a CNAME file with the domain name')
     .action(async (configFN, cmdObj) => {
         // console.log(`render: akasha: ${util.inspect(akasha)}`);
         try {
@@ -217,6 +218,9 @@ program
             }
             if (cmdObj.remote) {
                 options.remote = cmdObj.remote;
+            }
+            if (cmdObj.cname) {
+                options.cname = cmdObj.cname;
             }
             if (cmdObj.tag) {
                 options.tag = cmdObj.tag;
@@ -236,6 +240,9 @@ program
             if (cmdObj.nopush) {
                 options.push = false;
             }
+
+            options.nojekyll = true;
+            options.dotfiles = true;
 
             // console.log(`gh-pages-publish options ${config.renderDestination} cmdObj ${util.inspect(cmdObj)} options ${util.inspect(options)}`);
 
