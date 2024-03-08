@@ -25,7 +25,7 @@ import url  from 'url';
 import { promises as fs } from 'fs';
 import FS from 'fs';
 import EventEmitter from 'events';
-import minimatch from 'minimatch';
+import { minimatch } from 'minimatch';
 import fastq from 'fastq';
 
 
