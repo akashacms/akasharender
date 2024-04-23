@@ -4,13 +4,10 @@ import { promises as fsp } from 'fs';
 import akasha from '../index.js';
 import * as filecache from '../cache/file-cache-lokijs.mjs';
 import minimatch from 'minimatch';
-import Chai   from 'chai';
+import { assert }   from 'chai';
 
-const assert = Chai.assert;
-
-// See https://techsparx.com/nodejs/esnext/dirname-es-modules.html
-const moduleURL = new URL(import.meta.url);
-const __dirname = path.dirname(moduleURL.pathname);
+const __filename = import.meta.filename;
+const __dirname = import.meta.dirname;
 
 let config;
 

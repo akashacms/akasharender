@@ -1,12 +1,16 @@
 
-const { promisify } = require('util');
-const akasha   = require('../index');
-const { assert } = require('chai');
-const sizeOf = promisify(require('image-size'));
+import { promisify } from 'node:util';
+import { default as akasha } from '../index.js';
+import { assert } from 'chai';
+import { default as _image_size } from 'image-size';
+const sizeOf = promisify(_image_size);
+const _filecache = await import('../cache/file-cache-lokijs.mjs');
 // Note this is an ES6 module and to use it we must 
 // use an async function along with the await keyword
-const _filecache = import('../cache/file-cache.mjs');
+// const _filecache = import('../cache/file-cache.mjs');
 
+const __filename = import.meta.filename;
+const __dirname = import.meta.dirname;
 
 // This is about hosting a website on a subdirectory
 // The renderDestination will still have the root of the files
@@ -23,7 +27,7 @@ describe('build rebased site', function() {
         config_rebase = new akasha.Configuration();
         config_rebase.rootURL("https://example.akashacms.com/rebase/to/");
         config_rebase.configDir = __dirname;
-        config_rebase.use(require('./test-plugin/plugin.js'));
+        config_rebase.use((await import('./test-plugin/plugin.js')).default);
         config_rebase.addLayoutsDir('layouts')
             .addLayoutsDir('layouts-extra')
             .addDocumentsDir('documents')
@@ -113,7 +117,7 @@ describe('build rebased site', function() {
 describe('rebased stylesheets, javascripts', function() {
     describe('simple-style-javascript.html', function() {
 
-        checkStyleJS = (html, $) => {
+        let checkStyleJS = (html, $) => {
 
             assert.exists(html, 'result exists');
             assert.isString(html, 'result isString');
@@ -146,7 +150,7 @@ describe('rebased stylesheets, javascripts', function() {
     
     describe('metadata-style-javascript.html', function() {
 
-        checkMetadataStyleJS = (html, $) => {
+        let checkMetadataStyleJS = (html, $) => {
 
             assert.exists(html, 'result exists');
             assert.isString(html, 'result isString');

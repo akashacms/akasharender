@@ -1,15 +1,16 @@
 
-const fs = require('fs').promises;
-const path = require('path');
-const { promisify } = require('util');
-const akasha   = require('../index');
+import { promises as fs } from 'node:fs';
+import path from 'node:path';
+import { promisify } from 'node:util';
+import { default as akasha } from '../index.js';
 const mahabhuta = akasha.mahabhuta;
-const { assert } = require('chai');
-const sizeOf = promisify(require('image-size'));
-// Note this is an ES6 module and to use it we must 
-// use an async function along with the await keyword
-const _filecache = import('../cache/file-cache-lokijs.mjs');
+import { assert } from 'chai';
+import { default as _image_size } from 'image-size';
+const sizeOf = promisify(_image_size);
+const _filecache = await import('../cache/file-cache-lokijs.mjs');
 
+const __filename = import.meta.filename;
+const __dirname = import.meta.dirname;
 
 let config;
 
@@ -20,7 +21,9 @@ describe('build site', function() {
         config = new akasha.Configuration();
         config.rootURL("https://example.akashacms.com");
         config.configDir = __dirname;
-        config.use(require('./test-plugin/plugin.js'));
+        const tp = (await import('./test-plugin/plugin.js')).default;
+        // console.log(tp);
+        config.use(tp);
         config
             .addAssetsDir('assets2')
             .addAssetsDir('assets')
@@ -58,7 +61,7 @@ describe('build site', function() {
         config.setConcurrency(5);
         config.prepare();
 
-        require('./final-mahabhuta.js').addFinalMahabhuta(config, mahabhuta);
+        (await import('./final-mahabhuta.js')).default.addFinalMahabhuta(config, mahabhuta);
         } catch (err) {
             console.log(err);
         }
@@ -121,7 +124,7 @@ describe('build site', function() {
 describe('stylesheets, javascripts', function() {
     describe('simple-style-javascript.html', function() {
 
-        checkStyleJS = (html, $) => {
+        let checkStyleJS = (html, $) => {
 
             assert.exists(html, 'result exists');
             assert.isString(html, 'result isString');
@@ -152,7 +155,7 @@ describe('stylesheets, javascripts', function() {
     
     describe('metadata-style-javascript.html', function() {
 
-        checkMetadataStyleJS = (html, $) => {
+        let checkMetadataStyleJS = (html, $) => {
 
             assert.exists(html, 'result exists');
             assert.isString(html, 'result isString');
