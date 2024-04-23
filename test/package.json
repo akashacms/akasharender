@@ -5,11 +5,11 @@
   "main": "index.js",
   "scripts": {
     "test": "npm-run-all test-normal test-rebased test-cache test-absolute",
-    "test-normal": "mocha ./index",
-    "test-rebased": "mocha ./rebased",
+    "test-normal": "mocha ./index.mjs",
+    "test-rebased": "mocha ./rebased.mjs",
     "test-cache": "mocha ./test-cache.mjs",
-    "test-bad-formatting": "mocha ./bad-formatting.js",
-    "test-absolute": "mocha ./test-relative.js",
+    "test-bad-formatting": "mocha ./bad-formatting.mjs",
+    "test-absolute": "mocha ./test-relative.mjs",
     "build": "npm-run-all build:copy build:render",
     "build:copy": "node ../cli.js copy-assets config-normal.js",
     "build:render": "node ../cli.js render config-normal.js",
@@ -22,11 +22,9 @@
   "author": "",
   "license": "ISC",
   "dependencies": {
-    "chai": "^4.3.6",
-    "gh-pages": "^3.1.0",
-    "image-size": "^0.8.1",
-    "live-server": "^1.2.1",
-    "mocha": "^10.0.0",
+    "chai": "^5.1.x",
+    "image-size": "^1.1.x",
+    "mocha": "^10.x.0",
     "npm-run-all": "^4.1.5"
   }
 }
