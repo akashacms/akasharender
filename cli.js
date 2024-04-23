@@ -21,7 +21,7 @@
 
 'use strict';
 
-const program   = require('commander');
+const { program } = require('commander');
 const ghpages   = require('gh-pages');
 const fs        = require('fs');
 const fsp       = require('fs/promises');
