@@ -111,6 +111,9 @@ const remapdirs = dirz => {
                 baseMetadata: {}
             };
         } else {
+            if (!dir.dest) {
+                throw new Error(`remapdirs invalid mount specification ${util.inspect(dir)}`);
+            }
             return {
                 mounted: dir.src,
                 mountPoint: dir.dest,
