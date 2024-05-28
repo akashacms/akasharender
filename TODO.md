@@ -2,16 +2,83 @@
 
 This should probably be kept in GitHub issues -- eventually
 
+# Replacing LokiJS with MongoDB using mongodb-memory-server
 
-# Replace sightmap
+The `mongodb-memory-server` project automatically instantiates a MongoDB that works only in memory.  It was meant for testing.  But it could serve AkashaRender as well, since LokiJS serves as an in-memory database which is dispensed when done.
 
-This is an ancient package, that basically see's zero usage.  Surely there is a better package.
+The problem with LokiJS is the lack of capabilities, and that its development halted over 2 years ago.  It does not have anything like aggregation pipelines, for example.
 
-Bonus points for something that builds Google News XML files
+Otherwise it can be replaced with some intelligent data structures?
 
-https://www.npmjs.com/package/sitemap - Looks very modern and comprehensive
+For example each item scanned by StackedDirs/FileCache can be in
 
-https://www.npmjs.com/package/easy-sitemap - Much lighter weight
+```js
+  Map<string, fileInfo> // where the string is the vpath
+```
+
+Other indexes to this could be Map from various values to the vpath
+
+```js
+Map<dirNameString, Array<vpath>> // string for dirnames, to a list of vpaths in that dir
+```
+
+Or, maybe that approach won't work since it is so brittle and takes a lot to keep up the indexing.
+
+# Move to Bootstrap v5 for Bootstrap theme
+
+Examples site would have a sub-area for Bootstrap examples
+
+The existing Bootstrap Theme plugin needs to have an npm tag "bootstrap4" and remain frozen.  That also requires a Git branch for Bootstrap4.
+
+1. Git branch - Bootstrap4 - npm branch - bootstrap4 - to freeze it at compatibility with 0.9 release
+2. On main branch, move to Bootstrap 5
+
+# Move to relying more on templates and less on custom elements
+
+The header metadata tags - they're already templates, why do they require a custom element.
+
+Each custom element takes some CPU to process the element.  Reducing the number of custom elements will reduce execution time.
+
+# In StackedDirs create a schema for file data, and automatic validation
+
+Prevent failures by preventing creation of bad file information
+
+In AkashaRender/FileCache extend that schema, and simplify the data structure.  Currently there are many special cases.
+
+Define types for these objects so that VSCode can intelligently assist with writing code.
+
+# Productize the DIY Website for open source projects concept
+
+NAME: PublishTheDocs -- play on ReadTheDocs ??
+
+Make sure all components are complete enough to have real releases.
+
+Goal for an open source project:
+
+* Website w/ documentation, blog, e-book, API docs, etc - whatever is required by software projects
+* e-Books which are easily bundled as EPUB in addition to display on the web
+* Study the ReadTheDocs user experience for an online EPUB viewer
+* Port a ReadTheDocs theme for use with EPUB, or else a Jekyll theme
+* Easily usable on GitHub pages
+* Hence easily managed on GitHub
+* Also support for Gitea and GitLab
+
+Everything is close to product-ready.  It doesn't have to be fully ready to start showing folks how to use it.
+
+Record videos about usage - on YouTube
+
+Write articles that end up on Medium and published to ITNEXT
+
+# Implementing an article style where a parallel pane automatically scrolls through code.
+
+See: https://annotate.dev/p/hello-world/learn-oauth-2-0-by-building-your-own-oauth-client-U2HaZNtvQojn4F
+
+This is a service, `annotate.dev`, for hosting articles that have code in a sidebar...?
+
+Anyway, it seems this can be implemented in Bootstrap using Scrollspy: https://getbootstrap.com/docs/5.3/components/scrollspy/
+
+The idea is as the reader scrolls through the article, that the sidebar automatically shows related stuff.
+
 
 # Highlight.JS using JS in the browser
 
@@ -44,13 +111,78 @@ https://developers.facebook.com/tools/debug/
 </head>
 ```
 
+# Metadata for the FediVerse
+
+https://en.wikipedia.org/wiki/Fediverse
+
+https://en.wikipedia.org/wiki/ActivityPub
+
+The idea is for an AkashaCMS site to be usable in FediVerse.  Hopefully there is a comments system which can be used.
+
+Example for Eleventy -- https://lewisdale.dev/post/you-can-be-friends-with-my-blog/
+
+https://lewisdale.dev/post/get-your-eleventy-site-onto-the-fediverse/
+
+https://github.com/LewisDaleUK/eleventy-plugin-activity-pub
+
+This talks about generating a file where one purpose is to point to a WebFinger file.  WebFinger is a well-known protocol.
+
+https://maho.dev/2024/02/a-guide-to-implement-activitypub-in-a-static-site-or-any-website/ -- This is a complete guide on implementing ActivityPub on a static website platform.
+
+https://book.micro.blog/activitypub/ -- Explanation of the protocol pieces.  https://book.micro.blog/ -- Full book about micro-blogging and more.
+
+https://www.theverge.com/24063290/fediverse-explained-activitypub-social-media-open-protocol
+
+https://dev.to/thasmin/getting-started-with-activitypub-2mgm
+
+Lists of tools:
+
+* https://github.com/BasixKOR/awesome-activitypub
+* https://codeberg.org/fediverse/delightful-activitypub-development/
+
+https://activitypub.ghost.org/
+
+https://activitypub.rocks/ -- Documentation, tools, etc
+
+Wordpress
+
+* https://wedistribute.org/2023/09/connect-wordpress-to-the-fediverse/
+* https://jseggers.com/technology/how-to-set-up-activitypub-for-self-hosted-wordpress-sites/
+* https://fedi.tips/wordpress-turning-your-blog-into-a-fediverse-server/
+* https://andreas.heigl.org/2022/10/30/tweaking-a-wordpress-blog-for-the-fediverse/
+
+WriteFreely -- https://writefreely.org/
+
+https://github.com/tsileo/microblog.pub
+
+https://github.com/oelna/microblog -- Simple PHP site for activitypub etc
+
+Node.js
+
+* https://www.npmjs.com/search?q=fediverse
+* https://www.npmjs.com/package/megalodon
+* https://www.npmjs.com/package/fedi-get-key
+* https://www.npmjs.com/package/@fedify/markdown-it-mention
+* https://www.npmjs.com/package/masto
+* https://www.npmjs.com/package/@fedify/fedify
+* https://www.npmjs.com/package/@musakui/fedi
+* https://www.npmjs.com/package/@fedikit/nodeinfo
+* https://www.npmjs.com/search?q=%40fedikit
+* https://www.npmjs.com/package/peertube-plugin-hive-tube
+* https://community.nodebb.org/category/30/activitypub
+* https://github.com/immers-space/activitypub-express
+
+https://join-lemmy.org/
+
+Specs
+
+* https://w3c.github.io/activitypub/
+
+Otherwise - Emote for commenting - https://www.ezoic.com/posts/emote-free-comments-section-for-websites/
+
 # Icons
 
 https://humbleicons.com/
-
-# Front end build tool
-
-https://vitejs.dev/
 
 
 # Using gh-pages w/ GitHub token, or GitHub actions
@@ -112,12 +244,6 @@ The goal is:
 # Convert some or all code to TypeScript and/or ES6
 
 It's the way of the future.  AkashaRender has some needs for advanced data type support.
-
-# Revisit the choice of Commander in cli.js
-
-Perhaps "yargs" is better?
-
-Maybe cli.js can be rewritten as a zx script?
 
 # Image rewriting with Sharp
 
