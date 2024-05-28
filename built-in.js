@@ -19,7 +19,7 @@
 
 'use strict';
 
-const fs    = require('fs-extra');
+const fsp   = require('node:fs/promises');
 const url   = require('url');
 const path  = require('path');
 const util  = require('util');
@@ -185,7 +185,7 @@ module.exports = class BuiltInPlugin extends Plugin {
                 }
 
                 // Make sure the destination directory exists
-                await fs.mkdir(path.dirname(resizedest), { recursive: true });
+                await fsp.mkdir(path.dirname(resizedest), { recursive: true });
                 await resized.toFile(resizedest);
             } catch (e) {
                 throw new Error(`built-in: Image resize failed for ${srcfile} (toresize ${util.inspect(toresize)} found ${util.inspect(found)}) because ${e}`);
@@ -456,7 +456,7 @@ class CodeEmbed extends mahabhuta.CustomElement {
             throw new Error(`code-embed file-name ${fn} does not refer to usable file`);
         }
 
-        const txt = await fs.readFile(found.fspath, 'utf8');
+        const txt = await fsp.readFile(found.fspath, 'utf8');
         let $ = mahabhuta.parse(`<pre><code></code></pre>`);
         if (lang && lang !== '') {
             $('code').addClass(lang);
