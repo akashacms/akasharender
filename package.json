@@ -30,6 +30,7 @@
     "akasharender": "cli.js"
   },
   "dependencies": {
+    "@akashacms/renderers": "^0.9.x",
     "@akashacms/stacked-dirs": "akashacms/stacked-directories",
     "commander": "^12.0.x",
     "debug": "^4.3.x",
@@ -41,7 +42,6 @@
     "mahabhuta": "^0.8.x",
     "minimatch": "^9.0.x",
     "relative": "^3.0.x",
-    "@akashacms/renderers": "^0.9.x",
     "rss": "^1.2.x",
     "sharp": "^0.33.x",
     "uuid": "^9.0.x"
