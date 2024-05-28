@@ -101,6 +101,7 @@ program
     .command('render <configFN>')
     .description('Render a site into output directory')
     .option('--quiet', 'Do not print the rendering report')
+    .option('--copy-assets', 'First, copy the assets')
     .option('--results-to <resultFile>', 'Store the results into the named file')
     .option('--perfresults <perfResultsFile>', 'Store the time to render each document')
     .action(async (configFN, cmdObj) => {
@@ -110,6 +111,9 @@ program
             let akasha = config.akasha;
             await akasha.setup(config);
             data.init();
+            if (cmdObj.copyAssets) {
+                await config.copyAssets();
+            }
             let results = await akasha.render(config);
             if (!cmdObj.quiet) {
                 for (let result of results) {
