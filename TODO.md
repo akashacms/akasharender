@@ -2,6 +2,95 @@
 
 This should probably be kept in GitHub issues -- eventually
 
+# Develop wholly new thing - SimpleCMS
+
+Start with the SimpleCMS example and build it out.
+
+Do not use the existing Plugin system.  Instead, use a simplified MahaArray approach.  Develop Arrays for:
+
+* Building HTML headers - JavaScript, CSS, and metadata
+* HTML cleanups
+* Image/Figure
+* Microformats etc
+* Book navigation structure
+* Blog navigation structure
+* Build RSS from collections
+* Build XMLSitemap from collections
+* Partials
+
+Keep these function arrays to the minimum.  Also offer a mechanism to plug-in function arrays.
+
+Use the Renderers package.  But, focus on Nunjucks for fancy stuff using their macro system.
+
+Processing order -- Does MarkdownIT pass through Nunjucks or other template code unmolested?
+
+A "theme" is therefore a collection of CSS/JS and Nunjucks macros.  It should be possible to convert macros from e.g. readthedocs or other sources.
+
+To support querying "collections" there must be a file cache similar to the current thing.  This cache must use strict object schemas and typescript types to simplify writing code.  A "collection" is a query into the file cache.
+
+Most configuration should be done using command-line options.
+
+Configuration for MarkdownIT will require JavaScript.  Instead of plugins like "Footnotes" it should rely on the existing MarkdownIT plugins for that purpose.
+
+
+
+
+1. In Renderers, develop a method for configuring MarkdownIT with native plugins
+2. Possible processing order
+   1. "content-template" header to name the template system for the content?
+   2. First render using the content template system, then render either MarkdownIT or AsciiDoc
+   3. "layout" header to name the layout template, processing the layout template using the content from step 2
+3. Develop file cache system on top of Stacked Dirs
+   1. Store file information along with in-memory indexes
+   2. Query mechanism e.g. for "collections"
+4. 
+
+
+# Collapse some of the plugins into akashacms-base or -builtin?
+
+For example, why is the Breadcrumbs tag a separate plugin?  The footnotes plugin shouldn't exist, and it should instead configure footnote support in Markdown-IT.
+
+A performance boost will be derived by decreasing the number of Mahabhuta tags.
+
+# To replace Mahabhuta tags w/ direct calls from templates ..
+
+Many of the functions implementing Mahabhuta tags are async.  They need to become synchronous to be called from a template.
+
+I tried converting the Breadcrumbs plugin, which failed because it has to be asynchronous.  In part that's because of the asynchronously initialized file information cache.  That function calls indexChain which in turn calls documents.indexChain which in turn calls documents.find -- and `find` is an async function because of something related to Loki.
+
+ACTUALLY -- It is now known how to implement Nunjucks extensions.  Further, it looks to be easy to implement an extension that does asynchronous code.
+
+The code is currently in `built-in.js`.
+
+In the Plugin `configure` function add extensions starting with this:
+
+```js
+const njk = this.config.findRendererName('.html.njk');
+```
+
+This finds the NunjucksRenderer instance.  This object gives us relatively easy access to the Nunjucks API.
+
+```js
+njk.njkenv().addExtension('akstylesheets',
+    new stylesheetsExtension(this.config, this, njk)
+);
+```
+
+This is the function for adding an extension, as the name implies.  Further down that file is the implementation of the extension as a class.  Notice that we're passing the AkashaCMS Configuration object, the Plugin instance, and the NunjucksRenderer object.  Those objects are of use inside the extension.
+
+Yes, it might be interesting to revisit how the FileCache instances are implemented.  The current method is clumsy.  It may be best fixed by converting AkashaRender entirely to EJS or TS modules, especially as newer Node.js is improving compatibility.
+
+# The best candidates for custom tag replacement
+
+The custom tags split into two groups:
+
+1. Stuff that is used in layout templates, or in partials
+2. Stuff that users will do with custom tags
+
+The latter is not really feasible because they're working in Markdown rather than an HTML context.
+
+The stuff for templates, they're working in an HTML context where it's natural to be writing template tags as well as HTML tags.  Those are easy to convert to custom Nunjucks tags.
+
 # Replacing LokiJS with MongoDB using mongodb-memory-server
 
 The `mongodb-memory-server` project automatically instantiates a MongoDB that works only in memory.  It was meant for testing.  But it could serve AkashaRender as well, since LokiJS serves as an in-memory database which is dispensed when done.
@@ -39,7 +128,49 @@ The header metadata tags - they're already templates, why do they require a cust
 
 Each custom element takes some CPU to process the element.  Reducing the number of custom elements will reduce execution time.
 
+# Remove Tag Cloud implementation from plugin-tagged-content, move rest to plugin-builtin
+
+The ability to present tags, and have tagged content, should be a built-in feature.
+
+Remove the tag cloud feature since it is not useful and was a fad from 15 years ago.
+
+Ensure that FileCache tracks documents-with-tags and provides useful functions for retrieving the documents by tag name.  This should already be there.
+
+Instead of creating an index page for every tag, instead have - index page name & list of tag names - as configuration settings.  This also requires a command to list the tags, and to list the indexes (and tags), and to list the tag names that are not on an index page.
+
+Index page generation could be in the base plugin instead of built-in.
+
+
+??????
+Instead, when a document arrives with tags, enter the information into an index Map.
+
+```js
+const tagIndex = new Map<tagName, Array<vpath>>()
+```
+
+This keeps a list for each tag name mapping to a list of vpath's.  But, how to maintain it?
+
+Have to consider
+
+* When the fileCache initially adds a document, recording the tags in that array
+* When the fileCache updates a document, handle the update to tags->vpath mapping
+* When the fileCache deletes a document, handle deleting the tags->vpath mappings
+
+Hence it requires creating a Class to manage the association.  It should have methods:
+
+* recordDocumentTags(documentInfo) --
+* updateDocumentTags(documentInfo) --
+* forgetDocumentTags(documentInfo) --
+/????????????
+
+
 # In StackedDirs create a schema for file data, and automatic validation
+
+UPDATE: Maybe a JSON Schema is not required.  The StackedDirs package exports a class, VPathData, that is well structured.  I've added some comments for documentation.  There is also a type guard function which can enforce correctness.  I've just made a change, to export that function, and to also use it in a few more places.
+
+UPDATE: The remaining task becomes - for code using StackedDirs - that code must know the correct type.  As it is, it's an anonymous object received on an EventEmitter listener.
+
+UPDATE: What's needed is a listener API function that receives typed parameters.  Maybe.
 
 Prevent failures by preventing creation of bad file information
 
