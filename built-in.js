@@ -34,6 +34,8 @@ const cheerio   = require('cheerio');
 const mahabhuta = require('mahabhuta');
 const mahaMetadata = require('mahabhuta/maha/metadata');
 const mahaPartial = require('mahabhuta/maha/partial');
+const Renderers = require('@akashacms/renderers');
+const NunjucksRenderer = Renderers.NunjucksRenderer;
 
 const pluginName = "akashacms-builtin";
 
@@ -91,6 +93,31 @@ module.exports = class BuiltInPlugin extends Plugin {
         // if (!config.builtin) config.builtin = {};
         // if (!config.builtin.suppress) config.builtin.suppress = {};
         this[_plugin_resizequeue] = [];
+
+        // console.log(`Adding testExtension`);
+        const njk = this.config.findRendererName('.html.njk');
+        njk.njkenv().addExtension('akstylesheets',
+            new stylesheetsExtension(this.config, this, njk)
+        );
+        njk.njkenv().addExtension('akheaderjs',
+            new headerJavaScriptExtension(this.config, this, njk)
+        );
+        njk.njkenv().addExtension('akfooterjs',
+            new footerJavaScriptExtension(this.config, this, njk)
+        );
+
+
+        // try {
+        //     njk.njkenv().addExtension('aknjktest', new testExtension());
+        // } catch (err) {
+        //     console.error(err.stack());
+        // }
+        
+        // if (!njk.njkenv().hasExtension('aknjktest')) {
+        //     console.error(`aknjktest extension not added?`);
+        // } else {
+        //     console.log(`aknjktest exists`);
+        // }
     }
 
     get config() { return this[_plugin_config]; }
@@ -218,6 +245,8 @@ module.exports.mahabhutaArray = function(options) {
 };
 
 function _doStylesheets(metadata, options) {
+    // console.log(`_doStylesheets ${util.inspect(metadata)}`);
+
     var scripts;
     if (typeof metadata.headerStylesheetsAdd !== "undefined") {
         scripts = options.config.scripts.stylesheets.concat(metadata.headerStylesheetsAdd);
@@ -894,4 +923,148 @@ class MungedAttrRemover extends mahabhuta.Munger {
         // console.log($element);
         $element.removeAttr('munged');
     }
+}
+
+////////////// Nunjucks Extensions
+
+// From https://github.com/softonic/nunjucks-include-with/tree/master
+
+class stylesheetsExtension {
+    constructor(config, plugin, njkRenderer) {
+        this.tags = [ 'akstylesheets' ];
+        this.config = config;
+        this.plugin = plugin;
+        this.njkRenderer = njkRenderer;
+
+        // console.log(`stylesheetsExtension ${util.inspect(this.tags)} ${util.inspect(this.config)} ${util.inspect(this.plugin)}`);
+    }
+
+    parse(parser, nodes, lexer) {
+        // console.log(`in stylesheetsExtension - parse`);
+        try {
+            // get the tag token
+            var tok = parser.nextToken();
+
+
+            // parse the args and move after the block end. passing true
+            // as the second arg is required if there are no parentheses
+            var args = parser.parseSignature(null, true);
+            parser.advanceAfterBlockEnd(tok.value);
+
+            // parse the body and possibly the error block, which is optional
+            var body = parser.parseUntilBlocks('endstylesheets');
+
+            parser.advanceAfterBlockEnd();
+
+            // See above for notes about CallExtension
+            return new nodes.CallExtension(this, 'run', args, [body]);
+        } catch (err) {
+            console.error(`stylesheetsExtension `, err.stack);
+        }
+    }
+
+    run(context, args, body) {
+        // console.log(`stylesheetsExtension ${util.inspect(context)}`);
+        return this.plugin.doStylesheets(context.ctx);
+    };
+}
+
+class headerJavaScriptExtension {
+    constructor(config, plugin, njkRenderer) {
+        this.tags = [ 'akheaderjs' ];
+        this.config = config;
+        this.plugin = plugin;
+        this.njkRenderer = njkRenderer;
+
+        // console.log(`headerJavaScriptExtension ${util.inspect(this.tags)} ${util.inspect(this.config)} ${util.inspect(this.plugin)}`);
+    }
+
+    parse(parser, nodes, lexer) {
+        // console.log(`in headerJavaScriptExtension - parse`);
+        try {
+            var tok = parser.nextToken();
+            var args = parser.parseSignature(null, true);
+            parser.advanceAfterBlockEnd(tok.value);
+            var body = parser.parseUntilBlocks('endheaderjs');
+            parser.advanceAfterBlockEnd();
+            return new nodes.CallExtension(this, 'run', args, [body]);
+        } catch (err) {
+            console.error(`headerJavaScriptExtension `, err.stack);
+        }
+    }
+
+    run(context, args, body) {
+        // console.log(`headerJavaScriptExtension ${util.inspect(context)}`);
+        return this.plugin.doHeaderJavaScript(context.ctx);
+    };
+}
+
+class footerJavaScriptExtension {
+    constructor(config, plugin, njkRenderer) {
+        this.tags = [ 'akfooterjs' ];
+        this.config = config;
+        this.plugin = plugin;
+        this.njkRenderer = njkRenderer;
+
+        // console.log(`footerJavaScriptExtension ${util.inspect(this.tags)} ${util.inspect(this.config)} ${util.inspect(this.plugin)}`);
+    }
+
+    parse(parser, nodes, lexer) {
+        // console.log(`in footerJavaScriptExtension - parse`);
+        try {
+            var tok = parser.nextToken();
+            var args = parser.parseSignature(null, true);
+            parser.advanceAfterBlockEnd(tok.value);
+            var body = parser.parseUntilBlocks('endfooterjs');
+            parser.advanceAfterBlockEnd();
+            return new nodes.CallExtension(this, 'run', args, [body]);
+        } catch (err) {
+            console.error(`footerJavaScriptExtension `, err.stack);
+        }
+    }
+
+    run(context, args, body) {
+        // console.log(`footerJavaScriptExtension ${util.inspect(context)}`);
+        return this.plugin.doFooterJavaScript(context.ctx);
+    };
+}
+
+function testExtension() {
+    this.tags = [ 'aknjktest' ];
+
+    this.parse = function(parser, nodes, lexer) {
+console.log(`in testExtension - parse`);
+        try {
+            // get the tag token
+            var tok = parser.nextToken();
+
+
+            // parse the args and move after the block end. passing true
+            // as the second arg is required if there are no parentheses
+            var args = parser.parseSignature(null, true);
+            parser.advanceAfterBlockEnd(tok.value);
+
+            // parse the body and possibly the error block, which is optional
+            var body = parser.parseUntilBlocks('error', 'endaknjktest');
+            var errorBody = null;
+
+            if(parser.skipSymbol('error')) {
+                parser.skip(lexer.TOKEN_BLOCK_END);
+                errorBody = parser.parseUntilBlocks('endaknjktest');
+            }
+
+            parser.advanceAfterBlockEnd();
+
+            // See above for notes about CallExtension
+            return new nodes.CallExtension(this, 'run', args, [body, errorBody]);
+        } catch (err) {
+            console.error(`testExtionsion `, err.stack);
+        }
+    };
+
+
+    this.run = function(context, url, body, errorBody) {
+        console.log(`aknjktest ${util.inspect(context)} ${util.inspect(url)} ${util.inspect(body)} ${util.inspect(errorBody)}`);
+    };
+
 }
