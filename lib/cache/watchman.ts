@@ -20,10 +20,10 @@
 import { promises as fs } from 'fs';
 import path from 'path';
 import fastq from 'fastq';
-import data from '../data.js';
+import * as data from '../data.js';
 import {
     documents, assets, layouts, partials
-} from './file-cache-lokijs.mjs';
+} from './file-cache-lokijs.js';
 
 async function renderVPath(config, info) {
     data.remove(info.mountPoint, info.vpath);
@@ -80,7 +80,7 @@ async function rebuild(config) {
 
 async function unlinkVPath(config, info) {
     if (!config.renderDestination) {
-        console.log(`UNLINK ${collection} could not perform unlink (no renderDestination) for `, info);
+        // console.log(`UNLINK ${collection} could not perform unlink (no renderDestination) for `, info);
         return;
     }
     const renderer = config.findRendererPath(info.vpath);

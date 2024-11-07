@@ -23,24 +23,36 @@
  * @module akasharender
  */
 
-'use strict';
-
-const util   = require('util');
-const fsp    = require('fs/promises');
-const fs     = require('fs');
-const path   = require('path');
+import util from 'node:util';
+import { promises as fsp } from 'node:fs';
+import fs from 'node:fs';
+import path from 'node:path';
 // const oembetter = require('oembetter')();
-const RSS    = require('rss');
-const fastq = require('fastq');
-const { DirsWatcher, mimedefine } = require('@akashacms/stacked-dirs');
-const Renderers = require('@akashacms/renderers');
-const mahabhuta = require('mahabhuta');
-exports.mahabhuta = mahabhuta;
-const cheerio = require('cheerio');
-const mahaPartial = require('mahabhuta/maha/partial');
+import RSS from 'rss';
+import fastq from 'fastq';
+import { DirsWatcher, mimedefine } from '@akashacms/stacked-dirs';
+import * as Renderers from '@akashacms/renderers';
+export * as Renderers from '@akashacms/renderers';
+import { Renderer } from '@akashacms/renderers';
+export { Renderer } from '@akashacms/renderers';
+import * as mahabhuta from 'mahabhuta';
+export * as mahabhuta from 'mahabhuta';
+import cheerio from 'cheerio';
+import mahaPartial from 'mahabhuta/maha/partial.js';
 
-exports.Renderers = Renderers;
-exports.Renderer = Renderers.Renderer;
+import * as relative from 'relative';
+export * as relative from 'relative';
+
+import { Plugin } from './Plugin.js';
+export { Plugin } from './Plugin.js';
+
+import { render, renderDocument } from './render.js';
+export { render, renderDocument } from './render.js';
+
+// For use in Configure.prepare
+import { BuiltInPlugin } from './built-in.js';
+
+import * as filecache from './cache/file-cache-lokijs.js';
 
 // There doesn't seem to be an official MIME type registered
 // for AsciiDoctor
@@ -79,9 +91,6 @@ mimedefine({'text/x-nunjucks': [ 'njk' ]});
 mimedefine({'text/x-handlebars': [ 'handlebars' ]});
 mimedefine({'text/x-liquid': [ 'liquid' ]});
 
-// exports.cache = import('./cache/cache-forerunner.mjs');
-exports.filecache = undefined;
-
 /**
  * Performs setup of things so that AkashaRender can function.
  * The correct initialization of AkashaRender is to
@@ -94,36 +103,32 @@ exports.filecache = undefined;
  * 
  * @param {*} config 
  */
-exports.setup = async function setup(config) {
-    exports.filecache = await import('./cache/file-cache-lokijs.mjs');
+export async function setup(config) {
 
     config.renderers.partialFunc = (fname, metadata) => {
         // console.log(`calling partial ${fname}`);
-        return exports.partial(config, fname, metadata);
+        return partial(config, fname, metadata);
     };
     config.renderers.partialSyncFunc = (fname, metadata) => {
         // console.log(`calling partialSync ${fname}`);
-        return exports.partialSync(config, fname, metadata);
+        return partialSync(config, fname, metadata);
     }
 
-    await exports.cacheSetup(config);
-    await exports.fileCachesReady(config);
+    await cacheSetup(config);
+    await fileCachesReady(config);
 }
 
-exports.cacheSetup = async function(config) {
+export async function cacheSetup(config) {
     try {
-        let filecache = exports.filecache;
         await filecache.setup(config);
-        // exports.setupPluginCaches(config)
     } catch (err) {
         console.error(`INITIALIZATION FAILURE COULD NOT INITIALIZE CACHE `, err);
         process.exit(1);
     }
 }
 
-exports.closeCaches = async function() {
+export async function closeCaches() {
     try {
-        let filecache = exports.filecache;
         await filecache.close();
     } catch (err) {
         console.error(`INITIALIZATION FAILURE COULD NOT CLOSE CACHES `, err);
@@ -131,59 +136,8 @@ exports.closeCaches = async function() {
     }
 }
 
-/* exports.setupDocuments = async function(config) {
+export async function fileCachesReady(config) {
     try {
-        let filecache = exports.filecache;
-        await filecache.setupDocuments(config);
-    } catch (err) {
-        console.error(`INITIALIZATION FAILURE COULD NOT INITIALIZE DOCUMENTS CACHE `, err);
-        process.exit(1);
-    }
-}
-
-exports.setupAssets = async function(config) {
-    try {
-        let filecache = exports.filecache;
-        await filecache.setupAssets(config);
-    } catch (err) {
-        console.error(`INITIALIZATION FAILURE COULD NOT INITIALIZE ASSETS CACHE `, err);
-        process.exit(1);
-    }
-}
-
-exports.setupLayouts = async function(config) {
-    try {
-        let filecache = exports.filecache;
-        await filecache.setupLayouts(config);
-    } catch (err) {
-        console.error(`INITIALIZATION FAILURE COULD NOT INITIALIZE LAYOUTS CACHE `, err);
-        process.exit(1);
-    }
-}
-
-exports.setupPartials = async function(config) {
-    try {
-        let filecache = exports.filecache;
-        await filecache.setupPartials(config);
-        // console.log(`setupPartials SUCCESS`);
-    } catch (err) {
-        console.error(`INITIALIZATION FAILURE COULD NOT INITIALIZE PARTIALS CACHE `, err);
-        process.exit(1);
-    }
-}
-
-exports.setupPluginCaches = async function(config) {
-    try {
-        await config.hookPluginCacheSetup();
-    } catch (err) {
-        console.error(`INITIALIZATION FAILURE COULD NOT INITIALIZE PLUGINS CACHES `, err);
-        process.exit(1);
-    }
-} */
-
-exports.fileCachesReady = async function(config) {
-    try {
-        let filecache = exports.filecache;
         await Promise.all([
             filecache.documents.isReady(),
             filecache.assets.isReady(),
@@ -196,15 +150,8 @@ exports.fileCachesReady = async function(config) {
     }
 }
 
-exports.Plugin = require('./Plugin');
-
-const render = require('./render');
-
-exports.render = render.render;
-exports.renderDocument = render.renderDocument;
-
-exports.renderPath = async (config, path2r) => {
-    const documents = exports.filecache.documents;
+export async function renderPath(config, path2r) {
+    const documents = filecache.documents;
     let found;
     let count = 0;
     while (count < 20) {
@@ -230,7 +177,7 @@ exports.renderPath = async (config, path2r) => {
         else {
             await new Promise((resolve, reject) => {
                 setTimeout(() => {
-                    resolve();
+                    resolve(undefined);
                 }, 100);
             });
             count++;
@@ -241,7 +188,7 @@ exports.renderPath = async (config, path2r) => {
     if (!found) {
         throw new Error(`Did not find document for ${path2r}`);
     }
-    let result = await render.renderDocument(config, found);
+    let result = await renderDocument(config, found);
     return result;
 }
 
@@ -254,7 +201,7 @@ exports.renderPath = async (config, path2r) => {
  * @param {*} fpath 
  * @returns 
  */
-exports.readRenderedFile = async(config, fpath) => {
+export async function readRenderedFile(config, fpath) {
 
     let html = await fsp.readFile(path.join(config.renderDestination, fpath), 'utf8');
     let $ = config.mahabhutaConfig 
@@ -274,14 +221,14 @@ exports.readRenderedFile = async(config, fpath) => {
  * @param {*} metadata Object containing metadata
  * @returns Promise that resolves to a string containing the rendered stuff
  */
-exports.partial = async function partial(config, fname, metadata) {
+export async function partial(config, fname, metadata) {
 
     if (!fname || typeof fname !== 'string') {
         throw new Error(`partial fname not a string ${util.inspect(fname)}`);
     }
 
     // console.log(`partial ${fname}`);
-    const found = exports.filecache.partials.find(fname);
+    const found = filecache.partials.find(fname);
     if (!found) {
         throw new Error(`No partial found for ${fname} in ${util.inspect(config.partialsDirs)}`);
     }
@@ -299,15 +246,15 @@ exports.partial = async function partial(config, fname, metadata) {
         // point to the config object.  This block of code
         // duplicates the metadata object, then sets the
         // config field in the duplicate, passing that to the partial.
-        let mdata = {};
+        let mdata: any = {};
         let prop;
 
         for (prop in metadata) {
             mdata[prop] = metadata[prop];
         }
         mdata.config = config;
-        mdata.partialSync = exports.partialSync.bind(renderer, config);
-        mdata.partial     = exports.partial.bind(renderer, config);
+        mdata.partialSync = partialSync.bind(renderer, config);
+        mdata.partial     = partial.bind(renderer, config);
         // console.log(`partial-funcs render ${renderer.name} ${found.vpath}`);
         return renderer.render({
             fspath: found.fspath,
@@ -333,13 +280,13 @@ exports.partial = async function partial(config, fname, metadata) {
  * @param {*} metadata Object containing metadata
  * @returns String containing the rendered stuff
  */
-exports.partialSync = function partialSync(config, fname, metadata) {
+export function partialSync(config, fname, metadata) {
 
     if (!fname || typeof fname !== 'string') {
         throw new Error(`partialSync fname not a string ${util.inspect(fname)}`);
     }
 
-    const found = exports.filecache.partials.find(fname);
+    const found = filecache.partials.find(fname);
     if (!found) new Error(`No partial found for ${fname} in ${util.inspect(config.partialsDirs)}`);
 
     var renderer = config.findRendererPath(found.vpath);
@@ -348,7 +295,7 @@ exports.partialSync = function partialSync(config, fname, metadata) {
         // point to the config object.  This block of code
         // duplicates the metadata object, then sets the
         // config field in the duplicate, passing that to the partial.
-        let mdata = {};
+        let mdata: any = {};
         let prop;
 
         for (prop in metadata) {
@@ -358,7 +305,7 @@ exports.partialSync = function partialSync(config, fname, metadata) {
         // In this context, partialSync is directly available
         // as a function that we can directly use.
         // console.log(`partialSync `, partialSync);
-        mdata.partialSync = exports.partialSync.bind(renderer, config);
+        mdata.partialSync = partialSync.bind(renderer, config);
         let partialText;
         if (found.docBody) partialText = found.docBody;
         else if (found.docContent) partialText = found.docContent;
@@ -388,17 +335,16 @@ exports.partialSync = function partialSync(config, fname, metadata) {
  * @param {*} fname 
  * @returns 
  */
-exports.indexChain = async function(config, fname) {
+export async function indexChain(config, fname) {
 
     // This used to be a full function here, but has moved
     // into the FileCache class.  Requiring a `config` option
     // is for backwards compatibility with the former API.
 
-    const documents = exports.filecache.documents;
+    const documents = filecache.documents;
     return documents.indexChain(fname);
 }
 
-exports.relative = require('relative');
 
 /**
  * Manipulate the rel= attributes on a link returned from Mahabhuta.
@@ -408,7 +354,7 @@ exports.relative = require('relative');
  * @params {doattr} Boolean flag whether to set (true) or remove (false) the attribute
  *
  */
-exports.linkRelSetAttr = function($link, attr, doattr) {
+export function linkRelSetAttr($link, attr, doattr) {
     let linkrel = $link.attr('rel');
     let rels = linkrel ? linkrel.split(' ') : [];
     let hasattr = rels.indexOf(attr) >= 0;
@@ -423,7 +369,7 @@ exports.linkRelSetAttr = function($link, attr, doattr) {
 
 ///////////////// RSS Feed Generation
 
-exports.generateRSS = async function(config, configrss, feedData, items, renderTo) {
+export async function generateRSS(config, configrss, feedData, items, renderTo) {
 
     // Supposedly it's required to use hasOwnProperty
     // http://stackoverflow.com/questions/728360/how-do-i-correctly-clone-a-javascript-object#728694
@@ -480,24 +426,24 @@ exports.generateRSS = async function(config, configrss, feedData, items, renderT
  * @see module:Configuration
  */
 
-const _config_pluginData = Symbol('pluginData');
-const _config_assetsDirs = Symbol('assetsDirs');
-const _config_documentDirs = Symbol('documentDirs');
-const _config_layoutDirs = Symbol('layoutDirs');
-const _config_partialDirs = Symbol('partialDirs');
-const _config_mahafuncs = Symbol('mahafuncs');
-const _config_renderTo = Symbol('renderTo');
-const _config_metadata = Symbol('metadata');
-const _config_root_url = Symbol('root_url');
-const _config_scripts = Symbol('scripts');
-const _config_plugins = Symbol('plugins');
-const _config_cheerio = Symbol('cheerio');
-const _config_configdir = Symbol('configdir');
-const _config_cachedir  = Symbol('cachedir');
-const _config_autoload  = Symbol('autoload');
-const _config_autosave  = Symbol('autosave');
-const _config_concurrency = Symbol('concurrency');
-const _config_renderers = Symbol('renderers');
+// const _config_pluginData = Symbol('pluginData');
+// const _config_assetsDirs = Symbol('assetsDirs');
+// const _config_documentDirs = Symbol('documentDirs');
+// const _config_layoutDirs = Symbol('layoutDirs');
+// const _config_partialDirs = Symbol('partialDirs');
+// const _config_mahafuncs = Symbol('mahafuncs');
+// const _config_renderTo = Symbol('renderTo');
+// const _config_metadata = Symbol('metadata');
+// const _config_root_url = Symbol('root_url');
+// const _config_scripts = Symbol('scripts');
+// const _config_plugins = Symbol('plugins');
+// const _config_cheerio = Symbol('cheerio');
+// const _config_configdir = Symbol('configdir');
+// const _config_cachedir  = Symbol('cachedir');
+// const _config_autoload  = Symbol('autoload');
+// const _config_autosave  = Symbol('autosave');
+// const _config_concurrency = Symbol('concurrency');
+// const _config_renderers = Symbol('renderers');
 
 /**
  * Configuration of an AkashaRender project, including the input directories,
@@ -508,16 +454,58 @@ const _config_renderers = Symbol('renderers');
  * const akasha = require('akasharender');
  * const config = new akasha.Configuration();
  */
-module.exports.Configuration = class Configuration {
+export class Configuration {
+    #renderers: Renderers.Configuration;
+    #autoload: boolean;
+    #autosave: boolean;
+    #configdir: string;
+    #cachedir: string;
+    #assetsDirs;
+    #layoutDirs;
+    #documentDirs;
+    #partialDirs;
+    #mahafuncs;
+    #cheerio;
+    #renderTo: string;
+    #scripts;
+    #concurrency: number;
+    #metadata: any;
+    #root_url: string;
+    #plugins;
+    #pluginData;
+    
     constructor(modulepath) {
 
         // this[_config_renderers] = [];
-        this[_config_renderers] = new Renderers.Configuration({
+        this.#renderers = new Renderers.Configuration({
             
         });
 
-        this[_config_autoload] = false;
-        this[_config_autosave] = false;
+        this.#autoload = false;
+        this.#autosave = false;
+
+        this.#mahafuncs = [];
+        this.#scripts = {
+            stylesheets: [],
+            javaScriptTop: [],
+            javaScriptBottom: []
+        };
+
+        this.#concurrency = 3;
+
+        this.#documentDirs = [];
+        this.#layoutDirs = [];
+        this.#partialDirs = [];
+        this.#assetsDirs = [];
+
+        this.#mahafuncs = [];
+
+        this.#renderTo = 'out';
+
+        this.#metadata = {} as any;
+
+        this.#plugins = [];
+        this.#pluginData = [];
 
         /*
          * Is this the best place for this?  It is necessary to
@@ -552,7 +540,7 @@ module.exports.Configuration = class Configuration {
         let config = this;
         this.addMahabhuta(mahaPartial.mahabhutaArray({
             renderPartial: function(fname, metadata) {
-                return exports.partial(config, fname, metadata);
+                return partial(config, fname, metadata);
             }
         }));
     }
@@ -587,7 +575,7 @@ module.exports.Configuration = class Configuration {
         let stat;
 
         const cacheDirsPath = configDirPath('cache');
-        if (!this[_config_cachedir]) {
+        if (!this.#cachedir) {
             if (fs.existsSync(cacheDirsPath)
              && (stat = fs.statSync(cacheDirsPath))) {
                 if (stat.isDirectory()) {
@@ -599,12 +587,12 @@ module.exports.Configuration = class Configuration {
                 fs.mkdirSync(cacheDirsPath, { recursive: true });
                 this.cacheDir = 'cache';
             }
-        } else if (this[_config_cachedir] && !fs.existsSync(this[_config_cachedir])) {
-            fs.mkdirSync(this[_config_cachedir], { recursive: true });
+        } else if (this.#cachedir && !fs.existsSync(this.#cachedir)) {
+            fs.mkdirSync(this.#cachedir, { recursive: true });
         }
 
         const assetsDirsPath = configDirPath('assets');
-        if (!this[_config_assetsDirs]) {
+        if (!this.#assetsDirs) {
             if (fs.existsSync(assetsDirsPath) && (stat = fs.statSync(assetsDirsPath))) {
                 if (stat.isDirectory()) {
                     this.addAssetsDir('assets');
@@ -613,7 +601,7 @@ module.exports.Configuration = class Configuration {
         }
 
         const layoutsDirsPath = configDirPath('layouts');
-        if (!this[_config_layoutDirs]) {
+        if (!this.#layoutDirs) {
             if (fs.existsSync(layoutsDirsPath) && (stat = fs.statSync(layoutsDirsPath))) {
                 if (stat.isDirectory()) {
                     this.addLayoutsDir('layouts');
@@ -631,7 +619,7 @@ module.exports.Configuration = class Configuration {
         }
 
         const documentDirsPath = configDirPath('documents');
-        if (!this[_config_documentDirs]) {
+        if (!this.#documentDirs) {
             if (fs.existsSync(documentDirsPath) && (stat = fs.statSync(documentDirsPath))) {
                 if (stat.isDirectory()) {
                     this.addDocumentsDir('documents');
@@ -643,10 +631,8 @@ module.exports.Configuration = class Configuration {
             }
         }
 
-        if (!this[_config_mahafuncs]) { this[_config_mahafuncs] = []; }
-
         const renderToPath = configDirPath('out');
-        if (!this[_config_renderTo])  {
+        if (!this.#renderTo)  {
             if (fs.existsSync(renderToPath)
              && (stat = fs.statSync(renderToPath))) {
                 if (stat.isDirectory()) {
@@ -658,24 +644,21 @@ module.exports.Configuration = class Configuration {
                 fs.mkdirSync(renderToPath, { recursive: true });
                 this.setRenderDestination('out');
             }
-        } else if (this[_config_renderTo] && !fs.existsSync(this[_config_renderTo])) {
-            fs.mkdirSync(this[_config_renderTo], { recursive: true });
+        } else if (this.#renderTo && !fs.existsSync(this.#renderTo)) {
+            fs.mkdirSync(this.#renderTo, { recursive: true });
         }
-
-        if (!this[_config_scripts])                  { this[_config_scripts] = { }; }
-        if (!this[_config_scripts].stylesheets)      { this[_config_scripts].stylesheets = []; }
-        if (!this[_config_scripts].javaScriptTop)    { this[_config_scripts].javaScriptTop = []; }
-        if (!this[_config_scripts].javaScriptBottom) { this[_config_scripts].javaScriptBottom = []; }
-
-        if (!this[_config_concurrency]) { this[_config_concurrency] = 3; }
 
         // The akashacms-builtin plugin needs to be last on the chain so that
         // its partials etc can be easily overridden.  This is the most convenient
         // place to declare that plugin.
         //
 
-        var config = this;
-        this.use(require('./built-in'), {
+        // Normally we'd do require('./built-in.js').
+        // But, in this context that doesn't work.
+        // What we did is to import the
+        // BuiltInPlugin class earlier so that
+        // it can be used here.
+        this.use(BuiltInPlugin, {
             // built-in options if any
             // Do not need this here any longer because it is handled
             // in the constructor.
@@ -692,32 +675,31 @@ module.exports.Configuration = class Configuration {
      * Record the configuration directory so that we can correctly interpolate
      * the pathnames we're provided.
      */
-    set configDir(cfgdir) { this[_config_configdir] = cfgdir; }
-    get configDir() { return this[_config_configdir]; }
+    set configDir(cfgdir) { this.#configdir = cfgdir; }
+    get configDir() { return this.#configdir; }
 
-    set cacheDir(dirnm) { this[_config_cachedir] = dirnm; }
-    get cacheDir() { return this[_config_cachedir]; }
+    set cacheDir(dirnm) { this.#cachedir = dirnm; }
+    get cacheDir() { return this.#cachedir; }
 
-    get cacheAutosave() { return this[_config_autosave]; }
-    set cacheAutosave(auto) { this[_config_autosave] = auto; }
+    get cacheAutosave() { return this.#autosave; }
+    set cacheAutosave(auto) { this.#autosave = auto; }
 
-    get cacheAutoload() { return this[_config_autoload]; }
-    set cacheAutoload(auto) { this[_config_autoload] = auto; }
+    get cacheAutoload() { return this.#autoload; }
+    set cacheAutoload(auto) { this.#autoload = auto; }
 
     // set akasha(_akasha)  { this[_config_akasha] = _akasha; }
-    get akasha() { return module.exports }
+    get akasha() { return module_exports; }
 
-    async documentsCache() { return exports.filecache.documents; }
-    async assetsCache()    { return exports.filecache.assets; }
-    async layoutsCache()   { return exports.filecache.layouts; }
-    async partialsCache()  { return exports.filecache.partials; }
+    async documentsCache() { return filecache.documents; }
+    async assetsCache()    { return filecache.assets; }
+    async layoutsCache()   { return filecache.layouts; }
+    async partialsCache()  { return filecache.partials; }
 
     /**
      * Add a directory to the documentDirs configuration array
      * @param {string} dir The pathname to use
      */
     addDocumentsDir(dir) {
-        if (!this[_config_documentDirs]) { this[_config_documentDirs] = []; }
         // If we have a configDir, and it's a relative directory, make it
         // relative to the configDir
         if (this.configDir != null) {
@@ -727,13 +709,13 @@ module.exports.Configuration = class Configuration {
                 dir.src = path.join(this.configDir, dir.src);
             }
         }
-        this[_config_documentDirs].push(dir);
+        this.#documentDirs.push(dir);
         // console.log(`addDocumentsDir ${util.inspect(dir)} ==> ${util.inspect(this[_config_documentDirs])}`);
         return this;
     }
 
     get documentDirs() {
-        return this[_config_documentDirs] ? this[_config_documentDirs] : [];
+        return this.#documentDirs;
     }
 
     /**
@@ -757,7 +739,6 @@ module.exports.Configuration = class Configuration {
      * @param {string} dir The pathname to use
      */
     addLayoutsDir(dir) {
-        if (!this[_config_layoutDirs]) { this[_config_layoutDirs] = []; }
         // If we have a configDir, and it's a relative directory, make it
         // relative to the configDir
         if (this.configDir != null) {
@@ -767,12 +748,12 @@ module.exports.Configuration = class Configuration {
                 dir.src = path.join(this.configDir, dir.src);
             }
         }
-        this[_config_layoutDirs].push(dir);
-        this[_config_renderers].addLayoutDir(dir.src ? dir.src : dir);
+        this.#layoutDirs.push(dir);
+        this.#renderers.addLayoutDir(dir.src ? dir.src : dir);
         return this;
     }
 
-    get layoutDirs() { return this[_config_layoutDirs] ? this[_config_layoutDirs] : []; }
+    get layoutDirs() { return this.#layoutDirs; }
 
     /**
      * Add a directory to the partialDirs configurtion array
@@ -780,7 +761,6 @@ module.exports.Configuration = class Configuration {
      * @returns {Configuration}
      */
     addPartialsDir(dir) {
-        if (!this[_config_partialDirs]) { this[_config_partialDirs] = []; }
         // If we have a configDir, and it's a relative directory, make it
         // relative to the configDir
         if (this.configDir != null) {
@@ -791,12 +771,12 @@ module.exports.Configuration = class Configuration {
             }
         }
         // console.log(`addPartialsDir `, dir);
-        this[_config_partialDirs].push(dir);
-        this[_config_renderers].addPartialDir(dir.src ? dir.src : dir);
+        this.#partialDirs.push(dir);
+        this.#renderers.addPartialDir(dir.src ? dir.src : dir);
         return this;
     }
 
-    get partialsDirs() { return this[_config_partialDirs] ? this[_config_partialDirs] : []; }
+    get partialsDirs() { return this.#partialDirs; }
     
     /**
      * Add a directory to the assetDirs configurtion array
@@ -804,7 +784,6 @@ module.exports.Configuration = class Configuration {
      * @returns {Configuration}
      */
     addAssetsDir(dir) {
-        if (!this[_config_assetsDirs]) { this[_config_assetsDirs] = []; }
         // If we have a configDir, and it's a relative directory, make it
         // relative to the configDir
         if (this.configDir != null) {
@@ -814,11 +793,11 @@ module.exports.Configuration = class Configuration {
                 dir.src = path.join(this.configDir, dir.src);
             }
         }
-        this[_config_assetsDirs].push(dir);
+        this.#assetsDirs.push(dir);
         return this;
     }
 
-    get assetDirs() { return this[_config_assetsDirs] ? this[_config_assetsDirs] : []; }
+    get assetDirs() { return this.#assetsDirs; }
 
     /**
      * Add an array of Mahabhuta functions
@@ -829,12 +808,11 @@ module.exports.Configuration = class Configuration {
         if (typeof mahafuncs === 'undefined' || !mahafuncs) {
             throw new Error(`undefined mahafuncs in ${this.configDir}`);
         }
-        if (!this[_config_mahafuncs]) { this[_config_mahafuncs] = []; }
-        this[_config_mahafuncs].push(mahafuncs);
+        this.#mahafuncs.push(mahafuncs);
         return this;
     }
 
-    get mahafuncs() { return this[_config_mahafuncs]; }
+    get mahafuncs() { return this.#mahafuncs; }
 
     /**
      * Define the directory into which the project is rendered.
@@ -849,13 +827,13 @@ module.exports.Configuration = class Configuration {
                 dir = path.join(this.configDir, dir);
             }
         }
-        this[_config_renderTo] = dir;
+        this.#renderTo = dir;
         return this;
     }
 
     /** Fetch the declared destination for rendering the project. */
-    get renderDestination() { return this[_config_renderTo]; }
-    get renderTo() { return this[_config_renderTo]; }
+    get renderDestination() { return this.#renderTo; }
+    get renderTo() { return this.#renderTo; }
 
     /**
      * Add a value to the project metadata.  The metadata is combined with
@@ -865,17 +843,12 @@ module.exports.Configuration = class Configuration {
      * @returns {Configuration}
      */
     addMetadata(index, value) {
-        if (typeof this[_config_metadata] === 'undefined'
-        || !this.hasOwnProperty(_config_metadata)
-        || !this[_config_metadata]) {
-            this[_config_metadata] = {};
-        }
-        var md = this[_config_metadata];
+        var md = this.#metadata;
         md[index] = value;
         return this;
     }
 
-    get metadata() { return this[_config_metadata]; }
+    get metadata() { return this.#metadata; }
 
     /**
     * Document the URL for a website project.
@@ -883,11 +856,11 @@ module.exports.Configuration = class Configuration {
     * @returns {Configuration}
     */
     rootURL(root_url) {
-        this[_config_root_url] = root_url;
+        this.#root_url = root_url;
         return this;
     }
 
-    get root_url() { return this[_config_root_url]; }
+    get root_url() { return this.#root_url; }
 
     /**
      * Set how many documents to render concurrently.
@@ -895,11 +868,11 @@ module.exports.Configuration = class Configuration {
     * @returns {Configuration}
      */
     setConcurrency(concurrency) {
-        this[_config_concurrency] = concurrency;
+        this.#concurrency = concurrency;
         return this;
     }
 
-    get concurrency() { return this[_config_concurrency]; }
+    get concurrency() { return this.#concurrency; }
 
     /**
      * Declare JavaScript to add within the head tag of rendered pages.
@@ -907,17 +880,11 @@ module.exports.Configuration = class Configuration {
      * @returns {Configuration}
      */
     addHeaderJavaScript(script) {
-        if (typeof this[_config_scripts] === 'undefined'
-        || !this.hasOwnProperty(_config_scripts)
-        || !this[_config_scripts]) {
-            this[_config_scripts] = {};
-        }
-        if (!this[_config_scripts].javaScriptTop) this[_config_scripts].javaScriptTop = [];
-        this[_config_scripts].javaScriptTop.push(script);
+        this.#scripts.javaScriptTop.push(script);
         return this;
     }
 
-    get scripts() { return this[_config_scripts]; }
+    get scripts() { return this.#scripts; }
 
     /**
      * Declare JavaScript to add at the bottom of rendered pages.
@@ -925,13 +892,7 @@ module.exports.Configuration = class Configuration {
      * @returns {Configuration}
      */
     addFooterJavaScript(script) {
-        if (typeof this[_config_scripts] === 'undefined'
-        || !this.hasOwnProperty(_config_scripts)
-        || !this[_config_scripts]) {
-            this[_config_scripts] = {};
-        }
-        if (!this[_config_scripts].javaScriptBottom) this[_config_scripts].javaScriptBottom = [];
-        this[_config_scripts].javaScriptBottom.push(script);
+        this.#scripts.javaScriptBottom.push(script);
         return this;
     }
 
@@ -941,32 +902,26 @@ module.exports.Configuration = class Configuration {
      * @returns {Configuration}
      */
     addStylesheet(css) {
-        if (typeof this[_config_scripts] === 'undefined'
-        || !this.hasOwnProperty(_config_scripts)
-        || !this[_config_scripts]) {
-            this[_config_scripts] = {};
-        }
-        if (!this[_config_scripts].stylesheets) this[_config_scripts].stylesheets = [];
-        this[_config_scripts].stylesheets.push(css);
+        this.#scripts.stylesheets.push(css);
         return this;
     }
 
     setMahabhutaConfig(cheerio) {
-        this[_config_cheerio] = cheerio;
+        this.#cheerio = cheerio;
 
         // For cheerio 1.0.0-rc.10 we need to use this setting.
         // If the configuration has set this, we must not
         // override their setting.  But, generally, for correct
         // operation and handling of Mahabhuta tags, we need
         // this setting to be <code>true</code>
-        if (!('_useHtmlParser2' in this[_config_cheerio])) {
-            this[_config_cheerio]._useHtmlParser2 = true;
+        if (!('_useHtmlParser2' in this.#cheerio)) {
+            this.#cheerio._useHtmlParser2 = true;
         }
 
         // console.log(this[_config_cheerio]);
     }
 
-    get mahabhutaConfig() { return this[_config_cheerio]; }
+    get mahabhutaConfig() { return this.#cheerio; }
 
     /**
      * Copy the contents of all directories in assetDirs to the render destination.
@@ -975,7 +930,7 @@ module.exports.Configuration = class Configuration {
         // console.log('copyAssets START');
 
         const config = this;
-        const assets = exports.filecache.assets;
+        const assets = filecache.assets;
         await assets.isReady();
         // Fetch the list of all assets files
         const paths = assets.paths();
@@ -1101,28 +1056,27 @@ module.exports.Configuration = class Configuration {
      */
     use(PluginObj, options) {
         // console.log("Configuration #1 use PluginObj "+ typeof PluginObj +" "+ util.inspect(PluginObj));
-        if (typeof this[_config_plugins] === 'undefined'
-        || !this.hasOwnProperty(_config_plugins)
-        || ! this[_config_plugins]) {
-            this[_config_plugins] = [];
-        }
-
         if (typeof PluginObj === 'string') {
+            // This is going to fail because
+            // require doesn't work in this context
+            // Further, this context does not
+            // support async functions, so we
+            // cannot do import.
             PluginObj = require(PluginObj);
         }
-        if (!PluginObj || PluginObj instanceof module.exports.Plugin) {
+        if (!PluginObj || PluginObj instanceof Plugin) {
             throw new Error("No plugin supplied");
         }
         // console.log("Configuration #2 use PluginObj "+ typeof PluginObj +" "+ util.inspect(PluginObj));
         var plugin = new PluginObj();
         plugin.akasha = this.akasha;
-        this[_config_plugins].push(plugin);
+        this.#plugins.push(plugin);
         if (!options) options = {};
         plugin.configure(this, options);
         return this;
     }
 
-    get plugins() { return this[_config_plugins]; }
+    get plugins() { return this.#plugins; }
 
     /**
      * Iterate over the installed plugins, calling the function passed in `iterator`
@@ -1132,7 +1086,7 @@ module.exports.Configuration = class Configuration {
      * @param final The function to call after all iterator calls have been made.  Signature: `function(err)`
      */
     eachPlugin(iterator, final) {
-        throw new Exception("eachPlugin deprecated");
+        throw new Error("eachPlugin deprecated");
         /* async.eachSeries(this.plugins,
         function(plugin, next) {
             iterator(plugin, next);
@@ -1164,10 +1118,7 @@ module.exports.Configuration = class Configuration {
      * @returns {Object}
      */ 
     pluginData(name) {
-        if (!this[_config_pluginData]) {
-            this[_config_pluginData] = [];
-        }
-        var pluginDataArray = this[_config_pluginData];
+        var pluginDataArray = this.#pluginData;
         if (!(name in pluginDataArray)) {
             pluginDataArray[name] = {};
         }
@@ -1186,7 +1137,7 @@ module.exports.Configuration = class Configuration {
     }
 
     registerRenderer(renderer) {
-        if (!(renderer instanceof module.exports.Renderer)) {
+        if (!(renderer instanceof Renderer)) {
             console.error('Not A Renderer '+ util.inspect(renderer));
             throw new Error(`Not a Renderer ${renderer.name}`);
         }
@@ -1194,7 +1145,7 @@ module.exports.Configuration = class Configuration {
             // renderer.akasha = this.akasha;
             // renderer.config = this;
             // console.log(`registerRenderer `, renderer);
-            this[_config_renderers].registerRenderer(renderer);
+            this.#renderers.registerRenderer(renderer);
         }
     }
 
@@ -1207,37 +1158,24 @@ module.exports.Configuration = class Configuration {
      * is already there in case epubtools must use the same renderer name.
      */
     registerOverrideRenderer(renderer) {
-        if (!(renderer instanceof module.exports.Renderer)) {
+        if (!(renderer instanceof Renderer)) {
             console.error('Not A Renderer '+ util.inspect(renderer));
             throw new Error('Not a Renderer');
         }
         // renderer.akasha = this.akasha;
         // renderer.config = this;
-        this[_config_renderers].registerOverrideRenderer(renderer);
+        this.#renderers.registerOverrideRenderer(renderer);
     }
 
     findRendererName(name) {
-        return this[_config_renderers].findRendererName(name);
+        return this.#renderers.findRendererName(name);
     }
 
     findRendererPath(_path) {
-        return this[_config_renderers].findRendererPath(_path);
+        return this.#renderers.findRendererPath(_path);
     }
 
-    /* registerBuiltInRenderers() {
-        // Register built-in renderers
-        this.registerRenderer(new module.exports.MarkdownRenderer());
-        this.registerRenderer(new module.exports.AsciidocRenderer());
-        this.registerRenderer(new module.exports.EJSRenderer());
-        this.registerRenderer(new module.exports.LiquidRenderer());
-        this.registerRenderer(new module.exports.NunjucksRenderer());
-        this.registerRenderer(new module.exports.HandlebarsRenderer());
-        // this.registerRenderer(new module.exports.TempuraRenderer());
-        this.registerRenderer(new module.exports.CSSLESSRenderer());
-        this.registerRenderer(new module.exports.JSONRenderer());
-    }*/
-
-    get renderers() { return this[_config_renderers]; }
+    get renderers() { return this.#renderers; }
 
     /**
      * Find a Renderer by its extension.
@@ -1246,3 +1184,28 @@ module.exports.Configuration = class Configuration {
         return this.findRendererName(name);
     }
 }
+
+const module_exports = {
+    Renderers,
+    Renderer: Renderers.Renderer,
+    mahabhuta,
+    filecache,
+    setup,
+    cacheSetup,
+    closeCaches,
+    fileCachesReady,
+    Plugin,
+    render,
+    renderDocument,
+    renderPath,
+    readRenderedFile,
+    partial,
+    partialSync,
+    indexChain,
+    relative,
+    linkRelSetAttr,
+    generateRSS,
+    Configuration
+} as any;
+
+export default module_exports;

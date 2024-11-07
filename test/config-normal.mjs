@@ -1,6 +1,8 @@
 
-const akasha   = require('../index');
+const akasha   = (await import('../dist/index.js')).default;
 const mahabhuta = akasha.mahabhuta;
+
+const __dirname = import.meta.dirname;
 
 const config = new akasha.Configuration();
 config.rootURL("https://example.akashacms.com");
@@ -81,6 +83,9 @@ config
 config.setConcurrency(5);
 config.prepare();
 
-require('./final-mahabhuta.js').addFinalMahabhuta(config, mahabhuta);
+(await import('./final-mahabhuta.js'))
+    .default.addFinalMahabhuta(config, mahabhuta);
 
-module.exports = config;
+export default config;
+
+// console.log(config);

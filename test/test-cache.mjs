@@ -1,8 +1,8 @@
 import util   from 'util';
 import path   from 'path';
 import { promises as fsp } from 'fs';
-import akasha from '../index.js';
-import * as filecache from '../cache/file-cache-lokijs.mjs';
+import akasha from '../dist/index.js';
+import * as filecache from '../dist/cache/file-cache-lokijs.js';
 import minimatch from 'minimatch';
 import { assert }   from 'chai';
 
@@ -1732,6 +1732,14 @@ describe('Assets cache', function() {
             fspath: '**/assets2/file.txt',
             renderPath: 'file.txt',
             vpath: 'file.txt'
+        },
+        // This was not here previously, but
+        // the file is in the directory.  Why
+        // was this file left out of this list?
+        {
+            fspath: '**/assets/file-virgin.txt',
+            renderPath: 'file-virgin.txt',
+            vpath: 'file-virgin.txt'
         },
         {
             fspath: '**/assets/rss_button.png',

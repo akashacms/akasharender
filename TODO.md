@@ -91,6 +91,52 @@ The latter is not really feasible because they're working in Markdown rather tha
 
 The stuff for templates, they're working in an HTML context where it's natural to be writing template tags as well as HTML tags.  Those are easy to convert to custom Nunjucks tags.
 
+# Replacing LokiJS with in-memory SQLITE3
+
+SQLITE3 will be simpler than MongoDB because it can be used with a `:memory:` database and is easy to use directly in a Node.js process rather than using an external MongoDB.  IGNORE THE NEXT SECTION OTHER THAN FOR A FEW IDEAS.
+
+```js
+const sqlite3 = require('sqlite3').verbose();
+let db = new sqlite3.Database(':memory:', (err) => {
+  if (err) {
+    return console.error(err.message);
+  }
+  console.log('Connected to the in-memory SQlite database.');
+});
+```
+
+https://www.sql-easy.com/learn/how-to-use-node-js-sqlite/
+
+
+https://github.com/gms1/HomeOfThings/tree/master/packages/node/sqlite3orm
+
+SQLITE3ORM is a package simplifying SQLITE3 schema's by using decorators to describe the schema and other goodies.
+
+
+First, determine if the StackedDirs/FileCache combo can be simplified into supporting a single level data structure.  The current version uses nested data.
+
+Second, the SQLITE3 for Node.js supports JSON columns out of the box.  Is this true for the SQLITE3 in Node.js 22?  Or is it only true for the incumbent modules?  It does not support indexing JSON fields, nor querying data in a JSON field.  Therefore, using SQLITE3 with a nested data structure requires
+
+* Storing the nested data in a JSON field
+* Extracting the fields one wants to index into fields which are indexed.
+
+Doing this goes right past all the ideas of indexed JavaScript objects.  The indexing is handled by a mature database engine.
+
+https://github.com/fitnr/sqlite-json
+
+https://www.sqlite.org/json1.html
+
+https://www.beekeeperstudio.io/blog/sqlite-json
+
+
+Note that SQLITE3 supports both Stored Procedures and Triggers: https://www.geeksforgeeks.org/how-to-use-stored-procedure-in-sqlite/
+
+Stored procedures are functions stored in SQLITE3, and executed by it.  A trigger reacts to something happening and running a stored procedure.
+
+Hence there are many things which could be implemented on that for AkashaCMS.
+
+
+
 # Replacing LokiJS with MongoDB using mongodb-memory-server
 
 The `mongodb-memory-server` project automatically instantiates a MongoDB that works only in memory.  It was meant for testing.  But it could serve AkashaRender as well, since LokiJS serves as an in-memory database which is dispensed when done.

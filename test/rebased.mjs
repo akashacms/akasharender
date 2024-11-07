@@ -1,10 +1,11 @@
 
 import { promisify } from 'node:util';
-import { default as akasha } from '../index.js';
+import { default as akasha } from '../dist/index.js';
 import { assert } from 'chai';
 import { default as _image_size } from 'image-size';
 const sizeOf = promisify(_image_size);
-const _filecache = await import('../cache/file-cache-lokijs.mjs');
+const _filecache = await import('../dist/cache/file-cache-lokijs.js');
+
 // Note this is an ES6 module and to use it we must 
 // use an async function along with the await keyword
 // const _filecache = import('../cache/file-cache.mjs');
@@ -18,6 +19,9 @@ const __dirname = import.meta.dirname;
 // start with /rebase/to/ ... 
 // Hence /index.html would become /rebase/to/index.html
 
+import AkashaTestPlugin from './test-plugin/plugin.mjs';
+
+
 let config_rebase;
 
 describe('build rebased site', function() {
@@ -27,7 +31,7 @@ describe('build rebased site', function() {
         config_rebase = new akasha.Configuration();
         config_rebase.rootURL("https://example.akashacms.com/rebase/to/");
         config_rebase.configDir = __dirname;
-        config_rebase.use((await import('./test-plugin/plugin.js')).default);
+        config_rebase.use(AkashaTestPlugin);
         config_rebase.addLayoutsDir('layouts')
             .addLayoutsDir('layouts-extra')
             .addDocumentsDir('documents')
@@ -35,13 +39,14 @@ describe('build rebased site', function() {
                 src: 'mounted',
                 dest: 'mounted'
             })
+            .addAssetsDir('assets')
             .addPartialsDir('partials')
             .setRenderDestination('out-rebased');
             config_rebase.setMahabhutaConfig({
-            recognizeSelfClosing: true,
-            recognizeCDATA: true,
-            decodeEntities: true
-        });
+                recognizeSelfClosing: true,
+                recognizeCDATA: true,
+                decodeEntities: true
+            });
         config_rebase
             .addFooterJavaScript({ href: "/vendor/jquery/jquery.min.js" })
             .addFooterJavaScript({ 
@@ -87,7 +92,7 @@ describe('build rebased site', function() {
 
     it('should have called onPluginCacheSetup', function() {
         assert.isOk(config_rebase.plugin('akashacms-test-plugin')
-                            .onPluginCacheSetupCalled);
+            .onPluginCacheSetupCalled);
     });
 
     it('should copy assets', async function() {

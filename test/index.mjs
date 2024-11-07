@@ -2,12 +2,12 @@
 import { promises as fs } from 'node:fs';
 import path from 'node:path';
 import { promisify } from 'node:util';
-import { default as akasha } from '../index.js';
+import * as akasha from '../dist/index.js';
 const mahabhuta = akasha.mahabhuta;
 import { assert } from 'chai';
 import { default as _image_size } from 'image-size';
 const sizeOf = promisify(_image_size);
-const _filecache = await import('../cache/file-cache-lokijs.mjs');
+const _filecache = await import('../dist/cache/file-cache-lokijs.js');
 
 const __filename = import.meta.filename;
 const __dirname = import.meta.dirname;
@@ -21,7 +21,7 @@ describe('build site', function() {
         config = new akasha.Configuration();
         config.rootURL("https://example.akashacms.com");
         config.configDir = __dirname;
-        const tp = (await import('./test-plugin/plugin.js')).default;
+        const tp = (await import('./test-plugin/plugin.mjs')).default;
         // console.log(tp);
         config.use(tp);
         config
@@ -88,8 +88,9 @@ describe('build site', function() {
     });
 
     it('should have called onPluginCacheSetup', function() {
+        // console.log(config.plugins);
         assert.isOk(config.plugin('akashacms-test-plugin')
-                            .onPluginCacheSetupCalled);
+                .onPluginCacheSetupCalled);
     });
 
     it('should copy assets', async function() {
@@ -542,6 +543,7 @@ describe('teaser, content', function() {
         assert.notExists($('body #png2jpg').attr('resize-width'));
         assert.notExists($('body #png2jpg').attr('resize-to'));
 
+        // console.log(config.plugin('akashacms-builtin'));
         // console.log(config.plugin('akashacms-builtin').resizequeue);
         assert.equal(config.plugin('akashacms-builtin').resizequeue.length, 0);
         /*
