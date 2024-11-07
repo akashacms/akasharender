@@ -39,7 +39,9 @@ program
     .description('Copy assets into output directory')
     .action(async (configFN) => {
         try {
-            const config = await import(path.join(process.cwd(), configFN));
+            const config = (await import(
+                path.join(process.cwd(), configFN)
+            )).default;
             let akasha = config.akasha;
             await akasha.setup(config);
             await config.copyAssets();
@@ -56,7 +58,9 @@ program
     .action(async (configFN, documentFN) => {
 
         try {
-            const config = await import(path.join(process.cwd(), configFN));
+            const config = (await import(
+                path.join(process.cwd(), configFN)
+            )).default;
             let akasha = config.akasha;
             await akasha.setup(config);
             const documents = akasha.filecache.documents;
@@ -84,7 +88,9 @@ program
     .description('Render a document into output directory')
     .action(async (configFN, documentFN) => {
         try {
-            const config = await import(path.join(process.cwd(), configFN));
+            const config = (await import(
+                path.join(process.cwd(), configFN)
+            )).default;
             let akasha = config.akasha;
             await akasha.setup(config);
             data.init();
@@ -107,12 +113,9 @@ program
     .action(async (configFN, cmdObj) => {
         // console.log(`render: akasha: ${util.inspect(akasha)}`);
         try {
-            const fn = path.join(process.cwd(), configFN);
-            // console.log(fn);
-            const configg = await import(fn);
-            // console.log(`render ${fn} `, configg);
-            const config = configg.default;
-            // console.log(`render ${util.inspect(config)}`);
+            const config = (await import(
+                path.join(process.cwd(), configFN)
+            )).default;
             let akasha = config.akasha;
             await akasha.setup(config);
             data.init();
