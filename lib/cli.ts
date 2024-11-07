@@ -21,15 +21,15 @@
 
 'use strict';
 
-const { program } = require('commander');
-const ghpages   = require('gh-pages');
-const fs        = require('fs');
-const fsp       = require('fs/promises');
-const path      = require('path');
-const util      = require('util');
-const data      = require('./data');
+import { program } from 'commander';
+import ghpages from 'gh-pages';
+import fs from 'node:fs';
+import { promises as fsp } from 'node:fs';
+import path from 'node:path';
+import util from 'node:util';
+import * as data from './data.js';
 
-const _watchman = import('./cache/watchman.mjs');
+const _watchman = import('./cache/watchman.js');
 
 process.title = 'akasharender';
 program.version('0.7.5');
@@ -39,7 +39,7 @@ program
     .description('Copy assets into output directory')
     .action(async (configFN) => {
         try {
-            const config = require(path.join(process.cwd(), configFN));
+            const config = await import(path.join(process.cwd(), configFN));
             let akasha = config.akasha;
             await akasha.setup(config);
             await config.copyAssets();
@@ -56,7 +56,7 @@ program
     .action(async (configFN, documentFN) => {
 
         try {
-            const config = require(path.join(process.cwd(), configFN));
+            const config = await import(path.join(process.cwd(), configFN));
             let akasha = config.akasha;
             await akasha.setup(config);
             const documents = akasha.filecache.documents;
@@ -84,7 +84,7 @@ program
     .description('Render a document into output directory')
     .action(async (configFN, documentFN) => {
         try {
-            const config = require(path.join(process.cwd(), configFN));
+            const config = await import(path.join(process.cwd(), configFN));
             let akasha = config.akasha;
             await akasha.setup(config);
             data.init();
@@ -107,7 +107,12 @@ program
     .action(async (configFN, cmdObj) => {
         // console.log(`render: akasha: ${util.inspect(akasha)}`);
         try {
-            const config = require(path.join(process.cwd(), configFN));
+            const fn = path.join(process.cwd(), configFN);
+            // console.log(fn);
+            const configg = await import(fn);
+            // console.log(`render ${fn} `, configg);
+            const config = configg.default;
+            // console.log(`render ${util.inspect(config)}`);
             let akasha = config.akasha;
             await akasha.setup(config);
             data.init();
@@ -179,7 +184,9 @@ program
     .action(async (configFN, cmdObj) => {
         // console.log(`render: akasha: ${util.inspect(akasha)}`);
         try {
-            const config = require(path.join(process.cwd(), configFN));
+            const config = (await import(
+                path.join(process.cwd(), configFN)
+            )).default;
             let akasha = config.akasha;
             await akasha.setup(config);
             data.init();
@@ -208,10 +215,12 @@ program
     .action(async (configFN, cmdObj) => {
         // console.log(`render: akasha: ${util.inspect(akasha)}`);
         try {
-            const config = require(path.join(process.cwd(), configFN));
+            const config = (await import(
+                path.join(process.cwd(), configFN)
+            )).default;
             let akasha = config.akasha;
 
-            let options = {
+            let options: any = {
                 dotfiles: true
             };
             if (cmdObj.branch) {
@@ -267,7 +276,9 @@ program
     .action(async (configFN) => {
         // console.log(`render: akasha: ${util.inspect(akasha)}`);
         try {
-            const config = require(path.join(process.cwd(), configFN));
+            const config = (await import(
+                path.join(process.cwd(), configFN)
+            )).default;
             let akasha = config.akasha;
             console.log(config);
         } catch (e) {
@@ -281,7 +292,9 @@ program
     .action(async (configFN) => {
         // console.log(`render: akasha: ${util.inspect(akasha)}`);
         try {
-            const config = require(path.join(process.cwd(), configFN));
+            const config = (await import(
+                path.join(process.cwd(), configFN)
+            )).default;
             let akasha = config.akasha;
             await akasha.setup(config);
             console.log(config.documentDirs);
@@ -297,7 +310,9 @@ program
     .action(async (configFN) => {
         // console.log(`render: akasha: ${util.inspect(akasha)}`);
         try {
-            const config = require(path.join(process.cwd(), configFN));
+            const config = (await import(
+                path.join(process.cwd(), configFN)
+            )).default;
             let akasha = config.akasha;
             await akasha.setup(config);
             console.log(config.assetDirs);
@@ -313,7 +328,9 @@ program
     .action(async (configFN) => {
         // console.log(`render: akasha: ${util.inspect(akasha)}`);
         try {
-            const config = require(path.join(process.cwd(), configFN));
+            const config = (await import(
+                path.join(process.cwd(), configFN)
+            )).default;
             let akasha = config.akasha;
             await akasha.setup(config);
             console.log(config.partialsDirs);
@@ -329,7 +346,9 @@ program
     .action(async (configFN) => {
         // console.log(`render: akasha: ${util.inspect(akasha)}`);
         try {
-            const config = require(path.join(process.cwd(), configFN));
+            const config = (await import(
+                path.join(process.cwd(), configFN)
+            )).default;
             let akasha = config.akasha;
             await akasha.setup(config);
             console.log(config.layoutDirs);
@@ -346,7 +365,9 @@ program
     .action(async (configFN) => {
         // console.log(`render: akasha: ${util.inspect(akasha)}`);
         try {
-            const config = require(path.join(process.cwd(), configFN));
+            const config = (await import(
+                path.join(process.cwd(), configFN)
+            )).default;
             let akasha = config.akasha;
             await akasha.setup(config);
             console.log(akasha.filecache.documents.paths());
@@ -362,7 +383,9 @@ program
     .action(async (configFN) => {
         // console.log(`render: akasha: ${util.inspect(akasha)}`);
         try {
-            const config = require(path.join(process.cwd(), configFN));
+            const config = (await import(
+                path.join(process.cwd(), configFN)
+            )).default;
             let akasha = config.akasha;
             await akasha.setup(config);
             console.log(akasha.filecache.documents.setTimes());
@@ -378,7 +401,9 @@ program
     .action(async (configFN, docFN) => {
         // console.log(`render: akasha: ${util.inspect(akasha)}`);
         try {
-            const config = require(path.join(process.cwd(), configFN));
+            const config = (await import(
+                path.join(process.cwd(), configFN)
+            )).default;
             let akasha = config.akasha;
             await akasha.setup(config);
             const docinfo = akasha.filecache.documents.find(docFN);
@@ -397,7 +422,9 @@ program
     .action(async (configFN) => {
         // console.log(`render: akasha: ${util.inspect(akasha)}`);
         try {
-            const config = require(path.join(process.cwd(), configFN));
+            const config = (await import(
+                path.join(process.cwd(), configFN)
+            )).default;
             let akasha = config.akasha;
             await akasha.setup(config);
             console.log(akasha.filecache.documents.tags());
@@ -421,11 +448,13 @@ program
     .action(async (configFN, cmdObj) => {
         // console.log(`render: akasha: ${util.inspect(akasha)}`);
         try {
-            const config = require(path.join(process.cwd(), configFN));
+            const config = (await import(
+                path.join(process.cwd(), configFN)
+            )).default;
             let akasha = config.akasha;
             await akasha.setup(config);
             // console.log(cmdObj);
-            let options = { };
+            let options: any = { };
             if (cmdObj.root) options.rootPath = cmdObj.root;
             if (cmdObj.match) options.pathmatch = cmdObj.match;
             if (cmdObj.rendermatch) options.renderpathmatch = cmdObj.rendermatch;
@@ -449,7 +478,9 @@ program
     .action(async (configFN) => {
         // console.log(`render: akasha: ${util.inspect(akasha)}`);
         try {
-            const config = require(path.join(process.cwd(), configFN));
+            const config = (await import(
+                path.join(process.cwd(), configFN)
+            )).default;
             let akasha = config.akasha;
             await akasha.setup(config);
             console.log(akasha.filecache.assets.paths());
@@ -465,7 +496,9 @@ program
     .action(async (configFN, assetFN) => {
         // console.log(`render: akasha: ${util.inspect(akasha)}`);
         try {
-            const config = require(path.join(process.cwd(), configFN));
+            const config = (await import(
+                path.join(process.cwd(), configFN)
+            )).default;
             let akasha = config.akasha;
             await akasha.setup(config);
             const assetinfo = akasha.filecache.assets.find(assetFN);
@@ -484,7 +517,9 @@ program
     .action(async (configFN) => {
         // console.log(`render: akasha: ${util.inspect(akasha)}`);
         try {
-            const config = require(path.join(process.cwd(), configFN));
+            const config = (await import(
+                path.join(process.cwd(), configFN)
+            )).default;
             let akasha = config.akasha;
             await akasha.setup(config);
             console.log(akasha.filecache.layouts.paths());
@@ -505,7 +540,9 @@ program
     .action(async (configFN, layoutFN) => {
         // console.log(`render: akasha: ${util.inspect(akasha)}`);
         try {
-            const config = require(path.join(process.cwd(), configFN));
+            const config = (await import(
+                path.join(process.cwd(), configFN)
+            )).default;
             let akasha = config.akasha;
             await akasha.setup(config);
             const layoutinfo = akasha.filecache.layouts.find(layoutFN);
@@ -524,7 +561,9 @@ program
     .action(async (configFN) => {
         // console.log(`render: akasha: ${util.inspect(akasha)}`);
         try {
-            const config = require(path.join(process.cwd(), configFN));
+            const config = (await import(
+                path.join(process.cwd(), configFN)
+            )).default;
             let akasha = config.akasha;
             await akasha.setup(config);
             await akasha.setupPluginCaches(config)
@@ -544,7 +583,9 @@ program
     .action(async (configFN, partialFN) => {
         // console.log(`render: akasha: ${util.inspect(akasha)}`);
         try {
-            const config = require(path.join(process.cwd(), configFN));
+            const config = (await import(
+                path.join(process.cwd(), configFN)
+            )).default;
             let akasha = config.akasha;
             await akasha.setup(config);
             const partialinfo = akasha.filecache.partials.find(partialFN);

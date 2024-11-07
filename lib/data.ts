@@ -19,15 +19,15 @@
 
 // TODO - write a module to take rendering data and produce a table
 
-const path = require('path');
+import path from 'node:path';
 
 var traces;
 
-module.exports.init = function() {
+export function init() {
     traces = [];
 };
 
-module.exports.report = function(basedir, fpath, renderTo, stage, start) {
+export function report(basedir, fpath, renderTo, stage, start) {
     if (traces) traces.push({
         file: {
             basedir, fpath, renderTo
@@ -45,7 +45,7 @@ module.exports.report = function(basedir, fpath, renderTo, stage, start) {
  * @param {*} basedir
  * @param {*} fpath
  */
-module.exports.remove = function(basedir, fpath) {
+export function remove(basedir, fpath) {
     traces = traces.filter(item => {
         if (item.file.basedir !== basedir || item.file.fpath !== fpath) {
             return true;
@@ -55,11 +55,11 @@ module.exports.remove = function(basedir, fpath) {
     });
 };
 
-module.exports.removeAll = function() {
+export function removeAll() {
     traces = [];
 };
 
-module.exports.print = function() {
+export function print() {
     if (!traces) return;
     let traces2 = traces.sort((a, b) => {
         let aFile = path.join(a.file.basedir, a.file.fpath);
@@ -73,7 +73,7 @@ module.exports.print = function() {
     }
 };
 
-module.exports.data4file = function(basedir, fpath) {
+export function data4file(basedir, fpath) {
     let ret = "";
     if (!traces) return ret;
     for (let trace of traces) {

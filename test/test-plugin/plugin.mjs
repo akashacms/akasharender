@@ -3,7 +3,7 @@
  * AkashaCMS plugin features.   Simply add this plugin to the config
  * used in test suites, and you can use the fixtures.
  */
-const Plugin = require('../../Plugin.js');
+import { Plugin } from '../../dist/Plugin.js';
 
 const pluginName = "akashacms-test-plugin";
 
@@ -11,7 +11,8 @@ const pluginName = "akashacms-test-plugin";
 const _plugin_config = Symbol('config');
 const _plugin_options = Symbol('options');
 
-module.exports = class AkashaTestPlugin extends Plugin {
+export default class AkashaTestPlugin extends Plugin {
+
 	constructor() {
 		super(pluginName);
 	}

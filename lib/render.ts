@@ -17,19 +17,17 @@
  *  limitations under the License.
  */
 
-'use strict';
+import path from 'node:path';
+import { promises as fsp } from 'node:fs';
+import util from 'node:util';
+import * as data from './data.js';
+import mahabhuta from 'mahabhuta';
 
-const path      = require('path');
-const fsp       = require('fs/promises');
-const util      = require('util');
-const data      = require('./data');
-const mahabhuta = require('mahabhuta');
-
-const fastq     = require('fastq');
+import fastq from 'fastq';
 
 //////////////////////////////////////////////////////////
 
-exports.renderDocument = async function(config, docInfo) {
+export async function renderDocument(config, docInfo) {
     const renderStart = new Date();
     const renderBaseMetadata = docInfo.baseMetadata;
     // console.log(`newRenderDocument `, docInfo);
@@ -99,7 +97,7 @@ exports.renderDocument = async function(config, docInfo) {
                     throw new Error(`No layout found in ${util.inspect(config.layoutDirs)} for ${docInfo.metadata.layout} in file ${docInfo.vpath}`);
                 }
 
-                let layoutmetadata = {};
+                let layoutmetadata: any = {};
                 for (var yprop in found.metadata) {
                     layoutmetadata[yprop] = found.metadata[yprop];
                 }
@@ -113,7 +111,7 @@ exports.renderDocument = async function(config, docInfo) {
                 const renderer = config.findRendererPath(docInfo.metadata.layout);
 
                 if (!renderer) {
-                    throw new Error(`No renderer for ${metadata.layout} in file ${docinfo.vpath}`);;
+                    throw new Error(`No renderer for ${layoutmetadata.layout} in file ${docInfo.vpath}`);;
                 }
 
                 // console.log(`renderDocument `, found);
@@ -149,7 +147,7 @@ exports.renderDocument = async function(config, docInfo) {
 
                 try {
 
-                    const mahametadata = {};
+                    const mahametadata: any = {};
                     for (var yprop in docInfo.metadata) {
                         mahametadata[yprop] = docInfo.metadata[yprop];
                     }
@@ -181,7 +179,7 @@ exports.renderDocument = async function(config, docInfo) {
             // console.log(`RENDERED ${renderer.name} ${docInfo.path} ==> ${renderToFpath}`);
             const renderEndRendered = new Date();
             data.report(docInfo.mountPoint, docInfo.vpath, config.renderTo, "RENDERED", renderStart);
-            return `${renderer.name} ${docInfo.vpath} ==> ${docInfo.renderPath} (${(renderEndRendered - renderStart) / 1000} seconds)\n${data.data4file(docInfo.mountPoint, docInfo.vpath)}`;
+            return `${renderer.name} ${docInfo.vpath} ==> ${docInfo.renderPath} (${(renderEndRendered.valueOf() - renderStart.valueOf()) / 1000} seconds)\n${data.data4file(docInfo.mountPoint, docInfo.vpath)}`;
         } catch (err) {
             console.error(`in renderer branch for ${docInfo.vpath} to ${docInfo.renderPath} error=${err.stack ? err.stack : err}`);
             throw new Error(`in renderer branch for ${docInfo.vpath} to ${docInfo.renderPath} error=${err.stack ? err.stack : err}`);
@@ -195,7 +193,7 @@ exports.renderDocument = async function(config, docInfo) {
             await fsp.copyFile(docInfo.fspath, renderToFpath);
             // console.log(`COPIED ${docInfo.path} ==> ${renderToFpath}`);
             const renderEndCopied = new Date();
-            return `COPY ${docInfo.vpath} ==> ${renderToFpath} (${(renderEndCopied - renderStart) / 1000} seconds)`;
+            return `COPY ${docInfo.vpath} ==> ${renderToFpath} (${(renderEndCopied.valueOf() - renderStart.valueOf()) / 1000} seconds)`;
         } catch(err) {
             console.error(`in copy branch for ${docInfo.vpath} to ${docInfo.renderPath} error=${err.stack ? err.stack : err}`);
             throw new Error(`in copy branch for ${docInfo.vpath} to ${docInfo.renderPath} error=${err.stack ? err.stack : err}`);
@@ -203,7 +201,7 @@ exports.renderDocument = async function(config, docInfo) {
     }
 }
 
-exports.render = async function(config) {
+export async function render(config) {
 
     const documents = config.akasha.filecache.documents;
     await documents.isReady();
@@ -251,7 +249,7 @@ exports.render = async function(config) {
     async function renderDocumentInQueue(entry) {
         // console.log(`renderDocumentInQueue ${entry.info.vpath}`);
         try {
-            let result = await exports.renderDocument(entry.config, entry.info);
+            let result = await renderDocument(entry.config, entry.info);
             // console.log(`DONE renderDocumentInQueue ${entry.info.vpath}`, result);
             return { result };
         } catch (error) {

@@ -2,15 +2,17 @@
 import { promises as fs } from 'node:fs';
 import path from 'node:path';
 import { promisify } from 'node:util';
-import { default as akasha } from '../index.js';
+import { default as akasha } from '../dist/index.js';
 const mahabhuta = akasha.mahabhuta;
 import { assert } from 'chai';
 import { default as _image_size } from 'image-size';
 const sizeOf = promisify(_image_size);
-const _filecache = await import('../cache/file-cache-lokijs.mjs');
+const _filecache = await import('../dist/cache/file-cache-lokijs.js');
 
 const __filename = import.meta.filename;
 const __dirname = import.meta.dirname;
+
+import AkashaTestPlugin from './test-plugin/plugin.mjs';
 
 let config;
 
@@ -20,7 +22,7 @@ describe('build site', function() {
         config = new akasha.Configuration();
         config.rootURL("https://example.akashacms.com");
         config.configDir = __dirname;
-        config.use((await import('./test-plugin/plugin.js')).default);
+        config.use(AkashaTestPlugin);
         config
             .addAssetsDir('assets2')
             .addAssetsDir('assets')

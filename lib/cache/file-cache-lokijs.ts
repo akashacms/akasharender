@@ -157,6 +157,7 @@ export async function setupDocuments(config) {
         documents.on('error', err => {
             console.error(`ERROR in documents `, err);
         });
+        // console.log(`FILECACHE setupDocuments ${util.inspect(config.documentDirs)} ${util.inspect(docsDirs)}`)
         await documents.setup();
         await config.hookFileCacheSetup('documents', documents);
         // console.log(`filecache FINISH documents setup`);
@@ -312,7 +313,7 @@ export class FileCache extends EventEmitter {
 
         this[_symb_queue] = fastq.promise(async function(event) {
             if (event.collection !== fcache.collection) {
-                throw new Error(`handleChanged event for wrong collection; got ${event.collection}, expected ${that.collection}`);
+                throw new Error(`handleChanged event for wrong collection; got ${event.collection}, expected ${fcache.collection}`);
             }
             if (event.code === 'changed') {
                 try {
@@ -421,6 +422,8 @@ export class FileCache extends EventEmitter {
 
         // console.log(this[_symb_watcher]);
 
+        // console.log(`FileCache setup dirs ${util.inspect(this.dirs)}`);
+
         await this[_symb_watcher].watch(this.dirs);
 
     }
@@ -490,7 +493,7 @@ export class FileCache extends EventEmitter {
             // console.log(`!isReady ${this.collection} ${this[_symb_dirs].length} ${this[_symb_is_ready]}`);
             await new Promise((resolve, reject) => {
                 setTimeout(() => {
-                    resolve();
+                    resolve(undefined);
                 }, 100);
             });
         }        
@@ -513,11 +516,10 @@ export class FileCache extends EventEmitter {
         this.removeAllListeners('ready');
     }
 
-    getCollection(collection) {
-        if (typeof collection !== 'undefined') {
-            throw new Error(`Do not pass collection name ${collection}`);
-        }
-        return db.getCollection(this.collection);
+    getCollection(collection?: string) {
+        return db.getCollection(typeof collection === 'string'
+            ? collection
+            : this.collection);
     }
 
     async gatherInfoData(info) {
@@ -1194,12 +1196,13 @@ export class FileCache extends EventEmitter {
         for (const obj of ret) {
 
             const setter = async (date) => {
-                const parsed = new Date(Date.parse(date));
+                const parsed = Date.parse(date);;
                 if (! isNaN(parsed)) {
+                    const dp = new Date(parsed);
                     FS.utimesSync(
                         obj.fspath,
-                        parsed,
-                        parsed
+                        dp,
+                        dp
                     );
                 } 
             }
@@ -1380,7 +1383,7 @@ export class FileCache extends EventEmitter {
         // the find(selector), we construct a suitable selector.
         // For others, there is a where clause below.
 
-        const selector = {};
+        const selector: any = {};
 
         if (options.pathmatch) {
             if (typeof options.pathmatch === 'string'

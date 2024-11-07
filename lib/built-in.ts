@@ -17,38 +17,38 @@
  *  limitations under the License.
  */
 
-'use strict';
-
-const fsp   = require('node:fs/promises');
-const url   = require('url');
-const path  = require('path');
-const util  = require('util');
-const sharp = require('sharp');
-const uuid  = require('uuid');
+import fsp from 'node:fs/promises';
+import url from 'node:url';
+import path from 'node:path';
+import util from 'node:util';
+import sharp from 'sharp';
+import * as uuid from 'uuid';
 const uuidv1 = uuid.v1;
-const render = require('./render');
-const Plugin = require('./Plugin');
-const relative = require('relative');
-const hljs = require('highlight.js');
-const cheerio   = require('cheerio');
-const mahabhuta = require('mahabhuta');
-const mahaMetadata = require('mahabhuta/maha/metadata');
-const mahaPartial = require('mahabhuta/maha/partial');
-const Renderers = require('@akashacms/renderers');
+import * as render from './render.js';
+import { Plugin } from './Plugin.js';
+import relative from 'relative';
+import hljs from 'highlight.js';
+import cheerio from 'cheerio';
+import mahabhuta from 'mahabhuta';
+import mahaMetadata from 'mahabhuta/maha/metadata.js';
+import mahaPartial from 'mahabhuta/maha/partial.js';
+import Renderers from '@akashacms/renderers';
 const NunjucksRenderer = Renderers.NunjucksRenderer;
 
 const pluginName = "akashacms-builtin";
 
-const _plugin_config = Symbol('config');
-const _plugin_resizequeue = Symbol('resizequeue');
-
-module.exports = class BuiltInPlugin extends Plugin {
+export class BuiltInPlugin extends Plugin {
 	constructor() {
 		super(pluginName);
+        this.#resize_queue = [];
+
 	}
 
+    #config;
+    #resize_queue;
+
 	configure(config, options) {
-        this[_plugin_config] = config;
+        this.#config = config;
         this.options = options ? options : {};
         if (typeof this.options.relativizeHeadLinks === 'undefined') {
             this.options.relativizeHeadLinks = true;
@@ -60,15 +60,10 @@ module.exports = class BuiltInPlugin extends Plugin {
             this.options.relativizeBodyLinks = true;
         }
         this.options.config = config;
-        let moduleDirname;
-        try {
-            moduleDirname = path.dirname(require.resolve('akasharender'));
-        } catch (e) {
-            moduleDirname = __dirname;
-        }
+        let moduleDirname = import.meta.dirname;
         // Need this as the place to store Nunjucks macros and templates
-        config.addLayoutsDir(path.join(moduleDirname, 'layouts'));
-        config.addPartialsDir(path.join(moduleDirname, 'partials'));
+        config.addLayoutsDir(path.join(moduleDirname, '..', 'layouts'));
+        config.addPartialsDir(path.join(moduleDirname, '..', 'partials'));
         // Do not need this here any longer because it is handled
         // in the Configuration constructor.  The idea is to put
         // mahaPartial as the very first Mahafunc so that all
@@ -87,14 +82,8 @@ module.exports = class BuiltInPlugin extends Plugin {
             // TODO how to configure this
             // sitemap_title: ....?
         }));
-        config.addMahabhuta(module.exports.mahabhutaArray(options));
+        config.addMahabhuta(mahabhutaArray(options));
 
-        // TODO These seem to not be used
-        // if (!config.builtin) config.builtin = {};
-        // if (!config.builtin.suppress) config.builtin.suppress = {};
-        this[_plugin_resizequeue] = [];
-
-        // console.log(`Adding testExtension`);
         const njk = this.config.findRendererName('.html.njk');
         njk.njkenv().addExtension('akstylesheets',
             new stylesheetsExtension(this.config, this, njk)
@@ -105,6 +94,17 @@ module.exports = class BuiltInPlugin extends Plugin {
         njk.njkenv().addExtension('akfooterjs',
             new footerJavaScriptExtension(this.config, this, njk)
         );
+
+        // Verify that the extensions were installed
+        for (const ext of [
+                    'akstylesheets',
+                    'akheaderjs',
+                    'akfooterjs'
+        ]) {
+            if (!njk.njkenv().hasExtension(ext)) {
+                throw new Error(`Configure - NJK does not have extension - ${ext}`);
+            }
+        }
 
 
         // try {
@@ -120,9 +120,11 @@ module.exports = class BuiltInPlugin extends Plugin {
         // }
     }
 
-    get config() { return this[_plugin_config]; }
-    get resizequeue() { return this[_plugin_resizequeue]; }
+    get config() { return this.#config; }
+    // get resizequeue() { return this.#resize_queue; }
 
+    get resizequeue() { return this.#resize_queue; }
+    
     /**
      * Determine whether <link> tags in the <head> for local
      * URLs are relativized or absolutized.
@@ -160,7 +162,7 @@ module.exports = class BuiltInPlugin extends Plugin {
     }
 
     addImageToResize(src, resizewidth, resizeto, docPath) {
-        this[_plugin_resizequeue].push({ src, resizewidth, resizeto, docPath });
+        this.#resize_queue.push({ src, resizewidth, resizeto, docPath });
     }
 
     async onSiteRendered(config) {
@@ -169,9 +171,10 @@ module.exports = class BuiltInPlugin extends Plugin {
         // await documents.isReady();
         const assets = this.akasha.filecache.assets;
         // await assets.isReady();
-        while (this.resizequeue.length > 0) {
+        while (Array.isArray(this.#resize_queue)
+            && this.#resize_queue.length > 0) {
 
-            let toresize = this.resizequeue.pop();
+            let toresize = this.#resize_queue.pop();
 
             let img2resize;
             if (!path.isAbsolute(toresize.src)) {
@@ -222,7 +225,7 @@ module.exports = class BuiltInPlugin extends Plugin {
 
 }
 
-module.exports.mahabhutaArray = function(options) {
+export const mahabhutaArray = function(options) {
     let ret = new mahabhuta.MahafuncArray(pluginName, options);
     ret.addMahafunc(new StylesheetsElement());
     ret.addMahafunc(new HeaderJavaScript());
@@ -364,7 +367,7 @@ function _doFooterJavaScript(metadata, options) {
 
 class StylesheetsElement extends mahabhuta.CustomElement {
 	get elementName() { return "ak-stylesheets"; }
-	process($element, metadata, dirty) {
+	async process($element, metadata, setDirty: Function, done?: Function) {
 		let ret =  _doStylesheets(metadata, this.array.options);
         // console.log(`StylesheetsElement `, ret);
         return ret;
@@ -373,7 +376,7 @@ class StylesheetsElement extends mahabhuta.CustomElement {
 
 class HeaderJavaScript extends mahabhuta.CustomElement {
 	get elementName() { return "ak-headerJavaScript"; }
-	process($element, metadata, dirty) {
+	async process($element, metadata, setDirty: Function, done?: Function) {
 		let ret = _doHeaderJavaScript(metadata, this.array.options);
         // console.log(`HeaderJavaScript `, ret);
         return ret;
@@ -382,7 +385,7 @@ class HeaderJavaScript extends mahabhuta.CustomElement {
 
 class FooterJavaScript extends mahabhuta.CustomElement {
 	get elementName() { return "ak-footerJavaScript"; }
-	process($element, metadata, dirty) {
+	async process($element, metadata, dirty) {
 		return _doFooterJavaScript(metadata, this.array.options);
 	}
 }
@@ -390,7 +393,7 @@ class FooterJavaScript extends mahabhuta.CustomElement {
 class HeadLinkRelativizer extends mahabhuta.Munger {
     get selector() { return "html head link"; }
     get elementName() { return "html head link"; }
-    async process($, $link, metadata, dirty) {
+    async process($, $link, metadata, dirty): Promise<string> {
         // Only relativize if desired
         if (!this.array.options.relativizeHeadLinks) return;
         let href = $link.attr('href');
@@ -410,7 +413,7 @@ class HeadLinkRelativizer extends mahabhuta.Munger {
 class ScriptRelativizer extends mahabhuta.Munger {
     get selector() { return "script"; }
     get elementName() { return "script"; }
-    async process($, $link, metadata, dirty) {
+    async process($, $link, metadata, dirty): Promise<string> {
         // Only relativize if desired
         if (!this.array.options.relativizeScriptLinks) return;
         let href = $link.attr('src');
@@ -447,7 +450,7 @@ class InsertTeaser extends mahabhuta.CustomElement {
 }
 
 class AkBodyClassAdd extends mahabhuta.PageProcessor {
-	process($, metadata, dirty) {
+	async process($, metadata, dirty): Promise<string> {
 		if (typeof metadata.akBodyClassAdd !== 'undefined'
 		 && metadata.akBodyClassAdd != ''
 		 && $('html body').get(0)) {
@@ -455,9 +458,9 @@ class AkBodyClassAdd extends mahabhuta.PageProcessor {
 				if (!$('html body').hasClass(metadata.akBodyClassAdd)) {
 					$('html body').addClass(metadata.akBodyClassAdd);
 				}
-				resolve();
+				resolve(undefined);
 			});
-		} else return Promise.resolve();
+		} else return Promise.resolve('');
 	}
 }
 
@@ -692,7 +695,7 @@ class SelectElements extends mahabhuta.Munger {
     get selector() { return "select-elements"; }
     get elementName() { return "select-elements"; }
 
-    async process($, $link, metadata, dirty) {
+    async process($, $link, metadata, dirty): Promise<string> {
         let count = $link.attr('count')
                     ? Number.parseInt($link.attr('count'))
                     : 1;
@@ -726,6 +729,7 @@ class SelectElements extends mahabhuta.Munger {
             $newItem.append(chosen);
         }
 
+        return '';
     }
 }
 
@@ -919,9 +923,10 @@ class AnchorCleanup extends mahabhuta.Munger {
 class MungedAttrRemover extends mahabhuta.Munger {
     get selector() { return 'html body a[munged]'; }
     get elementName() { return 'html body a[munged]'; }
-    async process($, $element, metadata, dirty, done) {
+    async process($, $element, metadata, setDirty: Function, done?: Function): Promise<string> {
         // console.log($element);
         $element.removeAttr('munged');
+        return '';
     }
 }
 
@@ -930,6 +935,10 @@ class MungedAttrRemover extends mahabhuta.Munger {
 // From https://github.com/softonic/nunjucks-include-with/tree/master
 
 class stylesheetsExtension {
+    tags;
+    config;
+    plugin;
+    njkRenderer;
     constructor(config, plugin, njkRenderer) {
         this.tags = [ 'akstylesheets' ];
         this.config = config;
@@ -952,7 +961,7 @@ class stylesheetsExtension {
             parser.advanceAfterBlockEnd(tok.value);
 
             // parse the body and possibly the error block, which is optional
-            var body = parser.parseUntilBlocks('endstylesheets');
+            var body = parser.parseUntilBlocks('endakstylesheets');
 
             parser.advanceAfterBlockEnd();
 
@@ -970,6 +979,10 @@ class stylesheetsExtension {
 }
 
 class headerJavaScriptExtension {
+    tags;
+    config;
+    plugin;
+    njkRenderer;
     constructor(config, plugin, njkRenderer) {
         this.tags = [ 'akheaderjs' ];
         this.config = config;
@@ -985,7 +998,7 @@ class headerJavaScriptExtension {
             var tok = parser.nextToken();
             var args = parser.parseSignature(null, true);
             parser.advanceAfterBlockEnd(tok.value);
-            var body = parser.parseUntilBlocks('endheaderjs');
+            var body = parser.parseUntilBlocks('endakheaderjs');
             parser.advanceAfterBlockEnd();
             return new nodes.CallExtension(this, 'run', args, [body]);
         } catch (err) {
@@ -1000,6 +1013,10 @@ class headerJavaScriptExtension {
 }
 
 class footerJavaScriptExtension {
+    tags;
+    config;
+    plugin;
+    njkRenderer;
     constructor(config, plugin, njkRenderer) {
         this.tags = [ 'akfooterjs' ];
         this.config = config;
@@ -1015,7 +1032,7 @@ class footerJavaScriptExtension {
             var tok = parser.nextToken();
             var args = parser.parseSignature(null, true);
             parser.advanceAfterBlockEnd(tok.value);
-            var body = parser.parseUntilBlocks('endfooterjs');
+            var body = parser.parseUntilBlocks('endakfooterjs');
             parser.advanceAfterBlockEnd();
             return new nodes.CallExtension(this, 'run', args, [body]);
         } catch (err) {

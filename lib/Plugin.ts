@@ -17,22 +17,20 @@
  *  limitations under the License.
  */
 
-'use strict';
+export class Plugin {
 
-const _plugin_name = Symbol('name');
-const _plugin_options = Symbol('options');
-const _plugin_akasha = Symbol('akasha');
-
-module.exports = class Plugin {
+    #name: string;
+    #options: any;
+    #akasha;
 
     constructor(name) {
-        this[_plugin_name]  = name;
+        this.#name  = name;
     }
 
-    set options(newOptions) { this[_plugin_options] = newOptions; }
-    get options() { return this[_plugin_options]; }
-    get akasha() { return this[_plugin_akasha]; }
-    set akasha(_akasha) { this[_plugin_akasha] = _akasha; }
+    set options(newOptions) { this.#options = newOptions; }
+    get options() { return this.#options; }
+    get akasha() { return this.#akasha; }
+    set akasha(_akasha) { this.#akasha = _akasha; }
 
     /**
      * Add this plugin to the configuration object.
@@ -44,7 +42,7 @@ module.exports = class Plugin {
     /**
      * Getter for the plugin name
      */
-    get name() { return this[_plugin_name]; }
+    get name() { return this.#name; }
 
     /**
      * Getter for object describing the additional FileCache fields
