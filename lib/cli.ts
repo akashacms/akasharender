@@ -93,7 +93,7 @@ program
             )).default;
             let akasha = config.akasha;
             await akasha.setup(config);
-            data.init();
+            await data.removeAll();
             console.log(`render-document before renderPath ${documentFN}`);
             let result = await akasha.renderPath(config, documentFN);
             console.log(result);
@@ -118,7 +118,7 @@ program
             )).default;
             let akasha = config.akasha;
             await akasha.setup(config);
-            data.init();
+            await data.removeAll();
             if (cmdObj.copyAssets) {
                 await config.copyAssets();
             }
@@ -192,7 +192,7 @@ program
             )).default;
             let akasha = config.akasha;
             await akasha.setup(config);
-            data.init();
+            await data.removeAll();
             // console.log('CALLING config.hookBeforeSiteRendered');
             await config.hookBeforeSiteRendered();
             const watchman = (await _watchman).watchman;
