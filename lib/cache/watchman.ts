@@ -26,7 +26,7 @@ import {
 } from './file-cache-lokijs.js';
 
 async function renderVPath(config, info) {
-    data.remove(info.mountPoint, info.vpath);
+    await data.remove(info.mountPoint, info.vpath);
     let result = await config.akasha.renderPath(config, info.vpath);
     console.log(result);
 }
@@ -46,7 +46,7 @@ async function renderForLayout(config, info) {
 
     const queue = fastq.promise(async function(item) {
         try {
-            data.remove(item.mountPoint, item.vpath);
+            await data.remove(item.mountPoint, item.vpath);
             let result = await config.akasha.renderPath(config, item.vpath);
             console.log(result);
             return "ok";
@@ -66,7 +66,7 @@ async function renderForLayout(config, info) {
 }
 
 async function rebuild(config) {
-    data.removeAll();
+    await data.removeAll();
     let results = await config.akasha.render(config);
     for (let result of results) {
         if (result.error) {
