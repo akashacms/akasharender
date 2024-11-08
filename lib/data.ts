@@ -1,6 +1,6 @@
 /**
  *
- * Copyright 2014-2022 David Herron
+ * Copyright 2014-2024 David Herron
  *
  * This file is part of AkashaCMS (http://akashacms.com/).
  *
@@ -16,8 +16,6 @@
  *  See the License for the specific language governing permissions and
  *  limitations under the License.
  */
-
-// TODO - write a module to take rendering data and produce a table
 
 import path from 'node:path';
 
