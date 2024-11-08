@@ -76,7 +76,7 @@ export async function renderDocument(config, docInfo) {
                 throw new Error(`Error rendering ${docInfo.vpath} ${(err.stack ? err.stack : err)}`);
             }
             // console.log(docrendered);
-            data.report(docInfo.mountPoint, docInfo.vpath, config.renderTo, 
+            await data.report(docInfo.mountPoint, docInfo.vpath, config.renderTo, 
                                 "FIRST RENDER", renderStart);
             
             // There may be a layout, which will be in metadata.layout
@@ -134,7 +134,7 @@ export async function renderDocument(config, docInfo) {
             }
 
             const renderSecondRender = new Date();
-            data.report(docInfo.mountPoint, docInfo.vpath, config.renderTo, 
+            await data.report(docInfo.mountPoint, docInfo.vpath, config.renderTo, 
                                 "SECOND RENDER", renderStart);
 
             // Next step is to run Mahabhuta on the rendered content
@@ -169,7 +169,7 @@ export async function renderDocument(config, docInfo) {
                 }
             }
 
-            data.report(docInfo.mountPoint, docInfo.vpath, config.renderTo, 
+            await data.report(docInfo.mountPoint, docInfo.vpath, config.renderTo, 
                 "MAHABHUTA", renderStart);
 
             const renderDest = path.join(config.renderTo, docInfo.renderPath);
@@ -178,8 +178,11 @@ export async function renderDocument(config, docInfo) {
 
             // console.log(`RENDERED ${renderer.name} ${docInfo.path} ==> ${renderToFpath}`);
             const renderEndRendered = new Date();
-            data.report(docInfo.mountPoint, docInfo.vpath, config.renderTo, "RENDERED", renderStart);
-            return `${renderer.name} ${docInfo.vpath} ==> ${docInfo.renderPath} (${(renderEndRendered.valueOf() - renderStart.valueOf()) / 1000} seconds)\n${data.data4file(docInfo.mountPoint, docInfo.vpath)}`;
+            await data.report(
+                docInfo.mountPoint, docInfo.vpath,
+                config.renderTo,
+                "RENDERED", renderStart);
+            return `${renderer.name} ${docInfo.vpath} ==> ${docInfo.renderPath} (${(renderEndRendered.valueOf() - renderStart.valueOf()) / 1000} seconds)\n${await data.data4file(docInfo.mountPoint, docInfo.vpath)}`;
         } catch (err) {
             console.error(`in renderer branch for ${docInfo.vpath} to ${docInfo.renderPath} error=${err.stack ? err.stack : err}`);
             throw new Error(`in renderer branch for ${docInfo.vpath} to ${docInfo.renderPath} error=${err.stack ? err.stack : err}`);
