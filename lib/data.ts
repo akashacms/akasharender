@@ -32,8 +32,14 @@ class Trace {
     @field({ name: 'fpath', dbtype: 'TEXT' })
     fpath: string;
 
-    @field({ name: 'fullpath', dbtype: 'TEXT' })
-    fullpath: string;
+    @field({
+        name: 'fullpath',
+        // This caused an error
+        // dbtype: 'TEXT AS (concat(basedir, "/", fpath))',
+        // ERROR: cannot INSERT into generated column "fullpath"
+        dbtype: 'TEXT',
+    })
+    fullpath?: string;
 
     @field({ name: 'renderTo', dbtype: 'TEXT' })
     renderTo: string;
@@ -55,7 +61,7 @@ class Trace {
         dbtype: "TEXT DEFAULT(datetime('now') || 'Z')"
     })
     now: string;
-    
+
 }
 
 await schema().createTable(sqdb, 'TRACES');
@@ -81,11 +87,15 @@ export async function report(basedir, fpath, renderTo, stage, start) {
  * @param {*} fpath
  */
 export async function remove(basedir, fpath) {
-    await dao.deleteAll({ basedir, fpath });
+    try {
+        await dao.deleteAll({ basedir, fpath });
+    } catch (err) {}
 };
 
 export async function removeAll() {
-    await dao.deleteAll({});
+    try {
+        await dao.deleteAll({});
+    } catch (err) {}
 };
 
 export async function print() {
@@ -109,7 +119,7 @@ export async function data4file(basedir, fpath) {
     });
     for (let trace of traces) {
         if (trace.basedir === basedir && trace.fpath === fpath) {
-            ret += `${trace.basedir} ${trace.fpath} ${trace.renderTo} ${trace.stage} ${(new Date(trace.now).valueOf() - new Date(trace.start).valueOf()) / 1000} seconds\n`;
+            ret += `${trace.fullpath} ${trace.renderTo} ${trace.stage} ${(new Date(trace.now).valueOf() - new Date(trace.start).valueOf()) / 1000} seconds\n`;
         }
     }
     return ret;
