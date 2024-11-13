@@ -46,6 +46,7 @@
     "relative": "^3.0.x",
     "rss": "^1.2.x",
     "sharp": "^0.33.x",
+    "sqlite-regex": "^0.2.4-alpha.1",
     "sqlite3": "^5.1.7",
     "sqlite3orm": "^2.7.3",
     "utils-decorators": "^2.10.0",
