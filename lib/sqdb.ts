@@ -24,7 +24,35 @@
  * ORM that runs on top of SQLITE3.
  */
 
+import { Database } from 'sqlite3';
+// import sqleanLibs from 'sqlite3-sqlean';
+import * as sqlite_regex from "sqlite-regex";
+
 import { SqlDatabase } from 'sqlite3orm';
 
-export const sqdb = new SqlDatabase();;
+/**
+ * Subclass the SqlDatabase so we can expose
+ * the underlying SQLITE3 Database object and
+ * some useful methods on that class.
+ */
+export class SqlDatabaseChild extends SqlDatabase {
+    _db() { return this.db; }
+
+    loadExtension(filename: string, callback?: (err?: Error | null) => void): Database {
+        return this.db.loadExtension(filename, callback);
+    }
+}
+
+// Turns on full stack traces
+// SqlDatabase.verbose();
+export const sqdb = new SqlDatabaseChild();
 await sqdb.open(':memory:');
+// await sqdb.open('test.db');
+// sqdb.loadExtension(sqleanLibs.reLibPath);
+sqdb.loadExtension(sqlite_regex.getLoadablePath());
+
+// This traces SQL statements
+//
+// sqdb.on('trace', sql => {
+//     console.log(sql);
+// });
