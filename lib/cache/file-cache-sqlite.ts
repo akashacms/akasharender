@@ -27,6 +27,8 @@ import { sqdb } from '../sqdb.js';
 import { Configuration } from '../index.js';
 import fastq from 'fastq';
 
+///////////// Assets table
+
 @table({
     name: 'ASSETS',
     withoutRowId: true,
@@ -64,6 +66,18 @@ class Asset {
     pathInMounted: string;
 
     @field({
+        name: 'fspath', dbtype: 'TEXT'
+    })
+    @index('asset_fspath')
+    fspath: string;
+
+    @field({
+        name: 'renderPath', dbtype: 'TEXT'
+    })
+    @index('asset_renderPath')
+    renderPath: string;
+
+    @field({
         name: 'mtimeMs',
         dbtype: "TEXT DEFAULT(datetime('now') || 'Z')"
     })
@@ -78,10 +92,10 @@ class Asset {
 
 await schema().createTable(sqdb, 'ASSETS');
 type TassetsDAO = BaseDAO<Asset>;
-const assetsDAO: TassetsDAO
+export const assetsDAO: TassetsDAO
     = new BaseDAO<Asset>(Asset, sqdb);
 
-
+//////////// Partials Table
 
 @table({
     name: 'PARTIALS',
@@ -120,6 +134,18 @@ class Partial {
     pathInMounted: string;
 
     @field({
+        name: 'fspath', dbtype: 'TEXT'
+    })
+    @index('partial_fspath')
+    fspath: string;
+
+    @field({
+        name: 'renderPath', dbtype: 'TEXT'
+    })
+    @index('partial_renderPath')
+    renderPath: string;
+
+    @field({
         name: 'mtimeMs',
         dbtype: "TEXT DEFAULT(datetime('now') || 'Z')"
     })
@@ -132,7 +158,11 @@ class Partial {
 }
 
 await schema().createTable(sqdb, 'PARTIALS');
-const partialsDAO = new BaseDAO<Partial>(Partial, sqdb);
+type TpartialsDAO = BaseDAO<Partial>;
+export const partialsDAO
+    = new BaseDAO<Partial>(Partial, sqdb);
+
+///////////////// Layouts Table
 
 @table({
     name: 'LAYOUTS',
@@ -171,6 +201,18 @@ class Layout {
     pathInMounted: string;
 
     @field({
+        name: 'fspath', dbtype: 'TEXT'
+    })
+    @index('layout_fspath')
+    fspath: string;
+
+    @field({
+        name: 'renderPath', dbtype: 'TEXT'
+    })
+    @index('layout_renderPath')
+    renderPath: string;
+
+    @field({
         name: 'mtimeMs',
         dbtype: "TEXT DEFAULT(datetime('now') || 'Z')"
     })
@@ -184,7 +226,11 @@ class Layout {
 }
 
 await schema().createTable(sqdb, 'LAYOUTS');
-const layoutsDAO = new BaseDAO<Layout>(Layout, sqdb);
+type TlayoutsDAO = BaseDAO<Layout>;
+export const layoutsDAO
+    = new BaseDAO<Layout>(Layout, sqdb);
+
+/////////////// Documents Table
 
 @table({
     name: 'DOCUMENTS',
@@ -223,10 +269,44 @@ class Document {
     pathInMounted: string;
 
     @field({
+        name: 'fspath', dbtype: 'TEXT'
+    })
+    @index('docs_fspath')
+    fspath: string;
+
+    @field({
+        name: 'renderPath', dbtype: 'TEXT'
+    })
+    @index('docs_renderPath')
+    renderPath: string;
+
+    @field({
+        name: 'rendersToHTML', dbtype: 'INTEGER'
+    })
+    @index('docs_rendersToHTML')
+    rendersToHTML: boolean;
+
+    @field({
+        name: 'dirname', dbtype: 'TEXT'
+    })
+    @index('docs_dirname')
+    dirname: string;
+
+    @field({
         name: 'mtimeMs',
         dbtype: "TEXT DEFAULT(datetime('now') || 'Z')"
     })
     mtimeMs: string;
+
+    @field({
+        name: 'docMetadata', dbtype: 'TEXT', isJson: true
+    })
+    docMetadata: any;
+
+    @field({
+        name: 'metadata', dbtype: 'TEXT', isJson: true
+    })
+    metadata: any;
 
     @field({
         name: 'info', dbtype: 'TEXT', isJson: true
@@ -236,7 +316,9 @@ class Document {
 }
 
 await schema().createTable(sqdb, 'DOCUMENTS');
-const documentsDAO = new BaseDAO<Document>(Document, sqdb);
+type TdocumentssDAO = BaseDAO<Document>;
+export const documentsDAO
+    = new BaseDAO<Document>(Document, sqdb);
 
 @table({ name: 'TAGGLUE' })
 class TagGlue {
@@ -304,8 +386,30 @@ const remapdirs = dirz => {
     });
 };
 
+/**
+ * Type for return from paths method.  The fields here
+ * are whats in the Asset/Layout/Partial classes above
+ * plus a couple fields that older code expected
+ * from the paths method.
+ */
+export type PathsReturnType = {
+    vpath: string,
+    mime: string,
+    mounted: string,
+    mountPoint: string,
+    pathInMounted: string,
+    mtimeMs: string,
+    info: any,
+    // These will be computed in BaseFileCache
+    // They were returned in previous versions.
+    fspath: string,
+    renderPath: string
+};
 
-class BaseFileCache<T extends object> extends EventEmitter {
+export class BaseFileCache<
+        T extends Asset | Layout | Partial | Document,
+        Tdao extends BaseDAO<T>
+> extends EventEmitter {
 
     #config?: Configuration;
     #name?: string;
@@ -313,7 +417,7 @@ class BaseFileCache<T extends object> extends EventEmitter {
     #is_ready: boolean = false;
     #cache_content: boolean;
     #map_renderpath: boolean;
-    #dao: BaseDAO<T>;
+    #dao: Tdao; // BaseDAO<T>;
 
 
     /**
@@ -326,7 +430,7 @@ class BaseFileCache<T extends object> extends EventEmitter {
         config: Configuration,
         name: string,
         dirs: dirToWatch[],
-        dao: BaseDAO<T>
+        dao: Tdao // BaseDAO<T>
     ) {
         super();
         // console.log(`BaseFileCache ${name} constructor dirs=${util.inspect(dirs)}`);
@@ -346,7 +450,7 @@ class BaseFileCache<T extends object> extends EventEmitter {
     get gacheContent() { return this.#cache_content; }
     set mapRenderPath(doit) { this.#map_renderpath = doit; }
     get mapRenderPath() { return this.#map_renderpath; }
-    get dao(): BaseDAO<T> { return this.#dao; }
+    get dao(): Tdao { return this.#dao; }
 
     // SKIP: getDynamicView
 
@@ -368,6 +472,8 @@ class BaseFileCache<T extends object> extends EventEmitter {
         this.removeAllListeners('added');
         this.removeAllListeners('unlinked');
         this.removeAllListeners('ready');
+
+        await sqdb.close();
     }
 
     /**
@@ -488,6 +594,8 @@ class BaseFileCache<T extends object> extends EventEmitter {
 
         await this.#watcher.watch(remapdirs(this.dirs));
 
+        // console.log(`DAO ${this.dao.table.name} ${util.inspect(this.dao.table.fields)}`);
+
     }
 
     async handleChanged(name, info) {
@@ -502,10 +610,6 @@ class BaseFileCache<T extends object> extends EventEmitter {
         // console.log(`handleChanged ${info.vpath} ${info.metadata && info.metadata.publicationDate ? info.metadata.publicationDate : '???'}`);
 
         info.stack = undefined;
-
-        assetsDAO.selectAll({
-            vpath: { eq: info.vpath }
-        });
 
         const result = await this.dao.selectAll({
             vpath: { eq: info.vpath },
@@ -529,7 +633,14 @@ class BaseFileCache<T extends object> extends EventEmitter {
             mountPoint: info.mountPoint,
             pathInMounted: info.pathInMounted,
             info,
-            mtimeMs: new Date(info.statsMtime).toISOString()
+            mtimeMs: new Date(info.statsMtime).toISOString(),
+            // For BaseFileCache, these fields are
+            // simply computed as shown.  For the
+            // DocsFileCache, renderPath will be the
+            // file as rendered which is different from
+            // the value in vpath.
+            fspath: path.join(info.mounted, info.pathInMounted),
+            renderPath: info.vpath
         } as T);
 
         await this.config.hookFileChanged(name, info);
@@ -574,7 +685,14 @@ class BaseFileCache<T extends object> extends EventEmitter {
             mountPoint: info.mountPoint,
             pathInMounted: info.pathInMounted,
             info,
-            mtimeMs: new Date(info.statsMtime).toISOString()
+            mtimeMs: new Date(info.statsMtime).toISOString(),
+            // For BaseFileCache, these fields are
+            // simply computed as shown.  For the
+            // DocsFileCache, renderPath will be the
+            // file as rendered which is different from
+            // the value in vpath.
+            fspath: path.join(info.mounted, info.pathInMounted),
+            renderPath: info.vpath
         } as T);
 
         await this.config.hookFileAdded(name, info);
@@ -647,10 +765,11 @@ class BaseFileCache<T extends object> extends EventEmitter {
                 // console.log(`dirMount.ignore ${fspath} ${i} => ${ignore}`);
             }
             // if (ignore) console.log(`MUST ignore File ${info.vpath}`);
+            // console.log(`ignoreFile for ${info.vpath} ==> ${ignore}`);
             return ignore;
         } else {
             // no mount?  that means something strange
-            // console.error(`No dirMount found for ${info.vpath} / ${info.dirMountedOn}`);
+            console.error(`No dirMount found for ${info.vpath} / ${info.dirMountedOn}`);
             return true;
         }
     }
@@ -677,7 +796,9 @@ class BaseFileCache<T extends object> extends EventEmitter {
         return true;
     }
 
-    async paths() {
+    async paths()
+        : Promise<Array<PathsReturnType>>
+    {
         const fcache = this;
 
         // This is copied from the older version
@@ -685,8 +806,9 @@ class BaseFileCache<T extends object> extends EventEmitter {
         // seems meant to eliminate duplicates.
         const vpathsSeen = new Set();
 
-        const result = await this.#dao.selectAll({});
+        const result = await this.dao.selectAll({});
         const result2 = result.filter(item => {
+            // console.log(`paths ?ignore? ${item.vpath}`);
             if (fcache.ignoreFile(item)) {
                 return false;
             }
@@ -710,13 +832,40 @@ class BaseFileCache<T extends object> extends EventEmitter {
             if (aa.mtimeMs > bb.mtimeMs) return -1;
         });
 
-        // The old version of this function had a
-        // stage in which the values were map'd into
-        // an undocumented object.
+        // This stage converts the items 
+        // received by this function into
+        // what is required from
+        // the paths method.
+        // const result4
+        //         = new Array<PathsReturnType>();
+        // for (const item of result3) {
+        //     result4.push(<PathsReturnType>{
+        //         vpath: item.vpath,
+        //         mime: item.mime,
+        //         mounted: item.mounted,
+        //         mountPoint: item.mountPoint,
+        //         pathInMounted: item.pathInMounted,
+        //         mtimeMs: item.mtimeMs,
+        //         info: item.info,
+        //         fspath: path.join(item.mounted, item.pathInMounted),
+        //         renderPath: item.vpath
+        //     });
+        // }
+
         return result3;
     }
 
+    /**
+     * Find the file within the cache.
+     *
+     * @param _fpath The vpath or renderPath to look for
+     * @returns boolean true if found, false otherwise
+     */
     async find(_fpath) {
+
+        if (typeof _fpath !== 'string') {
+            throw new Error(`find parameter not string ${typeof _fpath}`);
+        }
 
         const fpath = _fpath.startsWith('/')
                     ? _fpath.substring(1)
@@ -724,18 +873,20 @@ class BaseFileCache<T extends object> extends EventEmitter {
 
         const fcache = this;
 
-        const result1 = await this.#dao.selectAll({
+        const result1 = await this.dao.selectAll({
             or: [
                 { vpath: { eq: fpath }},
                 { renderPath: { eq: fpath }}
             ]
         } as Filter<T>);
 
+        // console.log(`find ${_fpath} ${fpath} ==> result1 ${util.inspect(result1)} `);
+
         const result2 = result1.filter(item => {
-            if (fcache.ignoreFile(item)) {
-                return false;
-            }
+            return !(fcache.ignoreFile(item));
         });
+
+        // console.log(`find ${_fpath} ${fpath} ==> result2 ${util.inspect(result2)} `);
 
         let ret;
         if (Array.isArray(result2) && result2.length > 0) {
@@ -747,6 +898,872 @@ class BaseFileCache<T extends object> extends EventEmitter {
         }
         return ret;
     }
+
+    async findAll() {
+
+        const fcache = this;
+
+        const result1 = await this.dao.selectAll({
+        } as Filter<T>);
+
+        const result2 = result1.filter(item => {
+            // console.log(`findAll ?ignore? ${item.vpath}`);
+            return !(fcache.ignoreFile(item));
+        });
+        return result2;
+    }
+}
+
+export class DocumentsFileCache
+    extends BaseFileCache<Document, TdocumentssDAO> {
+
+    constructor(
+        config: Configuration,
+        name: string,
+        dirs: dirToWatch[]
+    ) {
+        super(config, name, dirs, documentsDAO);
+    }
+
+    async gatherInfoData(info) {
+
+        info.renderPath = info.vpath;
+        info.dirname = path.dirname(info.vpath);
+        if (info.dirname === '.') info.dirname = '/';
+
+        // find the mounted directory,
+        // get the baseMetadata
+        for (let dir of this.dirs) {
+            if (dir.mounted === info.mounted) {
+                if (dir.baseMetadata) {
+                    info.baseMetadata = dir.baseMetadata;
+                }
+                break;
+            }
+        }
+
+        // set publicationDate somehow
+
+
+        let renderer = this.config.findRendererPath(info.vpath);
+        info.renderer = renderer;
+
+        if (renderer) {
+
+            info.renderPath
+                = renderer.filePath(info.vpath);
+
+            // This was in the LokiJS code, but
+            // was not in use.
+            // info.rendername = path.basename(
+            //     info.renderPath
+            // );
+
+            info.rendersToHTML = minimatch(
+                info.renderPath,
+                '**/*.html')
+            ? true : false;
+
+            if (renderer.parseMetadata) {
+
+                // Using <any> here covers over
+                // that parseMetadata requires
+                // a RenderingContext which
+                // in turn requires a 
+                // metadata object.
+                const rc = renderer.parseMetadata(<any>{
+                    fspath: info.fspath,
+                    content: await fs.readFile(info.fspath, 'utf-8')
+                });
+
+                // docMetadata is the unmodified metadata/frontmatter
+                // in the document
+                info.docMetadata = rc.metadata;
+                // docContent is the unparsed original content
+                // including any frontmatter
+                info.docContent = rc.content;
+                // docBody is the parsed body -- e.g. following the frontmatter
+                info.docBody = rc.body;
+
+                // This is the computed metadata that includes data from 
+                // several sources
+                info.metadata = { };
+                if (!info.docMetadata) info.docMetadata = {};
+
+                // The rest of this is adapted from the old function
+                // HTMLRenderer.newInitMetadata
+
+                // For starters the metadata is collected from several sources.
+                // 1) the metadata specified in the directory mount where
+                //    this document was found
+                // 2) metadata in the project configuration
+                // 3) the metadata in the document, as captured in docMetadata
+
+                for (let yprop in info.baseMetadata) {
+                    // console.log(`initMetadata ${basedir} ${fpath} baseMetadata ${baseMetadata[yprop]}`);
+                    info.metadata[yprop] = info.baseMetadata[yprop];
+                }
+                for (let yprop in this.config.metadata) {
+                    info.metadata[yprop] = this.config.metadata[yprop];
+                }
+                let fmmcount = 0;
+                for (let yprop in info.docMetadata) {
+                    info.metadata[yprop] = info.docMetadata[yprop];
+                    fmmcount++;
+                }
+
+                // The rendered version of the content lands here
+                info.metadata.content = "";
+                // The document object has been useful for 
+                // communicating the file path and other data.
+                info.metadata.document = {};
+                info.metadata.document.basedir = info.mountPoint;
+                info.metadata.document.relpath = info.pathInMounted;
+                info.metadata.document.relrender = renderer.filePath(info.pathInMounted);
+                info.metadata.document.path = info.vpath;
+                info.metadata.document.renderTo = info.renderPath;
+
+                // Ensure the <em>tags</em> field is an array
+                if (!(info.metadata.tags)) {
+                    info.metadata.tags = [];
+                } else if (typeof (info.metadata.tags) === 'string') {
+                    let taglist = [];
+                    const re = /\s*,\s*/;
+                    info.metadata.tags.split(re).forEach(tag => {
+                        taglist.push(tag.trim());
+                    });
+                    info.metadata.tags = taglist;
+                } else if (!Array.isArray(info.metadata.tags)) {
+                    throw new Error(
+                        `FORMAT ERROR - ${info.vpath} has badly formatted tags `,
+                        info.metadata.tags);
+                }
+                info.docMetadata.tags = info.metadata.tags;
+
+                // The root URL for the project
+                info.metadata.root_url = this.config.root_url;
+
+                // Compute the URL this document will render to
+                if (this.config.root_url) {
+                    let pRootUrl = url.parse(this.config.root_url);
+                    pRootUrl.pathname = path.normalize(
+                            path.join(pRootUrl.pathname, info.metadata.document.renderTo)
+                    );
+                    info.metadata.rendered_url = url.format(pRootUrl);
+                } else {
+                    info.metadata.rendered_url = info.metadata.document.renderTo;
+                }
+
+                // info.metadata.rendered_date = info.stats.mtime;
+
+                const parsePublDate = (date) => {
+                    const parsed = Date.parse(date);
+                    if (! isNaN(parsed)) {
+                        info.metadata.publicationDate = new Date(parsed);
+                        info.publicationDate = info.metadata.publicationDate;
+                        info.publicationTime = info.publicationDate.getTime();
+                    }
+                };
+
+                if (info.docMetadata
+                 && typeof info.docMetadata.publDate === 'string') {
+                    parsePublDate(info.docMetadata.publDate);
+                }
+                if (info.docMetadata
+                 && typeof info.docMetadata.publicationDate === 'string') {
+                    parsePublDate(info.docMetadata.publicationDate);
+                }
+
+                if (!info.metadata.publicationDate) {
+                    var dateSet = false;
+                    if (info.docMetadata
+                     && info.docMetadata.publDate) {
+                        parsePublDate(info.docMetadata.publDate);
+                        dateSet = true;
+                    }
+                    if (info.docMetadata
+                     && typeof info.docMetadata.publicationDate === 'string') {
+                        parsePublDate(info.docMetadata.publicationDate);
+                        dateSet = true;
+                    }
+                    if (! dateSet && info.mtimeMs) {
+                        info.metadata.publicationDate = new Date(info.mtimeMs);
+                        info.publicationDate = info.metadata.publicationDate;
+                        info.publicationTime = info.publicationDate.getTime();
+                        // console.log(`${info.vpath} metadata.publicationDate ${info.metadata.publicationDate} set from stats.mtime`);
+                    }
+                    if (!info.metadata.publicationDate) {
+                        info.metadata.publicationDate = new Date();
+                        info.publicationDate = info.metadata.publicationDate;
+                        info.publicationTime = info.publicationDate.getTime();
+                        // console.log(`${info.vpath} metadata.publicationDate ${info.metadata.publicationDate} set from current time`);
+                    }
+                }
+
+            }
+        }
+    }
+
+    async handleChanged(name, info) {
+        console.log(`PROCESS ${name} handleChanged`, info.vpath);
+        if (this.ignoreFile(info)) {
+            // console.log(`OOOOOOOOGA!!! Received a file that should be ingored `, info);
+            return;
+        }
+        if (name !== this.name) {
+            throw new Error(`handleChanged event for wrong name; got ${name}, expected ${this.name}`);
+        }
+        // console.log(`handleChanged ${info.vpath} ${info.metadata && info.metadata.publicationDate ? info.metadata.publicationDate : '???'}`);
+
+        await this.gatherInfoData(info);
+        info.stack = undefined;
+
+        const result = await this.dao.selectAll({
+            vpath: { eq: info.vpath },
+            mounted: { eq: info.mounted }
+        } as Filter<Document>);
+
+        if (
+            !Array.isArray(result)
+         || result.length <= 0
+        ) {
+            // It wasn't found in the database.  Hence
+            // we should add it.
+            return this.handleAdded(name, info);
+        }
+
+        info.stack = undefined;
+        await this.dao.update({
+            vpath: info.vpath,
+            mime: info.mime,
+            mounted: info.mounted,
+            mountPoint: info.mountPoint,
+            pathInMounted: info.pathInMounted,
+            mtimeMs: new Date(info.statsMtime).toISOString(),
+            fspath: path.join(info.mounted, info.pathInMounted),
+            renderPath: info.renderPath,
+            rendersToHTML: info.rendersToHTML,
+            dirname: path.dirname(info.renderPath),
+            docMetadata: info.docMetadata,
+            metadata: info.metadata,
+            info,
+        } as Document);
+
+        await this.config.hookFileChanged(name, info);
+    }
+
+    async handleAdded(name, info) {
+        //  console.log(`PROCESS ${name} handleAdded`, info.vpath);
+        if (this.ignoreFile(info)) {
+            // console.log(`OOOOOOOOGA!!! Received a file that should be ingored `, info);
+            return;
+        }
+        if (name !== this.name) {
+            // console.log(`handleAdded WRONG NAME ${name} not ${this.name}`);
+            throw new Error(`handleAdded event for wrong name; got ${name}, expected ${this.name}`);
+        }
+
+        await this.gatherInfoData(info);
+        info.stack = undefined;
+
+        // console.log(`handleAdded ADDING ${info.vpath} to ${documentsDAO.table.name}`);
+        const result = await this.dao.insert({
+            vpath: info.vpath,
+            mime: info.mime,
+            mounted: info.mounted,
+            mountPoint: info.mountPoint,
+            pathInMounted: info.pathInMounted,
+            mtimeMs: new Date(info.statsMtime).toISOString(),
+            fspath: path.join(info.mounted, info.pathInMounted),
+            renderPath: info.renderPath,
+            rendersToHTML: info.rendersToHTML,
+            dirname: path.dirname(info.renderPath),
+            docMetadata: info.docMetadata,
+            metadata: info.metadata,
+            info,
+        } as Document);
+
+        // console.log(`handleAdded ADDING ${info.vpath} ==> ${util.inspect(result)}`);
+
+        await this.config.hookFileAdded(name, info);
+    }
+
+    async indexChain(_fpath) {
+
+        const fpath = _fpath.startsWith('/')
+                    ? _fpath.substring(1) 
+                    : _fpath;
+        const parsed = path.parse(fpath);
+
+        const filez: Document[] = [];
+        const self = await this.dao.selectAll({
+            'or': [
+                { vpath: { eq: fpath } },
+                { renderPath: { eq: fpath } }
+            ]
+        });
+        let fileName = fpath;
+        if (Array.isArray(self) && self.length >= 1) {
+            filez.push(self[0]);
+            fileName = self[0].renderPath;
+        }
+
+        let parentDir;
+        let dirName = path.dirname(fpath);
+        let done = false;
+        while (!(dirName === '.' || dirName === parsed.root)) {
+            if (path.basename(fileName) === 'index.html') {
+                parentDir = path.dirname(path.dirname(fileName));
+            } else {
+                parentDir = path.dirname(fileName);
+            }
+            let lookFor = path.join(parentDir, "index.html");
+
+            const index = await this.dao.selectAll({
+                'or': [
+                    { vpath: { eq: lookFor } },
+                    { renderPath: { eq: lookFor } }
+                ]
+            });
+
+            if (Array.isArray(index) && index.length >= 1) {
+                filez.push(index[0]);
+            }
+
+            fileName = lookFor;
+            dirName = path.dirname(lookFor);
+        }
+
+        return filez
+                .map(function(obj: any) {
+                    obj.foundDir = obj.mountPoint;
+                    obj.foundPath = obj.renderPath;
+                    obj.filename = '/' + obj.renderPath;
+                    return obj;
+                })
+                .reverse();
+    }
+
+    /**
+     * Finds all the documents in the same directory
+     * as the named file.
+     *
+     * This doesn't appear to be used anywhere.
+     *
+     * @param _fpath 
+     * @returns 
+     */
+    async siblings(_fpath) {
+        let ret;
+        let vpath = _fpath.startsWith('/')
+                  ? _fpath.substring(1)
+                  : _fpath;
+        let dirname = path.dirname(vpath);
+        // if (dirname === '.') dirname = '/';
+
+        const siblings = await this.dao.selectAll({
+            dirname: { eq: dirname },
+            // The siblings cannot include the self.
+            vpath: { neq: vpath },
+            renderPath: { neq: vpath },
+            rendersToHTML: true
+        });
+        return siblings.filter(item => {
+            return !this.ignoreFile(item);
+        });
+    }
+
+    /**
+     * Find the index files (renders to index.html)
+     * within the named subtree.
+     *
+     * @param rootPath 
+     * @returns 
+     */
+    async indexFiles(rootPath?: string) {
+        let rootP = rootPath?.startsWith('/')
+                  ? rootPath?.substring(1)
+                  : rootPath;
+
+        // Optionally appendable sub-query
+        // to handle when rootPath is specified
+        let rootQ = typeof rootP === 'string'
+            ? `AND ( renderPath regexp '^${rootP}' )`
+            : '';
+
+        return this.dao.sqldb.all(`
+        SELECT *
+        FROM DOCUMENTS
+        WHERE
+            ( rendersToHTML = true )
+        AND (
+            ( renderPath regexp '/index.html$' )
+         OR ( renderPath regexp '^index.html$' )
+        )
+        ${rootQ}
+        `);
+        
+
+        // It's proved difficult to get the regexp
+        // to work in this mode:
+        //
+        // return await this.search({
+        //     rendersToHTML: true,
+        //     renderpathmatch: /\/index.html$/,
+        //     rootPath: rootPath
+        // });
+    }
+    
+    /**
+     * For every file in the documents cache,
+     * set the access and modifications.
+     *
+     * ????? Why would this be useful?
+     * I can see doing this for the rendered
+     * files in the output directory.  But this is
+     * for the files in the documents directories. ????
+     */
+    async setTimes() {
+        await this.dao.selectEach(
+            (err, model) => {
+
+                const setter = async (date) => {
+                    const parsed = Date.parse(date);;
+                    if (! isNaN(parsed)) {
+                        const dp = new Date(parsed);
+                        FS.utimesSync(
+                            model.fspath,
+                            dp,
+                            dp
+                        );
+                    } 
+                }
+                if (model.info.docMetadata
+                 && model.info.docMetadata.publDate) {
+                    setter(model.info.docMetadata.publDate);
+                }
+                if (model.info.docMetadata
+                 && model.info.docMetadata.publicationDate) {
+                    setter(model.info.docMetadata.publicationDate);
+                }
+            },
+            {} as Where<Document>
+        );
+    }
+
+    /**
+     * Retrieve the documents which have tags.
+     *
+     * @returns 
+     */
+    async documentsWithTags() {
+        const docs = new Array<Document>();
+        await this.dao.selectEach(
+            (err, doc) => {
+                if (doc
+                 && doc.docMetadata
+                 && doc.docMetadata.tags
+                 && Array.isArray(
+                    doc.docMetadata.tags
+                 )
+                 && doc.docMetadata.tags.length >= 1
+                ) {
+                    docs.push(doc);
+                }
+            },
+            {
+                rendersToHTML: { eq: true },
+                info: { isNotNull: true }
+            } as Where<Document>
+        );
+
+        // console.log(docs);
+        return docs;
+    }
+
+    /**
+     * Get an array of tags used by all documents.
+     * This uses the JSON extension to extract
+     * the tags from the metadata object.
+     *
+     * @returns 
+     */
+    async tags() {
+        const res = await this.dao.sqldb.all(`
+            SELECT
+                vpath,
+                json_extract(docMetadata, '$.tags') as tags
+            FROM DOCUMENTS
+        `);
+
+        // console.log(res);
+
+        // The query above produces this result:
+        //
+        // {
+        //     vpath: 'tags-array.html.md',
+        //     tags: '["Tag1","Tag2","Tag3"]'
+        // },
+        // {
+        //     vpath: 'tags-string.html.md',
+        //     tags: '["Tag-string-1","Tag-string-2","Tag-string-3"]'
+        // }
+        //
+        // In other words, the tags array arrives
+        // as JSON which we must parse.
+
+        const tags = new Set();
+        for (const item of res) {
+            if (!('tags' in item)) continue;
+            let tagsP = [];
+            if (typeof item.tags === 'string') {
+                tagsP = JSON.parse(item.tags);
+            } else if (Array.isArray(item.tags)) {
+                tagsP = item.tags;
+            }
+            for (const tag of tagsP) {
+                tags.add(tag);
+            }
+        }
+
+        // The Set class made sure to weed out
+        // duplicate tags.  With Array.from
+        // we can make the set into an array
+        // which can be sorted.
+        const ret = Array.from(tags);
+        return ret.sort((a: string, b: string) => {
+            var tagA = a.toLowerCase();
+            var tagB = b.toLowerCase();
+            if (tagA < tagB) return -1;
+            if (tagA > tagB) return 1;
+            return 0;
+        });
+    }
+
+    /**
+     * Perform descriptive search operations
+     * with many options.
+     *
+     * @param options 
+     * @returns 
+     */
+    async search(options) {
+
+        const fcache = this;
+        const vpathsSeen = new Set();
+
+        const selector = {} as any;
+        if (options.mime) {
+            if (typeof options.mime === 'string') {
+                selector.mime = {
+                    eq: options.mime
+                };
+            } else if (Array.isArray(options.mime)) {
+                selector.mime = {
+                    in: options.mime
+                };
+            } /* else {
+                throw new Error(`Incorrect MIME check ${options.mime}`);
+            } */
+        }
+        if (
+            typeof options.rendersToHTML === 'boolean'
+        ) {
+            selector.rendersToHTML = {
+                eq: options.rendersToHTML
+            };
+        }
+
+        const regexSQL = {
+            or: []
+        };
+        if (
+            typeof options.pathmatch === 'string'
+        ) {
+            regexSQL.or.push({
+                sql: ` vpath regexp '${options.pathmatch}' `
+            });
+        } else if (
+            options.pathmatch instanceof RegExp
+        ) {
+            regexSQL.or.push({
+                sql: ` vpath regexp '${options.pathmatch.source}' `
+            });
+        } else if (Array.isArray(options.pathmatch)) {
+            for (const match of options.pathmatch) {
+                if (typeof match === 'string') {
+                    regexSQL.or.push({
+                        vpath: { sql: ` vpath regexp '${match}' `}
+                    });
+                } else if (match instanceof RegExp) {
+                    regexSQL.or.push({
+                        vpath: { sql: ` vpath regexp '${match.source}' `}
+                    });
+                } else {
+                    throw new Error(`search ERROR invalid pathmatch regexp ${util.inspect(match)}`);
+                }
+            }
+        } else if ('pathmatch' in options) {
+            // There's a pathmatch field, that
+            // isn't correct
+            throw new Error(`search ERROR invalid pathmatch ${util.inspect(options.pathmatch)}`);
+        }
+
+        // Attempting to do the following:
+        //
+        // sqlite> select vpath, renderPath from DOCUMENTS where renderPath regexp '/index.html$';
+        // hier-broke/dir1/dir2/index.html.md|hier-broke/dir1/dir2/index.html
+        // hier/dir1/dir2/index.html.md|hier/dir1/dir2/index.html
+        // hier/dir1/index.html.md|hier/dir1/index.html
+        // hier/imgdir/index.html.md|hier/imgdir/index.html
+        // hier/index.html.md|hier/index.html
+        // subdir/index.html.md|subdir/index.html
+
+        if (
+            typeof options.renderpathmatch === 'string'
+        ) {
+            regexSQL.or.push({
+                sql: ` renderPath regexp '${options.renderpathmatch}' `
+            });
+        } else if (
+            options.renderpathmatch instanceof RegExp
+        ) {
+            regexSQL.or.push({
+                sql: ` renderPath regexp '${options.renderpathmatch.source}' `
+            });
+        } else if (Array.isArray(options.renderpathmatch)) {
+            for (const match of options.renderpathmatch) {
+                if (typeof match === 'string') {
+                    regexSQL.or.push({
+                        vpath: { sql: ` renderPath regexp '${match}' `}
+                    });
+                } else if (match instanceof RegExp) {
+                    regexSQL.or.push({
+                        vpath: { sql: ` renderPath regexp '${match.source}' `}
+                    });
+                } else {
+                    throw new Error(`search ERROR invalid renderpathmatch regexp ${util.inspect(match)}`);
+                }
+            }
+        } else if ('renderpathmatch' in options) {
+            throw new Error(`search ERROR invalid renderpathmatch ${util.inspect(options.pathmatch)}`);
+        }
+        if (regexSQL.or.length >= 1) {
+            selector.or = regexSQL.or;
+        }
+
+        // console.log(selector)
+
+        // Select based on things we can query
+        // directly from  the Document object.
+        const result1 = await this.dao.selectAll(selector);
+
+        // If the search options include layout(s)
+        // we check docMetadata.layout
+        const result2 = options.layouts
+            ? result1.filter(item => {
+                let layouts;
+                if (Array.isArray(options.layouts)) {
+                    layouts = options.layouts;
+                } else {
+                    layouts = [ options.layouts ];
+                }
+                if (item.vpath
+                 && item.docMetadata
+                 && item.docMetadata.layout
+                ) {
+                    if (layouts.includes(
+                        item.docMetadata.layout
+                    )) {
+                        return true;
+                    } else {
+                        // This item has a
+                        // non-matching layout
+                        return false;
+                    }
+                } else {
+                    // Has no layout, therefore does
+                    // not match the layout option
+                    return false;
+                }
+            })
+            : result1;
+
+        // Check for match against tags
+        const result3 = 
+            (
+                options.tag
+                && typeof options.tag === 'string'
+            ) ? result2.filter(item => {
+                if (item.vpath
+                 && item.docMetadata
+                 && item.docMetadata.tags
+                 && Array.isArray(item.docMetadata.tags)
+                ) {
+                    if (item.docMetadata.tags.includes(options.tag)) {
+                        return true;
+                    } else {
+                        return false;
+                    }
+                } else {
+                    return false;
+                }
+            })
+            : result2;
+
+        const result4 =
+            (
+                options.rootPath
+             && typeof options.rootPath === 'string'
+            ) ? result3.filter(item => {
+                if (item.vpath
+                 && item.renderPath
+                ) {
+                    if (item.renderPath.startsWith(options.rootPath)) {
+                        return true;
+                    } else {
+                        return false;
+                    }
+                } else {
+                    return false;
+                }
+            })
+            : result3;
+
+        const result5 =
+            (
+                options.glob
+             && typeof options.glob === 'string'
+            ) ? result4.filter(item => {
+                if (item.vpath) {
+                    return minimatch(item.vpath, options.glob);
+                } else {
+                    return false;
+                }
+            })
+            : result4;
+
+        const result6 =
+            (
+                options.renderglob
+            && typeof options.renderglob === 'string'
+            ) ? result5.filter(item => {
+                if (item.renderPath) {
+                    return minimatch(item.renderPath, options.renderglob);
+                } else {
+                    return false;
+                }
+            })
+            : result5;
+
+        const result7 =
+            (
+                options.renderers
+             && Array.isArray(options.renderers)
+            ) ? result6.filter(item => {
+
+                let renderer = fcache.config.findRendererPath(item.vpath);
+                // console.log(`renderer for ${obj.vpath} `, renderer);
+                if (!renderer) return false;
+
+                let found = false;
+                for (const r of options.renderers) {
+                    // console.log(`check renderer ${typeof r} ${renderer.name} ${renderer instanceof r}`);
+                    if (typeof r === 'string'
+                     && r === renderer.name) {
+                        found = true;
+                    } else if (typeof r === 'object'
+                     || typeof r === 'function') {
+                        console.error('WARNING: Matching renderer by object class is no longer supported', r);
+                    }
+                }
+                return found;
+            })
+            : result6;
+
+        const result8 =
+            (options.filterfunc)
+            ? result7.filter(item => {
+                return options.filterfunc(
+                    fcache.config,
+                    options,
+                    item
+                );
+            })
+            : result7;
+
+        
+        let result9 = result8;
+        if (
+            typeof options.sortBy === 'string'
+         && (
+             options.sortBy === 'publicationDate'
+          || options.sortBy === 'publicationTime'
+         )
+        ) {
+            result9 = result8.sort((a, b) => {
+                let aDate = a.metadata
+                         && a.metadata.publicationDate
+                    ? new Date(a.metadata.publicationDate)
+                    : new Date(a.mtimeMs);
+                let bDate = b.metadata 
+                         && b.metadata.publicationDate
+                    ? new Date(b.metadata.publicationDate)
+                    : new Date(b.mtimeMs);
+                if (aDate === bDate) return 0;
+                if (aDate > bDate) return -1;
+                if (aDate < bDate) return 1;
+            });
+        }
+
+        let result10 = result9;
+        if (
+            typeof options.sortByDescending === 'boolean'
+         || typeof options.reverse === 'boolean'
+        ) {
+            if (typeof options.sortByDescending === 'boolean'
+             && options.sortByDescending
+            ) {
+                result10 = result9.reverse();
+            }
+            if (typeof options.reverse === 'boolean'
+             && options.reverse
+            ) {
+                result10 = result9.reverse();
+            }
+        }
+
+        let result11 = result10;
+        if (typeof options.offset === 'number') {
+            result11 = result10.slice(options.offset);
+        }
+
+        let result12 = result11;
+        if (typeof options.limit === 'number') {
+            result12 = result11.slice(
+                0, options.limit - 1
+            );
+        }
+
+        return result12;
+    }
+
+    // Skip tags for now.  Should be easy.
+
+    // For tags support, this can be useful
+    //  -- https://antonz.org/json-virtual-columns/
+    // It shows how to do generated columns
+    // from fields in JSON
+
+    // But, how to do generated columns
+    // using SQLITE3ORM?
+
+    // https://antonz.org/sqlean-regexp/ -- RegExp
+    // extension for SQLITE3
+
+    // https://github.com/asg017/sqlite-regex includes
+    // a node.js package
+    // https://www.npmjs.com/package/sqlite-regex
 }
 
 export var assetsCache;
@@ -758,7 +1775,7 @@ export async function setup(
     config: Configuration
 ): Promise<void> {
 
-    assetsCache = new BaseFileCache<Asset>(
+    assetsCache = new BaseFileCache<Asset, TassetsDAO>(
         config,
         'assets',
         config.assetDirs,
@@ -766,7 +1783,11 @@ export async function setup(
     );
     await assetsCache.setup();
 
-    partialsCache = new BaseFileCache<Partial>(
+    assetsCache.on('error', (...args) => {
+        console.error(`assetsCache ERROR ${util.inspect(args)}`)
+    });
+
+    partialsCache = new BaseFileCache<Partial, TpartialsDAO>(
         config,
         'partials',
         config.partialsDirs,
@@ -774,7 +1795,11 @@ export async function setup(
     );
     await partialsCache.setup();
 
-    layoutsCache = new BaseFileCache<Asset>(
+    partialsCache.on('error', (...args) => {
+        console.error(`partialsCache ERROR ${util.inspect(args)}`)
+    });
+
+    layoutsCache = new BaseFileCache<Layout, TlayoutsDAO>(
         config,
         'layouts',
         config.layoutDirs,
@@ -782,7 +1807,22 @@ export async function setup(
     );
     await layoutsCache.setup();
 
-    // TODO documentsCache
+    layoutsCache.on('error', (...args) => {
+        console.error(`layoutsCache ERROR ${util.inspect(args)}`)
+    });
+
+    // console.log(`DocumentsFileCache 'documents' ${util.inspect(config.documentDirs)}`);
+
+    documentsCache = new DocumentsFileCache(
+        config,
+        'documents',
+        config.documentDirs
+    );
+    await documentsCache.setup();
+
+    documentsCache.on('error', (...args) => {
+        console.error(`documentsCache ERROR ${util.inspect(args)}`)
+    });
 }
 
 export async function closeFileCaches() {
