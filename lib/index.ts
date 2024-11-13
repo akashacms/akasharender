@@ -90,6 +90,7 @@ mimedefine({'text/x-ejs': [ 'ejs']});
 mimedefine({'text/x-nunjucks': [ 'njk' ]});
 mimedefine({'text/x-handlebars': [ 'handlebars' ]});
 mimedefine({'text/x-liquid': [ 'liquid' ]});
+mimedefine({'text/x-tempura': [ 'tempura' ]});
 
 /**
  * Performs setup of things so that AkashaRender can function.
@@ -1001,6 +1002,7 @@ export class Configuration {
     }
 
     async hookFileAdded(collection, vpinfo) {
+        // console.log(`hookFileAdded ${collection} ${vpinfo.vpath}`);
         const config = this;
         for (let plugin of config.plugins) {
             if (typeof plugin.onFileAdded !== 'undefined') {
