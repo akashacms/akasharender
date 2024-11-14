@@ -1493,11 +1493,11 @@ export class DocumentsFileCache
             for (const match of options.pathmatch) {
                 if (typeof match === 'string') {
                     regexSQL.or.push({
-                        vpath: { sql: ` vpath regexp '${match}' `}
+                        sql: ` vpath regexp '${match}' `
                     });
                 } else if (match instanceof RegExp) {
                     regexSQL.or.push({
-                        vpath: { sql: ` vpath regexp '${match.source}' `}
+                        sql: ` vpath regexp '${match.source}' `
                     });
                 } else {
                     throw new Error(`search ERROR invalid pathmatch regexp ${util.inspect(match)}`);
@@ -1535,11 +1535,11 @@ export class DocumentsFileCache
             for (const match of options.renderpathmatch) {
                 if (typeof match === 'string') {
                     regexSQL.or.push({
-                        vpath: { sql: ` renderPath regexp '${match}' `}
+                        sql: ` renderPath regexp '${match}' `
                     });
                 } else if (match instanceof RegExp) {
                     regexSQL.or.push({
-                        vpath: { sql: ` renderPath regexp '${match.source}' `}
+                        sql: ` renderPath regexp '${match.source}' `
                     });
                 } else {
                     throw new Error(`search ERROR invalid renderpathmatch regexp ${util.inspect(match)}`);
@@ -1714,9 +1714,23 @@ export class DocumentsFileCache
                 if (aDate > bDate) return -1;
                 if (aDate < bDate) return 1;
             });
+        } else if (
+            typeof options.sortBy === 'string'
+         && options.sortBy === 'dirname'
+        ) {
+            result9 = result8.sort((a, b) => {
+                if (a.dirname === b.dirname) return 0;
+                if (a.dirname < b.dirname) return -1;
+                if (a.dirname > b.dirname) return 1;
+            });
         }
 
-        let result10 = result9;
+        let result9a = result9;
+        if (typeof options.sortFunc === 'function') {
+            result9a = result9.sort(options.sortFunc);
+        }
+
+        let result10 = result9a;
         if (
             typeof options.sortByDescending === 'boolean'
          || typeof options.reverse === 'boolean'
@@ -1724,12 +1738,12 @@ export class DocumentsFileCache
             if (typeof options.sortByDescending === 'boolean'
              && options.sortByDescending
             ) {
-                result10 = result9.reverse();
+                result10 = result9a.reverse();
             }
             if (typeof options.reverse === 'boolean'
              && options.reverse
             ) {
-                result10 = result9.reverse();
+                result10 = result9a.reverse();
             }
         }
 
