@@ -49,10 +49,15 @@ export { Plugin } from './Plugin.js';
 import { render, renderDocument } from './render.js';
 export { render, renderDocument } from './render.js';
 
+const __filename = import.meta.filename;
+const __dirname = import.meta.dirname;
+
 // For use in Configure.prepare
 import { BuiltInPlugin } from './built-in.js';
 
-import * as filecache from './cache/file-cache-lokijs.js';
+// import * as filecache from './cache/file-cache-lokijs.js';
+
+import * as filecache from './cache/file-cache-sqlite.js';
 
 // There doesn't seem to be an official MIME type registered
 // for AsciiDoctor
@@ -130,7 +135,7 @@ export async function cacheSetup(config) {
 
 export async function closeCaches() {
     try {
-        await filecache.close();
+        await filecache.closeFileCaches();
     } catch (err) {
         console.error(`INITIALIZATION FAILURE COULD NOT CLOSE CACHES `, err);
         process.exit(1);
@@ -140,10 +145,10 @@ export async function closeCaches() {
 export async function fileCachesReady(config) {
     try {
         await Promise.all([
-            filecache.documents.isReady(),
-            filecache.assets.isReady(),
-            filecache.layouts.isReady(),
-            filecache.partials.isReady()
+            filecache.documentsCache.isReady(),
+            filecache.assetsCache.isReady(),
+            filecache.layoutsCache.isReady(),
+            filecache.partialsCache.isReady()
         ]);
     } catch (err) {
         console.error(`INITIALIZATION FAILURE COULD NOT INITIALIZE CACHE SYSTEM `, err);
@@ -152,7 +157,7 @@ export async function fileCachesReady(config) {
 }
 
 export async function renderPath(config, path2r) {
-    const documents = filecache.documents;
+    const documents = filecache.documentsCache;
     let found;
     let count = 0;
     while (count < 20) {
@@ -229,7 +234,7 @@ export async function partial(config, fname, metadata) {
     }
 
     // console.log(`partial ${fname}`);
-    const found = filecache.partials.find(fname);
+    const found = await filecache.partialsCache.find(fname);
     if (!found) {
         throw new Error(`No partial found for ${fname} in ${util.inspect(config.partialsDirs)}`);
     }
@@ -287,8 +292,10 @@ export function partialSync(config, fname, metadata) {
         throw new Error(`partialSync fname not a string ${util.inspect(fname)}`);
     }
 
-    const found = filecache.partials.find(fname);
-    if (!found) new Error(`No partial found for ${fname} in ${util.inspect(config.partialsDirs)}`);
+    const found = filecache.partialsCache.findSync(fname);
+    if (!found) {
+        throw new Error(`No partial found for ${fname} in ${util.inspect(config.partialsDirs)}`);
+    }
 
     var renderer = config.findRendererPath(found.vpath);
     if (renderer) {
@@ -342,7 +349,7 @@ export async function indexChain(config, fname) {
     // into the FileCache class.  Requiring a `config` option
     // is for backwards compatibility with the former API.
 
-    const documents = filecache.documents;
+    const documents = filecache.documentsCache;
     return documents.indexChain(fname);
 }
 
@@ -691,10 +698,10 @@ export class Configuration {
     // set akasha(_akasha)  { this[_config_akasha] = _akasha; }
     get akasha() { return module_exports; }
 
-    async documentsCache() { return filecache.documents; }
-    async assetsCache()    { return filecache.assets; }
-    async layoutsCache()   { return filecache.layouts; }
-    async partialsCache()  { return filecache.partials; }
+    async documentsCache() { return filecache.documentsCache; }
+    async assetsCache()    { return filecache.assetsCache; }
+    async layoutsCache()   { return filecache.layoutsCache; }
+    async partialsCache()  { return filecache.partialsCache; }
 
     /**
      * Add a directory to the documentDirs configuration array
@@ -931,10 +938,10 @@ export class Configuration {
         // console.log('copyAssets START');
 
         const config = this;
-        const assets = filecache.assets;
-        await assets.isReady();
+        const assets = filecache.assetsCache;
+        // await assets.isReady();
         // Fetch the list of all assets files
-        const paths = assets.paths();
+        const paths = await assets.paths();
 
         // The work task is to copy each file
         const queue = fastq.promise(async function(item) {
