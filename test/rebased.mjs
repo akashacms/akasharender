@@ -4,7 +4,7 @@ import { default as akasha } from '../dist/index.js';
 import { assert } from 'chai';
 import { default as _image_size } from 'image-size';
 const sizeOf = promisify(_image_size);
-const _filecache = await import('../dist/cache/file-cache-lokijs.js');
+const filecache = await import('../dist/cache/file-cache-sqlite.js');
 
 // Note this is an ES6 module and to use it we must 
 // use an async function along with the await keyword
@@ -113,10 +113,10 @@ describe('build rebased site', function() {
         assert.isFalse(failed);
     });
 
-    it('should close the configuration', async function() {
-        this.timeout(75000);
-        await akasha.closeCaches();
-    });
+    // it('should close the configuration', async function() {
+    //     this.timeout(75000);
+    //     await akasha.closeCaches();
+    // });
 });
 
 describe('rebased stylesheets, javascripts', function() {
@@ -908,25 +908,9 @@ describe('rebased teaser, content', function() {
 });
 
 describe('Rebased index Chain', function() {
-    before(async function() {
-        await akasha.cacheSetup(config_rebase);
-        await akasha.fileCachesReady(config_rebase);
-        /* await Promise.all([
-            akasha.setupDocuments(config),
-            akasha.setupAssets(config),
-            akasha.setupLayouts(config),
-            akasha.setupPartials(config)
-        ])
-        let filecache = await _filecache;
-        await Promise.all([
-            filecache.documents.isReady(),
-            filecache.assets.isReady(),
-            filecache.layouts.isReady(),
-            filecache.partials.isReady()
-        ]); */
-        // console.log(`before documents.isReady`);
-        // await documents.isReady();
-    });
+    // before(async function() {
+    //     await akasha.setup(config_rebase);
+    // });
 
     // NOTE The indexChain function has moved into FileCache class.
     // Therefore the following tests should be rewritten to match.
@@ -1072,5 +1056,13 @@ describe('Rebased Nunjucks Include', function() {
         assert.equal($('#p4').length, 1);
         assert.equal($('#inclusion2 #p3').length, 1);
         assert.equal($('#inclusion2 #p4').length, 1);
+    });
+});
+
+
+describe('Close caches', function() {
+
+    it('should close caches', async function() {
+        await filecache.closeFileCaches();
     });
 });
