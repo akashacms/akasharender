@@ -167,9 +167,9 @@ export class BuiltInPlugin extends Plugin {
 
     async onSiteRendered(config) {
 
-        const documents = this.akasha.filecache.documents;
+        const documents = this.akasha.filecache.documentsCache;
         // await documents.isReady();
-        const assets = this.akasha.filecache.assets;
+        const assets = this.akasha.filecache.assetsCache;
         // await assets.isReady();
         while (Array.isArray(this.#resize_queue)
             && this.#resize_queue.length > 0) {
@@ -188,11 +188,11 @@ export class BuiltInPlugin extends Plugin {
 
             let srcfile = undefined;
 
-            let found = assets.find(img2resize);
+            let found = await assets.find(img2resize);
             if (found) {
                 srcfile = found.fspath;
             } else {
-                found = documents.find(img2resize);
+                found = await documents.find(img2resize);
                 srcfile = found ? found.fspath : undefined;
             }
             if (!srcfile) throw new Error(`akashacms-builtin: Did not find source file for image to resize ${img2resize}`);
@@ -209,7 +209,8 @@ export class BuiltInPlugin extends Plugin {
                 } else {
                     // This is for relative image paths, hence it needs to be
                     // relative to the docPath
-                    resizedest = path.join(config.renderDestination,
+                    resizedest = path.join(
+                            config.renderDestination,
                             path.dirname(toresize.docPath),
                             imgtoresize);
                 }
@@ -482,8 +483,8 @@ class CodeEmbed extends mahabhuta.CustomElement {
             txtpath = path.join(path.dirname(metadata.document.renderTo), fn);
         }
 
-        const documents = this.array.options.config.akasha.filecache.documents;
-        const found = documents.find(txtpath);
+        const documents = this.array.options.config.akasha.filecache.documentsCache;
+        const found = await documents.find(txtpath);
         if (!found) {
             throw new Error(`code-embed file-name ${fn} does not refer to usable file`);
         }
@@ -639,7 +640,7 @@ class ShowContent extends mahabhuta.CustomElement {
             doc2read = href;
         }
         // console.log(`ShowContent ${util.inspect(metadata.document)} ${doc2read}`);
-        const documents = this.array.options.config.akasha.filecache.documents;
+        const documents = this.array.options.config.akasha.filecache.documentsCache;
         const doc = await documents.find(doc2read);
         const data = {
             href, clazz, id, caption, width, style, dest, contentImage,
@@ -740,9 +741,9 @@ class AnchorCleanup extends mahabhuta.Munger {
     async process($, $link, metadata, dirty) {
         var href     = $link.attr('href');
         var linktext = $link.text();
-        const documents = this.array.options.config.akasha.filecache.documents;
+        const documents = this.array.options.config.akasha.filecache.documentsCache;
         // await documents.isReady();
-        const assets = this.array.options.config.akasha.filecache.assets;
+        const assets = this.array.options.config.akasha.filecache.assetsCache;
         // await assets.isReady();
         // console.log(`AnchorCleanup ${href} ${linktext}`);
         if (href && href !== '#') {
@@ -828,7 +829,7 @@ class AnchorCleanup extends mahabhuta.Munger {
             // Look to see if it's an asset file
             let foundAsset;
             try {
-                foundAsset = assets.find(absolutePath);
+                foundAsset = await assets.find(absolutePath);
             } catch (e) {
                 foundAsset = undefined;
             }
@@ -851,7 +852,7 @@ class AnchorCleanup extends mahabhuta.Munger {
             }
 
             // Does it exist in documents dir?
-            let found = documents.find(absolutePath);
+            let found = await documents.find(absolutePath);
             // console.log(`AnchorCleanup findRendersTo ${absolutePath} ${util.inspect(found)}`);
             if (!found) {
                 console.log(`WARNING: Did not find ${href} in ${util.inspect(this.array.options.config.documentDirs)} in ${metadata.document.path} absolutePath ${absolutePath}`);
@@ -863,7 +864,7 @@ class AnchorCleanup extends mahabhuta.Munger {
             // The problem is that this.array.options.config.findRendererPath would fail on just /path/to but succeed
             // on /path/to/index.html
             if (found.isDirectory) {
-                found = documents.find(path.join(absolutePath, "index.html"));
+                found = await documents.find(path.join(absolutePath, "index.html"));
                 if (!found) {
                     throw new Error(`Did not find ${href} in ${util.inspect(this.array.options.config.documentDirs)} in ${metadata.document.path}`);
                 }
