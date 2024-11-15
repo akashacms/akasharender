@@ -22,8 +22,8 @@ import path from 'path';
 import fastq from 'fastq';
 import * as data from '../data.js';
 import {
-    documents, assets, layouts, partials
-} from './file-cache-lokijs.js';
+    documentsCache, assetsCache, layoutsCache, partialsCache
+} from './file-cache-sqlite.js';
 
 async function renderVPath(config, info) {
     await data.remove(info.mountPoint, info.vpath);
@@ -40,7 +40,7 @@ async function renderVPath(config, info) {
  * @param info 
  */
 async function renderForLayout(config, info) {
-    const docs = documents.search({
+    const docs = await documentsCache.search({
         layouts: [ info.vpath ]
     });
 
@@ -95,12 +95,12 @@ async function unlinkVPath(config, info) {
 }
 
 export async function watchman(config) {
-    documents
+    documentsCache
     .on('change', async (collection, info) => {
         try {
             await renderVPath(config, info);
         } catch (e) {
-            documents.emit('error', {
+            documentsCache.emit('error', {
                 code: 'change',
                 collection: collection,
                 vpath: info.vpath,
@@ -112,7 +112,7 @@ export async function watchman(config) {
         try {
             await renderVPath(config, info);
         } catch (e) {
-            documents.emit('error', {
+            documentsCache.emit('error', {
                 code: 'add',
                 collection: collection,
                 vpath: info.vpath,
@@ -125,7 +125,7 @@ export async function watchman(config) {
             // console.log(`UNLINK ${config.renderDestination} ${info.renderPath}`);
             await unlinkVPath(config, info);
         } catch (e) {
-            documents.emit('error', {
+            documentsCache.emit('error', {
                 code: 'unlink',
                 collection: collection,
                 vpath: info.vpath,
@@ -135,14 +135,14 @@ export async function watchman(config) {
     });
     console.log('... watching documents');
 
-    assets
+    assetsCache
     .on('change', async (collection, info) => {
         try {
             const destFN = path.join(config.renderDestination, info.renderPath);
             await fs.copyFile(info.fspath, destFN);
             console.log(`CHANGE ${info.vpath} COPY==> ${info.renderPath}`);
         } catch (e) {
-            assets.emit('error', {
+            assetsCache.emit('error', {
                 code: 'change',
                 collection: collection,
                 vpath: info.vpath,
@@ -156,7 +156,7 @@ export async function watchman(config) {
             await fs.copyFile(info.fspath, destFN);
             console.log(`ADD ${info.vpath} COPY==> ${info.renderPath}`);
         } catch (e) {
-            assets.emit('error', {
+            assetsCache.emit('error', {
                 code: 'add',
                 collection: collection,
                 vpath: info.vpath,
@@ -169,7 +169,7 @@ export async function watchman(config) {
             await fs.unlink(path.join(config.renderDestination, info.renderPath));
             console.log(`UNLINK ${info.renderPath}`);
         } catch (e) {
-            assets.emit('error', {
+            assetsCache.emit('error', {
                 code: 'unlink',
                 collection: collection,
                 vpath: info.vpath,
@@ -179,12 +179,12 @@ export async function watchman(config) {
     });
     console.log('... watching assets');
 
-    layouts
+    layoutsCache
     .on('change', async (collection, info) => {
         try {
             await renderForLayout(config, info);
         } catch (e) {
-            layouts.emit('error', {
+            layoutsCache.emit('error', {
                 code: 'change',
                 collection: collection,
                 vpath: info.vpath,
@@ -196,7 +196,7 @@ export async function watchman(config) {
         try {
             await renderForLayout(config, info);
         } catch (e) {
-            layouts.emit('error', {
+            layoutsCache.emit('error', {
                 code: 'add',
                 collection: collection,
                 vpath: info.vpath,
@@ -209,12 +209,12 @@ export async function watchman(config) {
     });
     console.log('... watching layouts');
 
-    partials
+    partialsCache
     .on('change', async (collection, info) => {
         try {
             await rebuild(config);
         } catch (e) {
-            partials.emit('error', {
+            partialsCache.emit('error', {
                 code: 'change',
                 collection: collection,
                 vpath: info.vpath,
@@ -226,7 +226,7 @@ export async function watchman(config) {
         try {
             await rebuild(config);
         } catch (e) {
-            partials.emit('error', {
+            partialsCache.emit('error', {
                 code: 'add',
                 collection: collection,
                 vpath: info.vpath,
