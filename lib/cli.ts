@@ -63,7 +63,7 @@ program
             )).default;
             let akasha = config.akasha;
             await akasha.setup(config);
-            const documents = akasha.filecache.documents;
+            const documents = akasha.filecache.documentsCache;
             const doc = await documents.find(documentFN);
             // data: ${doc.data}
             // text: ${doc.text}
@@ -373,7 +373,7 @@ program
             )).default;
             let akasha = config.akasha;
             await akasha.setup(config);
-            console.log(akasha.filecache.documents.paths());
+            console.log(await akasha.filecache.documentsCache.paths());
             await akasha.closeCaches();
         } catch (e) {
             console.error(`documents command ERRORED ${e.stack}`);
@@ -391,7 +391,7 @@ program
             )).default;
             let akasha = config.akasha;
             await akasha.setup(config);
-            console.log(akasha.filecache.documents.setTimes());
+            console.log(akasha.filecache.documentsCache.setTimes());
             await akasha.closeCaches();
         } catch (e) {
             console.error(`docs-set-dates command ERRORED ${e.stack}`);
@@ -409,7 +409,7 @@ program
             )).default;
             let akasha = config.akasha;
             await akasha.setup(config);
-            const docinfo = akasha.filecache.documents.find(docFN);
+            const docinfo = akasha.filecache.documentsCache.find(docFN);
             delete docinfo.meta;
             delete docinfo['$loki'];
             console.log(`docFN ${docFN} `, docinfo);
@@ -430,7 +430,7 @@ program
             )).default;
             let akasha = config.akasha;
             await akasha.setup(config);
-            console.log(akasha.filecache.documents.tags());
+            console.log(await akasha.filecache.documentsCache.tags());
             await akasha.closeCaches();
         } catch (e) {
             console.error(`docinfo command ERRORED ${e.stack}`);
@@ -467,7 +467,7 @@ program
             if (cmdObj.mime) options.mime = cmdObj.mime;
             if (cmdObj.tag) options.tag = cmdObj.tag;
             // console.log(options);
-            let docs = akasha.filecache.documents.search(options);
+            let docs = akasha.filecache.documentsCache.search(options);
             console.log(docs);
             await akasha.closeCaches();
         } catch (e) {
@@ -486,7 +486,7 @@ program
             )).default;
             let akasha = config.akasha;
             await akasha.setup(config);
-            console.log(akasha.filecache.assets.paths());
+            console.log(await akasha.filecache.assetsCache.paths());
             await akasha.closeCaches();
         } catch (e) {
             console.error(`assets command ERRORED ${e.stack}`);
@@ -504,9 +504,7 @@ program
             )).default;
             let akasha = config.akasha;
             await akasha.setup(config);
-            const assetinfo = akasha.filecache.assets.find(assetFN);
-            delete assetinfo.meta;
-            delete assetinfo['$loki'];
+            const assetinfo = await akasha.filecache.assetsCache.find(assetFN);
             console.log(assetinfo);
             await akasha.closeCaches();
         } catch (e) {
@@ -525,7 +523,7 @@ program
             )).default;
             let akasha = config.akasha;
             await akasha.setup(config);
-            console.log(akasha.filecache.layouts.paths());
+            console.log(await akasha.filecache.layoutsCache.paths());
             await akasha.closeCaches();
         } catch (e) {
             console.error(`layouts command ERRORED ${e.stack}`);
@@ -548,9 +546,7 @@ program
             )).default;
             let akasha = config.akasha;
             await akasha.setup(config);
-            const layoutinfo = akasha.filecache.layouts.find(layoutFN);
-            delete layoutinfo.meta;
-            delete layoutinfo['$loki'];
+            const layoutinfo = await akasha.filecache.layoutsCache.find(layoutFN);
             console.log(layoutinfo);
             await akasha.closeCaches();
         } catch (e) {
@@ -569,8 +565,7 @@ program
             )).default;
             let akasha = config.akasha;
             await akasha.setup(config);
-            await akasha.setupPluginCaches(config)
-            console.log(akasha.filecache.partials.paths());
+            console.log(await akasha.filecache.partialsCache.paths());
             await akasha.closeCaches();
         } catch (e) {
             console.error(`partials command ERRORED ${e.stack}`);
@@ -591,9 +586,7 @@ program
             )).default;
             let akasha = config.akasha;
             await akasha.setup(config);
-            const partialinfo = akasha.filecache.partials.find(partialFN);
-            delete partialinfo.meta;
-            delete partialinfo['$loki'];
+            const partialinfo = await akasha.filecache.partialsCache.find(partialFN);
             console.log(partialinfo);
             await akasha.closeCaches();
         } catch (e) {
