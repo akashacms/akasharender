@@ -30,7 +30,7 @@ import fastq from 'fastq';
 export async function renderDocument(config, docInfo) {
     const renderStart = new Date();
     const renderBaseMetadata = docInfo.baseMetadata;
-    // console.log(`newRenderDocument `, docInfo);
+    // console.log(`renderDocument `, docInfo);
     const stats = await fsp.stat(docInfo.fspath);
     if (stats && stats.isFile()) {
     } else { return `SKIP DIRECTORY ${docInfo.vpath}`; }
@@ -58,19 +58,25 @@ export async function renderDocument(config, docInfo) {
             // Render the document - output goes to "docrendered"
 
             let docrendered;
-            /* console.log({
-                fspath: docInfo.fspath,
-                content: docInfo.docContent,
-                body: docInfo.docBody,
-                metadata: docInfo.metadata
-            }) */
+            // console.log({
+            //     title: 'before renderer.render',
+            //     fspath: docInfo.fspath,
+            //     content: docInfo.info.docContent,
+            //     body: docInfo.info.docBody,
+            //     metadata: docInfo.info.metadata
+            // });
             try {
-                docrendered = await renderer.render({
+                const context = {
                     fspath: docInfo.fspath,
-                    content: docInfo.docContent,
-                    body: docInfo.docBody,
+                    content: docInfo.info.docContent,
+                    body: docInfo.info.docBody,
                     metadata: docInfo.metadata
-                });
+                };
+                if (typeof context.content !== 'string'
+                 || typeof context.body !== 'string') {
+                    // console.warn(`render should fail for ${util.inspect(context)} `, docInfo);
+                }
+                docrendered = await renderer.render(context);
             } catch (err) {
                 console.error(`Error rendering ${docInfo.vpath} ${(err.stack ? err.stack : err)}`);
                 throw new Error(`Error rendering ${docInfo.vpath} ${(err.stack ? err.stack : err)}`);
@@ -89,8 +95,8 @@ export async function renderDocument(config, docInfo) {
             let layoutrendered;
             if (docInfo.metadata.layout) {
 
-                const layouts = config.akasha.filecache.layouts;
-                await layouts.isReady();
+                const layouts = config.akasha.filecache.layoutsCache;
+                // await layouts.isReady();
 
                 let found = await layouts.find(docInfo.metadata.layout);
                 if (!found) {
@@ -114,16 +120,24 @@ export async function renderDocument(config, docInfo) {
                     throw new Error(`No renderer for ${layoutmetadata.layout} in file ${docInfo.vpath}`);;
                 }
 
+                const context = {
+                    fspath: found.fspath,
+                    content: found.info.docContent,
+                    body: found.info.docBody,
+                    metadata: layoutmetadata
+                };
+
+                if (typeof context.content !== 'string'
+                 || typeof context.body !== 'string') {
+                    throw new Error(`renderDocument LAYOUT RENDERING for ${docInfo.vpath} with layout ${docInfo.metadata.layout} has no context.content or context.body to which to render the content ${util.inspect(context)} ${util.inspect(found)}`);
+                }
+
                 // console.log(`renderDocument `, found);
                 // console.log(`renderDocument `, layoutmetadata);
 
                 try {
-                    layoutrendered = await renderer.render({
-                        fspath: found.fspath,
-                        content: found.docContent,
-                        body: found.docBody,
-                        metadata: layoutmetadata
-                    });
+                    layoutrendered
+                        = await renderer.render(context);
                 } catch (e) {
                     let ee = new Error(`Error rendering ${docInfo.vpath} with ${docInfo.metadata.layout} ${e.stack ? e.stack : e}`);
                     console.error(ee);
@@ -206,13 +220,13 @@ export async function renderDocument(config, docInfo) {
 
 export async function render(config) {
 
-    const documents = config.akasha.filecache.documents;
-    await documents.isReady();
+    const documents = config.akasha.filecache.documentsCache;
+    // await documents.isReady();
     // console.log('CALLING config.hookBeforeSiteRendered');
     await config.hookBeforeSiteRendered();
     
     // 1. Gather list of files from RenderFileCache
-    const filez = documents.paths();
+    const filez = await documents.paths();
     // console.log(`newerrender filez ${filez.length}`);
 
     // 2. Exclude any that we want to ignore
@@ -235,7 +249,7 @@ export async function render(config) {
             // config object and the path string
             filez2.push({
                 config: config,
-                info: documents.find(entry.vpath)
+                info: await documents.find(entry.vpath)
             });
         }
     }
