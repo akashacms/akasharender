@@ -7,7 +7,7 @@ const mahabhuta = akasha.mahabhuta;
 import { assert } from 'chai';
 import { default as _image_size } from 'image-size';
 const sizeOf = promisify(_image_size);
-const _filecache = await import('../dist/cache/file-cache-lokijs.js');
+const filecache = await import('../dist/cache/file-cache-sqlite.js');
 
 const __filename = import.meta.filename;
 const __dirname = import.meta.dirname;
@@ -1104,8 +1104,7 @@ describe('Select Elements', function() {
 describe('Index Chain', function() {
 
     it('should generate correct index chain for /hier/dir1/dir2/sibling.html', async function() {
-        const filecache = await _filecache;
-        let chain = await filecache.documents.indexChain('/hier/dir1/dir2/sibling.html');
+        let chain = await filecache.documentsCache.indexChain('/hier/dir1/dir2/sibling.html');
 
         assert.equal(chain.length, 5);
         assert.deepEqual([
@@ -1136,7 +1135,6 @@ describe('Index Chain', function() {
     });
 
     it('should generate correct AKASHACMS index chain for /hier-broke/dir1/dir2/sibling.html', async function() {
-        const filecache = await _filecache;
         let chain = await akasha.indexChain(config, '/hier-broke/dir1/dir2/sibling.html');
 
         assert.equal(chain.length, 3);
@@ -1161,8 +1159,7 @@ describe('Index Chain', function() {
     });
 
     it('should generate correct index chain for /hier-broke/dir1/dir2/sibling.html', async function() {
-        const filecache = await _filecache;
-        let chain = await filecache.documents.indexChain('/hier-broke/dir1/dir2/sibling.html');
+        let chain = await filecache.documentsCache.indexChain('/hier-broke/dir1/dir2/sibling.html');
 
         assert.equal(chain.length, 3);
 
@@ -1186,7 +1183,6 @@ describe('Index Chain', function() {
     });
 
     it('should generate correct AKASHACMS index chain for /hier/dir1/dir2/index.html', async function() {
-        const filecache = await _filecache;
         let chain = await akasha.indexChain(config, '/hier/dir1/dir2/index.html');
 
         assert.equal(chain.length, 4);
@@ -1215,8 +1211,7 @@ describe('Index Chain', function() {
     });
 
     it('should generate correct index chain for /hier/dir1/dir2/index.html', async function() {
-        const filecache = await _filecache;
-        let chain = await filecache.documents.indexChain('/hier/dir1/dir2/index.html');
+        let chain = await filecache.documentsCache.indexChain('/hier/dir1/dir2/index.html');
 
         assert.equal(chain.length, 4);
         assert.deepEqual([
@@ -1244,8 +1239,7 @@ describe('Index Chain', function() {
     });
 
     it('should generate correct index chain for /hier/dir1/sibling.html', async function() {
-        const filecache = await _filecache;
-        let chain = await filecache.documents.indexChain('/hier/dir1/sibling.html');
+        let chain = await filecache.documentsCache.indexChain('/hier/dir1/sibling.html');
 
         assert.equal(chain.length, 4);
 
@@ -1274,8 +1268,7 @@ describe('Index Chain', function() {
     });
 
     it('should generate correct index chain for /hier-broke/dir1/sibling.html', async function() {
-        const filecache = await _filecache;
-        let chain = await filecache.documents.indexChain('/hier-broke/dir1/sibling.html');
+        let chain = await filecache.documentsCache.indexChain('/hier-broke/dir1/sibling.html');
 
         assert.equal(chain.length, 2);
 
@@ -1296,8 +1289,7 @@ describe('Index Chain', function() {
     });
 
     it('should generate correct index chain for /hier/dir1/index.html', async function() {
-        const filecache = await _filecache;
-        let chain = await filecache.documents.indexChain('/hier/dir1/index.html');
+        let chain = await filecache.documentsCache.indexChain('/hier/dir1/index.html');
 
         assert.equal(chain.length, 3);
 
@@ -1322,8 +1314,7 @@ describe('Index Chain', function() {
     });
 
     it('should generate correct index chain for /hier/index.html', async function() {
-        const filecache = await _filecache;
-        let chain = await filecache.documents.indexChain('/hier/index.html');
+        let chain = await filecache.documentsCache.indexChain('/hier/index.html');
 
         assert.equal(chain.length, 2);
 
@@ -1343,8 +1334,7 @@ describe('Index Chain', function() {
     });
 
     it('should generate correct index chain for /index.html', async function() {
-        const filecache = await _filecache;
-        let chain = await filecache.documents.indexChain('/index.html');
+        let chain = await filecache.documentsCache.indexChain('/index.html');
 
         assert.equal(chain.length, 1);
 
@@ -1639,7 +1629,7 @@ describe('final funcs', function() {
 describe('Close caches', function() {
 
     it('should close caches', async function() {
-        await (await _filecache).close();
+        await filecache.closeFileCaches();
     });
 });
 
