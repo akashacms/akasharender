@@ -1,5 +1,5 @@
 
-import { DirsWatcher, dirToWatch } from '@akashacms/stacked-dirs';
+import { DirsWatcher, dirToWatch, VPathData } from '@akashacms/stacked-dirs';
 import path from 'path';
 import util from 'util';
 import url  from 'url';
@@ -592,10 +592,19 @@ export class BaseFileCache<
             });
         });
 
-        await this.#watcher.watch(remapdirs(this.dirs));
+        const mapped = remapdirs(this.dirs);
+        // console.log(`setup ${this.#name} watch ${util.inspect(this.#dirs)} ==> ${util.inspect(mapped)}`);
+        await this.#watcher.watch(mapped);
 
         // console.log(`DAO ${this.dao.table.name} ${util.inspect(this.dao.table.fields)}`);
 
+    }
+
+    gatherInfoData(info: T) {
+        // Placeholder which some subclasses
+        // are expected to override
+
+        info.renderPath = info.vpath;
     }
 
     async handleChanged(name, info) {
@@ -609,6 +618,7 @@ export class BaseFileCache<
         }
         // console.log(`handleChanged ${info.vpath} ${info.metadata && info.metadata.publicationDate ? info.metadata.publicationDate : '???'}`);
 
+        this.gatherInfoData(info);
         info.stack = undefined;
 
         const result = await this.dao.selectAll({
@@ -627,20 +637,21 @@ export class BaseFileCache<
 
         info.stack = undefined;
         await this.#dao.update({
-            vpath: info.vpath,
-            mime: info.mime,
-            mounted: info.mounted,
-            mountPoint: info.mountPoint,
-            pathInMounted: info.pathInMounted,
-            info,
+            vpath: info.vpath as string,
+            mime: info.mime as string,
+            mounted: info.mounted as string,
+            mountPoint: info.mountPoint as string,
+            pathInMounted: info.pathInMounted as string,
             mtimeMs: new Date(info.statsMtime).toISOString(),
-            // For BaseFileCache, these fields are
-            // simply computed as shown.  For the
-            // DocsFileCache, renderPath will be the
-            // file as rendered which is different from
-            // the value in vpath.
-            fspath: path.join(info.mounted, info.pathInMounted),
-            renderPath: info.vpath
+            fspath: path.join(info.mounted, info.pathInMounted) as string,
+            renderPath: (info.renderPath
+                    ? info.renderPath
+                    : info.vpath) as string,
+            rendersToHTML: false,
+            dirname: path.dirname(info.renderPath),
+            docMetadata: {} as any,
+            metadata: {} as any,
+            info,
         } as T);
 
         await this.config.hookFileChanged(name, info);
@@ -676,6 +687,7 @@ export class BaseFileCache<
             throw new Error(`handleAdded event for wrong name; got ${name}, expected ${this.name}`);
         }
 
+        this.gatherInfoData(info);
         info.stack = undefined;
 
         await this.#dao.insert({
@@ -684,15 +696,14 @@ export class BaseFileCache<
             mounted: info.mounted,
             mountPoint: info.mountPoint,
             pathInMounted: info.pathInMounted,
-            info,
             mtimeMs: new Date(info.statsMtime).toISOString(),
-            // For BaseFileCache, these fields are
-            // simply computed as shown.  For the
-            // DocsFileCache, renderPath will be the
-            // file as rendered which is different from
-            // the value in vpath.
             fspath: path.join(info.mounted, info.pathInMounted),
-            renderPath: info.vpath
+            renderPath: info.renderPath,
+            rendersToHTML: info.rendersToHTML,
+            dirname: path.dirname(info.renderPath),
+            docMetadata: info.docMetadata,
+            metadata: info.metadata,
+            info,
         } as T);
 
         await this.config.hookFileAdded(name, info);
@@ -806,31 +817,33 @@ export class BaseFileCache<
         // seems meant to eliminate duplicates.
         const vpathsSeen = new Set();
 
-        const result = await this.dao.selectAll({});
+        const result = await this.dao.selectAll({
+            order: { mtimeMs: true }
+        });
         const result2 = result.filter(item => {
             // console.log(`paths ?ignore? ${item.vpath}`);
             if (fcache.ignoreFile(item)) {
                 return false;
             }
-            if (vpathsSeen.has((item as any).vpath)) {
+            if (vpathsSeen.has((item as Asset).vpath)) {
                 return false;
             } else {
-                vpathsSeen.add((item as any).vpath);
+                vpathsSeen.add((item as Asset).vpath);
                 return true;
             }
         });
-        const result3 = result2.sort((a, b) => {
-            // We need these to be one of the concrete
-            // types so that the mtimeMs field is
-            // recognized by TypeScript.  The Asset
-            // class is a good substitute for the base
-            // class of cached files.
-            const aa = <Asset>a;
-            const bb = <Asset>b;
-            if (aa.mtimeMs < bb.mtimeMs) return 1;
-            if (aa.mtimeMs === bb.mtimeMs) return 0;
-            if (aa.mtimeMs > bb.mtimeMs) return -1;
-        });
+        // const result3 = result2.sort((a, b) => {
+        //     // We need these to be one of the concrete
+        //     // types so that the mtimeMs field is
+        //     // recognized by TypeScript.  The Asset
+        //     // class is a good substitute for the base
+        //     // class of cached files.
+        //     const aa = <Asset>a;
+        //     const bb = <Asset>b;
+        //     if (aa.mtimeMs < bb.mtimeMs) return 1;
+        //     if (aa.mtimeMs === bb.mtimeMs) return 0;
+        //     if (aa.mtimeMs > bb.mtimeMs) return -1;
+        // });
 
         // This stage converts the items 
         // received by this function into
@@ -852,7 +865,14 @@ export class BaseFileCache<
         //     });
         // }
 
-        return result3;
+        // console.log(result2/*.map(item => {
+        //     return {
+        //         vpath: item.vpath,
+        //         mtimeMs: item.mtimeMs
+        //     };
+        // }) */);
+
+        return result2;
     }
 
     /**
@@ -899,6 +919,100 @@ export class BaseFileCache<
         return ret;
     }
 
+    #fExistsInDir(fpath, dir) {
+        console.log(`#fExistsInDir ${fpath} ${util.inspect(dir)}`);
+        if (dir.mountPoint === '/') {
+            const fspath = path.join(
+                dir.mounted, fpath
+            );
+            let fsexists = FS.existsSync(fspath);
+
+            if (fsexists) {
+                let stats = FS.statSync(fspath);
+                return <VPathData> {
+                    vpath: fpath,
+                    renderPath: fpath,
+                    fspath: fspath,
+                    mime: undefined,
+                    mounted: dir.mounted,
+                    mountPoint: dir.mountPoint,
+                    pathInMounted: fpath,
+                    statsMtime: stats.mtimeMs
+                };
+            } else {
+                return undefined;
+            }
+        }
+
+        let mp = dir.mountPoint.startsWith('/')
+            ? dir.mountPoint.substring(1)
+            : dir.mountPoint;
+        mp = mp.endsWith('/')
+            ? mp
+            : (mp+'/');
+
+        if (fpath.startsWith(mp)) {
+            let pathInMounted
+                = fpath.replace(dir.mountPoint, '');
+            let fspath = path.join(
+                dir.mounted, pathInMounted);
+            console.log(`Checking exist for ${dir.mountPoint} ${dir.mounted} ${pathInMounted} ${fspath}`);
+            let fsexists = FS.existsSync(fspath);
+
+            if (fsexists) {
+                let stats = FS.statSync(fspath);
+                return <VPathData> {
+                    vpath: fpath,
+                    renderPath: fpath,
+                    fspath: fspath,
+                    mime: undefined,
+                    mounted: dir.mounted,
+                    mountPoint: dir.mountPoint,
+                    pathInMounted: pathInMounted,
+                    statsMtime: stats.mtimeMs
+                };
+            }
+        }
+
+        return undefined;
+    }
+
+    /**
+     * Fulfills the "find" operation not by
+     * looking in the database, but by scanning
+     * the filesystem using synchronous calls.
+     *
+     * @param _fpath 
+     * @returns 
+     */
+    findSync(_fpath): VPathData | undefined {
+
+        if (typeof _fpath !== 'string') {
+            throw new Error(`find parameter not string ${typeof _fpath}`);
+        }
+
+        const fpath = _fpath.startsWith('/')
+                    ? _fpath.substring(1)
+                    : _fpath;
+
+        const fcache = this;
+
+        const mapped = remapdirs(this.dirs);
+        console.log(`findSync looking for ${fpath} in ${util.inspect(mapped)}`);
+
+        for (const dir of mapped) {
+            if (!(dir?.mountPoint)) {
+                console.warn(`findSync bad dirs in ${util.inspect(this.dirs)}`);
+            }
+            const found = this.#fExistsInDir(fpath, dir);
+            if (found) {
+                console.log(`findSync ${fpath} found`, found);
+                return found;
+            }
+        }
+        return undefined;
+    }
+
     async findAll() {
 
         const fcache = this;
@@ -914,6 +1028,79 @@ export class BaseFileCache<
     }
 }
 
+export class TemplatesFileCache<
+    T extends Layout | Partial,
+    Tdao extends BaseDAO<T>>
+    extends BaseFileCache<T, Tdao> {
+
+    constructor(
+        config: Configuration,
+        name: string,
+        dirs: dirToWatch[],
+        dao: Tdao
+    ) {
+        super(config, name, dirs, dao);
+    }
+
+    /**
+     * Gather the additional data suitable
+     * for Partial and Layout templates.  The
+     * full data set required for Documents is
+     * not suitable for the templates.
+     *
+     * @param info 
+     */
+    gatherInfoData(info) {
+
+        info.renderPath = info.vpath;
+        info.dirname = path.dirname(info.vpath);
+        if (info.dirname === '.') info.dirname = '/';
+
+        let renderer = this.config.findRendererPath(info.vpath);
+        info.renderer = renderer;
+
+
+        if (renderer) {
+
+
+            if (renderer.parseMetadata) {
+
+                // Using <any> here covers over
+                // that parseMetadata requires
+                // a RenderingContext which
+                // in turn requires a 
+                // metadata object.
+                const rc = renderer.parseMetadata(<any>{
+                    fspath: info.fspath,
+                    content: FS.readFileSync(info.fspath, 'utf-8')
+                });
+
+                // docMetadata is the unmodified metadata/frontmatter
+                // in the document
+                info.docMetadata = rc.metadata;
+                // docContent is the unparsed original content
+                // including any frontmatter
+                info.docContent = rc.content;
+                // docBody is the parsed body -- e.g. following the frontmatter
+                info.docBody = rc.body;
+
+                // This is the computed metadata that includes data from 
+                // several sources
+                info.metadata = { };
+                if (!info.docMetadata) info.docMetadata = {};
+
+                for (let yprop in info.baseMetadata) {
+                    // console.log(`initMetadata ${basedir} ${fpath} baseMetadata ${baseMetadata[yprop]}`);
+                    info.metadata[yprop] = info.baseMetadata[yprop];
+                }
+            }
+        }
+
+        // console.log(`TemplatesFileCache after gatherInfoData `, info);
+    }
+
+}
+
 export class DocumentsFileCache
     extends BaseFileCache<Document, TdocumentssDAO> {
 
@@ -925,7 +1112,7 @@ export class DocumentsFileCache
         super(config, name, dirs, documentsDAO);
     }
 
-    async gatherInfoData(info) {
+    gatherInfoData(info) {
 
         info.renderPath = info.vpath;
         info.dirname = path.dirname(info.vpath);
@@ -933,7 +1120,7 @@ export class DocumentsFileCache
 
         // find the mounted directory,
         // get the baseMetadata
-        for (let dir of this.dirs) {
+        for (let dir of remapdirs(this.dirs)) {
             if (dir.mounted === info.mounted) {
                 if (dir.baseMetadata) {
                     info.baseMetadata = dir.baseMetadata;
@@ -973,7 +1160,7 @@ export class DocumentsFileCache
                 // metadata object.
                 const rc = renderer.parseMetadata(<any>{
                     fspath: info.fspath,
-                    content: await fs.readFile(info.fspath, 'utf-8')
+                    content: FS.readFileSync(info.fspath, 'utf-8')
                 });
 
                 // docMetadata is the unmodified metadata/frontmatter
@@ -1163,7 +1350,7 @@ export class DocumentsFileCache
             throw new Error(`handleAdded event for wrong name; got ${name}, expected ${this.name}`);
         }
 
-        await this.gatherInfoData(info);
+        this.gatherInfoData(info);
         info.stack = undefined;
 
         // console.log(`handleAdded ADDING ${info.vpath} to ${documentsDAO.table.name}`);
@@ -1801,7 +1988,9 @@ export async function setup(
         console.error(`assetsCache ERROR ${util.inspect(args)}`)
     });
 
-    partialsCache = new BaseFileCache<Partial, TpartialsDAO>(
+    partialsCache = new TemplatesFileCache<
+            Partial, TpartialsDAO
+    >(
         config,
         'partials',
         config.partialsDirs,
@@ -1813,7 +2002,9 @@ export async function setup(
         console.error(`partialsCache ERROR ${util.inspect(args)}`)
     });
 
-    layoutsCache = new BaseFileCache<Layout, TlayoutsDAO>(
+    layoutsCache = new TemplatesFileCache<
+            Layout, TlayoutsDAO
+    >(
         config,
         'layouts',
         config.layoutDirs,
@@ -1837,6 +2028,8 @@ export async function setup(
     documentsCache.on('error', (...args) => {
         console.error(`documentsCache ERROR ${util.inspect(args)}`)
     });
+
+    await config.hookPluginCacheSetup();
 }
 
 export async function closeFileCaches() {
