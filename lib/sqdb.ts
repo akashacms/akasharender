@@ -43,10 +43,14 @@ export class SqlDatabaseChild extends SqlDatabase {
     }
 }
 
+const dburl = typeof process.env.AK_DB_URL === 'string'
+        ? process.env.AK_DB_URL
+        : ':memory:';
+
 // Turns on full stack traces
 // SqlDatabase.verbose();
 export const sqdb = new SqlDatabaseChild();
-await sqdb.open(':memory:');
+await sqdb.open(dburl);
 // await sqdb.open('test.db');
 // sqdb.loadExtension(sqleanLibs.reLibPath);
 sqdb.loadExtension(sqlite_regex.getLoadablePath());
