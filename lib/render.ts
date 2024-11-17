@@ -58,20 +58,21 @@ export async function renderDocument(config, docInfo) {
             // Render the document - output goes to "docrendered"
 
             let docrendered;
-            // console.log({
-            //     title: 'before renderer.render',
-            //     fspath: docInfo.fspath,
-            //     content: docInfo.info.docContent,
-            //     body: docInfo.info.docBody,
-            //     metadata: docInfo.info.metadata
-            // });
             try {
                 const context = {
                     fspath: docInfo.fspath,
-                    content: docInfo.info.docContent,
-                    body: docInfo.info.docBody,
+                    content: docInfo.docContent,
+                    body: docInfo.docBody,
                     metadata: docInfo.metadata
                 };
+                // console.log({
+                //     title: 'before DOCUMENT renderer.render',
+                //     fspath: docInfo.fspath,
+                //     content: docInfo.docContent,
+                //     body: docInfo.docBody,
+                //     metadata: docInfo.metadata,
+                //     info: docInfo.info
+                // });
                 if (typeof context.content !== 'string'
                  || typeof context.body !== 'string') {
                     // console.warn(`render should fail for ${util.inspect(context)} `, docInfo);
@@ -122,8 +123,8 @@ export async function renderDocument(config, docInfo) {
 
                 const context = {
                     fspath: found.fspath,
-                    content: found.info.docContent,
-                    body: found.info.docBody,
+                    content: found.docContent,
+                    body: found.docBody,
                     metadata: layoutmetadata
                 };
 

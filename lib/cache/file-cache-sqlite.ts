@@ -152,6 +152,26 @@ class Partial {
     mtimeMs: string;
 
     @field({
+        name: 'docMetadata', dbtype: 'TEXT', isJson: true
+    })
+    docMetadata: any;
+
+    @field({
+        name: 'docContent', dbtype: 'TEXT', isJson: true
+    })
+    docContent: any;
+
+    @field({
+        name: 'docBody', dbtype: 'TEXT', isJson: true
+    })
+    docBody: any;
+
+    @field({
+        name: 'metadata', dbtype: 'TEXT', isJson: true
+    })
+    metadata: any;
+
+    @field({
         name: 'info', dbtype: 'TEXT', isJson: true
     })
     info: any;
@@ -217,6 +237,26 @@ class Layout {
         dbtype: "TEXT DEFAULT(datetime('now') || 'Z')"
     })
     mtimeMs: string;
+
+    @field({
+        name: 'docMetadata', dbtype: 'TEXT', isJson: true
+    })
+    docMetadata: any;
+
+    @field({
+        name: 'docContent', dbtype: 'TEXT', isJson: true
+    })
+    docContent: any;
+
+    @field({
+        name: 'docBody', dbtype: 'TEXT', isJson: true
+    })
+    docBody: any;
+
+    @field({
+        name: 'metadata', dbtype: 'TEXT', isJson: true
+    })
+    metadata: any;
 
     @field({
         name: 'info', dbtype: 'TEXT', isJson: true
@@ -304,9 +344,30 @@ class Document {
     docMetadata: any;
 
     @field({
+        name: 'docContent', dbtype: 'TEXT', isJson: false
+    })
+    docContent: string;
+
+    @field({
+        name: 'docBody', dbtype: 'TEXT', isJson: false
+    })
+    docBody: string;
+
+    @field({
         name: 'metadata', dbtype: 'TEXT', isJson: true
     })
     metadata: any;
+
+    @field({
+        name: 'tags', dbtype: 'TEXT', isJson: true
+    })
+    tags: any;
+
+    @field({
+        name: 'layout', dbtype: 'TEXT', isJson: false
+    })
+    @index('docs_layout')
+    layout: string;
 
     @field({
         name: 'info', dbtype: 'TEXT', isJson: true
@@ -527,6 +588,8 @@ export class BaseFileCache<
                         error: e
                     });
                 }
+            /* } else if (event.code === 'error') {
+                await fcache.handleError(event.name) */
             } else if (event.code === 'ready') {
                 await fcache.handleReady(event.name);
                 fcache.emit('ready', event.name);
@@ -636,25 +699,28 @@ export class BaseFileCache<
         }
 
         info.stack = undefined;
+        await this.updateDocInDB(info);
+        await this.config.hookFileChanged(name, info);
+    }
+
+    protected async updateDocInDB(info) {
         await this.#dao.update({
-            vpath: info.vpath as string,
-            mime: info.mime as string,
-            mounted: info.mounted as string,
-            mountPoint: info.mountPoint as string,
-            pathInMounted: info.pathInMounted as string,
+            vpath: info.vpath,
+            mime: info.mime,
+            mounted: info.mounted,
+            mountPoint: info.mountPoint,
+            pathInMounted: info.pathInMounted,
             mtimeMs: new Date(info.statsMtime).toISOString(),
-            fspath: path.join(info.mounted, info.pathInMounted) as string,
-            renderPath: (info.renderPath
-                    ? info.renderPath
-                    : info.vpath) as string,
-            rendersToHTML: false,
+            fspath: path.join(info.mounted, info.pathInMounted),
+            renderPath: info.renderPath,
+            rendersToHTML: info.rendersToHTML,
             dirname: path.dirname(info.renderPath),
-            docMetadata: {} as any,
-            metadata: {} as any,
+            docMetadata: info.docMetadata,
+            // docContent: info.docContent,
+            // docBody: info.docBody,
+            metadata: info.metadata,
             info,
         } as T);
-
-        await this.config.hookFileChanged(name, info);
     }
 
     /**
@@ -689,7 +755,11 @@ export class BaseFileCache<
 
         this.gatherInfoData(info);
         info.stack = undefined;
+        await this.insertDocToDB(info);
+        await this.config.hookFileAdded(name, info);
+    }
 
+    protected async insertDocToDB(info) {
         await this.#dao.insert({
             vpath: info.vpath,
             mime: info.mime,
@@ -702,11 +772,11 @@ export class BaseFileCache<
             rendersToHTML: info.rendersToHTML,
             dirname: path.dirname(info.renderPath),
             docMetadata: info.docMetadata,
+            // docContent: info.docContent,
+            // docBody: info.docBody,
             metadata: info.metadata,
             info,
         } as T);
-
-        await this.config.hookFileAdded(name, info);
     }
 
     async handleUnlinked(name, info) {
@@ -920,7 +990,7 @@ export class BaseFileCache<
     }
 
     #fExistsInDir(fpath, dir) {
-        console.log(`#fExistsInDir ${fpath} ${util.inspect(dir)}`);
+        // console.log(`#fExistsInDir ${fpath} ${util.inspect(dir)}`);
         if (dir.mountPoint === '/') {
             const fspath = path.join(
                 dir.mounted, fpath
@@ -956,7 +1026,7 @@ export class BaseFileCache<
                 = fpath.replace(dir.mountPoint, '');
             let fspath = path.join(
                 dir.mounted, pathInMounted);
-            console.log(`Checking exist for ${dir.mountPoint} ${dir.mounted} ${pathInMounted} ${fspath}`);
+            // console.log(`Checking exist for ${dir.mountPoint} ${dir.mounted} ${pathInMounted} ${fspath}`);
             let fsexists = FS.existsSync(fspath);
 
             if (fsexists) {
@@ -998,7 +1068,7 @@ export class BaseFileCache<
         const fcache = this;
 
         const mapped = remapdirs(this.dirs);
-        console.log(`findSync looking for ${fpath} in ${util.inspect(mapped)}`);
+        // console.log(`findSync looking for ${fpath} in ${util.inspect(mapped)}`);
 
         for (const dir of mapped) {
             if (!(dir?.mountPoint)) {
@@ -1006,7 +1076,7 @@ export class BaseFileCache<
             }
             const found = this.#fExistsInDir(fpath, dir);
             if (found) {
-                console.log(`findSync ${fpath} found`, found);
+                // console.log(`findSync ${fpath} found`, found);
                 return found;
             }
         }
@@ -1099,6 +1169,45 @@ export class TemplatesFileCache<
         // console.log(`TemplatesFileCache after gatherInfoData `, info);
     }
 
+    protected async updateDocInDB(info) {
+        await this.dao.update(({
+            vpath: info.vpath,
+            mime: info.mime,
+            mounted: info.mounted,
+            mountPoint: info.mountPoint,
+            pathInMounted: info.pathInMounted,
+            mtimeMs: new Date(info.statsMtime).toISOString(),
+            fspath: path.join(info.mounted, info.pathInMounted),
+            renderPath: info.renderPath,
+            rendersToHTML: info.rendersToHTML,
+            dirname: path.dirname(info.renderPath),
+            docMetadata: info.docMetadata,
+            docContent: info.docContent,
+            docBody: info.docBody,
+            metadata: info.metadata,
+            info,
+        } as unknown) as T);
+    }
+
+    protected async insertDocToDB(info: any) {
+        await this.dao.insert(({
+            vpath: info.vpath,
+            mime: info.mime,
+            mounted: info.mounted,
+            mountPoint: info.mountPoint,
+            pathInMounted: info.pathInMounted,
+            mtimeMs: new Date(info.statsMtime).toISOString(),
+            fspath: path.join(info.mounted, info.pathInMounted),
+            renderPath: info.renderPath,
+            rendersToHTML: info.rendersToHTML,
+            dirname: path.dirname(info.renderPath),
+            docMetadata: info.docMetadata,
+            docContent: info.docContent,
+            docBody: info.docBody,
+            metadata: info.metadata,
+            info,
+        } as unknown) as T);
+    }
 }
 
 export class DocumentsFileCache
@@ -1291,36 +1400,8 @@ export class DocumentsFileCache
         }
     }
 
-    async handleChanged(name, info) {
-        console.log(`PROCESS ${name} handleChanged`, info.vpath);
-        if (this.ignoreFile(info)) {
-            // console.log(`OOOOOOOOGA!!! Received a file that should be ingored `, info);
-            return;
-        }
-        if (name !== this.name) {
-            throw new Error(`handleChanged event for wrong name; got ${name}, expected ${this.name}`);
-        }
-        // console.log(`handleChanged ${info.vpath} ${info.metadata && info.metadata.publicationDate ? info.metadata.publicationDate : '???'}`);
-
-        await this.gatherInfoData(info);
-        info.stack = undefined;
-
-        const result = await this.dao.selectAll({
-            vpath: { eq: info.vpath },
-            mounted: { eq: info.mounted }
-        } as Filter<Document>);
-
-        if (
-            !Array.isArray(result)
-         || result.length <= 0
-        ) {
-            // It wasn't found in the database.  Hence
-            // we should add it.
-            return this.handleAdded(name, info);
-        }
-
-        info.stack = undefined;
-        await this.dao.update({
+    protected async updateDocInDB(info) {
+        await this.dao.update(({
             vpath: info.vpath,
             mime: info.mime,
             mounted: info.mounted,
@@ -1332,29 +1413,19 @@ export class DocumentsFileCache
             rendersToHTML: info.rendersToHTML,
             dirname: path.dirname(info.renderPath),
             docMetadata: info.docMetadata,
+            docContent: info.docContent,
+            docBody: info.docBody,
             metadata: info.metadata,
+            tags: Array.isArray(info.metadata?.tags)
+                    ? info.metadata.tags
+                    : [],
+            layout: info.metadata?.layout,
             info,
-        } as Document);
-
-        await this.config.hookFileChanged(name, info);
+        } as unknown) as Document);
     }
 
-    async handleAdded(name, info) {
-        //  console.log(`PROCESS ${name} handleAdded`, info.vpath);
-        if (this.ignoreFile(info)) {
-            // console.log(`OOOOOOOOGA!!! Received a file that should be ingored `, info);
-            return;
-        }
-        if (name !== this.name) {
-            // console.log(`handleAdded WRONG NAME ${name} not ${this.name}`);
-            throw new Error(`handleAdded event for wrong name; got ${name}, expected ${this.name}`);
-        }
-
-        this.gatherInfoData(info);
-        info.stack = undefined;
-
-        // console.log(`handleAdded ADDING ${info.vpath} to ${documentsDAO.table.name}`);
-        const result = await this.dao.insert({
+    protected async insertDocToDB(info: any) {
+        await this.dao.insert(({
             vpath: info.vpath,
             mime: info.mime,
             mounted: info.mounted,
@@ -1366,13 +1437,15 @@ export class DocumentsFileCache
             rendersToHTML: info.rendersToHTML,
             dirname: path.dirname(info.renderPath),
             docMetadata: info.docMetadata,
+            docContent: info.docContent,
+            docBody: info.docBody,
             metadata: info.metadata,
+            tags: Array.isArray(info.metadata?.tags)
+                    ? info.metadata.tags
+                    : [],
+            layout: info.metadata?.layout,
             info,
-        } as Document);
-
-        // console.log(`handleAdded ADDING ${info.vpath} ==> ${util.inspect(result)}`);
-
-        await this.config.hookFileAdded(name, info);
+        } as unknown) as Document);
     }
 
     async indexChain(_fpath) {
@@ -1668,23 +1741,23 @@ export class DocumentsFileCache
             typeof options.pathmatch === 'string'
         ) {
             regexSQL.or.push({
-                sql: ` vpath regexp '${options.pathmatch}' `
+                sql: ` ( vpath regexp '${options.pathmatch}' ) `
             });
         } else if (
             options.pathmatch instanceof RegExp
         ) {
             regexSQL.or.push({
-                sql: ` vpath regexp '${options.pathmatch.source}' `
+                sql: ` ( vpath regexp '${options.pathmatch.source}' ) `
             });
         } else if (Array.isArray(options.pathmatch)) {
             for (const match of options.pathmatch) {
                 if (typeof match === 'string') {
                     regexSQL.or.push({
-                        sql: ` vpath regexp '${match}' `
+                        sql: ` ( vpath regexp '${match}' ) `
                     });
                 } else if (match instanceof RegExp) {
                     regexSQL.or.push({
-                        sql: ` vpath regexp '${match.source}' `
+                        sql: ` ( vpath regexp '${match.source}' )`
                     });
                 } else {
                     throw new Error(`search ERROR invalid pathmatch regexp ${util.inspect(match)}`);
@@ -1694,6 +1767,18 @@ export class DocumentsFileCache
             // There's a pathmatch field, that
             // isn't correct
             throw new Error(`search ERROR invalid pathmatch ${util.inspect(options.pathmatch)}`);
+        }
+
+        if (options.layouts) {
+            if (Array.isArray(options.layouts)) {
+                for (const layout of options.layouts) {
+                    regexSQL.or.push({
+                        layout: { eq: layout }
+                    });
+                }
+            } else {
+                selector.layout = { eq: options.layouts };
+            }
         }
 
         // Attempting to do the following:
@@ -1747,34 +1832,8 @@ export class DocumentsFileCache
 
         // If the search options include layout(s)
         // we check docMetadata.layout
-        const result2 = options.layouts
-            ? result1.filter(item => {
-                let layouts;
-                if (Array.isArray(options.layouts)) {
-                    layouts = options.layouts;
-                } else {
-                    layouts = [ options.layouts ];
-                }
-                if (item.vpath
-                 && item.docMetadata
-                 && item.docMetadata.layout
-                ) {
-                    if (layouts.includes(
-                        item.docMetadata.layout
-                    )) {
-                        return true;
-                    } else {
-                        // This item has a
-                        // non-matching layout
-                        return false;
-                    }
-                } else {
-                    // Has no layout, therefore does
-                    // not match the layout option
-                    return false;
-                }
-            })
-            : result1;
+        // NOW MOVED ABOVE
+        const result2 = result1;
 
         // Check for match against tags
         const result3 = 

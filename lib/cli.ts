@@ -409,9 +409,7 @@ program
             )).default;
             let akasha = config.akasha;
             await akasha.setup(config);
-            const docinfo = akasha.filecache.documentsCache.find(docFN);
-            delete docinfo.meta;
-            delete docinfo['$loki'];
+            const docinfo = await akasha.filecache.documentsCache.find(docFN);
             console.log(`docFN ${docFN} `, docinfo);
             await akasha.closeCaches();
         } catch (e) {
