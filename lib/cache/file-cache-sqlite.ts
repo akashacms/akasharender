@@ -1641,6 +1641,49 @@ export class DocumentsFileCache
         return docs;
     }
 
+    async documentsWithTag(tagnm: string | string[])
+        : Promise<Array<string>>
+    {
+        let tags: string[];
+        if (typeof tagnm === 'string') {
+            tags = [ tagnm ];
+        } else if (Array.isArray(tagnm)) {
+            tags = tagnm;
+        } else {
+            throw new Error(`documentsWithTag given bad tags array ${util.inspect(tagnm)}`);
+        }
+
+        const res = await this.dao.sqldb.all(`
+            SELECT
+                vpath,
+                json_extract(docMetadata, '$.tags') as tags
+            FROM DOCUMENTS
+        `) as unknown as Array<{
+            vpath: string,
+            tags: string[]
+        }>;
+
+        const vpaths = [];
+        for (const item of res) {
+            if (!('tags' in item)) continue;
+            let tagsP = [];
+            if (typeof item.tags === 'string') {
+                tagsP = JSON.parse(item.tags);
+            } else if (Array.isArray(item.tags)) {
+                tagsP = item.tags;
+            }
+
+            for (const tag of tags) {
+                if (tagsP.includes(tag)) {
+                    vpaths.push(item.vpath);
+                    break;
+                }
+            }
+        }
+
+        return vpaths;
+    }
+
     /**
      * Get an array of tags used by all documents.
      * This uses the JSON extension to extract
@@ -1654,7 +1697,10 @@ export class DocumentsFileCache
                 vpath,
                 json_extract(docMetadata, '$.tags') as tags
             FROM DOCUMENTS
-        `);
+        `) as unknown as Array<{
+            vpath: string,
+            tags: string[]
+        }>;
 
         // console.log(res);
 
