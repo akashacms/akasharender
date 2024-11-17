@@ -594,6 +594,20 @@ program
         }
     });
 
-
+program
+    .command('index <configFN>')
+    .description('Loads configuration, indexes content, then exits')
+    .action(async (configFN) => {
+        try {
+            const config = (await import(
+                path.join(process.cwd(), configFN)
+            )).default;
+            let akasha = config.akasha;
+            await akasha.setup(config);
+            await akasha.closeCaches();
+        } catch (e) {
+            console.error(`partialinfo command ERRORED ${e.stack}`);
+        }
+    });
 
 program.parse(process.argv);
