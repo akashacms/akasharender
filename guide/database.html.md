@@ -87,3 +87,114 @@ Basically:
 * `sqdb.prepare` is for SQL Prepared statements
 * `sql.exec` executes SQL statements
 * `sql.run` executes SQL statements with the option of inserting parameters
+
+
+## Saving the in-memory database to disk
+
+Setting the environment variable `AK_DB_URL` to a file-name will cause the database to be saved to that file.  Otherwise the database is solely kept in memory.
+
+## Solely indexing the project content
+
+When the API function `akasha.setup(CONFIG)` is executed, many things happen, including the indexing of all content files.
+
+The CLI tool command `index` solely executes that API function, then executes `akasha.closeCaches()`.  The side effects are that all content files are indexed and the CLI tool exits.
+
+For example:
+
+```shell
+$ AK_DB_URL=test.db \
+    node ../dist/cli.js index config-normal.mjs 
+```
+
+This indexes the content files, and saves the data into the named database file.
+
+You can then use the `sqlite3` program to inspect the database like so:
+
+```shell
+$ sqlite3 test.db 
+SQLite version 3.37.2 2022-01-06 13:25:41
+Enter ".help" for usage hints.
+sqlite> .schema
+CREATE TABLE IF NOT EXISTS "TRACES" (
+  `basedir` TEXT,
+  `fpath` TEXT,
+  `fullpath` TEXT,
+  `renderTo` TEXT,
+  `stage` TEXT DEFAULT(datetime('now') || 'Z'),
+  `start` TEXT DEFAULT(datetime('now') || 'Z'),
+  `now` TEXT DEFAULT(datetime('now') || 'Z')
+);
+CREATE TABLE IF NOT EXISTS "ASSETS" (
+  `vpath` TEXT PRIMARY KEY,
+  `mime` TEXT,
+  `mounted` TEXT,
+  `mountPoint` TEXT,
+  `pathInMounted` TEXT,
+  `fspath` TEXT,
+  `renderPath` TEXT,
+  `mtimeMs` TEXT DEFAULT(datetime('now') || 'Z'),
+  `info` TEXT
+) WITHOUT ROWID;CREATE TABLE IF NOT EXISTS "PARTIALS" (
+  `vpath` TEXT PRIMARY KEY,
+  `mime` TEXT,
+  `mounted` TEXT,
+  `mountPoint` TEXT,
+  `pathInMounted` TEXT,
+  `fspath` TEXT,
+  `renderPath` TEXT,
+  `mtimeMs` TEXT DEFAULT(datetime('now') || 'Z'),
+  `docMetadata` TEXT,
+  `docContent` TEXT,
+  `docBody` TEXT,
+  `metadata` TEXT,
+  `info` TEXT
+) WITHOUT ROWID;
+CREATE TABLE IF NOT EXISTS "LAYOUTS" (
+  `vpath` TEXT PRIMARY KEY,
+  `mime` TEXT,
+  `mounted` TEXT,
+  `mountPoint` TEXT,
+  `pathInMounted` TEXT,
+  `fspath` TEXT,
+  `renderPath` TEXT,
+  `mtimeMs` TEXT DEFAULT(datetime('now') || 'Z'),
+  `docMetadata` TEXT,
+  `docContent` TEXT,
+  `docBody` TEXT,
+  `metadata` TEXT,
+  `info` TEXT
+) WITHOUT ROWID;
+CREATE TABLE IF NOT EXISTS "DOCUMENTS" (
+  `vpath` TEXT PRIMARY KEY,
+  `mime` TEXT,
+  `mounted` TEXT,
+  `mountPoint` TEXT,
+  `pathInMounted` TEXT,
+  `fspath` TEXT,
+  `renderPath` TEXT,
+  `rendersToHTML` INTEGER,
+  `dirname` TEXT,
+  `mtimeMs` TEXT DEFAULT(datetime('now') || 'Z'),
+  `docMetadata` TEXT,
+  `metadata` TEXT,
+  `info` TEXT
+) WITHOUT ROWID;
+CREATE TABLE IF NOT EXISTS "TAGGLUE" (
+  `docvpath` string,
+  `slug` string,
+  CONSTRAINT "tag_docvpath"
+    FOREIGN KEY ("docvpath")
+    REFERENCES "DOCUMENTS" ("vpath") ON DELETE CASCADE
+,
+  CONSTRAINT "tag_slug"
+    FOREIGN KEY ("slug")
+    REFERENCES "TAGS" ("slug") ON DELETE CASCADE
+
+);
+CREATE TABLE IF NOT EXISTS "TAGS" (
+  `tagname` TEXT,
+  `slug` TEXT PRIMARY KEY,
+  `description` TEXT
+);
+sqlite> 
+```
