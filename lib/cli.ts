@@ -436,6 +436,24 @@ program
     });
 
 program
+    .command('docs-with-tag <configFN> <tags...>')
+    .description('List the document vpaths for given tags')
+    .action(async (configFN, tags) => {
+        try {
+            const config = (await import(
+                path.join(process.cwd(), configFN)
+            )).default;
+            let akasha = config.akasha;
+            await akasha.setup(config);
+            console.log(await akasha.filecache
+                .documentsCache.documentsWithTag(tags));
+            await akasha.closeCaches();
+        } catch (e) {
+            console.error(`docs-with-tags command ERRORED ${e.stack}`);
+        }
+    });
+
+program
     .command('search <configFN>')
     .description('Search for documents')
     .option('--root <rootPath>', 'Select only files within the named directory')
