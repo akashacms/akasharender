@@ -33,7 +33,7 @@ import fastq from 'fastq';
     name: 'ASSETS',
     withoutRowId: true,
 } as TableOpts)
-class Asset {
+export class Asset {
 
     // Primary key
     @id({
@@ -101,7 +101,7 @@ export const assetsDAO: TassetsDAO
     name: 'PARTIALS',
     withoutRowId: true,
 })
-class Partial {
+export class Partial {
 
     // Primary key
     @id({
@@ -188,7 +188,7 @@ export const partialsDAO
     name: 'LAYOUTS',
     withoutRowId: true,
 })
-class Layout {
+export class Layout {
 
     // Primary key
     @id({
@@ -276,7 +276,7 @@ export const layoutsDAO
     name: 'DOCUMENTS',
     withoutRowId: true,
 })
-class Document {
+export class Document {
 
     // Primary key
     @id({
@@ -951,7 +951,7 @@ export class BaseFileCache<
      * @param _fpath The vpath or renderPath to look for
      * @returns boolean true if found, false otherwise
      */
-    async find(_fpath) {
+    async find(_fpath): Promise<T> {
 
         if (typeof _fpath !== 'string') {
             throw new Error(`find parameter not string ${typeof _fpath}`);
@@ -1747,6 +1747,41 @@ export class DocumentsFileCache
     }
 
     /**
+     * Retrieve the data for an internal link
+     * within the site documents.  Forming an
+     * internal link is at a minimum the rendered
+     * path for the document and its title.
+     * The teaser, if available, can be used in
+     * a tooltip. The thumbnail is an image that
+     * could be displayed.
+     *
+     * @param vpath 
+     * @returns 
+     */
+    async docLinkData(vpath: string): Promise<{
+
+        // The vpath reference
+        vpath: string;
+        // The path it renders to
+        renderPath: string;
+        // The title string from that page
+        title: string;
+        // The teaser text from that page
+        teaser?: string;
+        // The hero image (thumbnail)
+        thumbnail?: string;
+    }> {
+        const docInfo = await this.find(vpath);
+        return {
+            vpath,
+            renderPath: docInfo.renderPath,
+            title: docInfo.metadata.title,
+            teaser: docInfo.metadata.teaser,
+            // thumbnail
+        };
+    }
+
+    /**
      * Perform descriptive search operations
      * with many options.
      *
@@ -2072,10 +2107,10 @@ export class DocumentsFileCache
     // https://www.npmjs.com/package/sqlite-regex
 }
 
-export var assetsCache;
-export var partialsCache;
-export var layoutsCache;
-export var documentsCache;
+export var assetsCache: BaseFileCache< Asset, typeof assetsDAO>;
+export var partialsCache: TemplatesFileCache<Partial, typeof partialsDAO>;
+export var layoutsCache: TemplatesFileCache<Layout, typeof layoutsDAO>;
+export var documentsCache: DocumentsFileCache;
 
 export async function setup(
     config: Configuration
