@@ -17,19 +17,30 @@
     "blog",
     "akashacms"
   ],
+  "author": {
+    "name": "David Herron",
+    "email": "david@davidherron.com",
+    "url": "http://akashacms.com"
+  },
   "homepage": "https://akashacms.com/akasharender/toc.html",
   "repository": {
     "type": "git",
     "url": "git://github.com/akashacms/akasharender.git"
   },
+  "scripts": {
+    "watch": "tsc -w",
+    "build": "tsc",
+    "dotest": "cd test && npm test",
+    "dopublish": "npm publish --access public"
+  },
   "engines": {
-    "node": ">=12.2.1"
+    "node": ">=20.x"
   },
   "main": "dist/index.js",
   "type": "module",
-  "types": "dist/index",
+  "types": "dist/index.js",
   "bin": {
-    "akasharender": "cli.js"
+    "akasharender": "dist/cli.js"
   },
   "dependencies": {
     "@akashacms/renderers": "^0.9.x",
@@ -52,15 +63,6 @@
     "utils-decorators": "^2.10.0",
     "uuid": "^11.0.x",
     "zx": "^8.2.1"
-  },
-  "scripts": {
-    "dotest": "cd test && npm test",
-    "dopublish": "npm publish --access public"
-  },
-  "author": {
-    "name": "David Herron",
-    "email": "david@davidherron.com",
-    "url": "http://akashacms.com"
   },
   "license": "ISC",
   "devDependencies": {
