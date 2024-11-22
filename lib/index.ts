@@ -46,8 +46,8 @@ export * as relative from 'relative';
 import { Plugin } from './Plugin.js';
 export { Plugin } from './Plugin.js';
 
-import { render, renderDocument } from './render.js';
-export { render, renderDocument } from './render.js';
+import { render, renderDocument, renderContent } from './render.js';
+export { render, renderDocument, renderContent } from './render.js';
 
 const __filename = import.meta.filename;
 const __dirname = import.meta.dirname;
@@ -314,13 +314,16 @@ export function partialSync(config, fname, metadata) {
         // as a function that we can directly use.
         // console.log(`partialSync `, partialSync);
         mdata.partialSync = partialSync.bind(renderer, config);
-        let partialText;
-        if (found.docBody) partialText = found.docBody;
-        else if (found.docContent) partialText = found.docContent;
-        else partialText = fs.readFileSync(found.fspath, 'utf8');
+        // for findSync, the "found" object is VPathData which
+        // does not have docBody nor docContent.  Therefore we
+        // must read this content
+        let partialText = fs.readFileSync(found.fspath, 'utf-8');
+        // if (found.docBody) partialText = found.docBody;
+        // else if (found.docContent) partialText = found.docContent;
+        // else partialText = fs.readFileSync(found.fspath, 'utf8');
         
         // console.log(`partial-funcs renderSync ${renderer.name} ${found.vpath}`);
-        return renderer.renderSync({
+        return renderer.renderSync(<Renderers.RenderingContext>{
             fspath: found.fspath,
             content: partialText,
             metadata: mdata
@@ -1176,11 +1179,11 @@ export class Configuration {
         this.#renderers.registerOverrideRenderer(renderer);
     }
 
-    findRendererName(name) {
+    findRendererName(name): Renderer {
         return this.#renderers.findRendererName(name);
     }
 
-    findRendererPath(_path) {
+    findRendererPath(_path): Renderer {
         return this.#renderers.findRendererPath(_path);
     }
 
