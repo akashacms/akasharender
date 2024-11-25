@@ -59,6 +59,8 @@ import { BuiltInPlugin } from './built-in.js';
 
 import * as filecache from './cache/file-cache-sqlite.js';
 
+export { newKeyv } from './sqdb.js';
+
 // There doesn't seem to be an official MIME type registered
 // for AsciiDoctor
 // per: https://asciidoctor.org/docs/faq/
@@ -761,6 +763,7 @@ export class Configuration {
         }
         this.#layoutDirs.push(dir);
         this.#renderers.addLayoutDir(dir.src ? dir.src : dir);
+        // console.log(`AkashaRender Configuration addLayoutsDir ${util.inspect(dir)} layoutDirs ${util.inspect(this.#layoutDirs)} Renderers layoutDirs ${util.inspect(this.#renderers.layoutDirs)}`);
         return this;
     }
 

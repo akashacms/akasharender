@@ -60,3 +60,17 @@ sqdb.loadExtension(sqlite_regex.getLoadablePath());
 // sqdb.on('trace', sql => {
 //     console.log(sql);
 // });
+
+/////////////////// KEYV Key/Value stores
+
+import Keyv from 'keyv';
+import KeyvSqlite from '@keyv/sqlite';
+const keyvSqlite = new KeyvSqlite(':memory:');
+
+export function newKeyv(namespace: string) {
+    return new Keyv({
+        store: keyvSqlite,
+        ttl: 500000,
+        namespace: namespace
+    });
+}
