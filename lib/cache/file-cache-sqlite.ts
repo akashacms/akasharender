@@ -333,6 +333,12 @@ export class Document {
     dirname: string;
 
     @field({
+        name: 'parentDir', dbtype: 'TEXT'
+    })
+    @index('docs_parentDir')
+    parentDir: string;
+
+    @field({
         name: 'mtimeMs',
         dbtype: "TEXT DEFAULT(datetime('now') || 'Z')"
     })
@@ -877,19 +883,33 @@ export class BaseFileCache<
         return true;
     }
 
-    async paths()
+    async paths(rootPath?: string)
         : Promise<Array<PathsReturnType>>
     {
         const fcache = this;
+
+
+        let rootP = rootPath?.startsWith('/')
+                  ? rootPath?.substring(1)
+                  : rootPath;
 
         // This is copied from the older version
         // (LokiJS version) of this function.  It
         // seems meant to eliminate duplicates.
         const vpathsSeen = new Set();
 
-        const result = await this.dao.selectAll({
+        const selector = {
             order: { mtimeMs: true }
-        });
+        } as any;
+        if (typeof rootP === 'string'
+        && rootP.length >= 1) {
+            selector.renderPath = {
+                isLike: `${rootP}%`
+                // sql: ` renderPath regexp '^${rootP}' `
+            };
+        }
+        // console.log(`paths ${util.inspect(selector)}`);
+        const result = await this.dao.selectAll(selector);
         const result2 = result.filter(item => {
             // console.log(`paths ?ignore? ${item.vpath}`);
             if (fcache.ignoreFile(item)) {
@@ -1226,6 +1246,7 @@ export class DocumentsFileCache
         info.renderPath = info.vpath;
         info.dirname = path.dirname(info.vpath);
         if (info.dirname === '.') info.dirname = '/';
+        info.parentDir = path.dirname(info.dirname);
 
         // find the mounted directory,
         // get the baseMetadata
@@ -1412,6 +1433,7 @@ export class DocumentsFileCache
             renderPath: info.renderPath,
             rendersToHTML: info.rendersToHTML,
             dirname: path.dirname(info.renderPath),
+            parentDir: info.parentDir,
             docMetadata: info.docMetadata,
             docContent: info.docContent,
             docBody: info.docBody,
@@ -1436,6 +1458,7 @@ export class DocumentsFileCache
             renderPath: info.renderPath,
             rendersToHTML: info.rendersToHTML,
             dirname: path.dirname(info.renderPath),
+            parentDir: info.parentDir,
             docMetadata: info.docMetadata,
             docContent: info.docContent,
             docBody: info.docBody,
@@ -1534,6 +1557,94 @@ export class DocumentsFileCache
     }
 
     /**
+     * Returns a tree of items starting from the document
+     * named in _rootItem.  The parameter should be an
+     * actual document in the tree, such as `path/to/index.html`.
+     * The return is a tree-shaped set of objects like the following;
+     * 
+  tree:
+    rootItem: folder/folder/index.html
+    dirname: folder/folder
+    items:
+        - vpath: folder/folder/index.html.md
+          renderPath: folder/folder/index.html
+    childFolders:
+        - dirname: folder/folder/folder
+          children:
+              rootItem: folder/folder/folder/index.html
+              dirname: folder/folder/folder
+              items:
+                - vpath: folder/folder/folder/index.html.md
+                  renderPath: folder/folder/folder/index.html
+                - vpath: folder/folder/folder/page1.html.md
+                  renderPath: folder/folder/folder/page1.html
+                - vpath: folder/folder/folder/page2.html.md
+                  renderPath: folder/folder/folder/page2.html
+              childFolders: []
+        - dirname: folder/folder/folder2
+          children:
+              rootItem: folder/folder/folder2/index.html
+              dirname: folder/folder/folder2
+              items:
+                - vpath: folder/folder/folder2/index.html.md
+                  renderPath: folder/folder/folder2/index.html
+                - vpath: folder/folder/folder2/page1.html.md
+                  renderPath: folder/folder/folder2/page1.html
+                - vpath: folder/folder/folder2/page2.html.md
+                  renderPath: folder/folder/folder2/page2.html
+              childFolders: []
+     *
+     * The objects under `items` are actully the full Document object
+     * from the cache, but for the interest of compactness most of
+     * the fields have been deleted.
+     *
+     * @param _rootItem 
+     * @returns 
+     */
+    async childItemTree(_rootItem: string) {
+
+        // console.log(`childItemTree ${_rootItem}`);
+
+        let rootItem = await this.find(_rootItem.startsWith('/')
+                                     ? _rootItem.substring(1)
+                                     : _rootItem);
+        let dirname = path.dirname(rootItem.vpath);
+        // Picks up everything from the current level.
+        // Differs from siblings by getting everything.
+        const items = await this.dao.selectAll({
+            dirname: { eq: dirname },
+            rendersToHTML: true
+        }) as unknown[] as any[];
+
+        const childFolders = await this.dao.sqldb.all(
+            `SELECT distinct dirname FROM DOCUMENTS
+            WHERE parentDir = '${dirname}'`
+        ) as unknown[] as Document[];
+
+        const cfs = [];
+        for (const cf of childFolders) {
+            cfs.push(await this.childItemTree(
+                path.join(cf.dirname, 'index.html')
+            ));
+        }
+
+        return {
+            rootItem,
+            dirname,
+            items: items,
+            // Uncomment this to generate simplified output
+            // for debugging.
+            // .map(item => {
+            //     return {
+            //         vpath: item.vpath,
+            //         renderPath: item.renderPath
+            //     }
+            // }),
+            childFolders: cfs
+        }
+    }
+
+    /**
      * Find the index files (renders to index.html)
      * within the named subtree.
      *
@@ -1547,7 +1658,10 @@ export class DocumentsFileCache
 
         // Optionally appendable sub-query
         // to handle when rootPath is specified
-        let rootQ = typeof rootP === 'string'
+        let rootQ = (
+                typeof rootP === 'string'
+             && rootP.length >= 1
+            )
             ? `AND ( renderPath regexp '^${rootP}' )`
             : '';
 
@@ -1781,14 +1895,18 @@ export class DocumentsFileCache
         };
     }
 
+
     /**
      * Perform descriptive search operations
-     * with many options.
+     * with many options.  They are converted
+     * into a selectAll statement.
      *
      * @param options 
      * @returns 
      */
-    async search(options) {
+    async search(options): Promise<Array<Document>> {
+
+        // console.log(`search `, options);
 
         const fcache = this;
         const vpathsSeen = new Set();
@@ -1815,6 +1933,13 @@ export class DocumentsFileCache
             };
         }
 
+        if (typeof options?.rootPath === 'string') {
+            selector.renderPath = {
+                isLike: `${options.rootPath}%`
+                // sql: ` renderPath like '${options.rootPath}%' `
+            }
+        }
+
         const regexSQL = {
             or: []
         };
@@ -1822,23 +1947,23 @@ export class DocumentsFileCache
             typeof options.pathmatch === 'string'
         ) {
             regexSQL.or.push({
-                sql: ` ( vpath regexp '${options.pathmatch}' ) `
+                sql: ` vpath regexp '${options.pathmatch}' `
             });
         } else if (
             options.pathmatch instanceof RegExp
         ) {
             regexSQL.or.push({
-                sql: ` ( vpath regexp '${options.pathmatch.source}' ) `
+                sql: ` vpath regexp '${options.pathmatch.source}' `
             });
         } else if (Array.isArray(options.pathmatch)) {
             for (const match of options.pathmatch) {
                 if (typeof match === 'string') {
                     regexSQL.or.push({
-                        sql: ` ( vpath regexp '${match}' ) `
+                        sql: ` vpath regexp '${match}' `
                     });
                 } else if (match instanceof RegExp) {
                     regexSQL.or.push({
-                        sql: ` ( vpath regexp '${match.source}' )`
+                        sql: ` vpath regexp '${match.source}' `
                     });
                 } else {
                     throw new Error(`search ERROR invalid pathmatch regexp ${util.inspect(match)}`);
@@ -1851,12 +1976,18 @@ export class DocumentsFileCache
         }
 
         if (options.layouts) {
-            if (Array.isArray(options.layouts)) {
+            if (Array.isArray(options.layouts)
+             && options.layouts.length >= 2
+            ) {
                 for (const layout of options.layouts) {
                     regexSQL.or.push({
                         layout: { eq: layout }
                     });
                 }
+            } else if (Array.isArray(options.layout)
+             && options.layouts.length === 1
+            ) {
+                selector.layout = { eq: options.layouts[0] };
             } else {
                 selector.layout = { eq: options.layouts };
             }
@@ -1905,11 +2036,16 @@ export class DocumentsFileCache
             selector.or = regexSQL.or;
         }
 
-        // console.log(selector)
+        // console.log(selector);
 
         // Select based on things we can query
         // directly from  the Document object.
-        const result1 = await this.dao.selectAll(selector);
+        let result1;
+        try {
+            result1 = await this.dao.selectAll(selector);
+        } catch (err: any) {
+            throw new Error(`DocumentsFileCache.search caught error in selectAll with selector ${util.inspect(selector)} - ${err.message}`);
+        }
 
         // If the search options include layout(s)
         // we check docMetadata.layout
@@ -1938,24 +2074,25 @@ export class DocumentsFileCache
             })
             : result2;
 
-        const result4 =
-            (
-                options.rootPath
-             && typeof options.rootPath === 'string'
-            ) ? result3.filter(item => {
-                if (item.vpath
-                 && item.renderPath
-                ) {
-                    if (item.renderPath.startsWith(options.rootPath)) {
-                        return true;
-                    } else {
-                        return false;
-                    }
-                } else {
-                    return false;
-                }
-            })
-            : result3;
+        const result4 = result3;
+            // (
+            //     options.rootPath
+            //  && typeof options.rootPath === 'string'
+            // ) ? result3.filter(item => {
+            //     if (item.vpath
+            //      && item.renderPath
+            //     ) {
+            //         // console.log(`search ${item.vpath} ${item.renderPath} ${options.rootPath}`);
+            //         if (item.renderPath.startsWith(options.rootPath)) {
+            //             return true;
+            //         } else {
+            //             return false;
+            //         }
+            //     } else {
+            //         return false;
+            //     }
+            // })
+            // : result3;
 
         const result5 =
             (
