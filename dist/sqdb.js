@@ -1,0 +1,59 @@
+/**
+ *
+ * Copyright 2024 David Herron
+ *
+ * This file is part of AkashaCMS (http://akashacms.com/).
+ *
+ *  Licensed under the Apache License, Version 2.0 (the "License");
+ *  you may not use this file except in compliance with the License.
+ *  You may obtain a copy of the License at
+ *
+ *      http://www.apache.org/licenses/LICENSE-2.0
+ *
+ *  Unless required by applicable law or agreed to in writing, software
+ *  distributed under the License is distributed on an "AS IS" BASIS,
+ *  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ *  See the License for the specific language governing permissions and
+ *  limitations under the License.
+ */
+// import sqleanLibs from 'sqlite3-sqlean';
+import * as sqlite_regex from "sqlite-regex";
+import { SqlDatabase } from 'sqlite3orm';
+/**
+ * Subclass the SqlDatabase so we can expose
+ * the underlying SQLITE3 Database object and
+ * some useful methods on that class.
+ */
+export class SqlDatabaseChild extends SqlDatabase {
+    _db() { return this.db; }
+    loadExtension(filename, callback) {
+        return this.db.loadExtension(filename, callback);
+    }
+}
+const dburl = typeof process.env.AK_DB_URL === 'string'
+    ? process.env.AK_DB_URL
+    : ':memory:';
+// Turns on full stack traces
+// SqlDatabase.verbose();
+export const sqdb = new SqlDatabaseChild();
+await sqdb.open(dburl);
+// await sqdb.open('test.db');
+// sqdb.loadExtension(sqleanLibs.reLibPath);
+sqdb.loadExtension(sqlite_regex.getLoadablePath());
+// This traces SQL statements
+//
+// sqdb.on('trace', sql => {
+//     console.log(sql);
+// });
+/////////////////// KEYV Key/Value stores
+import Keyv from 'keyv';
+import KeyvSqlite from '@keyv/sqlite';
+const keyvSqlite = new KeyvSqlite(':memory:');
+export function newKeyv(namespace) {
+    return new Keyv({
+        store: keyvSqlite,
+        ttl: 500000,
+        namespace: namespace
+    });
+}
+//# sourceMappingURL=data:application/json;base64,eyJ2ZXJzaW9uIjozLCJmaWxlIjoic3FkYi5qcyIsInNvdXJjZVJvb3QiOiIiLCJzb3VyY2VzIjpbIi4uL2xpYi9zcWRiLnRzIl0sIm5hbWVzIjpbXSwibWFwcGluZ3MiOiJBQUFBOzs7Ozs7Ozs7Ozs7Ozs7OztHQWlCRztBQVVILDJDQUEyQztBQUMzQyxPQUFPLEtBQUssWUFBWSxNQUFNLGNBQWMsQ0FBQztBQUU3QyxPQUFPLEVBQUUsV0FBVyxFQUFFLE1BQU0sWUFBWSxDQUFDO0FBRXpDOzs7O0dBSUc7QUFDSCxNQUFNLE9BQU8sZ0JBQWlCLFNBQVEsV0FBVztJQUM3QyxHQUFHLEtBQUssT0FBTyxJQUFJLENBQUMsRUFBRSxDQUFDLENBQUMsQ0FBQztJQUV6QixhQUFhLENBQUMsUUFBZ0IsRUFBRSxRQUF1QztRQUNuRSxPQUFPLElBQUksQ0FBQyxFQUFFLENBQUMsYUFBYSxDQUFDLFFBQVEsRUFBRSxRQUFRLENBQUMsQ0FBQztJQUNyRCxDQUFDO0NBQ0o7QUFFRCxNQUFNLEtBQUssR0FBRyxPQUFPLE9BQU8sQ0FBQyxHQUFHLENBQUMsU0FBUyxLQUFLLFFBQVE7SUFDL0MsQ0FBQyxDQUFDLE9BQU8sQ0FBQyxHQUFHLENBQUMsU0FBUztJQUN2QixDQUFDLENBQUMsVUFBVSxDQUFDO0FBRXJCLDZCQUE2QjtBQUM3Qix5QkFBeUI7QUFDekIsTUFBTSxDQUFDLE1BQU0sSUFBSSxHQUFHLElBQUksZ0JBQWdCLEVBQUUsQ0FBQztBQUMzQyxNQUFNLElBQUksQ0FBQyxJQUFJLENBQUMsS0FBSyxDQUFDLENBQUM7QUFDdkIsOEJBQThCO0FBQzlCLDRDQUE0QztBQUM1QyxJQUFJLENBQUMsYUFBYSxDQUFDLFlBQVksQ0FBQyxlQUFlLEVBQUUsQ0FBQyxDQUFDO0FBRW5ELDZCQUE2QjtBQUM3QixFQUFFO0FBQ0YsNEJBQTRCO0FBQzVCLHdCQUF3QjtBQUN4QixNQUFNO0FBRU4seUNBQXlDO0FBRXpDLE9BQU8sSUFBSSxNQUFNLE1BQU0sQ0FBQztBQUN4QixPQUFPLFVBQVUsTUFBTSxjQUFjLENBQUM7QUFDdEMsTUFBTSxVQUFVLEdBQUcsSUFBSSxVQUFVLENBQUMsVUFBVSxDQUFDLENBQUM7QUFFOUMsTUFBTSxVQUFVLE9BQU8sQ0FBQyxTQUFpQjtJQUNyQyxPQUFPLElBQUksSUFBSSxDQUFDO1FBQ1osS0FBSyxFQUFFLFVBQVU7UUFDakIsR0FBRyxFQUFFLE1BQU07UUFDWCxTQUFTLEVBQUUsU0FBUztLQUN2QixDQUFDLENBQUM7QUFDUCxDQUFDIiwic291cmNlc0NvbnRlbnQiOlsiLyoqXG4gKlxuICogQ29weXJpZ2h0IDIwMjQgRGF2aWQgSGVycm9uXG4gKlxuICogVGhpcyBmaWxlIGlzIHBhcnQgb2YgQWthc2hhQ01TIChodHRwOi8vYWthc2hhY21zLmNvbS8pLlxuICpcbiAqICBMaWNlbnNlZCB1bmRlciB0aGUgQXBhY2hlIExpY2Vuc2UsIFZlcnNpb24gMi4wICh0aGUgXCJMaWNlbnNlXCIpO1xuICogIHlvdSBtYXkgbm90IHVzZSB0aGlzIGZpbGUgZXhjZXB0IGluIGNvbXBsaWFuY2Ugd2l0aCB0aGUgTGljZW5zZS5cbiAqICBZb3UgbWF5IG9idGFpbiBhIGNvcHkgb2YgdGhlIExpY2Vuc2UgYXRcbiAqXG4gKiAgICAgIGh0dHA6Ly93d3cuYXBhY2hlLm9yZy9saWNlbnNlcy9MSUNFTlNFLTIuMFxuICpcbiAqICBVbmxlc3MgcmVxdWlyZWQgYnkgYXBwbGljYWJsZSBsYXcgb3IgYWdyZWVkIHRvIGluIHdyaXRpbmcsIHNvZnR3YXJlXG4gKiAgZGlzdHJpYnV0ZWQgdW5kZXIgdGhlIExpY2Vuc2UgaXMgZGlzdHJpYnV0ZWQgb24gYW4gXCJBUyBJU1wiIEJBU0lTLFxuICogIFdJVEhPVVQgV0FSUkFOVElFUyBPUiBDT05ESVRJT05TIE9GIEFOWSBLSU5ELCBlaXRoZXIgZXhwcmVzcyBvciBpbXBsaWVkLlxuICogIFNlZSB0aGUgTGljZW5zZSBmb3IgdGhlIHNwZWNpZmljIGxhbmd1YWdlIGdvdmVybmluZyBwZXJtaXNzaW9ucyBhbmRcbiAqICBsaW1pdGF0aW9ucyB1bmRlciB0aGUgTGljZW5zZS5cbiAqL1xuXG4vKipcbiAqIFNRTCBEYXRhYmFzZSBzdXBwb3J0IHVzaW5nIFNRTElURTMuXG4gKiBcbiAqIFdoYXQncyBzdXBwb3J0ZWQgaXMgU1FMSVRFM09STSAtIGEgbGlnaHR3ZWlnaHRcbiAqIE9STSB0aGF0IHJ1bnMgb24gdG9wIG9mIFNRTElURTMuXG4gKi9cblxuaW1wb3J0IHsgRGF0YWJhc2UgfSBmcm9tICdzcWxpdGUzJztcbi8vIGltcG9ydCBzcWxlYW5MaWJzIGZyb20gJ3NxbGl0ZTMtc3FsZWFuJztcbmltcG9ydCAqIGFzIHNxbGl0ZV9yZWdleCBmcm9tIFwic3FsaXRlLXJlZ2V4XCI7XG5cbmltcG9ydCB7IFNxbERhdGFiYXNlIH0gZnJvbSAnc3FsaXRlM29ybSc7XG5cbi8qKlxuICogU3ViY2xhc3MgdGhlIFNxbERhdGFiYXNlIHNvIHdlIGNhbiBleHBvc2VcbiAqIHRoZSB1bmRlcmx5aW5nIFNRTElURTMgRGF0YWJhc2Ugb2JqZWN0IGFuZFxuICogc29tZSB1c2VmdWwgbWV0aG9kcyBvbiB0aGF0IGNsYXNzLlxuICovXG5leHBvcnQgY2xhc3MgU3FsRGF0YWJhc2VDaGlsZCBleHRlbmRzIFNxbERhdGFiYXNlIHtcbiAgICBfZGIoKSB7IHJldHVybiB0aGlzLmRiOyB9XG5cbiAgICBsb2FkRXh0ZW5zaW9uKGZpbGVuYW1lOiBzdHJpbmcsIGNhbGxiYWNrPzogKGVycj86IEVycm9yIHwgbnVsbCkgPT4gdm9pZCk6IERhdGFiYXNlIHtcbiAgICAgICAgcmV0dXJuIHRoaXMuZGIubG9hZEV4dGVuc2lvbihmaWxlbmFtZSwgY2FsbGJhY2spO1xuICAgIH1cbn1cblxuY29uc3QgZGJ1cmwgPSB0eXBlb2YgcHJvY2Vzcy5lbnYuQUtfREJfVVJMID09PSAnc3RyaW5nJ1xuICAgICAgICA/IHByb2Nlc3MuZW52LkFLX0RCX1VSTFxuICAgICAgICA6ICc6bWVtb3J5Oic7XG5cbi8vIFR1cm5zIG9uIGZ1bGwgc3RhY2sgdHJhY2VzXG4vLyBTcWxEYXRhYmFzZS52ZXJib3NlKCk7XG5leHBvcnQgY29uc3Qgc3FkYiA9IG5ldyBTcWxEYXRhYmFzZUNoaWxkKCk7XG5hd2FpdCBzcWRiLm9wZW4oZGJ1cmwpO1xuLy8gYXdhaXQgc3FkYi5vcGVuKCd0ZXN0LmRiJyk7XG4vLyBzcWRiLmxvYWRFeHRlbnNpb24oc3FsZWFuTGlicy5yZUxpYlBhdGgpO1xuc3FkYi5sb2FkRXh0ZW5zaW9uKHNxbGl0ZV9yZWdleC5nZXRMb2FkYWJsZVBhdGgoKSk7XG5cbi8vIFRoaXMgdHJhY2VzIFNRTCBzdGF0ZW1lbnRzXG4vL1xuLy8gc3FkYi5vbigndHJhY2UnLCBzcWwgPT4ge1xuLy8gICAgIGNvbnNvbGUubG9nKHNxbCk7XG4vLyB9KTtcblxuLy8vLy8vLy8vLy8vLy8vLy8vLyBLRVlWIEtleS9WYWx1ZSBzdG9yZXNcblxuaW1wb3J0IEtleXYgZnJvbSAna2V5dic7XG5pbXBvcnQgS2V5dlNxbGl0ZSBmcm9tICdAa2V5di9zcWxpdGUnO1xuY29uc3Qga2V5dlNxbGl0ZSA9IG5ldyBLZXl2U3FsaXRlKCc6bWVtb3J5OicpO1xuXG5leHBvcnQgZnVuY3Rpb24gbmV3S2V5dihuYW1lc3BhY2U6IHN0cmluZykge1xuICAgIHJldHVybiBuZXcgS2V5dih7XG4gICAgICAgIHN0b3JlOiBrZXl2U3FsaXRlLFxuICAgICAgICB0dGw6IDUwMDAwMCxcbiAgICAgICAgbmFtZXNwYWNlOiBuYW1lc3BhY2VcbiAgICB9KTtcbn1cbiJdfQ==
