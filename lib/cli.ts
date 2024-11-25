@@ -28,6 +28,7 @@ import { promises as fsp } from 'node:fs';
 import path from 'node:path';
 import util from 'node:util';
 import * as data from './data.js';
+import YAML from 'js-yaml';
 
 const _watchman = import('./cache/watchman.js');
 
@@ -290,6 +291,23 @@ program
     });
 
 program
+    .command('plugins <configFN>')
+    .description('List the plugins')
+    .action(async (configFN) => {
+        // console.log(`render: akasha: ${util.inspect(akasha)}`);
+        try {
+            const config = (await import(
+                path.join(process.cwd(), configFN)
+            )).default;
+            let akasha = config.akasha;
+            console.log(config.plugins);
+            
+        } catch (e) {
+            console.error(`config command ERRORED ${e.stack}`);
+        }
+    });
+
+program
     .command('docdirs <configFN>')
     .description('List the documents directories in a site configuration')
     .action(async (configFN) => {
@@ -363,9 +381,9 @@ program
 
 
 program
-    .command('documents <configFN>')
+    .command('documents <configFN> [rootPath]')
     .description('List the documents in a site configuration')
-    .action(async (configFN) => {
+    .action(async (configFN, rootPath) => {
         // console.log(`render: akasha: ${util.inspect(akasha)}`);
         try {
             const config = (await import(
@@ -373,7 +391,7 @@ program
             )).default;
             let akasha = config.akasha;
             await akasha.setup(config);
-            console.log(await akasha.filecache.documentsCache.paths());
+            console.log(await akasha.filecache.documentsCache.paths(rootPath));
             await akasha.closeCaches();
         } catch (e) {
             console.error(`documents command ERRORED ${e.stack}`);
@@ -418,6 +436,60 @@ program
     });
 
 program
+    .command('index-files <configFN> [rootPath]')
+    .description('List the index pages (index.html) under the given directory')
+    .action(async (configFN, rootPath) => {
+        // console.log(`render: akasha: ${util.inspect(akasha)}`);
+        try {
+            const config = (await import(
+                path.join(process.cwd(), configFN)
+            )).default;
+            let akasha = config.akasha;
+            await akasha.setup(config);
+            const docinfo = await akasha.filecache.documentsCache.indexFiles(rootPath);
+            console.log(`indexes ${rootPath} `, docinfo.map(index => {
+                return {
+                    vpath: index.vpath,
+                    renderPath: index.renderPath,
+                    mountPoint: index.mountPoint,
+                    pathInMounted: index.pathInMounted,
+                    dirname: index.dirname
+                }
+            }));
+            await akasha.closeCaches();
+        } catch (e) {
+            console.error(`index-files command ERRORED ${e.stack}`);
+        }
+    });
+
+program
+    .command('siblings <configFN> <vpath>')
+    .description('List the sibling pages to the named document')
+    .action(async (configFN, vpath) => {
+        // console.log(`render: akasha: ${util.inspect(akasha)}`);
+        try {
+            const config = (await import(
+                path.join(process.cwd(), configFN)
+            )).default;
+            let akasha = config.akasha;
+            await akasha.setup(config);
+            const docinfo = await akasha.filecache.documentsCache.siblings(vpath);
+            console.log(`siblings ${vpath} `, docinfo.map(index => {
+                return {
+                    vpath: index.vpath,
+                    renderPath: index.renderPath,
+                    mountPoint: index.mountPoint,
+                    pathInMounted: index.pathInMounted,
+                    dirname: index.dirname
+                }
+            }));
+            await akasha.closeCaches();
+        } catch (e) {
+            console.error(`siblings command ERRORED ${e.stack}`);
+        }
+    });
+
+program
     .command('tags <configFN>')
     .description('List the tags')
     .action(async (configFN) => {
@@ -454,6 +526,35 @@ program
     });
 
 program
+    .command('child-item-tree <configFN> <rootPath>')
+    .description('List the documents under a given location by tree')
+    .action(async (configFN, rootPath) => {
+
+        try {
+            const config = (await import(
+                path.join(process.cwd(), configFN)
+            )).default;
+            let akasha = config.akasha;
+            await akasha.setup(config);
+            console.log(
+                YAML.dump({
+                    tree: await akasha.filecache
+                        .documentsCache.childItemTree(rootPath)
+                }, { indent: 4 })
+                // .map(item => {
+                //     return {
+                //         vpath: item.vpath,
+                //         renderPath: item.renderPath
+                //     }
+                // })
+            );
+            await akasha.closeCaches();
+        } catch (e) {
+            console.error(`docs-with-tags command ERRORED ${e.stack}`);
+        }
+    });
+
+program
     .command('search <configFN>')
     .description('Search for documents')
     .option('--root <rootPath>', 'Select only files within the named directory')
@@ -483,8 +584,24 @@ program
             if (cmdObj.mime) options.mime = cmdObj.mime;
             if (cmdObj.tag) options.tag = cmdObj.tag;
             // console.log(options);
-            let docs = akasha.filecache.documentsCache.search(options);
-            console.log(docs);
+            let docs = await akasha.filecache.documentsCache.search(options);
+            console.log(docs
+            // .map(doc => {
+            //     return {
+            //         vpath: doc.vpath,
+            //         renderPath: doc.renderPath,
+            //         dirname: doc.dirname
+            //     }
+            // })
+            // .sort((a: any, b: any) => {
+            //     var tagA = a.dirname.toLowerCase();
+            //     var tagB = b.dirname.toLowerCase();
+            //     if (tagA < tagB) return -1;
+            //     if (tagA > tagB) return 1;
+            //     return 0;
+            // })
+            // .reverse()
+            );
             await akasha.closeCaches();
         } catch (e) {
             console.error(`search command ERRORED ${e.stack}`);
