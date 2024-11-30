@@ -1605,9 +1605,20 @@ export class DocumentsFileCache
 
         // console.log(`childItemTree ${_rootItem}`);
 
-        let rootItem = await this.find(_rootItem.startsWith('/')
-                                     ? _rootItem.substring(1)
-                                     : _rootItem);
+        let rootItem = await this.find(
+                _rootItem.startsWith('/')
+                    ? _rootItem.substring(1)
+                    : _rootItem);
+        if (!rootItem) {
+            console.warn(`childItemTree no rootItem found for path ${_rootItem}`);
+            return undefined;
+        }
+        if (!(typeof rootItem === 'object')
+         || !('vpath' in rootItem)
+        ) {
+            console.warn(`childItemTree found invalid object for ${_rootItem} - ${util.inspect(rootItem)}`);
+            return undefined;
+        }
         let dirname = path.dirname(rootItem.vpath);
         // Picks up everything from the current level.
         // Differs from siblings by getting everything.
@@ -1911,16 +1922,22 @@ export class DocumentsFileCache
         const fcache = this;
         const vpathsSeen = new Set();
 
-        const selector = {} as any;
+        const selector = {
+            and: []
+        } as any;
         if (options.mime) {
             if (typeof options.mime === 'string') {
-                selector.mime = {
-                    eq: options.mime
-                };
+                selector.and.push({
+                    mime: {
+                        eq: options.mime
+                    }
+                });
             } else if (Array.isArray(options.mime)) {
-                selector.mime = {
-                    in: options.mime
-                };
+                selector.and.push({
+                    mime: {
+                        in: options.mime
+                    }
+                });
             } /* else {
                 throw new Error(`Incorrect MIME check ${options.mime}`);
             } */
@@ -1928,16 +1945,20 @@ export class DocumentsFileCache
         if (
             typeof options.rendersToHTML === 'boolean'
         ) {
-            selector.rendersToHTML = {
-                eq: options.rendersToHTML
-            };
+            selector.and.push({
+                rendersToHTML: {
+                    eq: options.rendersToHTML
+                }
+            });
         }
 
         if (typeof options?.rootPath === 'string') {
-            selector.renderPath = {
-                isLike: `${options.rootPath}%`
-                // sql: ` renderPath like '${options.rootPath}%' `
-            }
+            selector.and.push({
+                renderPath: {
+                    isLike: `${options.rootPath}%`
+                    // sql: ` renderPath like '${options.rootPath}%' `
+                }
+            });
         }
 
         const regexSQL = {
@@ -2033,7 +2054,7 @@ export class DocumentsFileCache
             throw new Error(`search ERROR invalid renderpathmatch ${util.inspect(options.pathmatch)}`);
         }
         if (regexSQL.or.length >= 1) {
-            selector.or = regexSQL.or;
+            selector.and.push({ or: regexSQL.or });
         }
 
         // console.log(selector);
@@ -2042,7 +2063,9 @@ export class DocumentsFileCache
         // directly from  the Document object.
         let result1;
         try {
-            result1 = await this.dao.selectAll(selector);
+            result1 = await this.dao.selectAll(
+                selector
+            );
         } catch (err: any) {
             throw new Error(`DocumentsFileCache.search caught error in selectAll with selector ${util.inspect(selector)} - ${err.message}`);
         }
@@ -2302,8 +2325,8 @@ export async function setup(
     );
     await documentsCache.setup();
 
-    documentsCache.on('error', (...args) => {
-        console.error(`documentsCache ERROR ${util.inspect(args)}`)
+    documentsCache.on('error', (err) => {
+        console.error(`documentsCache ERROR ${util.inspect(err)}`);
     });
 
     await config.hookPluginCacheSetup();
