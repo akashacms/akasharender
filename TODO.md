@@ -2,6 +2,10 @@
 
 This should probably be kept in GitHub issues -- eventually
 
+# Using Bluesky posts as comments
+
+https://emilyliu.me/blog/comments
+
 # Develop wholly new thing - SimpleCMS
 
 Start with the SimpleCMS example and build it out.
@@ -178,8 +182,6 @@ Each custom element takes some CPU to process the element.  Reducing the number 
 
 The ability to present tags, and have tagged content, should be a built-in feature.
 
-Remove the tag cloud feature since it is not useful and was a fad from 15 years ago.
-
 Ensure that FileCache tracks documents-with-tags and provides useful functions for retrieving the documents by tag name.  This should already be there.
 
 Instead of creating an index page for every tag, instead have - index page name & list of tag names - as configuration settings.  This also requires a command to list the tags, and to list the indexes (and tags), and to list the tag names that are not on an index page.
@@ -265,98 +267,6 @@ https://highlightjs.org/usage/ -- It can be configured to run JavaScript in the 
 
 Alternatively there might be other tools that do a better job of code highlighting.
 
-# Minimal metadata for social media
-
-https://meiert.com/en/blog/minimal-social-markup/
-
-https://cards-dev.twitter.com/validator
-
-https://www.linkedin.com/post-inspector/
-
-https://developers.facebook.com/tools/debug/
-
-
-```html
-<!-- <head> (and <body>) needed for LinkedIn -->
-<head>
-  <!-- “twitter:card” and title needed for Twitter -->
-  <meta name=twitter:card content=summary_large_image>
-  <meta property=og:title content="This is a test title">
-  <!-- Quotes needed for WhatsApp and Signal -->
-  <meta property="og:description" name="description" content="This is a test description.">
-  <meta property="og:image" content="https://hell.meiert.org/core/png/test.png">
-</head>
-```
-
-# Metadata for the FediVerse
-
-https://en.wikipedia.org/wiki/Fediverse
-
-https://en.wikipedia.org/wiki/ActivityPub
-
-The idea is for an AkashaCMS site to be usable in FediVerse.  Hopefully there is a comments system which can be used.
-
-Example for Eleventy -- https://lewisdale.dev/post/you-can-be-friends-with-my-blog/
-
-https://lewisdale.dev/post/get-your-eleventy-site-onto-the-fediverse/
-
-https://github.com/LewisDaleUK/eleventy-plugin-activity-pub
-
-This talks about generating a file where one purpose is to point to a WebFinger file.  WebFinger is a well-known protocol.
-
-https://maho.dev/2024/02/a-guide-to-implement-activitypub-in-a-static-site-or-any-website/ -- This is a complete guide on implementing ActivityPub on a static website platform.
-
-https://book.micro.blog/activitypub/ -- Explanation of the protocol pieces.  https://book.micro.blog/ -- Full book about micro-blogging and more.
-
-https://www.theverge.com/24063290/fediverse-explained-activitypub-social-media-open-protocol
-
-https://dev.to/thasmin/getting-started-with-activitypub-2mgm
-
-Lists of tools:
-
-* https://github.com/BasixKOR/awesome-activitypub
-* https://codeberg.org/fediverse/delightful-activitypub-development/
-
-https://activitypub.ghost.org/
-
-https://activitypub.rocks/ -- Documentation, tools, etc
-
-Wordpress
-
-* https://wedistribute.org/2023/09/connect-wordpress-to-the-fediverse/
-* https://jseggers.com/technology/how-to-set-up-activitypub-for-self-hosted-wordpress-sites/
-* https://fedi.tips/wordpress-turning-your-blog-into-a-fediverse-server/
-* https://andreas.heigl.org/2022/10/30/tweaking-a-wordpress-blog-for-the-fediverse/
-
-WriteFreely -- https://writefreely.org/
-
-https://github.com/tsileo/microblog.pub
-
-https://github.com/oelna/microblog -- Simple PHP site for activitypub etc
-
-Node.js
-
-* https://www.npmjs.com/search?q=fediverse
-* https://www.npmjs.com/package/megalodon
-* https://www.npmjs.com/package/fedi-get-key
-* https://www.npmjs.com/package/@fedify/markdown-it-mention
-* https://www.npmjs.com/package/masto
-* https://www.npmjs.com/package/@fedify/fedify
-* https://www.npmjs.com/package/@musakui/fedi
-* https://www.npmjs.com/package/@fedikit/nodeinfo
-* https://www.npmjs.com/search?q=%40fedikit
-* https://www.npmjs.com/package/peertube-plugin-hive-tube
-* https://community.nodebb.org/category/30/activitypub
-* https://github.com/immers-space/activitypub-express
-
-https://join-lemmy.org/
-
-Specs
-
-* https://w3c.github.io/activitypub/
-
-Otherwise - Emote for commenting - https://www.ezoic.com/posts/emote-free-comments-section-for-websites/
-
 # Icons
 
 https://humbleicons.com/
@@ -417,10 +327,6 @@ The goal is:
 * `create-epub` uses `epub-skeleton`
 * etc
 
-
-# Convert some or all code to TypeScript and/or ES6
-
-It's the way of the future.  AkashaRender has some needs for advanced data type support.
 
 # Image rewriting with Sharp
 

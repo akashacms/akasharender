@@ -184,6 +184,7 @@ export async function renderContent(
         rendered: string
     }>
 {
+    // console.log(`renderContent `, rc);
     const renderer = config.findRendererPath(
         rc.fspath
     );
@@ -209,6 +210,7 @@ export async function renderContent(
     // Render the primary content
     let docrendered = await renderer.render(rc);
 
+    // console.log(`renderContent rendered=`, docrendered);
     return {
         rendererName: renderer.name,
         format: renderer.renderFormat(rc),
@@ -252,7 +254,7 @@ export async function renderDocument(
         console.error(`Error rendering ${docInfo.vpath} ${(err.stack ? err.stack : err)}`);
         throw new Error(`Error rendering ${docInfo.vpath} ${(err.stack ? err.stack : err)}`);
     }
-    // console.log(docrendered);
+    // console.log(`documentRender ${docInfo.vpath} rendered=`, docRendered);
     await data.report(docInfo.mountPoint, 
                       docInfo.vpath,
                       config.renderTo, 
@@ -304,6 +306,8 @@ export async function renderDocument(
         layoutFormat = docFormat;
         layoutRendered = docRendered;
     }
+
+    // console.log(`renderDocument ${docInfo.vpath} after layout render `, layoutRendered);
 
     const renderSecondRender = new Date();
     await data.report(docInfo.mountPoint,

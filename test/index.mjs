@@ -340,6 +340,8 @@ describe('header metadata', function() {
             let results = await akasha.readRenderedFile(config, '/hier/dir1/dir2/nested-img-resize.html');
             html = results.html;
             $ = results.$;
+
+            // console.log(`nested-img-resize`, html);
         });
 
         it('should read in correctly', function() {
