@@ -855,7 +855,7 @@ class AnchorCleanup extends mahabhuta.Munger {
             let found = await documents.find(absolutePath);
             // console.log(`AnchorCleanup findRendersTo ${absolutePath} ${util.inspect(found)}`);
             if (!found) {
-                console.log(`WARNING: Did not find ${href} in ${util.inspect(this.array.options.config.documentDirs)} in ${metadata.document.path} absolutePath ${absolutePath}`);
+                // console.log(`WARNING: Did not find ${href} in ${util.inspect(this.array.options.config.documentDirs)} in ${metadata.document.path} absolutePath ${absolutePath}`);
                 return "ok";
             }
             // console.log(`AnchorCleanup ${metadata.document.path} ${href} findRendersTo ${(new Date() - startTime) / 1000} seconds`);

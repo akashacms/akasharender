@@ -1610,13 +1610,13 @@ export class DocumentsFileCache
                     ? _rootItem.substring(1)
                     : _rootItem);
         if (!rootItem) {
-            console.warn(`childItemTree no rootItem found for path ${_rootItem}`);
+            // console.warn(`childItemTree no rootItem found for path ${_rootItem}`);
             return undefined;
         }
         if (!(typeof rootItem === 'object')
          || !('vpath' in rootItem)
         ) {
-            console.warn(`childItemTree found invalid object for ${_rootItem} - ${util.inspect(rootItem)}`);
+            // console.warn(`childItemTree found invalid object for ${_rootItem} - ${util.inspect(rootItem)}`);
             return undefined;
         }
         let dirname = path.dirname(rootItem.vpath);
