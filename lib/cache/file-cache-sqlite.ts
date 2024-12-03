@@ -95,6 +95,13 @@ type TassetsDAO = BaseDAO<Asset>;
 export const assetsDAO: TassetsDAO
     = new BaseDAO<Asset>(Asset, sqdb);
 
+await assetsDAO.createIndex('asset_vpath');
+await assetsDAO.createIndex('asset_mounted');
+await assetsDAO.createIndex('asset_mountPoint');
+await assetsDAO.createIndex('asset_pathInMounted');
+await assetsDAO.createIndex('asset_fspath');
+await assetsDAO.createIndex('asset_renderPath');
+
 //////////// Partials Table
 
 @table({
@@ -181,6 +188,13 @@ await schema().createTable(sqdb, 'PARTIALS');
 type TpartialsDAO = BaseDAO<Partial>;
 export const partialsDAO
     = new BaseDAO<Partial>(Partial, sqdb);
+
+await partialsDAO.createIndex('partial_vpath');
+await partialsDAO.createIndex('partial_mounted');
+await partialsDAO.createIndex('partial_mountPoint');
+await partialsDAO.createIndex('partial_pathInMounted');
+await partialsDAO.createIndex('partial_fspath');
+await partialsDAO.createIndex('partial_renderPath');
 
 ///////////////// Layouts Table
 
@@ -269,6 +283,13 @@ await schema().createTable(sqdb, 'LAYOUTS');
 type TlayoutsDAO = BaseDAO<Layout>;
 export const layoutsDAO
     = new BaseDAO<Layout>(Layout, sqdb);
+
+await layoutsDAO.createIndex('layout_vpath');
+await layoutsDAO.createIndex('layout_mounted');
+await layoutsDAO.createIndex('layout_mountPoint');
+await layoutsDAO.createIndex('layout_pathInMounted');
+await layoutsDAO.createIndex('layout_fspath');
+await layoutsDAO.createIndex('layout_renderPath');
 
 /////////////// Documents Table
 
@@ -387,6 +408,16 @@ type TdocumentssDAO = BaseDAO<Document>;
 export const documentsDAO
     = new BaseDAO<Document>(Document, sqdb);
 
+await documentsDAO.createIndex('docs_vpath');
+await documentsDAO.createIndex('docs_mounted');
+await documentsDAO.createIndex('docs_mountPoint');
+await documentsDAO.createIndex('docs_pathInMounted');
+await documentsDAO.createIndex('docs_fspath');
+await documentsDAO.createIndex('docs_renderPath');
+await documentsDAO.createIndex('docs_rendersToHTML');
+await documentsDAO.createIndex('docs_dirname');
+await documentsDAO.createIndex('docs_parentDir');
+    
 @table({ name: 'TAGGLUE' })
 class TagGlue {
 
