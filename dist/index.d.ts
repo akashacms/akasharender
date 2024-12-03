@@ -21,6 +21,7 @@ export * as Renderers from '@akashacms/renderers';
 import { Renderer } from '@akashacms/renderers';
 export { Renderer } from '@akashacms/renderers';
 export * as mahabhuta from 'mahabhuta';
+import * as cheerio from 'cheerio';
 export * as relative from 'relative';
 export { Plugin } from './Plugin.js';
 export { render, renderDocument, renderContent } from './render.js';
@@ -54,7 +55,7 @@ export declare function renderPath(config: any, path2r: any): Promise<string>;
  */
 export declare function readRenderedFile(config: any, fpath: any): Promise<{
     html: string;
-    $: import("cheerio").CheerioAPI;
+    $: cheerio.CheerioAPI;
 }>;
 /**
  * Renders a partial template using the supplied metadata.  This version

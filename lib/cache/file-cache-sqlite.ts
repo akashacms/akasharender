@@ -2008,9 +2008,17 @@ export class DocumentsFileCache
             } else if (Array.isArray(options.layout)
              && options.layouts.length === 1
             ) {
-                selector.layout = { eq: options.layouts[0] };
+                selector.and.push({
+                    layout: {
+                        eq: options.layouts[0]
+                    }
+                });
             } else {
-                selector.layout = { eq: options.layouts };
+                selector.and.push({
+                    layout: {
+                        eq: options.layouts
+                    }
+                });
             }
         }
 
@@ -2055,6 +2063,12 @@ export class DocumentsFileCache
         }
         if (regexSQL.or.length >= 1) {
             selector.and.push({ or: regexSQL.or });
+        }
+
+        if (Array.isArray(selector.and)
+         && selector.and.length <= 0
+        ) {
+            delete selector.and;
         }
 
         // console.log(selector);
