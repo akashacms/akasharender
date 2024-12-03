@@ -37,7 +37,7 @@ import { Renderer } from '@akashacms/renderers';
 export { Renderer } from '@akashacms/renderers';
 import * as mahabhuta from 'mahabhuta';
 export * as mahabhuta from 'mahabhuta';
-import cheerio from 'cheerio';
+import * as cheerio from 'cheerio';
 import mahaPartial from 'mahabhuta/maha/partial.js';
 
 import * as relative from 'relative';
