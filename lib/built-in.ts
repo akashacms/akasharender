@@ -28,7 +28,7 @@ import * as render from './render.js';
 import { Plugin } from './Plugin.js';
 import relative from 'relative';
 import hljs from 'highlight.js';
-import cheerio from 'cheerio';
+import * as cheerio from 'cheerio';
 import mahabhuta from 'mahabhuta';
 import mahaMetadata from 'mahabhuta/maha/metadata.js';
 import mahaPartial from 'mahabhuta/maha/partial.js';
