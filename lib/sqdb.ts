@@ -29,6 +29,7 @@ import { Database } from 'sqlite3';
 import * as sqlite_regex from "sqlite-regex";
 
 import { SqlDatabase } from 'sqlite3orm';
+import { SQ3DataStore } from 'sqlite3-key-value-data-store';
 
 /**
  * Subclass the SqlDatabase so we can expose
@@ -36,7 +37,7 @@ import { SqlDatabase } from 'sqlite3orm';
  * some useful methods on that class.
  */
 export class SqlDatabaseChild extends SqlDatabase {
-    _db() { return this.db; }
+    get _db(): Database { return this.db; }
 
     loadExtension(filename: string, callback?: (err?: Error | null) => void): Database {
         return this.db.loadExtension(filename, callback);
@@ -57,9 +58,20 @@ sqdb.loadExtension(sqlite_regex.getLoadablePath());
 
 // This traces SQL statements
 //
-// sqdb.on('trace', sql => {
-//     console.log(sql);
-// });
+sqdb.on('trace', sql => {
+    console.log(sql);
+});
+sqdb.on('error', err => {
+    console.error(err);
+});
+
+////////////////////////
+
+export function newSQ3DataStore(name: string)
+    : SQ3DataStore
+{
+    return new SQ3DataStore(sqdb._db, name);
+}
 
 /////////////////// KEYV Key/Value stores
 

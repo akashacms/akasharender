@@ -26,7 +26,7 @@ export * as relative from 'relative';
 export { Plugin } from './Plugin.js';
 export { render, renderDocument, renderContent } from './render.js';
 import * as filecache from './cache/file-cache-sqlite.js';
-export { newKeyv } from './sqdb.js';
+export { newKeyv, newSQ3DataStore } from './sqdb.js';
 /**
  * Performs setup of things so that AkashaRender can function.
  * The correct initialization of AkashaRender is to
