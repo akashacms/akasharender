@@ -59,7 +59,7 @@ import { BuiltInPlugin } from './built-in.js';
 
 import * as filecache from './cache/file-cache-sqlite.js';
 
-export { newKeyv } from './sqdb.js';
+export { newKeyv, newSQ3DataStore } from './sqdb.js';
 
 // There doesn't seem to be an official MIME type registered
 // for AsciiDoctor

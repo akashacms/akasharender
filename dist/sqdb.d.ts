@@ -24,16 +24,18 @@
  */
 import { Database } from 'sqlite3';
 import { SqlDatabase } from 'sqlite3orm';
+import { SQ3DataStore } from 'sqlite3-key-value-data-store';
 /**
  * Subclass the SqlDatabase so we can expose
  * the underlying SQLITE3 Database object and
  * some useful methods on that class.
  */
 export declare class SqlDatabaseChild extends SqlDatabase {
-    _db(): Database;
+    get _db(): Database;
     loadExtension(filename: string, callback?: (err?: Error | null) => void): Database;
 }
 export declare const sqdb: SqlDatabaseChild;
+export declare function newSQ3DataStore(name: string): SQ3DataStore;
 import Keyv from 'keyv';
 export declare function newKeyv(namespace: string): Keyv<any>;
 //# sourceMappingURL=sqdb.d.ts.map
