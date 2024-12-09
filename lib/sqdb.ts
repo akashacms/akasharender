@@ -58,10 +58,14 @@ sqdb.loadExtension(sqlite_regex.getLoadablePath());
 
 // This traces SQL statements
 //
-sqdb.on('trace', sql => {
-    console.log(sql);
-});
+// sqdb.on('trace', sql => {
+//     console.log(sql);
+// });
 sqdb.on('error', err => {
+    console.error(err);
+});
+
+sqdb._db.on('error', err => {
     console.error(err);
 });
 
@@ -70,6 +74,7 @@ sqdb.on('error', err => {
 export function newSQ3DataStore(name: string)
     : SQ3DataStore
 {
+    // console.log(`newSQ3DataStore ${name}`);
     return new SQ3DataStore(sqdb._db, name);
 }
 
