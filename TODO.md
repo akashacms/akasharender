@@ -56,113 +56,6 @@ For example, why is the Breadcrumbs tag a separate plugin?  The footnotes plugin
 
 A performance boost will be derived by decreasing the number of Mahabhuta tags.
 
-# To replace Mahabhuta tags w/ direct calls from templates ..
-
-Many of the functions implementing Mahabhuta tags are async.  They need to become synchronous to be called from a template.
-
-I tried converting the Breadcrumbs plugin, which failed because it has to be asynchronous.  In part that's because of the asynchronously initialized file information cache.  That function calls indexChain which in turn calls documents.indexChain which in turn calls documents.find -- and `find` is an async function because of something related to Loki.
-
-ACTUALLY -- It is now known how to implement Nunjucks extensions.  Further, it looks to be easy to implement an extension that does asynchronous code.
-
-The code is currently in `built-in.js`.
-
-In the Plugin `configure` function add extensions starting with this:
-
-```js
-const njk = this.config.findRendererName('.html.njk');
-```
-
-This finds the NunjucksRenderer instance.  This object gives us relatively easy access to the Nunjucks API.
-
-```js
-njk.njkenv().addExtension('akstylesheets',
-    new stylesheetsExtension(this.config, this, njk)
-);
-```
-
-This is the function for adding an extension, as the name implies.  Further down that file is the implementation of the extension as a class.  Notice that we're passing the AkashaCMS Configuration object, the Plugin instance, and the NunjucksRenderer object.  Those objects are of use inside the extension.
-
-Yes, it might be interesting to revisit how the FileCache instances are implemented.  The current method is clumsy.  It may be best fixed by converting AkashaRender entirely to EJS or TS modules, especially as newer Node.js is improving compatibility.
-
-# The best candidates for custom tag replacement
-
-The custom tags split into two groups:
-
-1. Stuff that is used in layout templates, or in partials
-2. Stuff that users will do with custom tags
-
-The latter is not really feasible because they're working in Markdown rather than an HTML context.
-
-The stuff for templates, they're working in an HTML context where it's natural to be writing template tags as well as HTML tags.  Those are easy to convert to custom Nunjucks tags.
-
-# Replacing LokiJS with in-memory SQLITE3
-
-SQLITE3 will be simpler than MongoDB because it can be used with a `:memory:` database and is easy to use directly in a Node.js process rather than using an external MongoDB.  IGNORE THE NEXT SECTION OTHER THAN FOR A FEW IDEAS.
-
-```js
-const sqlite3 = require('sqlite3').verbose();
-let db = new sqlite3.Database(':memory:', (err) => {
-  if (err) {
-    return console.error(err.message);
-  }
-  console.log('Connected to the in-memory SQlite database.');
-});
-```
-
-https://www.sql-easy.com/learn/how-to-use-node-js-sqlite/
-
-
-https://github.com/gms1/HomeOfThings/tree/master/packages/node/sqlite3orm
-
-SQLITE3ORM is a package simplifying SQLITE3 schema's by using decorators to describe the schema and other goodies.
-
-
-First, determine if the StackedDirs/FileCache combo can be simplified into supporting a single level data structure.  The current version uses nested data.
-
-Second, the SQLITE3 for Node.js supports JSON columns out of the box.  Is this true for the SQLITE3 in Node.js 22?  Or is it only true for the incumbent modules?  It does not support indexing JSON fields, nor querying data in a JSON field.  Therefore, using SQLITE3 with a nested data structure requires
-
-* Storing the nested data in a JSON field
-* Extracting the fields one wants to index into fields which are indexed.
-
-Doing this goes right past all the ideas of indexed JavaScript objects.  The indexing is handled by a mature database engine.
-
-https://github.com/fitnr/sqlite-json
-
-https://www.sqlite.org/json1.html
-
-https://www.beekeeperstudio.io/blog/sqlite-json
-
-
-Note that SQLITE3 supports both Stored Procedures and Triggers: https://www.geeksforgeeks.org/how-to-use-stored-procedure-in-sqlite/
-
-Stored procedures are functions stored in SQLITE3, and executed by it.  A trigger reacts to something happening and running a stored procedure.
-
-Hence there are many things which could be implemented on that for AkashaCMS.
-
-
-
-# Replacing LokiJS with MongoDB using mongodb-memory-server
-
-The `mongodb-memory-server` project automatically instantiates a MongoDB that works only in memory.  It was meant for testing.  But it could serve AkashaRender as well, since LokiJS serves as an in-memory database which is dispensed when done.
-
-The problem with LokiJS is the lack of capabilities, and that its development halted over 2 years ago.  It does not have anything like aggregation pipelines, for example.
-
-Otherwise it can be replaced with some intelligent data structures?
-
-For example each item scanned by StackedDirs/FileCache can be in
-
-```js
-  Map<string, fileInfo> // where the string is the vpath
-```
-
-Other indexes to this could be Map from various values to the vpath
-
-```js
-Map<dirNameString, Array<vpath>> // string for dirnames, to a list of vpaths in that dir
-```
-
-Or, maybe that approach won't work since it is so brittle and takes a lot to keep up the indexing.
-
 # Move to Bootstrap v5 for Bootstrap theme
 
 Examples site would have a sub-area for Bootstrap examples
@@ -310,24 +203,6 @@ This task requires learning how to set up GitHub Actions.  Once that's done, tho
 
 Our task is to expose anything required in AkashaRender's gh-pages command.  In particular it seems that `-u "github-actions-bot <support+actions@github.com>` setting is required.
 
-# Add @akashacms/create-xyzzy packages
-
-The `npm init` command allows for easy creation of example projects.
-
-* https://docs.npmjs.com/cli/v8/commands/npm-init
-* https://www.npmjs.com/package/create-esm
-* https://github.com/standard-things/create-esm
-* https://www.npmjs.com/package/pkg-install
-
-The `create-esm` package is an example.  It ultimately uses the `pkg-install` package.
-
-The goal is:
-
-* `create-github-site` uses the current `open-source-site` example
-* `create-epub` uses `epub-skeleton`
-* etc
-
-
 # Image rewriting with Sharp
 
 Make sure we can rewrite to WEBP
@@ -364,28 +239,3 @@ What AkashaCMS should do:
 * Prefer the `<picture>` element, using `<source type=>` with no `media=` attribute.  The discussion on `blog.cloudfour.com` explains why
 * Ignore images where there is an existing `<picture>` element or `srcset/sizes` attributes.  In such a case the author will have already selected what to do.
 * Rewrite images to WEBP or other hyper-compressed format, then write the suitable `<picture>` element.
-
-# Data tables
-
-It will be useful to load data into the ForerunnerDB cache system.  The data can be useful to plugins or templates.
-
-In `config.js`:
-
-```js
-config.dataTables([
-    {
-        href: 'path/to/file.yaml',  # Also support JSON or CSV
-        name: 'collection-name',
-        persist: true/false,
-    },
-    ...
-]);
-```
-
-Create a `DataTable` class.  There must be a Chokidar instance to watch for changes in data table files.  When a data file is updated, reload, or if unlinked, then remove the table.
-
-The `DataTable` class can provide a few methods for searching the data.
-
-Perhaps a plugin like Affiliates can be rewritten to use DataTable?  As it stands, the Affiliates plugin has been rewritten with some custom code creating a Collection etc.
-
-For example, a DataTable of electric vehicle attributes - of solar panel attributes - of Linux Single Board Computer attributes - could be used in content.
