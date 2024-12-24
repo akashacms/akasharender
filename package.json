@@ -45,7 +45,6 @@
   "dependencies": {
     "@akashacms/renderers": "^0.9.x",
     "@akashacms/stacked-dirs": "^0.9.x",
-    "cheerio": "^1.0.x",
     "commander": "^12.1.x",
     "debug": "^4.3.x",
     "fastq": "^1.17.x",
