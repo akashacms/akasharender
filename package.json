@@ -44,7 +44,7 @@
   },
   "dependencies": {
     "@akashacms/renderers": "^0.9.x",
-    "@akashacms/stacked-dirs": "akashacms/stacked-directories",
+    "@akashacms/stacked-dirs": "^0.9.x",
     "cheerio": "^1.0.x",
     "commander": "^12.1.x",
     "debug": "^4.3.x",
@@ -65,7 +65,7 @@
     "uuid": "^11.0.x",
     "zx": "^8.2.1"
   },
-  "license": "ISC",
+  "license": "Apache-2.0",
   "devDependencies": {
     "@types/node": "^22.9.0",
     "typescript": "^5.6.3"
