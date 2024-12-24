@@ -789,13 +789,6 @@ describe('Documents cache', function() {
             fspath: '**/documents/teaser-njk-macro.html.md',
             vpath: 'teaser-njk-macro.html.md',
             renderPath: 'teaser-njk-macro.html'
-        },
-        {
-            fspath: '**/documents/markdoc-test.html.markdoc',
-            vpath: 'markdoc-test.html.markdoc',
-            renderPath: 'markdoc-test.html',
-            mountPoint: '/',
-            dirMountedOn: '/'
         }
     ];
     
