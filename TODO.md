@@ -2,6 +2,39 @@
 
 This should probably be kept in GitHub issues -- eventually
 
+# Finish developing the tool for creating Documents from AkashaCMS content
+
+Currently this is the tool for PDF generation.
+
+A similar tool for EPUB generation would be useful.  Additionally, the EPUB tool should be capable of producing a website.  And there must be an easy method for publishing the website to GitHub Pages, and the same for Gitlab or Gitea.
+
+For PDF from a single page - that's solved.  For PDF from multiple pages, there are a couple modes: 1) Markdown-IT plugin for importing content can import subsidiary pages into a master document, b) Render all pages, then pick up the HTML files, concatenating the `<body>` sections into one document, inserting a page break between sections, or using a `<section>` around each section with CSS for page-break-after.
+
+For EPUB generation this is probably multiple files.  Existing EPUB tools can collapse those files into the EPUB along with the required metadata files (OPF, etc).
+
+# Productize the DIY Website for open source projects concept
+
+NAME: PublishTheDocs -- play on ReadTheDocs ??
+
+Make sure all components are complete enough to have real releases.
+
+Goal for an open source project:
+
+* Website w/ documentation, blog, e-book, API docs, etc - whatever is required by software projects
+* e-Books which are easily bundled as EPUB in addition to display on the web
+* Study the ReadTheDocs user experience for an online EPUB viewer
+* Port a ReadTheDocs theme for use with EPUB, or else a Jekyll theme
+* Easily usable on GitHub pages
+* Hence easily managed on GitHub
+* Also support for Gitea and GitLab
+
+Everything is close to product-ready.  It doesn't have to be fully ready to start showing folks how to use it.
+
+Record videos about usage - on YouTube
+
+Write articles that end up on Medium and published to ITNEXT
+
+
 # Using Bluesky posts as comments
 
 https://emilyliu.me/blog/comments
@@ -75,7 +108,7 @@ Each custom element takes some CPU to process the element.  Reducing the number 
 
 The ability to present tags, and have tagged content, should be a built-in feature.
 
-Ensure that FileCache tracks documents-with-tags and provides useful functions for retrieving the documents by tag name.  This should already be there.
+DONE Ensure that FileCache tracks documents-with-tags and provides useful functions for retrieving the documents by tag name.  This should already be there.
 
 Instead of creating an index page for every tag, instead have - index page name & list of tag names - as configuration settings.  This also requires a command to list the tags, and to list the indexes (and tags), and to list the tag names that are not on an index page.
 
@@ -105,41 +138,19 @@ Hence it requires creating a Class to manage the association.  It should have me
 /????????????
 
 
-# In StackedDirs create a schema for file data, and automatic validation
+# The customers of StackedDirs need to receive typed data
 
-UPDATE: Maybe a JSON Schema is not required.  The StackedDirs package exports a class, VPathData, that is well structured.  I've added some comments for documentation.  There is also a type guard function which can enforce correctness.  I've just made a change, to export that function, and to also use it in a few more places.
+UPDATE: A JSON Schema is not required.  The StackedDirs package exports a class, VPathData, that is well structured.  I've added some comments for documentation.  There is also a type guard function which can enforce correctness.  I've just made a change, to export that function, and to also use it in a few more places.
 
-UPDATE: The remaining task becomes - for code using StackedDirs - that code must know the correct type.  As it is, it's an anonymous object received on an EventEmitter listener.
+For code using StackedDirs - that code must know the correct type.  As it is, it's an anonymous object received on an EventEmitter listener.
 
-UPDATE: What's needed is a listener API function that receives typed parameters.  Maybe.
+What's needed is a listener API function that receives typed parameters.  Maybe.
 
 Prevent failures by preventing creation of bad file information
 
 In AkashaRender/FileCache extend that schema, and simplify the data structure.  Currently there are many special cases.
 
 Define types for these objects so that VSCode can intelligently assist with writing code.
-
-# Productize the DIY Website for open source projects concept
-
-NAME: PublishTheDocs -- play on ReadTheDocs ??
-
-Make sure all components are complete enough to have real releases.
-
-Goal for an open source project:
-
-* Website w/ documentation, blog, e-book, API docs, etc - whatever is required by software projects
-* e-Books which are easily bundled as EPUB in addition to display on the web
-* Study the ReadTheDocs user experience for an online EPUB viewer
-* Port a ReadTheDocs theme for use with EPUB, or else a Jekyll theme
-* Easily usable on GitHub pages
-* Hence easily managed on GitHub
-* Also support for Gitea and GitLab
-
-Everything is close to product-ready.  It doesn't have to be fully ready to start showing folks how to use it.
-
-Record videos about usage - on YouTube
-
-Write articles that end up on Medium and published to ITNEXT
 
 # Implementing an article style where a parallel pane automatically scrolls through code.
 
