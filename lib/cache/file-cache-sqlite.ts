@@ -6,7 +6,7 @@ import url  from 'url';
 import { promises as fs } from 'fs';
 import FS from 'fs';
 import EventEmitter from 'events';
-import { minimatch } from 'minimatch';
+import micromatch from 'micromatch';
 
 import {
     field,
@@ -879,7 +879,7 @@ export class BaseFileCache<
                 ignores = [];
             }
             for (const i of ignores) {
-                if (minimatch(info.vpath, i)) ignore = true;
+                if (micromatch.isMatch(info.vpath, i)) ignore = true;
                 // console.log(`dirMount.ignore ${fspath} ${i} => ${ignore}`);
             }
             // if (ignore) console.log(`MUST ignore File ${info.vpath}`);
@@ -1307,7 +1307,7 @@ export class DocumentsFileCache
             //     info.renderPath
             // );
 
-            info.rendersToHTML = minimatch(
+            info.rendersToHTML = micromatch.isMatch(
                 info.renderPath,
                 '**/*.html')
             ? true : false;
@@ -2168,7 +2168,7 @@ export class DocumentsFileCache
              && typeof options.glob === 'string'
             ) ? result4.filter(item => {
                 if (item.vpath) {
-                    return minimatch(item.vpath, options.glob);
+                    return micromatch.isMatch(item.vpath, options.glob);
                 } else {
                     return false;
                 }
@@ -2181,7 +2181,7 @@ export class DocumentsFileCache
             && typeof options.renderglob === 'string'
             ) ? result5.filter(item => {
                 if (item.renderPath) {
-                    return minimatch(item.renderPath, options.renderglob);
+                    return micromatch.isMatch(item.renderPath, options.renderglob);
                 } else {
                     return false;
                 }
