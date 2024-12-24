@@ -69,11 +69,12 @@ program
             // data: ${doc.data}
             // text: ${doc.text}
             console.log(`
-basedir: ${doc.basedir}
-docpath: ${doc.docpath}
+docpath: ${doc.vpath}
 fspath: ${doc.fspath}
-renderer: ${util.inspect(doc.renderer)}
-renderpath: ${doc.renderpath}
+renderer: ${util.inspect(config.findRendererPath(doc.vpath))}
+renderpath: ${doc.renderPath}
+mounted: ${doc.mounted}
+mountPoint: ${doc.mountPoint}
 
 metadata: ${util.inspect(doc.metadata)}
 
