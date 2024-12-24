@@ -28,7 +28,6 @@ import * as render from './render.js';
 import { Plugin } from './Plugin.js';
 import relative from 'relative';
 import hljs from 'highlight.js';
-import * as cheerio from 'cheerio';
 import mahabhuta from 'mahabhuta';
 import mahaMetadata from 'mahabhuta/maha/metadata.js';
 import mahaPartial from 'mahabhuta/maha/partial.js';
@@ -288,7 +287,7 @@ function _doStylesheets(metadata, options) {
                     stylehref = newHref;
                 }
             }
-            let $ = cheerio.load('<link rel="stylesheet" type="text/css" href=""/>', null, false);
+            let $ = mahabhuta.parse('<link rel="stylesheet" type="text/css" href=""/>');
             $('link').attr('href', stylehref);
             if (style.media) {
                 $('link').attr('media', style.media);
@@ -312,7 +311,7 @@ function _doJavaScripts(metadata, scripts, options) {
 			throw new Error(`Must specify either href or script in ${util.inspect(script)}`);
 		}
         if (!script.script) script.script = '';
-        let $ = cheerio.load('<script ></script>', null, false);
+        let $ = mahabhuta.parse('<script ></script>');
         if (script.lang) $('script').attr('type', script.lang);
         if (script.href) {
             let scripthref = script.href;
