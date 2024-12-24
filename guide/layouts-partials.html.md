@@ -94,7 +94,7 @@ Partials are little snippets of template, which can be rendered into any locatio
 
 If you cannot use the `<partial>` tag, for example if you're creating a PHP file, and the file is processed by EJS, you can do this instead:
 
-```
+```html
 <%- partial('helloworld.html') %>
 ```
 
