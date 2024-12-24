@@ -7,7 +7,6 @@ const mahabhuta = akasha.mahabhuta;
 import { assert } from 'chai';
 import { default as _image_size } from 'image-size';
 const sizeOf = promisify(_image_size);
-const _filecache = await import('../dist/cache/file-cache-lokijs.js');
 
 const __filename = import.meta.filename;
 const __dirname = import.meta.dirname;
