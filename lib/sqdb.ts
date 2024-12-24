@@ -29,7 +29,7 @@ import { Database } from 'sqlite3';
 import * as sqlite_regex from "sqlite-regex";
 
 import { SqlDatabase } from 'sqlite3orm';
-import { SQ3DataStore } from 'sqlite3-key-value-data-store';
+import { SQ3DataStore } from 'sq3-kv-data-store';
 
 /**
  * Subclass the SqlDatabase so we can expose
@@ -76,18 +76,4 @@ export function newSQ3DataStore(name: string)
 {
     // console.log(`newSQ3DataStore ${name}`);
     return new SQ3DataStore(sqdb._db, name);
-}
-
-/////////////////// KEYV Key/Value stores
-
-import Keyv from 'keyv';
-import KeyvSqlite from '@keyv/sqlite';
-const keyvSqlite = new KeyvSqlite(':memory:');
-
-export function newKeyv(namespace: string) {
-    return new Keyv({
-        store: keyvSqlite,
-        ttl: 500000,
-        namespace: namespace
-    });
 }

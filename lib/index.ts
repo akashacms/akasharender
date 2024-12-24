@@ -55,11 +55,9 @@ const __dirname = import.meta.dirname;
 // For use in Configure.prepare
 import { BuiltInPlugin } from './built-in.js';
 
-// import * as filecache from './cache/file-cache-lokijs.js';
-
 import * as filecache from './cache/file-cache-sqlite.js';
 
-export { newKeyv, newSQ3DataStore } from './sqdb.js';
+export { newSQ3DataStore } from './sqdb.js';
 
 // There doesn't seem to be an official MIME type registered
 // for AsciiDoctor
