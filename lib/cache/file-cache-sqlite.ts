@@ -1864,11 +1864,9 @@ export class DocumentsFileCache
     async tags() {
         const res = await this.dao.sqldb.all(`
             SELECT
-                vpath,
-                json_extract(docMetadata, '$.tags') as tags
-            FROM DOCUMENTS
+                DISTINCT json_extract(docMetadata, '$.tags') AS tags
+            FROM DOCUMENTS, json_each(tags)
         `) as unknown as Array<{
-            vpath: string,
             tags: string[]
         }>;
 
@@ -1877,11 +1875,9 @@ export class DocumentsFileCache
         // The query above produces this result:
         //
         // {
-        //     vpath: 'tags-array.html.md',
         //     tags: '["Tag1","Tag2","Tag3"]'
         // },
         // {
-        //     vpath: 'tags-string.html.md',
         //     tags: '["Tag-string-1","Tag-string-2","Tag-string-3"]'
         // }
         //
