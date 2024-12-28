@@ -1,12 +1,13 @@
 
 import { DirsWatcher, dirToWatch, VPathData } from '@akashacms/stacked-dirs';
-import path from 'path';
-import util from 'util';
-import url  from 'url';
+import path from 'node:path';
+import util from 'node:util';
+import url  from 'node:url';
 import { promises as fs } from 'fs';
 import FS from 'fs';
 import EventEmitter from 'events';
 import micromatch from 'micromatch';
+import SqlString from 'sqlstring';
 
 import {
     field,
@@ -417,46 +418,46 @@ await documentsDAO.createIndex('docs_renderPath');
 await documentsDAO.createIndex('docs_rendersToHTML');
 await documentsDAO.createIndex('docs_dirname');
 await documentsDAO.createIndex('docs_parentDir');
-    
-@table({ name: 'TAGGLUE' })
-class TagGlue {
 
-    @field({ name: 'docvpath', dbtype: 'string' })
-    @fk('tag_docvpath', 'DOCUMENTS', 'vpath')
-    @index('tagglue_vpath')
-    docvpath: string;
+// @table({ name: 'TAGGLUE' })
+// class TagGlue {
 
-    @field({ name: 'slug', dbtype: 'string' })
-    @fk('tag_slug', 'TAGS', 'slug')
-    @index('tagglue_slug')
-    slug: string;
-}
+//     @field({ name: 'docvpath', dbtype: 'string' })
+//     @fk('tag_docvpath', 'DOCUMENTS', 'vpath')
+//     @index('tagglue_vpath')
+//     docvpath: string;
 
-await schema().createTable(sqdb, 'TAGGLUE');
-const tagGlueDAO = new BaseDAO<TagGlue>(TagGlue, sqdb);
+//     @field({ name: 'slug', dbtype: 'string' })
+//     @fk('tag_slug', 'TAGS', 'slug')
+//     @index('tagglue_slug')
+//     slug: string;
+// }
 
-@table({ name: 'TAGS' })
-class Tag {
-    @field({
-        name: 'tagname',
-        dbtype: 'TEXT'
-    })
-    tagname: string;
+// await schema().createTable(sqdb, 'TAGGLUE');
+// const tagGlueDAO = new BaseDAO<TagGlue>(TagGlue, sqdb);
 
-    @id({
-        name: 'slug', dbtype: 'TEXT'
-    })
-    @index('tag_slug')
-    slug: string;
+// @table({ name: 'TAGS' })
+// class Tag {
+//     @field({
+//         name: 'tagname',
+//         dbtype: 'TEXT'
+//     })
+//     tagname: string;
 
-    @field({
-        name: 'description', dbtype: 'TEXT'
-    })
-    description?: string;
-}
+//     @id({
+//         name: 'slug', dbtype: 'TEXT'
+//     })
+//     @index('tag_slug')
+//     slug: string;
 
-await schema().createTable(sqdb, 'TAGS');
-const tagsDAO = new BaseDAO<Tag>(Tag, sqdb);
+//     @field({
+//         name: 'description', dbtype: 'TEXT'
+//     })
+//     description?: string;
+// }
+
+// await schema().createTable(sqdb, 'TAGS');
+// const tagsDAO = new BaseDAO<Tag>(Tag, sqdb);
 
 
 // Convert AkashaCMS mount points into the mountpoint
@@ -1809,33 +1810,46 @@ export class DocumentsFileCache
             throw new Error(`documentsWithTag given bad tags array ${util.inspect(tagnm)}`);
         }
 
+        let tagstring = ` ( ${tags.map(t => {
+                return SqlString.format("?", [ t ]);
+            }).join(',')} ) `;
+
+        // By using json_each we're looping over
+        // the tags in a document one-per-row.
+        // Hence the AND clause has a single tag
+        // in json_each.value.
+        //
+        // The tags array will always be an array
+        // hence we use the SQLITE IN operator.
+        // But that means encoding the array
+        // as so:
+        //
+        //  json_each.value IN ( 'tag1', 'tag2', .. )
+        //
+        // That's what the assignment to tagstring
+        // is doing.  The SqlString package ensures
+        // that the string is encoded as being safe
+        // for an SQL query.
         const res = await this.dao.sqldb.all(`
             SELECT
                 vpath,
-                json_extract(docMetadata, '$.tags') as tags
-            FROM DOCUMENTS
+                json_extract(docMetadata, '$.tags') as tags,
+                json_array_length(tags) as tagslength
+            FROM DOCUMENTS, json_each(tags)
+            WHERE tagslength > 1
+            AND json_each.value IN ${tagstring}
         `) as unknown as Array<{
             vpath: string,
             tags: string[]
         }>;
 
-        const vpaths = [];
-        for (const item of res) {
-            if (!('tags' in item)) continue;
-            let tagsP = [];
-            if (typeof item.tags === 'string') {
-                tagsP = JSON.parse(item.tags);
-            } else if (Array.isArray(item.tags)) {
-                tagsP = item.tags;
-            }
-
-            for (const tag of tags) {
-                if (tagsP.includes(tag)) {
-                    vpaths.push(item.vpath);
-                    break;
-                }
-            }
+        if (!Array.isArray(res)) {
+            throw new Error(`documentsWithTag non-Array result ${util.inspect(res)}`);
         }
+
+        const vpaths = res.map(r => {
+            return r.vpath;
+        });
 
         return vpaths;
     }
