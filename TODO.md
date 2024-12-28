@@ -82,6 +82,25 @@ Configuration for MarkdownIT will require JavaScript.  Instead of plugins like "
    2. Query mechanism e.g. for "collections"
 4. 
 
+# Bring in support for News sitemaps
+
+Nowadays, Google automatically finds News sites.  It helps to publish a Google News Sitemap.  This sitemap cannot have entries more than 2 days old.
+
+1. Publish a news sitemap
+2. Make sure articles meet other News criteria
+3. Make sure to have good structured metadata in the tags
+
+https://support.google.com/news/publisher-center/answer/9606634?sjid=2608137449031758498-EU
+
+https://support.google.com/news/publisher-center/answer/9606709?sjid=2608137449031758498-EU
+
+https://developers.google.com/search/docs/crawling-indexing/sitemaps/news-sitemap
+
+Lots of advice:
+https://kinsta.com/blog/submit-to-google-news/
+
+Node.js generator:
+https://www.npmjs.com/package/google-news-sitemap
 
 # Collapse some of the plugins into akashacms-base or -builtin?
 
