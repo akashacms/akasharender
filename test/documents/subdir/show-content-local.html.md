@@ -2,6 +2,8 @@
 layout: default.html.ejs
 title: Show Content
 publicationDate: 2021-11-27
+tags:
+    - Shown
 ---
 
 <show-content id="simple" href="shown-content-local.html"></show-content>
