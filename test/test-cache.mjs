@@ -116,17 +116,6 @@ describe('Initialize cache test configuration', function() {
 });
 
 describe('Setup cache', function() {
-    // it('should delete cache DB dir', async function() {
-    //     try {
-    //         await fsp.rm(config.cacheDir, {
-    //             recursive: true
-    //         });
-    //     } catch (e) {
-    //         console.error(e);
-    //         throw e;
-    //     }
-    // });
-
     it('should successfully setup cache database', async function() {
         try {
             await filecache.setup(config);
@@ -137,30 +126,6 @@ describe('Setup cache', function() {
             throw e;
         }
     });
-
-    /*
-    it('should successfully setup file caches', async function() {
-        this.timeout(75000);
-        try {
-            /* await Promise.all([
-                akasha.setupDocuments(config),
-                akasha.setupAssets(config),
-                akasha.setupLayouts(config),
-                akasha.setupPartials(config)
-            ]); * /
-            await Promise.all([
-                filecache.documents.isReady(),
-                filecache.assets.isReady(),
-                filecache.layouts.isReady(),
-                filecache.partials.isReady()
-            ]);
-        } catch (e) {
-            console.error(e);
-            throw e;
-        }
-    });
-    */
-
 });
 
 /*
@@ -938,41 +903,6 @@ describe('Documents cache', function() {
         assert.isOk(filezContains(siblings, 'partials-nunjucks.html.njk'));
     });
 
-    /* it('should find siblings for index.html with View', function() {
-        const siblings = filecache.documents.siblingsView('index.html.md');
-        for (const sibling of siblings) {
-            assert.equal(sibling.dirname, '/');
-        }
-        assert.isOk(filezContains(siblings, 'img2figimg-liquid.html.md'));
-        assert.isOk(filezContains(siblings, 'img2figimg-handlebars.html.md'));
-        assert.isOk(filezContains(siblings, 'img2resize-handlebars.html.md'));
-        assert.isOk(filezContains(siblings, 'img2resize-nunjucks.html.md'));
-        assert.isOk(filezContains(siblings, 'img2figimg.html.md'));
-        assert.isNotOk(filezContains(siblings, 'index.html.md'));
-        assert.isOk(filezContains(siblings, 'fig-img.html.md'));
-        assert.isOk(filezContains(siblings, 'json-data-handlebars.html.json'));
-        assert.isOk(filezContains(siblings, 'json-data-nunjucks.html.json'));
-        assert.isOk(filezContains(siblings, 'json-data-liquid.html.json'));
-        assert.isOk(filezContains(siblings, 'json-data.html.json'));
-        assert.isOk(filezContains(siblings, 'metadata-style-javascript.html.md'));
-        assert.isOk(filezContains(siblings, 'njk-incl.html.md'));
-        assert.isOk(filezContains(siblings, 'img2resize.html.md'));
-        assert.isOk(filezContains(siblings, 'img2resize-liquid.html.md'));
-        assert.isOk(filezContains(siblings, 'njk-func.html.md'));
-        assert.isOk(filezContains(siblings, 'partials.html.md'));
-        assert.isOk(filezContains(siblings, 'partials-handlebars.html.handlebars'));
-        assert.isOk(filezContains(siblings, 'select-elements.html.md'));
-        assert.isOk(filezContains(siblings, 'show-content-handlebars.html.md'));
-        assert.isOk(filezContains(siblings, 'show-content-nunjucks.html.md'));
-        assert.isOk(filezContains(siblings, 'show-content.html.md'));
-        assert.isOk(filezContains(siblings, 'shown-content.html.md'));
-        assert.isOk(filezContains(siblings, 'simple-style-javascript.html.md'));
-        assert.isOk(filezContains(siblings, 'teaser-content.html.md'));
-        assert.isOk(filezContains(siblings, 'partials-liquid.html.liquid'));
-        assert.isOk(filezContains(siblings, 'show-content-liquid.html.md'));
-        assert.isOk(filezContains(siblings, 'partials-nunjucks.html.njk'));
-    }); */
-
     it('should find indexes', async function() {
 
         /* const found = [
@@ -1170,14 +1100,39 @@ describe('Documents cache', function() {
             assert.equal(found.length, 0);
         });
 
+        it('should find tags using documentsWithTag', async function() {
+            const found = await filecache.documentsCache.documentsWithTag([ 'Tag1', 'Include' ]);
+
+            assert.isArray(found);
+            assert.equal(found.length, 2);
+            assert.deepEqual(found,
+                [
+                    'njk-incl.html.md',
+                    'tags-array.html.md'
+                ]);
+        });
+
+        it('should find tags using documentsWithTag', async function() {
+            const found = await filecache.documentsCache.documentsWithTag([ 'foober', 'bad-tag' ]);
+
+            assert.isArray(found);
+            assert.equal(found.length, 0);
+            assert.deepEqual(found, [ ]);
+        });
+
         it('should find all tags', async function() {
             const found = await filecache.documentsCache.tags();
 
+            // console.log(found);
+
             assert.isDefined(found);
             assert.isArray(found);
-            assert.equal(found.length, 6);
+            assert.equal(found.length, 9);
 
             assert.deepEqual(found, [
+                'Include',
+                'NJK',
+                'Shown',
                 'Tag-string-1',
                 'Tag-string-2',
                 'Tag-string-3',
@@ -1191,42 +1146,25 @@ describe('Documents cache', function() {
         it('should find documents with tags', async function() {
             const found = await filecache.documentsCache.documentsWithTags();
 
+            // console.log(found);
+
             assert.isDefined(found);
             assert.isArray(found);
-            assert.equal(found.length, 2);
+            assert.equal(found.length, 4);
 
             const goodvpath = (vp) => {
                 return (vp === 'tags-array.html.md')
-                    || (vp === 'tags-string.html.md');
+                    || (vp === 'tags-string.html.md')
+                    || (vp === 'subdir/show-content-local.html.md')
+                    || (vp === 'njk-incl.html.md');
             };
 
             assert.isTrue(goodvpath(found[0].vpath));
             assert.isTrue(goodvpath(found[1].vpath));
+            assert.isTrue(goodvpath(found[2].vpath));
+            assert.isTrue(goodvpath(found[3].vpath));
         });
 
-        /* it('should find documents with tags and with View', function() {
-            const found = filecache.documents.documentsWithTags();
-            const foundV = filecache.documents.documentsWithTagsView();
-
-            assert.isDefined(found);
-            assert.isArray(found);
-            assert.equal(found.length, 2);
-
-            assert.isDefined(foundV);
-            assert.isArray(foundV);
-            assert.equal(foundV.length, 2);
-
-            const goodvpath = (vp) => {
-                return (vp === 'tags-array.html.md')
-                    || (vp === 'tags-string.html.md');
-            };
-
-            assert.isTrue(goodvpath(found[0].vpath));
-            assert.isTrue(goodvpath(found[1].vpath));
-
-            assert.isTrue(goodvpath(foundV[0].vpath));
-            assert.isTrue(goodvpath(foundV[1].vpath));
-        }); */
 
     });
 
