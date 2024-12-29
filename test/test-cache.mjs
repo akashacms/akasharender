@@ -1112,7 +1112,29 @@ describe('Documents cache', function() {
                 ]);
         });
 
-        it('should find tags using documentsWithTag', async function() {
+        it('should find tags with quotes (Teaser\'s) using documentsWithTag', async function() {
+            const found = await filecache.documentsCache.documentsWithTag([ "Teaser's" ]);
+
+            assert.isArray(found);
+            assert.equal(found.length, 1);
+            assert.deepEqual(found,
+                [
+                    'teaser-content.html.md'
+                ]);
+        });
+
+        it('should find tags with quotes (Something "quoted") using documentsWithTag', async function() {
+            const found = await filecache.documentsCache.documentsWithTag([ "Something \"quoted\"" ]);
+
+            assert.isArray(found);
+            assert.equal(found.length, 1);
+            assert.deepEqual(found,
+                [
+                    'teaser-content.html.md'
+                ]);
+        });
+
+        it('should not find bad tags using documentsWithTag', async function() {
             const found = await filecache.documentsCache.documentsWithTag([ 'foober', 'bad-tag' ]);
 
             assert.isArray(found);
@@ -1127,18 +1149,21 @@ describe('Documents cache', function() {
 
             assert.isDefined(found);
             assert.isArray(found);
-            assert.equal(found.length, 9);
+            assert.equal(found.length, 12);
 
             assert.deepEqual(found, [
                 'Include',
                 'NJK',
                 'Shown',
+                'Something "quoted"',
                 'Tag-string-1',
                 'Tag-string-2',
                 'Tag-string-3',
                 'Tag1',
                 'Tag2',
-                'Tag3'
+                'Tag3',
+                "Teaser's",
+                "Teasers",
             ]);
         });
 
@@ -1150,19 +1175,21 @@ describe('Documents cache', function() {
 
             assert.isDefined(found);
             assert.isArray(found);
-            assert.equal(found.length, 4);
+            assert.equal(found.length, 5);
 
             const goodvpath = (vp) => {
                 return (vp === 'tags-array.html.md')
                     || (vp === 'tags-string.html.md')
                     || (vp === 'subdir/show-content-local.html.md')
-                    || (vp === 'njk-incl.html.md');
+                    || (vp === 'njk-incl.html.md')
+                    || (vp === 'teaser-content.html.md');
             };
 
             assert.isTrue(goodvpath(found[0].vpath));
             assert.isTrue(goodvpath(found[1].vpath));
             assert.isTrue(goodvpath(found[2].vpath));
             assert.isTrue(goodvpath(found[3].vpath));
+            assert.isTrue(goodvpath(found[4].vpath));
         });
 
 

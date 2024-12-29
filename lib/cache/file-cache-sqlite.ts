@@ -1842,47 +1842,78 @@ export class DocumentsFileCache
             throw new Error(`documentsWithTag given bad tags array ${util.inspect(tagnm)}`);
         }
 
-        let tagstring = ` ( ${tags.map(t => {
-                return SqlString.format("?", [ t ]);
-            }).join(',')} ) `;
+        // Correctly handle tag strings with
+        // varying quotes.  A document might have these tags:
+        //
+        //    tags:
+        //    - Teaser's
+        //    - Teasers
+        //    - Something "quoted"
+        //
+        // These SQL queries work:
+        //
+        // sqlite> select * from TAGGLUE where tagName IN ( 'Something "quited"', "Teaser's" );
+        // teaser-content.html.md|Teaser's
+        // teaser-content.html.md|Something "quited"
+        // sqlite> select * from TAGGLUE where tagName IN ( 'Something "quited"', 'Teaser''s' );
+        // teaser-content.html.md|Teaser's
+        // teaser-content.html.md|Something "quited"
+        //
+        // But, this does not:
+        //
+        // sqlite> select * from TAGGLUE where tagName = 'Teaser's';
+        // '  ...> 
+        //
+        // The original code behavior was this:
+        //
+        // $ node ../dist/cli.js docs-with-tag config-normal.mjs "Teaser's"
+        // docs-with-tags command ERRORED Error: SQLITE_ERROR: near "s": syntax error
+        //
+        // An attempted fix:
+        // $ node ../dist/cli.js docs-with-tag config-normal.mjs "Teaser's"
+        // documentsWithTag [ "Teaser's" ]  ( 'Teaser\'s' ) 
+        // docs-with-tags command ERRORED Error: SQLITE_ERROR: near "s": syntax error
+        //
+        // Another attempted fix:
+        // $ node ../dist/cli.js docs-with-tag config-normal.mjs "Teaser's"
+        // documentsWithTag [ "Teaser's" ]  ( "Teaser''s" ) 
+        // []
+        // []
+        //
+        // And:
+        // $ node ../dist/cli.js docs-with-tag config-normal.mjs 'Something "quoted"'
+        // documentsWithTag [ 'Something "quoted"' ]  ( "Something "quoted"" ) 
+        // docs-with-tags command ERRORED Error: SQLITE_ERROR: near "quoted": syntax error
+        //
+        // The code below produces:
+        // $ node ../dist/cli.js docs-with-tag config-normal.mjs "Teaser's" 'Something "quited"'
+        // documentsWithTag [ "Teaser's", 'Something "quited"' ]  ( 'Teaser''s','Something "quited"' ) 
+        // [ { vpath: 'teaser-content.html.md' } ]
+        // [ 'teaser-content.html.md' ]
 
-        // By using json_each we're looping over
-        // the tags in a document one-per-row.
-        // Hence the AND clause has a single tag
-        // in json_each.value.
+        let tagstring = ` ( ${tags.map(t => {
+            return `'${t.indexOf("'") >= 0
+                ? t.replaceAll("'", "''")
+                : t}'`;
+        }).join(',')} ) `;
+
+        // console.log(`documentsWithTag ${util.inspect(tags)} ${tagstring}`);
+
+        // ${tagstring} is an encoding of the tags passed as
+        // parameters as something SQLITE can use with an IN operator.
         //
-        // The tags array will always be an array
-        // hence we use the SQLITE IN operator.
-        // But that means encoding the array
-        // as so:
+        //  WHERE tagName IN ( 'Tag1', 'Tag2' )
         //
-        //  json_each.value IN ( 'tag1', 'tag2', .. )
-        //
-        // That's what the assignment to tagstring
-        // is doing.  The SqlString package ensures
-        // that the string is encoded as being safe
-        // for an SQL query.        // const res = await this.dao.sqldb.all(`
-        //     SELECT
-        //         vpath,
-        //         json_extract(docMetadata, '$.tags') as tags,
-        //         json_array_length(tags) as tagslength
-        //     FROM DOCUMENTS, json_each(tags)
-        //     WHERE tagslength > 1
-        //     AND json_each.value IN ${tagstring}
-        // `);
-        // const res = await this.dao.sqldb.all(`
-        //     SELECT
-        //         vpath,
-        //         json_extract(docMetadata, '$.tags') as tags,
-        //     FROM TAGGLUE, json_each(tags)
-        //     WHERE json_each.value IN ${tagstring}
-        // `);
+        // When the tag names have single or double quotes some special
+        // care is required as discussed above. 
 
         const res = await this.dao.sqldb.all(`
             SELECT DISTINCT docvpath AS vpath
             FROM TAGGLUE
             WHERE tagName IN ${tagstring}
         `);
+
+        // console.log(res);
 
         if (!Array.isArray(res)) {
             throw new Error(`documentsWithTag non-Array result ${util.inspect(res)}`);
