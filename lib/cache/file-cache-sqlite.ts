@@ -419,22 +419,22 @@ await documentsDAO.createIndex('docs_rendersToHTML');
 await documentsDAO.createIndex('docs_dirname');
 await documentsDAO.createIndex('docs_parentDir');
 
-// @table({ name: 'TAGGLUE' })
-// class TagGlue {
+@table({ name: 'TAGGLUE' })
+class TagGlue {
 
-//     @field({ name: 'docvpath', dbtype: 'string' })
-//     @fk('tag_docvpath', 'DOCUMENTS', 'vpath')
-//     @index('tagglue_vpath')
-//     docvpath: string;
+    @field({ name: 'docvpath', dbtype: 'TEXT' })
+    // @fk('tag_docvpath', 'DOCUMENTS', 'vpath')
+    @index('tagglue_vpath')
+    docvpath: string;
 
-//     @field({ name: 'slug', dbtype: 'string' })
-//     @fk('tag_slug', 'TAGS', 'slug')
-//     @index('tagglue_slug')
-//     slug: string;
-// }
+    @field({ name: 'tagName', dbtype: 'TEXT' })
+    // @fk('tag_slug', 'TAGS', 'slug')
+    @index('tagglue_name')
+    tagName: string;
+}
 
-// await schema().createTable(sqdb, 'TAGGLUE');
-// const tagGlueDAO = new BaseDAO<TagGlue>(TagGlue, sqdb);
+await schema().createTable(sqdb, 'TAGGLUE');
+export const tagGlueDAO = new BaseDAO<TagGlue>(TagGlue, sqdb);
 
 // @table({ name: 'TAGS' })
 // class Tag {
@@ -1453,8 +1453,24 @@ export class DocumentsFileCache
         }
     }
 
+    protected async deleteDocTagGlue(vpath) {
+        await tagGlueDAO.deleteAll({
+            docvpath: vpath
+        } as Where<TagGlue>);
+    }
+
+    protected async addDocTagGlue(vpath, tags) {
+        for (const tag of tags) {
+            const glue = await tagGlueDAO.insert({
+                docvpath: vpath,
+                tagName: tag
+            });
+            // console.log('addDocTagGlue', glue);
+        }
+    }
+
     protected async updateDocInDB(info) {
-        await this.dao.update(({
+        const docInfo = <Document>{
             vpath: info.vpath,
             mime: info.mime,
             mounted: info.mounted,
@@ -1475,11 +1491,18 @@ export class DocumentsFileCache
                     : [],
             layout: info.metadata?.layout,
             info,
-        } as unknown) as Document);
+        };
+
+        await this.dao.update(docInfo);
+
+        await this.deleteDocTagGlue(docInfo.vpath);
+        await this.addDocTagGlue(
+            docInfo.vpath, docInfo.tags
+        );
     }
 
     protected async insertDocToDB(info: any) {
-        await this.dao.insert(({
+        const docInfo = <Document>{
             vpath: info.vpath,
             mime: info.mime,
             mounted: info.mounted,
@@ -1500,7 +1523,16 @@ export class DocumentsFileCache
                     : [],
             layout: info.metadata?.layout,
             info,
-        } as unknown) as Document);
+        };
+        await this.dao.insert(docInfo);
+        await this.addDocTagGlue(
+            docInfo.vpath, docInfo.tags
+        );
+    }
+
+    async handleUnlinked(name: any, info: any): Promise<void> {
+        await super.handleUnlinked(name, info);
+        await this.deleteDocTagGlue(info.vpath);
     }
 
     async indexChain(_fpath) {
@@ -1829,19 +1861,28 @@ export class DocumentsFileCache
         // That's what the assignment to tagstring
         // is doing.  The SqlString package ensures
         // that the string is encoded as being safe
-        // for an SQL query.
+        // for an SQL query.        // const res = await this.dao.sqldb.all(`
+        //     SELECT
+        //         vpath,
+        //         json_extract(docMetadata, '$.tags') as tags,
+        //         json_array_length(tags) as tagslength
+        //     FROM DOCUMENTS, json_each(tags)
+        //     WHERE tagslength > 1
+        //     AND json_each.value IN ${tagstring}
+        // `);
+        // const res = await this.dao.sqldb.all(`
+        //     SELECT
+        //         vpath,
+        //         json_extract(docMetadata, '$.tags') as tags,
+        //     FROM TAGGLUE, json_each(tags)
+        //     WHERE json_each.value IN ${tagstring}
+        // `);
+
         const res = await this.dao.sqldb.all(`
-            SELECT
-                vpath,
-                json_extract(docMetadata, '$.tags') as tags,
-                json_array_length(tags) as tagslength
-            FROM DOCUMENTS, json_each(tags)
-            WHERE tagslength > 1
-            AND json_each.value IN ${tagstring}
-        `) as unknown as Array<{
-            vpath: string,
-            tags: string[]
-        }>;
+            SELECT DISTINCT docvpath AS vpath
+            FROM TAGGLUE
+            WHERE tagName IN ${tagstring}
+        `);
 
         if (!Array.isArray(res)) {
             throw new Error(`documentsWithTag non-Array result ${util.inspect(res)}`);
@@ -1862,13 +1903,23 @@ export class DocumentsFileCache
      * @returns 
      */
     async tags() {
+        // const res = await this.dao.sqldb.all(`
+        //     SELECT
+        //         DISTINCT json_extract(docMetadata, '$.tags') AS tags
+        //     FROM DOCUMENTS, json_each(tags)
+        // `) as unknown as Array<{
+        //     tags: string[]
+        // }>;
+
         const res = await this.dao.sqldb.all(`
-            SELECT
-                DISTINCT json_extract(docMetadata, '$.tags') AS tags
-            FROM DOCUMENTS, json_each(tags)
+            SELECT DISTINCT tagName FROM TAGGLUE
         `) as unknown as Array<{
-            tags: string[]
+            tagName: string
         }>;
+
+        const tags = res.map(tag => {
+            return tag.tagName
+        });
 
         // console.log(res);
 
@@ -1884,19 +1935,19 @@ export class DocumentsFileCache
         // In other words, the tags array arrives
         // as JSON which we must parse.
 
-        const tags = new Set();
-        for (const item of res) {
-            if (!('tags' in item)) continue;
-            let tagsP = [];
-            if (typeof item.tags === 'string') {
-                tagsP = JSON.parse(item.tags);
-            } else if (Array.isArray(item.tags)) {
-                tagsP = item.tags;
-            }
-            for (const tag of tagsP) {
-                tags.add(tag);
-            }
-        }
+        // const tags = new Set();
+        // for (const item of res) {
+        //     if (!('tags' in item)) continue;
+        //     let tagsP = [];
+        //     if (typeof item.tags === 'string') {
+        //         tagsP = JSON.parse(item.tags);
+        //     } else if (Array.isArray(item.tags)) {
+        //         tagsP = item.tags;
+        //     }
+        //     for (const tag of tagsP) {
+        //         tags.add(tag);
+        //     }
+        // }
 
         // The Set class made sure to weed out
         // duplicate tags.  With Array.from
