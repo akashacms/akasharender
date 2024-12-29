@@ -69,6 +69,11 @@ export declare class Document {
 }
 type TdocumentssDAO = BaseDAO<Document>;
 export declare const documentsDAO: BaseDAO<Document>;
+declare class TagGlue {
+    docvpath: string;
+    tagName: string;
+}
+export declare const tagGlueDAO: BaseDAO<TagGlue>;
 /**
  * Type for return from paths method.  The fields here
  * are whats in the Asset/Layout/Partial classes above
@@ -192,8 +197,11 @@ export declare class TemplatesFileCache<T extends Layout | Partial, Tdao extends
 export declare class DocumentsFileCache extends BaseFileCache<Document, TdocumentssDAO> {
     constructor(config: Configuration, name: string, dirs: dirToWatch[]);
     gatherInfoData(info: any): void;
+    protected deleteDocTagGlue(vpath: any): Promise<void>;
+    protected addDocTagGlue(vpath: any, tags: any): Promise<void>;
     protected updateDocInDB(info: any): Promise<void>;
     protected insertDocToDB(info: any): Promise<void>;
+    handleUnlinked(name: any, info: any): Promise<void>;
     indexChain(_fpath: any): Promise<any[]>;
     /**
      * Finds all the documents in the same directory
@@ -288,7 +296,7 @@ export declare class DocumentsFileCache extends BaseFileCache<Document, Tdocumen
      *
      * @returns
      */
-    tags(): Promise<unknown[]>;
+    tags(): Promise<string[]>;
     /**
      * Retrieve the data for an internal link
      * within the site documents.  Forming an
