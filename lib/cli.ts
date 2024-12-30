@@ -96,7 +96,7 @@ program
             let akasha = config.akasha;
             await akasha.setup(config);
             await data.removeAll();
-            console.log(`render-document before renderPath ${documentFN}`);
+            // console.log(`render-document before renderPath ${documentFN}`);
             let result = await akasha.renderPath(config, documentFN);
             console.log(result);
             await akasha.closeCaches();

@@ -244,6 +244,8 @@ export async function renderDocument(
         metadata: docInfo.metadata
     };
 
+    // console.log(`renderDocument context= ${rc.fspath}`)
+
     let docFormat;      // Knowing the format 
     let docRendered;
     try {
@@ -254,7 +256,7 @@ export async function renderDocument(
         console.error(`Error rendering ${docInfo.vpath} ${(err.stack ? err.stack : err)}`);
         throw new Error(`Error rendering ${docInfo.vpath} ${(err.stack ? err.stack : err)}`);
     }
-    // console.log(`documentRender ${docInfo.vpath} rendered=`, docRendered);
+    // console.log(`renderDocument ${docInfo.vpath} rendered=`, docRendered);
     await data.report(docInfo.mountPoint, 
                       docInfo.vpath,
                       config.renderTo, 
@@ -307,7 +309,7 @@ export async function renderDocument(
         layoutRendered = docRendered;
     }
 
-    // console.log(`renderDocument ${docInfo.vpath} after layout render `, layoutRendered);
+    // console.log(`renderDocument ${docInfo.vpath} after layout render format ${layoutFormat} `);
 
     const renderSecondRender = new Date();
     await data.report(docInfo.mountPoint,
@@ -367,6 +369,26 @@ export async function renderDocument(
             config.renderTo,
             "RENDERED", renderStart);
         return `${layoutFormat} ${docInfo.vpath} ==> ${docInfo.renderPath} (${(renderEndRendered.valueOf() - renderStart.valueOf()) / 1000} seconds)\n${await data.data4file(docInfo.mountPoint, docInfo.vpath)}`;
+    } else if (layoutFormat === 'CSS') {
+
+        try {
+            const renderToFpath = path.join(
+                        config.renderTo, docInfo.renderPath);
+            const renderToDir = path.dirname(renderToFpath);
+            await fsp.mkdir(renderToDir, {
+                        recursive: true
+                    });
+            await fsp.writeFile(renderToFpath, layoutRendered, 'utf8');
+            const renderEndRendered = new Date();
+            await data.report(
+                docInfo.mountPoint, docInfo.vpath,
+                config.renderTo,
+                "RENDERED", renderStart);
+            return `${layoutFormat} ${docInfo.vpath} ==> ${docInfo.renderPath} (${(renderEndRendered.valueOf() - renderStart.valueOf()) / 1000} seconds)\n${await data.data4file(docInfo.mountPoint, docInfo.vpath)}`;
+        } catch(err) {
+            console.error(`in RENDER CSS branch for ${docInfo.vpath} to ${docInfo.renderPath} error=${err.stack ? err.stack : err}`);
+            throw new Error(`in RENDER CSS branch for ${docInfo.vpath} to ${docInfo.renderPath} error=${err.stack ? err.stack : err}`);
+        }
     } else {
 
         try {
