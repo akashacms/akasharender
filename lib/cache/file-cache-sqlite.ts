@@ -1737,7 +1737,7 @@ export class DocumentsFileCache
                 typeof rootP === 'string'
              && rootP.length >= 1
             )
-            ? `AND ( renderPath regexp '^${rootP}' )`
+            ? `AND ( renderPath LIKE '${rootP}%' )`
             : '';
 
         return this.dao.sqldb.all(`
@@ -1746,8 +1746,8 @@ export class DocumentsFileCache
         WHERE
             ( rendersToHTML = true )
         AND (
-            ( renderPath regexp '/index.html$' )
-         OR ( renderPath regexp '^index.html$' )
+            ( renderPath LIKE '%/index.html' )
+         OR ( renderPath = 'index.html' )
         )
         ${rootQ}
         `);
