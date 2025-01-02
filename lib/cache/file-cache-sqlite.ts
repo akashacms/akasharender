@@ -7,7 +7,6 @@ import { promises as fs } from 'fs';
 import FS from 'fs';
 import EventEmitter from 'events';
 import micromatch from 'micromatch';
-import SqlString from 'sqlstring';
 
 import {
     field,
