@@ -2083,16 +2083,33 @@ describe('Search', function() {
         assert.equal(found.length, 0);
     });
 
-    it('should select by GLOB', async function() {
+    it('should select JSON files by GLOB', async function() {
         const found = await filecache.documentsCache.search({
-            glob: '**/*.json'
+            glob: '*.json'
         });
+
+        console.log(found);
 
         assert.isDefined(found);
         assert.isArray(found);
         assert.isTrue(found.length > 0);
         for (const doc of found) {
             assert.isOk(doc.vpath.match(/\.json$/));
+        }
+    });
+
+    it('should select MD files by GLOB', async function() {
+        const found = await filecache.documentsCache.search({
+            glob: '**/*.md'
+        });
+
+        console.log(found);
+
+        assert.isDefined(found);
+        assert.isArray(found);
+        assert.isTrue(found.length > 0);
+        for (const doc of found) {
+            assert.isOk(doc.vpath.match(/\.md$/));
         }
     });
 

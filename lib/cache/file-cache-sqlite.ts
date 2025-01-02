@@ -1802,6 +1802,10 @@ export class DocumentsFileCache
 
     /**
      * Retrieve the documents which have tags.
+     * 
+     * TODO - Is this function used anywhere?
+     *   It is not referenced in akasharender, nor
+     *   in any plugin that I can find.
      *
      * @returns 
      */
@@ -2084,6 +2088,48 @@ export class DocumentsFileCache
             });
         }
 
+        // For glob and renderglob handle
+        // strings with single-quote characters
+        // as per discussion in documentsWithTag
+
+        if (
+            options.glob
+         && typeof options.glob === 'string'
+        ) {
+            selector.and.push({
+                sql: `T.vpath GLOB '${options.glob.indexOf("'") >= 0
+                    ? options.glob.replaceAll("'", "''")
+                    : options.glob}'`
+            });
+        }
+
+        if (
+            options.renderglob
+         && typeof options.renderglob === 'string'
+        ) {
+            selector.and.push({
+                sql: `T.renderPath GLOB '${options.renderglob.indexOf("'") >= 0
+                ? options.renderglob.replaceAll("'", "''")
+                : options.renderglob}'`
+            });
+        }
+
+        // This is possibly a way to implement options.tag.
+        // The code is derived from the sqlite3orm documentation.
+        // if (
+        //     options.tag
+        //     && typeof options.tag === 'string'
+        // ) {
+        //     selector.and.push({
+        //         sql: `
+        //     EXISTS (
+        //         SELECT 1
+        //         FROM TAGGLUE tg
+        //         WHERE tg.tagName = ${options.tag}
+        //     )
+        //     `});
+        // }
+
         const regexSQL = {
             or: []
         };
@@ -2212,8 +2258,28 @@ export class DocumentsFileCache
         // NOW MOVED ABOVE
         const result2 = result1;
 
+        // TODO - rewrite against tags column
+        //   and the tagglue table
+        //   HENCE this should be movable to SQL
+
         // Check for match against tags
-        const result3 = 
+        const result3 =
+
+        // First - No existing code uses this feature.
+        // Second - Tags have been redesigned.  Until now,
+        //    "item.tags" and "item.docMetadata.tags" are
+        //    arrays.  SQLITE doesn't have a field type for
+        //    arrays, and therefore it's stored as JSON, which
+        //    is slow for comparisons.
+        // Third - the new design, TAGGLUE, will have one row
+        //    for each tag in each document.  Hence it's
+        //    trivial to find all documents with a given tag
+        //    using SQL.
+        // Fourth - The test suite includes tests for
+        //    this feature.
+        // Fifth - there is a possible SQL implementation
+        //    earlier in the code.
+
             (
                 options.tag
                 && typeof options.tag === 'string'
@@ -2254,31 +2320,33 @@ export class DocumentsFileCache
             // })
             // : result3;
 
-        const result5 =
-            (
-                options.glob
-             && typeof options.glob === 'string'
-            ) ? result4.filter(item => {
-                if (item.vpath) {
-                    return micromatch.isMatch(item.vpath, options.glob);
-                } else {
-                    return false;
-                }
-            })
-            : result4;
+        const result5 = result4;
+        // This is now SQL
+            // (
+            //     options.glob
+            //  && typeof options.glob === 'string'
+            // ) ? result4.filter(item => {
+            //     if (item.vpath) {
+            //         return micromatch.isMatch(item.vpath, options.glob);
+            //     } else {
+            //         return false;
+            //     }
+            // })
+            // : result4;
 
-        const result6 =
-            (
-                options.renderglob
-            && typeof options.renderglob === 'string'
-            ) ? result5.filter(item => {
-                if (item.renderPath) {
-                    return micromatch.isMatch(item.renderPath, options.renderglob);
-                } else {
-                    return false;
-                }
-            })
-            : result5;
+        const result6 = result5;
+        // This is now SQL
+            // (
+            //     options.renderglob
+            // && typeof options.renderglob === 'string'
+            // ) ? result5.filter(item => {
+            //     if (item.renderPath) {
+            //         return micromatch.isMatch(item.renderPath, options.renderglob);
+            //     } else {
+            //         return false;
+            //     }
+            // })
+            // : result5;
 
         const result7 =
             (
