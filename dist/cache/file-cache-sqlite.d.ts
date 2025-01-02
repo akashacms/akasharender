@@ -285,6 +285,10 @@ export declare class DocumentsFileCache extends BaseFileCache<Document, Tdocumen
     /**
      * Retrieve the documents which have tags.
      *
+     * TODO - Is this function used anywhere?
+     *   It is not referenced in akasharender, nor
+     *   in any plugin that I can find.
+     *
      * @returns
      */
     documentsWithTags(): Promise<Document[]>;
