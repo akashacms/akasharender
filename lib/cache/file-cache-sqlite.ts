@@ -397,6 +397,12 @@ export class Document {
     layout: string;
 
     @field({
+        name: 'blogtag', dbtype: 'TEXT', isJson: false
+    })
+    @index('docs_blogtag')
+    blogtag: string;
+
+    @field({
         name: 'info', dbtype: 'TEXT', isJson: true
     })
     info: any;
@@ -417,6 +423,7 @@ await documentsDAO.createIndex('docs_renderPath');
 await documentsDAO.createIndex('docs_rendersToHTML');
 await documentsDAO.createIndex('docs_dirname');
 await documentsDAO.createIndex('docs_parentDir');
+await documentsDAO.createIndex('docs_blogtag');
 
 @table({ name: 'TAGGLUE' })
 class TagGlue {
@@ -434,6 +441,9 @@ class TagGlue {
 
 await schema().createTable(sqdb, 'TAGGLUE');
 export const tagGlueDAO = new BaseDAO<TagGlue>(TagGlue, sqdb);
+
+await tagGlueDAO.createIndex('tagglue_vpath');
+await tagGlueDAO.createIndex('tagglue_name');
 
 // @table({ name: 'TAGS' })
 // class Tag {
@@ -1489,6 +1499,9 @@ export class DocumentsFileCache
                     ? info.metadata.tags
                     : [],
             layout: info.metadata?.layout,
+            blogtag: typeof info.metadata?.blogtag === 'string'
+                ? info.metadata?.blogtag
+                : undefined,
             info,
         };
 
@@ -1521,6 +1534,9 @@ export class DocumentsFileCache
                     ? info.metadata.tags
                     : [],
             layout: info.metadata?.layout,
+            blogtag: typeof info.metadata?.blogtag === 'string'
+                ? info.metadata?.blogtag
+                : undefined,
             info,
         };
         await this.dao.insert(docInfo);
@@ -2110,6 +2126,24 @@ export class DocumentsFileCache
                 sql: `T.renderPath GLOB '${options.renderglob.indexOf("'") >= 0
                 ? options.renderglob.replaceAll("'", "''")
                 : options.renderglob}'`
+            });
+        }
+
+        // This is as a special favor to
+        // @akashacms/plugins-blog-podcast.  The
+        // blogtag metadata value is expensive to
+        // search for as a field in the JSON
+        // metadata.  By promoting this to a
+        // regular field it becomes a regular
+        // SQL query on a field where there
+        // can be an index.
+        if (
+            typeof options.blogtag === 'string'
+        ) {
+            selector.and.push({
+                blogtag: {
+                    eq: options.blogtag
+                }
             });
         }
 

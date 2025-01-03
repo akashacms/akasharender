@@ -65,6 +65,7 @@ export declare class Document {
     metadata: any;
     tags: any;
     layout: string;
+    blogtag: string;
     info: any;
 }
 type TdocumentssDAO = BaseDAO<Document>;

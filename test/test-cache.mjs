@@ -2088,7 +2088,7 @@ describe('Search', function() {
             glob: '*.json'
         });
 
-        console.log(found);
+        // console.log(found);
 
         assert.isDefined(found);
         assert.isArray(found);
@@ -2103,7 +2103,7 @@ describe('Search', function() {
             glob: '**/*.md'
         });
 
-        console.log(found);
+        // console.log(found);
 
         assert.isDefined(found);
         assert.isArray(found);
@@ -2198,6 +2198,46 @@ describe('Search', function() {
     //     assert.isArray(found);
     //     assert.equal(found.length, 0);
     // });
+
+    it('should select by blogtag sibling', async function() {
+        const found = await filecache.documentsCache.search({
+            blogtag: 'sibling'
+        });
+
+        assert.isDefined(found);
+        assert.isArray(found);
+        assert.isTrue(found.length > 0);
+        for (const doc of found) {
+            assert.isDefined(doc.blogtag);
+            assert.equal(typeof doc.blogtag, 'string')
+            assert.equal(doc.blogtag, 'sibling');
+        }
+    });
+
+    it('should select by blogtag nestedAnchor', async function() {
+        const found = await filecache.documentsCache.search({
+            blogtag: 'nestedAnchor'
+        });
+
+        assert.isDefined(found);
+        assert.isArray(found);
+        assert.isTrue(found.length > 0);
+        for (const doc of found) {
+            assert.isDefined(doc.blogtag);
+            assert.equal(typeof doc.blogtag, 'string')
+            assert.equal(doc.blogtag, 'nestedAnchor');
+        }
+    });
+
+    it('should select by blogtag UNKNOWN', async function() {
+        const found = await filecache.documentsCache.search({
+            blogtag: 'UNKNOWN'
+        });
+
+        assert.isDefined(found);
+        assert.isArray(found);
+        assert.isTrue(found.length <= 0);
+    });
 
     it('should select by layout string', async function() {
         const found = await filecache.documentsCache.search({
