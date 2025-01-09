@@ -33,6 +33,7 @@ import mahaMetadata from 'mahabhuta/maha/metadata.js';
 import mahaPartial from 'mahabhuta/maha/partial.js';
 import Renderers from '@akashacms/renderers';
 const NunjucksRenderer = Renderers.NunjucksRenderer;
+import {encode} from 'html-entities';
 
 const pluginName = "akashacms-builtin";
 
@@ -287,12 +288,42 @@ function _doStylesheets(metadata, options) {
                     stylehref = newHref;
                 }
             }
-            let $ = mahabhuta.parse('<link rel="stylesheet" type="text/css" href=""/>');
-            $('link').attr('href', stylehref);
-            if (style.media) {
-                $('link').attr('media', style.media);
-            }
-            ret += $.html();
+
+            const doStyleMedia = (media) => {
+                if (media) {
+                    return `media="${encode(media)}"`
+                } else {
+                    return '';
+                }
+            };
+            let ht = `<link rel="stylesheet" type="text/css" href="${encode(stylehref)}" ${doStyleMedia(style.media)}/>`
+            ret += ht;
+
+            // The issue with this and other instances
+            // is that this tended to result in
+            //
+            //   <html><body><link..></body></html>
+            //
+            // When it needed to just be the <link> tag.
+            // In other words, it tried to create an entire
+            // HTML document.  While there was a way around
+            // this - $('selector').prop('outerHTML')
+            // This also seemed to be an overhead
+            // we can avoid.
+            //
+            // The pattern is to use Template Strings while
+            // being careful to encode values safely for use
+            // in an attribute.  The "encode" function does
+            // the encoding.
+            //
+            // See https://github.com/akashacms/akasharender/issues/49
+
+            // let $ = mahabhuta.parse('<link rel="stylesheet" type="text/css" href=""/>');
+            // $('link').attr('href', stylehref);
+            // if (style.media) {
+            //     $('link').attr('media', style.media);
+            // }
+            // ret += $.html();
         }
         // console.log(`_doStylesheets ${ret}`);
     }
@@ -311,33 +342,71 @@ function _doJavaScripts(metadata, scripts, options) {
 			throw new Error(`Must specify either href or script in ${util.inspect(script)}`);
 		}
         if (!script.script) script.script = '';
-        let $ = mahabhuta.parse('<script ></script>');
-        if (script.lang) $('script').attr('type', script.lang);
-        if (script.href) {
-            let scripthref = script.href;
-            let pHref = url.parse(script.href, true, true);
-            if (!pHref.protocol && !pHref.hostname && !pHref.slashes) {
-                // This is a local URL
-                // Only relativize if desired
-                if (options.relativizeScriptLinks
-                 && path.isAbsolute(scripthref)) {
-                    let newHref = relative(`/${metadata.document.renderTo}`, scripthref);
-                    // console.log(`_doJavaScripts absolute scripthref ${scripthref} in ${util.inspect(metadata.document)} rewrote to ${newHref}`);
-                    scripthref = newHref;
-                }
-                /* if (options.config.root_url) {
-                    let pRootUrl = url.parse(options.config.root_url);
-                    scripthref = path.normalize(
-                            path.join(pRootUrl.pathname, pHref.pathname)
-                    );
-                } */
+
+        const doType = (lang) => {
+            if (lang) {
+                return `type="${encode(lang)}"`;
+            } else {
+                return '';
             }
-            $('script').attr('src', scripthref);
         }
-        if (script.script) {
-            $('script').append(script.script);
-        }
-        ret += $.html();
+        const doHref = (href) => {
+            if (href) {
+                let scripthref = href;
+                let pHref = url.parse(href, true, true);
+                if (!pHref.protocol && !pHref.hostname && !pHref.slashes) {
+                    // This is a local URL
+                    // Only relativize if desired
+                    if (options.relativizeScriptLinks
+                    && path.isAbsolute(scripthref)) {
+                        let newHref = relative(`/${metadata.document.renderTo}`, scripthref);
+                        // console.log(`_doJavaScripts absolute scripthref ${scripthref} in ${util.inspect(metadata.document)} rewrote to ${newHref}`);
+                        scripthref = newHref;
+                    }
+                    /* if (options.config.root_url) {
+                        let pRootUrl = url.parse(options.config.root_url);
+                        scripthref = path.normalize(
+                                path.join(pRootUrl.pathname, pHref.pathname)
+                        );
+                    } */
+                }
+                return `src="${encode(scripthref)}"`;
+            } else {
+                return '';
+            }
+        };
+        let ht = `<script ${doType(script.lang)} ${doHref(script.href)}>${script.script}</script>`;
+        ret += ht;
+
+        // let $ = mahabhuta.parse('<script ></script>');
+        // if (script.lang) $('script').attr('type', script.lang);
+        // if (script.href) {
+        //     let scripthref = script.href;
+        //     let pHref = url.parse(script.href, true, true);
+        //     if (!pHref.protocol && !pHref.hostname && !pHref.slashes) {
+        //         // This is a local URL
+        //         // Only relativize if desired
+        //         if (options.relativizeScriptLinks
+        //          && path.isAbsolute(scripthref)) {
+        //             let newHref = relative(`/${metadata.document.renderTo}`, scripthref);
+        //             // console.log(`_doJavaScripts absolute scripthref ${scripthref} in ${util.inspect(metadata.document)} rewrote to ${newHref}`);
+        //             scripthref = newHref;
+        //         }
+        //         /* if (options.config.root_url) {
+        //             let pRootUrl = url.parse(options.config.root_url);
+        //             scripthref = path.normalize(
+        //                     path.join(pRootUrl.pathname, pHref.pathname)
+        //             );
+        //         } */
+        //     }
+        //     $('script').attr('src', scripthref);
+        // }
+        // if (script.script) {
+        //     $('script').append(script.script);
+        // }
+        // // Emit only the <script> portion.
+        // // Using .html() emits a full <html><body>...
+        // ret +=  $.html(); // $('script').prop('outerHTML');
 	}
 	// console.log('_doJavaScripts '+ ret);
 	return ret;
@@ -489,22 +558,49 @@ class CodeEmbed extends mahabhuta.CustomElement {
         }
 
         const txt = await fsp.readFile(found.fspath, 'utf8');
-        let $ = mahabhuta.parse(`<pre><code></code></pre>`);
-        if (lang && lang !== '') {
-            $('code').addClass(lang);
+
+        const doLang = (lang) => {
+            if (lang) {
+                return `class="hljs ${encode(lang)}"`;
+            } else {
+                return 'class="hljs"';
+            }
+        };
+        const doID = (id) => {
+            if (id) {
+                return `id="${encode(id)}"`;
+            } else {
+                return '';
+            }
         }
-        $('code').addClass('hljs');
-        if (id && id !== '') {
-            $('pre').attr('id', id);
+        const doCode = (lang, code) => {
+            if (lang && lang != '') {
+                return hljs.highlight(code, {
+                    language: lang
+                }).value;
+            } else {
+                return hljs.highlightAuto(code).value;
+            }
         }
-        if (lang && lang !== '') {
-            $('code').append(hljs.highlight(txt, {
-                language: lang
-            }).value);
-        } else {
-            $('code').append(hljs.highlightAuto(txt).value);
-        }
-        return $.html();
+        let ret = `<pre ${doID(id)}><code ${doLang(lang)}>${doCode(lang, txt)}</code></pre>`;
+        return ret;
+
+        // let $ = mahabhuta.parse(`<pre><code></code></pre>`);
+        // if (lang && lang !== '') {
+        //     $('code').addClass(lang);
+        // }
+        // $('code').addClass('hljs');
+        // if (id && id !== '') {
+        //     $('pre').attr('id', id);
+        // }
+        // if (lang && lang !== '') {
+        //     $('code').append(hljs.highlight(txt, {
+        //         language: lang
+        //     }).value);
+        // } else {
+        //     $('code').append(hljs.highlightAuto(txt).value);
+        // }
+        // return $.html();
     }
 }
 
