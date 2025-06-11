@@ -30,7 +30,7 @@ import path from 'node:path';
 // const oembetter = require('oembetter')();
 import RSS from 'rss';
 import fastq from 'fastq';
-import { DirsWatcher, mimedefine } from '@akashacms/stacked-dirs';
+import { DirsWatcher, VPathData, dirToWatch, mimedefine } from '@akashacms/stacked-dirs';
 import * as Renderers from '@akashacms/renderers';
 export * as Renderers from '@akashacms/renderers';
 import { Renderer } from '@akashacms/renderers';
@@ -451,10 +451,75 @@ export async function generateRSS(config, configrss, feedData, items, renderTo) 
 // const _config_cheerio = Symbol('cheerio');
 // const _config_configdir = Symbol('configdir');
 // const _config_cachedir  = Symbol('cachedir');
-// const _config_autoload  = Symbol('autoload');
-// const _config_autosave  = Symbol('autosave');
 // const _config_concurrency = Symbol('concurrency');
 // const _config_renderers = Symbol('renderers');
+
+/**
+ * Data type describing items in the
+ * javaScriptTop and javaScriptBottom arrays.
+ * The fields correspond to the attributes
+ * of the <script> tag which can be used
+ * either in the top or bottom of
+ * an HTML file.
+ */
+export type javaScriptItem = {
+    href?: string,
+    script?: string,
+    lang?: string
+};
+
+export type stylesheetItem = {
+    href?: string,
+    media?: string
+
+};
+
+/**
+ * Defines the structure for directory
+ * mount specification in the Configuration.
+ * 
+ * The simple 'string' form says to mount
+ * the named fspath on the root of the
+ * virtual filespace.
+ * 
+ * The object form allows us to mount
+ * an fspath into a different location
+ * in the virtual filespace, to ignore
+ * files based on GLOB patterns, and to
+ * include metadata for every file in
+ * a directory tree.
+ * 
+ * In the file-cache module, this is
+ * converted to the dirToWatch structure
+ * used by StackedDirs.
+ */
+export type dirToMount =
+    string
+    | {
+        /**
+         * The fspath to mount
+         */
+        src: string,
+
+        /**
+         * The virtual filespace
+         * location
+         */
+        dest: string,
+
+        /**
+         * Array of GLOB patterns
+         * of files to ignore
+         */
+        ignore?: string[],
+
+        /**
+         * An object containing
+         * metadata that's to
+         * apply to every file
+         */
+        baseMetadata?: any
+    };
 
 /**
  * Configuration of an AkashaRender project, including the input directories,
@@ -467,18 +532,20 @@ export async function generateRSS(config, configrss, feedData, items, renderTo) 
  */
 export class Configuration {
     #renderers: Renderers.Configuration;
-    #autoload: boolean;
-    #autosave: boolean;
     #configdir: string;
     #cachedir: string;
-    #assetsDirs;
-    #layoutDirs;
-    #documentDirs;
-    #partialDirs;
+    #assetsDirs?: dirToMount[];
+    #layoutDirs?: dirToMount[];
+    #documentDirs?: dirToMount[];
+    #partialDirs?: dirToMount[];
     #mahafuncs;
-    #cheerio;
+    #cheerio?: cheerio.CheerioOptions;
     #renderTo: string;
-    #scripts;
+    #scripts?: {
+        stylesheets?: stylesheetItem[],
+        javaScriptTop?: javaScriptItem[],
+        javaScriptBottom?: javaScriptItem[]
+    };
     #concurrency: number;
     #metadata: any;
     #root_url: string;
@@ -491,9 +558,6 @@ export class Configuration {
         this.#renderers = new Renderers.Configuration({
             
         });
-
-        this.#autoload = false;
-        this.#autosave = false;
 
         this.#mahafuncs = [];
         this.#scripts = {
@@ -686,17 +750,11 @@ export class Configuration {
      * Record the configuration directory so that we can correctly interpolate
      * the pathnames we're provided.
      */
-    set configDir(cfgdir) { this.#configdir = cfgdir; }
+    set configDir(cfgdir: string) { this.#configdir = cfgdir; }
     get configDir() { return this.#configdir; }
 
-    set cacheDir(dirnm) { this.#cachedir = dirnm; }
+    set cacheDir(dirnm: string) { this.#cachedir = dirnm; }
     get cacheDir() { return this.#cachedir; }
-
-    get cacheAutosave() { return this.#autosave; }
-    set cacheAutosave(auto) { this.#autosave = auto; }
-
-    get cacheAutoload() { return this.#autoload; }
-    set cacheAutoload(auto) { this.#autoload = auto; }
 
     // set akasha(_akasha)  { this[_config_akasha] = _akasha; }
     get akasha() { return module_exports; }
@@ -710,17 +768,33 @@ export class Configuration {
      * Add a directory to the documentDirs configuration array
      * @param {string} dir The pathname to use
      */
-    addDocumentsDir(dir) {
+    addDocumentsDir(dir: dirToMount) {
         // If we have a configDir, and it's a relative directory, make it
         // relative to the configDir
-        if (this.configDir != null) {
-            if (typeof dir === 'string' && !path.isAbsolute(dir)) {
-                dir = path.join(this.configDir, dir);
-            } else if (typeof dir === 'object' && !path.isAbsolute(dir.src)) {
-                dir.src = path.join(this.configDir, dir.src);
+        let dirMount: dirToMount;
+        if (typeof dir === 'string') {
+            if (!path.isAbsolute(dir) && this.configDir != null) {
+                dirMount = {
+                    src: path.join(this.configDir, dir),
+                    dest: '/'
+                };
+            } else {
+                dirMount = {
+                    src: dir,
+                    dest: '/'
+                };
             }
+        } else if (typeof dir === 'object') {
+            if (!path.isAbsolute(dir.src) && this.configDir != null) {
+                dir.src = path.join(this.configDir, dir.src);
+                dirMount = dir;
+            } else {
+                dirMount = dir;
+            }
+        } else {
+            throw new Error(`addDocumentsDir - directory to mount of wrong type ${util.inspect(dir)}`);
         }
-        this.#documentDirs.push(dir);
+        this.#documentDirs.push(dirMount);
         // console.log(`addDocumentsDir ${util.inspect(dir)} ==> ${util.inspect(this[_config_documentDirs])}`);
         return this;
     }
@@ -733,7 +807,7 @@ export class Configuration {
      * Look up the document directory information for a given document directory.
      * @param {string} dirname The document directory to search for
      */
-    documentDirInfo(dirname) {
+    documentDirInfo(dirname: string) {
         for (var docDir of this.documentDirs) {
             if (typeof docDir === 'object') {
                 if (docDir.src === dirname) {
@@ -749,18 +823,35 @@ export class Configuration {
      * Add a directory to the layoutDirs configurtion array
      * @param {string} dir The pathname to use
      */
-    addLayoutsDir(dir) {
+    addLayoutsDir(dir: dirToMount) {
         // If we have a configDir, and it's a relative directory, make it
         // relative to the configDir
-        if (this.configDir != null) {
-            if (typeof dir === 'string' && !path.isAbsolute(dir)) {
-                dir = path.join(this.configDir, dir);
-            } else if (typeof dir === 'object' && !path.isAbsolute(dir.src)) {
-                dir.src = path.join(this.configDir, dir.src);
+        let dirMount: dirToMount;
+        if (typeof dir === 'string') {
+            if (!path.isAbsolute(dir) && this.configDir != null) {
+                dirMount = {
+                    src: path.join(this.configDir, dir),
+                    dest: '/'
+                };
+            } else {
+                dirMount = {
+                    src: dir,
+                    dest: '/'
+                };
             }
+        } else if (typeof dir === 'object') {
+            if (!path.isAbsolute(dir.src) && this.configDir != null) {
+                dir.src = path.join(this.configDir, dir.src);
+                dirMount = dir;
+            } else {
+                dirMount = dir;
+            }
+        } else {
+            throw new Error(`addLayoutsDir - directory to mount of wrong type ${util.inspect(dir)}`);
         }
-        this.#layoutDirs.push(dir);
-        this.#renderers.addLayoutDir(dir.src ? dir.src : dir);
+        this.#layoutDirs.push(dirMount);
+        // console.log(`AkashaRender Configuration addLayoutsDir ${util.inspect(dir)} ${util.inspect(dirMount)} layoutDirs ${util.inspect(this.#layoutDirs)} Renderers layoutDirs ${util.inspect(this.#renderers.layoutDirs)}`);
+        this.#renderers.addLayoutDir(dirMount.src);
         // console.log(`AkashaRender Configuration addLayoutsDir ${util.inspect(dir)} layoutDirs ${util.inspect(this.#layoutDirs)} Renderers layoutDirs ${util.inspect(this.#renderers.layoutDirs)}`);
         return this;
     }
@@ -772,19 +863,35 @@ export class Configuration {
      * @param {string} dir The pathname to use
      * @returns {Configuration}
      */
-    addPartialsDir(dir) {
+    addPartialsDir(dir: dirToMount) {
         // If we have a configDir, and it's a relative directory, make it
         // relative to the configDir
-        if (this.configDir != null) {
-            if (typeof dir === 'string' && !path.isAbsolute(dir)) {
-                dir = path.join(this.configDir, dir);
-            } else if (typeof dir === 'object' && !path.isAbsolute(dir.src)) {
-                dir.src = path.join(this.configDir, dir.src);
+        let dirMount: dirToMount;
+        if (typeof dir === 'string') {
+            if (!path.isAbsolute(dir) && this.configDir != null) {
+                dirMount = {
+                    src: path.join(this.configDir, dir),
+                    dest: '/'
+                };
+            } else {
+                dirMount = {
+                    src: dir,
+                    dest: '/'
+                };
             }
+        } else if (typeof dir === 'object') {
+            if (!path.isAbsolute(dir.src) && this.configDir != null) {
+                dir.src = path.join(this.configDir, dir.src);
+                dirMount = dir;
+            } else {
+                dirMount = dir;
+            }
+        } else {
+            throw new Error(`addPartialsDir - directory to mount of wrong type ${util.inspect(dir)}`);
         }
         // console.log(`addPartialsDir `, dir);
-        this.#partialDirs.push(dir);
-        this.#renderers.addPartialDir(dir.src ? dir.src : dir);
+        this.#partialDirs.push(dirMount);
+        this.#renderers.addPartialDir(dirMount.src);
         return this;
     }
 
@@ -795,17 +902,33 @@ export class Configuration {
      * @param {string} dir The pathname to use
      * @returns {Configuration}
      */
-    addAssetsDir(dir) {
+    addAssetsDir(dir: dirToMount) {
         // If we have a configDir, and it's a relative directory, make it
         // relative to the configDir
-        if (this.configDir != null) {
-            if (typeof dir === 'string' && !path.isAbsolute(dir)) {
-                dir = path.join(this.configDir, dir);
-            } else if (typeof dir === 'object' && !path.isAbsolute(dir.src)) {
-                dir.src = path.join(this.configDir, dir.src);
+        let dirMount: dirToMount;
+        if (typeof dir === 'string') {
+            if (!path.isAbsolute(dir) && this.configDir != null) {
+                dirMount = {
+                    src: path.join(this.configDir, dir),
+                    dest: '/'
+                };
+            } else {
+                dirMount = {
+                    src: dir,
+                    dest: '/'
+                };
             }
+        } else if (typeof dir === 'object') {
+            if (!path.isAbsolute(dir.src) && this.configDir != null) {
+                dir.src = path.join(this.configDir, dir.src);
+                dirMount = dir;
+            } else {
+                dirMount = dir;
+            }
+        } else {
+            throw new Error(`addAssetsDir - directory to mount of wrong type ${util.inspect(dir)}`);
         }
-        this.#assetsDirs.push(dir);
+        this.#assetsDirs.push(dirMount);
         return this;
     }
 
@@ -816,7 +939,7 @@ export class Configuration {
      * @param {Array} mahafuncs
      * @returns {Configuration}
      */
-    addMahabhuta(mahafuncs) {
+    addMahabhuta(mahafuncs: mahabhuta.MahafuncArray | mahabhuta.MahafuncType) {
         if (typeof mahafuncs === 'undefined' || !mahafuncs) {
             throw new Error(`undefined mahafuncs in ${this.configDir}`);
         }
@@ -831,7 +954,7 @@ export class Configuration {
      * @param {string} dir The pathname to use
      * @returns {Configuration}
      */
-    setRenderDestination(dir) {
+    setRenderDestination(dir: string) {
         // If we have a configDir, and it's a relative directory, make it
         // relative to the configDir
         if (this.configDir != null) {
@@ -854,7 +977,7 @@ export class Configuration {
      * @param value The value to store in the metadata.
      * @returns {Configuration}
      */
-    addMetadata(index, value) {
+    addMetadata(index: string, value: any) {
         var md = this.#metadata;
         md[index] = value;
         return this;
@@ -867,7 +990,7 @@ export class Configuration {
     * @param {string} root_url
     * @returns {Configuration}
     */
-    rootURL(root_url) {
+    rootURL(root_url: string) {
         this.#root_url = root_url;
         return this;
     }
@@ -879,7 +1002,7 @@ export class Configuration {
      * @param {number} concurrency
     * @returns {Configuration}
      */
-    setConcurrency(concurrency) {
+    setConcurrency(concurrency: number) {
         this.#concurrency = concurrency;
         return this;
     }
@@ -891,7 +1014,7 @@ export class Configuration {
      * @param script
      * @returns {Configuration}
      */
-    addHeaderJavaScript(script) {
+    addHeaderJavaScript(script: javaScriptItem) {
         this.#scripts.javaScriptTop.push(script);
         return this;
     }
@@ -903,7 +1026,7 @@ export class Configuration {
      * @param script
      * @returns {Configuration}
      */
-    addFooterJavaScript(script) {
+    addFooterJavaScript(script: javaScriptItem) {
         this.#scripts.javaScriptBottom.push(script);
         return this;
     }
@@ -913,12 +1036,12 @@ export class Configuration {
      * @param script
      * @returns {Configuration}
      */
-    addStylesheet(css) {
+    addStylesheet(css: stylesheetItem) {
         this.#scripts.stylesheets.push(css);
         return this;
     }
 
-    setMahabhutaConfig(cheerio) {
+    setMahabhutaConfig(cheerio?: cheerio.CheerioOptions) {
         this.#cheerio = cheerio;
 
         // For cheerio 1.0.0-rc.10 we need to use this setting.
@@ -927,7 +1050,7 @@ export class Configuration {
         // operation and handling of Mahabhuta tags, we need
         // this setting to be <code>true</code>
         if (!('_useHtmlParser2' in this.#cheerio)) {
-            this.#cheerio._useHtmlParser2 = true;
+            (this.#cheerio as any)._useHtmlParser2 = true;
         }
 
         // console.log(this[_config_cheerio]);
@@ -1012,7 +1135,7 @@ export class Configuration {
         }
     }
 
-    async hookFileAdded(collection, vpinfo) {
+    async hookFileAdded(collection: string, vpinfo: VPathData) {
         // console.log(`hookFileAdded ${collection} ${vpinfo.vpath}`);
         const config = this;
         for (let plugin of config.plugins) {
@@ -1023,7 +1146,7 @@ export class Configuration {
         }
     }
 
-    async hookFileChanged(collection, vpinfo) {
+    async hookFileChanged(collection: string, vpinfo: VPathData) {
         const config = this;
         for (let plugin of config.plugins) {
             if (typeof plugin.onFileChanged !== 'undefined') {
@@ -1033,7 +1156,7 @@ export class Configuration {
         }
     }
 
-    async hookFileUnlinked(collection, vpinfo) {
+    async hookFileUnlinked(collection: string, vpinfo: VPathData) {
         const config = this;
         for (let plugin of config.plugins) {
             if (typeof plugin.onFileUnlinked !== 'undefined') {
@@ -1043,7 +1166,7 @@ export class Configuration {
         }
     }
 
-    async hookFileCacheSetup(collectionnm, collection) {
+    async hookFileCacheSetup(collectionnm: string, collection) {
         const config = this;
         for (let plugin of config.plugins) {
             if (typeof plugin.onFileCacheSetup !== 'undefined') {
@@ -1112,7 +1235,7 @@ export class Configuration {
      * @param {string} name
      * @returns {Plugin}
      */
-    plugin(name) {
+    plugin(name: string) {
         // console.log('config.plugin: '+ util.inspect(this._plugins));
         if (! this.plugins) {
             return undefined;
@@ -1130,7 +1253,7 @@ export class Configuration {
      * @param {string} name
      * @returns {Object}
      */ 
-    pluginData(name) {
+    pluginData(name: string) {
         var pluginDataArray = this.#pluginData;
         if (!(name in pluginDataArray)) {
             pluginDataArray[name] = {};
@@ -1149,10 +1272,10 @@ export class Configuration {
         return false;
     }
 
-    registerRenderer(renderer) {
+    registerRenderer(renderer: Renderer) {
         if (!(renderer instanceof Renderer)) {
             console.error('Not A Renderer '+ util.inspect(renderer));
-            throw new Error(`Not a Renderer ${renderer.name}`);
+            throw new Error(`Not a Renderer ${util.inspect(renderer)}`);
         }
         if (!this.findRendererName(renderer.name)) {
             // renderer.akasha = this.akasha;
@@ -1170,7 +1293,7 @@ export class Configuration {
      * file name to be .xhtml.  We're not checking if the renderer name
      * is already there in case epubtools must use the same renderer name.
      */
-    registerOverrideRenderer(renderer) {
+    registerOverrideRenderer(renderer: Renderer) {
         if (!(renderer instanceof Renderer)) {
             console.error('Not A Renderer '+ util.inspect(renderer));
             throw new Error('Not a Renderer');
@@ -1180,11 +1303,11 @@ export class Configuration {
         this.#renderers.registerOverrideRenderer(renderer);
     }
 
-    findRendererName(name): Renderer {
+    findRendererName(name: string): Renderer {
         return this.#renderers.findRendererName(name);
     }
 
-    findRendererPath(_path): Renderer {
+    findRendererPath(_path: string): Renderer {
         return this.#renderers.findRendererPath(_path);
     }
 
@@ -1193,7 +1316,7 @@ export class Configuration {
     /**
      * Find a Renderer by its extension.
      */
-    findRenderer(name) {
+    findRenderer(name: string) {
         return this.findRendererName(name);
     }
 }

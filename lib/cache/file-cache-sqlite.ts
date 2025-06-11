@@ -24,7 +24,7 @@ import {
 } from 'sqlite3orm';
 
 import { sqdb } from '../sqdb.js';
-import { Configuration } from '../index.js';
+import { Configuration, dirToMount } from '../index.js';
 import fastq from 'fastq';
 
 ///////////// Assets table
@@ -471,7 +471,7 @@ await tagGlueDAO.createIndex('tagglue_name');
 
 // Convert AkashaCMS mount points into the mountpoint
 // used by DirsWatcher
-const remapdirs = dirz => {
+const remapdirs = (dirz: dirToMount[]): dirToWatch[] => {
     return dirz.map(dir => {
         // console.log('document dir ', dir);
         if (typeof dir === 'string') {
@@ -521,7 +521,7 @@ export class BaseFileCache<
 
     #config?: Configuration;
     #name?: string;
-    #dirs?: dirToWatch[];
+    #dirs?: dirToMount[];
     #is_ready: boolean = false;
     #cache_content: boolean;
     #map_renderpath: boolean;
@@ -537,7 +537,7 @@ export class BaseFileCache<
     constructor(
         config: Configuration,
         name: string,
-        dirs: dirToWatch[],
+        dirs: dirToMount[],
         dao: Tdao // BaseDAO<T>
     ) {
         super();
@@ -645,7 +645,7 @@ export class BaseFileCache<
 
         this.#watcher = new DirsWatcher(this.name);
 
-        this.#watcher.on('change', async (name, info) => {
+        this.#watcher.on('change', async (name: string, info: VPathData) => {
             // console.log(`${name} changed ${info.mountPoint} ${info.vpath}`);
             try {
                 if (!this.ignoreFile(info)) {
@@ -662,7 +662,7 @@ export class BaseFileCache<
                 console.error(`FAIL change ${info.vpath} because ${err.stack}`);
             }
         })
-        .on('add', async (name, info) => {
+        .on('add', async (name: string, info: VPathData) => {
             try {
                 // console.log(`${name} add ${info.mountPoint} ${info.vpath}`);
                 if (!this.ignoreFile(info)) {
@@ -679,7 +679,7 @@ export class BaseFileCache<
                 console.error(`FAIL add ${info.vpath} because ${err.stack}`);
             }
         })
-        .on('unlink', async (name, info) => {
+        .on('unlink', async (name: string, info: VPathData) => {
             // console.log(`unlink ${name} ${info.vpath}`);
             try {
                 if (!this.ignoreFile(info)) {
@@ -694,7 +694,7 @@ export class BaseFileCache<
                 console.error(`FAIL unlink ${info.vpath} because ${err.stack}`);
             }
         })
-        .on('ready', async (name) => {
+        .on('ready', async (name: string) => {
             // console.log(`${name} ready`);
             this.#queue.push({
                 code: 'ready',
@@ -1167,7 +1167,7 @@ export class TemplatesFileCache<
     constructor(
         config: Configuration,
         name: string,
-        dirs: dirToWatch[],
+        dirs: dirToMount[],
         dao: Tdao
     ) {
         super(config, name, dirs, dao);
@@ -1277,7 +1277,7 @@ export class DocumentsFileCache
     constructor(
         config: Configuration,
         name: string,
-        dirs: dirToWatch[]
+        dirs: dirToMount[]
     ) {
         super(config, name, dirs, documentsDAO);
     }

@@ -16,10 +16,12 @@
  *  See the License for the specific language governing permissions and
  *  limitations under the License.
  */
+import { VPathData } from '@akashacms/stacked-dirs';
 import * as Renderers from '@akashacms/renderers';
 export * as Renderers from '@akashacms/renderers';
 import { Renderer } from '@akashacms/renderers';
 export { Renderer } from '@akashacms/renderers';
+import * as mahabhuta from 'mahabhuta';
 export * as mahabhuta from 'mahabhuta';
 import * as cheerio from 'cheerio';
 export * as relative from 'relative';
@@ -108,6 +110,64 @@ export declare function generateRSS(config: any, configrss: any, feedData: any, 
  * @see module:Configuration
  */
 /**
+ * Data type describing items in the
+ * javaScriptTop and javaScriptBottom arrays.
+ * The fields correspond to the attributes
+ * of the <script> tag which can be used
+ * either in the top or bottom of
+ * an HTML file.
+ */
+export type javaScriptItem = {
+    href?: string;
+    script?: string;
+    lang?: string;
+};
+export type stylesheetItem = {
+    href?: string;
+    media?: string;
+};
+/**
+ * Defines the structure for directory
+ * mount specification in the Configuration.
+ *
+ * The simple 'string' form says to mount
+ * the named fspath on the root of the
+ * virtual filespace.
+ *
+ * The object form allows us to mount
+ * an fspath into a different location
+ * in the virtual filespace, to ignore
+ * files based on GLOB patterns, and to
+ * include metadata for every file in
+ * a directory tree.
+ *
+ * In the file-cache module, this is
+ * converted to the dirToWatch structure
+ * used by StackedDirs.
+ */
+export type dirToMount = string | {
+    /**
+     * The fspath to mount
+     */
+    src: string;
+    /**
+     * The virtual filespace
+     * location
+     */
+    dest: string;
+    /**
+     * Array of GLOB patterns
+     * of files to ignore
+     */
+    ignore?: string[];
+    /**
+     * An object containing
+     * metadata that's to
+     * apply to every file
+     */
+    baseMetadata?: any;
+};
+/**
  * Configuration of an AkashaRender project, including the input directories,
  * output directory, plugins, and various settings.
  *
@@ -142,10 +202,6 @@ export declare class Configuration {
     get configDir(): string;
     set cacheDir(dirnm: string);
     get cacheDir(): string;
-    get cacheAutosave(): boolean;
-    set cacheAutosave(auto: boolean);
-    get cacheAutoload(): boolean;
-    set cacheAutoload(auto: boolean);
     get akasha(): any;
     documentsCache(): Promise<filecache.DocumentsFileCache>;
     assetsCache(): Promise<filecache.BaseFileCache<filecache.Asset, import("sqlite3orm").BaseDAO<filecache.Asset>>>;
@@ -155,46 +211,67 @@ export declare class Configuration {
      * Add a directory to the documentDirs configuration array
      * @param {string} dir The pathname to use
      */
-    addDocumentsDir(dir: any): this;
-    get documentDirs(): any;
+    addDocumentsDir(dir: dirToMount): this;
+    get documentDirs(): dirToMount[];
     /**
      * Look up the document directory information for a given document directory.
      * @param {string} dirname The document directory to search for
      */
-    documentDirInfo(dirname: any): any;
+    documentDirInfo(dirname: string): string | {
+        /**
+         * The fspath to mount
+         */
+        src: string;
+        /**
+         * The virtual filespace
+         * location
+         */
+        dest: string;
+        /**
+         * Array of GLOB patterns
+         * of files to ignore
+         */
+        ignore?: string[];
+        /**
+         * An object containing
+         * metadata that's to
+         * apply to every file
+         */
+        baseMetadata?: any;
+    };
     /**
      * Add a directory to the layoutDirs configurtion array
      * @param {string} dir The pathname to use
      */
-    addLayoutsDir(dir: any): this;
-    get layoutDirs(): any;
+    addLayoutsDir(dir: dirToMount): this;
+    get layoutDirs(): dirToMount[];
     /**
      * Add a directory to the partialDirs configurtion array
      * @param {string} dir The pathname to use
      * @returns {Configuration}
      */
-    addPartialsDir(dir: any): this;
-    get partialsDirs(): any;
+    addPartialsDir(dir: dirToMount): this;
+    get partialsDirs(): dirToMount[];
     /**
      * Add a directory to the assetDirs configurtion array
      * @param {string} dir The pathname to use
      * @returns {Configuration}
      */
-    addAssetsDir(dir: any): this;
-    get assetDirs(): any;
+    addAssetsDir(dir: dirToMount): this;
+    get assetDirs(): dirToMount[];
     /**
      * Add an array of Mahabhuta functions
      * @param {Array} mahafuncs
      * @returns {Configuration}
      */
-    addMahabhuta(mahafuncs: any): this;
+    addMahabhuta(mahafuncs: mahabhuta.MahafuncArray | mahabhuta.MahafuncType): this;
     get mahafuncs(): any;
     /**
      * Define the directory into which the project is rendered.
      * @param {string} dir The pathname to use
      * @returns {Configuration}
      */
-    setRenderDestination(dir: any): this;
+    setRenderDestination(dir: string): this;
     /** Fetch the declared destination for rendering the project. */
     get renderDestination(): string;
     get renderTo(): string;
@@ -205,43 +282,47 @@ export declare class Configuration {
      * @param value The value to store in the metadata.
      * @returns {Configuration}
      */
-    addMetadata(index: any, value: any): this;
+    addMetadata(index: string, value: any): this;
     get metadata(): any;
     /**
     * Document the URL for a website project.
     * @param {string} root_url
     * @returns {Configuration}
     */
-    rootURL(root_url: any): this;
+    rootURL(root_url: string): this;
     get root_url(): string;
     /**
      * Set how many documents to render concurrently.
      * @param {number} concurrency
     * @returns {Configuration}
      */
-    setConcurrency(concurrency: any): this;
+    setConcurrency(concurrency: number): this;
     get concurrency(): number;
     /**
      * Declare JavaScript to add within the head tag of rendered pages.
      * @param script
      * @returns {Configuration}
      */
-    addHeaderJavaScript(script: any): this;
-    get scripts(): any;
+    addHeaderJavaScript(script: javaScriptItem): this;
+    get scripts(): {
+        stylesheets?: stylesheetItem[];
+        javaScriptTop?: javaScriptItem[];
+        javaScriptBottom?: javaScriptItem[];
+    };
     /**
      * Declare JavaScript to add at the bottom of rendered pages.
      * @param script
      * @returns {Configuration}
      */
-    addFooterJavaScript(script: any): this;
+    addFooterJavaScript(script: javaScriptItem): this;
     /**
      * Declare a CSS Stylesheet to add within the head tag of rendered pages.
      * @param script
      * @returns {Configuration}
      */
-    addStylesheet(css: any): this;
-    setMahabhutaConfig(cheerio: any): void;
-    get mahabhutaConfig(): any;
+    addStylesheet(css: stylesheetItem): this;
+    setMahabhutaConfig(cheerio?: cheerio.CheerioOptions): void;
+    get mahabhutaConfig(): cheerio.CheerioOptions;
     /**
      * Copy the contents of all directories in assetDirs to the render destination.
      */
@@ -254,10 +335,10 @@ export declare class Configuration {
      * Call the onSiteRendered function of any plugin which has that function.
      */
     hookSiteRendered(): Promise<void>;
-    hookFileAdded(collection: any, vpinfo: any): Promise<void>;
-    hookFileChanged(collection: any, vpinfo: any): Promise<void>;
-    hookFileUnlinked(collection: any, vpinfo: any): Promise<void>;
-    hookFileCacheSetup(collectionnm: any, collection: any): Promise<void>;
+    hookFileAdded(collection: string, vpinfo: VPathData): Promise<void>;
+    hookFileChanged(collection: string, vpinfo: VPathData): Promise<void>;
+    hookFileUnlinked(collection: string, vpinfo: VPathData): Promise<void>;
+    hookFileCacheSetup(collectionnm: string, collection: any): Promise<void>;
     hookPluginCacheSetup(): Promise<void>;
     /**
      * use - go through plugins array, adding each to the plugins array in
@@ -280,15 +361,15 @@ export declare class Configuration {
      * @param {string} name
      * @returns {Plugin}
      */
-    plugin(name: any): any;
+    plugin(name: string): any;
     /**
      * Retrieve the pluginData object for the named plugin.
      * @param {string} name
      * @returns {Object}
      */
-    pluginData(name: any): any;
+    pluginData(name: string): any;
     askPluginsLegitLocalHref(href: any): boolean;
-    registerRenderer(renderer: any): void;
+    registerRenderer(renderer: Renderer): void;
     /**
      * Allow an application to override one of the built-in renderers
      * that are initialized below.  The inspiration is epubtools that
@@ -297,14 +378,14 @@ export declare class Configuration {
      * file name to be .xhtml.  We're not checking if the renderer name
      * is already there in case epubtools must use the same renderer name.
      */
-    registerOverrideRenderer(renderer: any): void;
-    findRendererName(name: any): Renderer;
-    findRendererPath(_path: any): Renderer;
+    registerOverrideRenderer(renderer: Renderer): void;
+    findRendererName(name: string): Renderer;
+    findRendererPath(_path: string): Renderer;
     get renderers(): Renderers.Configuration;
     /**
      * Find a Renderer by its extension.
      */
-    findRenderer(name: any): Renderers.Renderer;
+    findRenderer(name: string): Renderers.Renderer;
 }
 declare const module_exports: any;
 export default module_exports;

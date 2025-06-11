@@ -34,6 +34,7 @@ import mahaPartial from 'mahabhuta/maha/partial.js';
 import Renderers from '@akashacms/renderers';
 const NunjucksRenderer = Renderers.NunjucksRenderer;
 import {encode} from 'html-entities';
+import { javaScriptItem } from './index.js';
 
 const pluginName = "akashacms-builtin";
 
@@ -330,7 +331,11 @@ function _doStylesheets(metadata, options) {
     return ret;
 }
 
-function _doJavaScripts(metadata, scripts, options) {
+function _doJavaScripts(
+    metadata,
+    scripts: javaScriptItem[],
+    options
+) {
 	var ret = '';
 	if (!scripts) return ret;
 
