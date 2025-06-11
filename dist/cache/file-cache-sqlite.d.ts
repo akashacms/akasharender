@@ -1,7 +1,7 @@
 import { dirToWatch, VPathData } from '@akashacms/stacked-dirs';
 import EventEmitter from 'events';
 import { BaseDAO } from 'sqlite3orm';
-import { Configuration } from '../index.js';
+import { Configuration, dirToMount } from '../index.js';
 export declare class Asset {
     vpath: string;
     mime: string;
@@ -100,10 +100,10 @@ export declare class BaseFileCache<T extends Asset | Layout | Partial | Document
      * @param name string giving the name for this watcher name
      * @param dao The SQLITE3ORM DAO instance to use
      */
-    constructor(config: Configuration, name: string, dirs: dirToWatch[], dao: Tdao);
+    constructor(config: Configuration, name: string, dirs: dirToMount[], dao: Tdao);
     get config(): Configuration;
     get name(): string;
-    get dirs(): dirToWatch[];
+    get dirs(): dirToMount[];
     set cacheContent(doit: any);
     get gacheContent(): boolean;
     set mapRenderPath(doit: boolean);
@@ -147,7 +147,7 @@ export declare class BaseFileCache<T extends Asset | Layout | Partial | Document
      * @param {*} info
      * @returns
      */
-    fileDirMount(info: any): any;
+    fileDirMount(info: any): dirToWatch;
     /**
      * Should this file be ignored, based on the `ignore` field
      * in the matching `dir` mount entry.
@@ -182,7 +182,7 @@ export declare class BaseFileCache<T extends Asset | Layout | Partial | Document
     findAll(): Promise<T[]>;
 }
 export declare class TemplatesFileCache<T extends Layout | Partial, Tdao extends BaseDAO<T>> extends BaseFileCache<T, Tdao> {
-    constructor(config: Configuration, name: string, dirs: dirToWatch[], dao: Tdao);
+    constructor(config: Configuration, name: string, dirs: dirToMount[], dao: Tdao);
     /**
      * Gather the additional data suitable
      * for Partial and Layout templates.  The
@@ -196,7 +196,7 @@ export declare class TemplatesFileCache<T extends Layout | Partial, Tdao extends
     protected insertDocToDB(info: any): Promise<void>;
 }
 export declare class DocumentsFileCache extends BaseFileCache<Document, TdocumentssDAO> {
-    constructor(config: Configuration, name: string, dirs: dirToWatch[]);
+    constructor(config: Configuration, name: string, dirs: dirToMount[]);
     gatherInfoData(info: any): void;
     protected deleteDocTagGlue(vpath: any): Promise<void>;
     protected addDocTagGlue(vpath: any, tags: any): Promise<void>;
