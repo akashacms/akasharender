@@ -24,6 +24,7 @@ export { Renderer } from '@akashacms/renderers';
 import * as mahabhuta from 'mahabhuta';
 export * as mahabhuta from 'mahabhuta';
 import * as cheerio from 'cheerio';
+export * from './mahafuncs.js';
 export * as relative from 'relative';
 export { Plugin } from './Plugin.js';
 export { render, renderDocument, renderContent } from './render.js';

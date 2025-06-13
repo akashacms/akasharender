@@ -16,11 +16,14 @@
  *  See the License for the specific language governing permissions and
  *  limitations under the License.
  */
+import { Configuration } from "./index.js";
 export declare class Plugin {
     #private;
     constructor(name: any);
     set options(newOptions: any);
     get options(): any;
+    set config(newConfig: Configuration);
+    get config(): Configuration;
     get akasha(): any;
     set akasha(_akasha: any);
     /**

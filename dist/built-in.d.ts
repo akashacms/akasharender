@@ -18,10 +18,11 @@
  */
 import { Plugin } from './Plugin.js';
 import mahabhuta from 'mahabhuta';
+import { Configuration } from './index.js';
 export declare class BuiltInPlugin extends Plugin {
     #private;
     constructor();
-    configure(config: any, options: any): void;
+    configure(config: Configuration, options: any): void;
     get config(): any;
     get resizequeue(): any;
     /**
@@ -42,8 +43,8 @@ export declare class BuiltInPlugin extends Plugin {
     doStylesheets(metadata: any): string;
     doHeaderJavaScript(metadata: any): string;
     doFooterJavaScript(metadata: any): string;
-    addImageToResize(src: any, resizewidth: any, resizeto: any, docPath: any): void;
+    addImageToResize(src: string, resizewidth: number, resizeto: string, docPath: string): void;
     onSiteRendered(config: any): Promise<void>;
 }
-export declare const mahabhutaArray: (options: any) => mahabhuta.MahafuncArray;
+export declare const mahabhutaArray: (options: any, config?: Configuration, akasha?: any, plugin?: Plugin) => mahabhuta.MahafuncArray;
 //# sourceMappingURL=built-in.d.ts.map

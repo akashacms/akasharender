@@ -32,9 +32,8 @@ import mahabhuta from 'mahabhuta';
 import mahaMetadata from 'mahabhuta/maha/metadata.js';
 import mahaPartial from 'mahabhuta/maha/partial.js';
 import Renderers from '@akashacms/renderers';
-const NunjucksRenderer = Renderers.NunjucksRenderer;
 import {encode} from 'html-entities';
-import { javaScriptItem } from './index.js';
+import { Configuration, CustomElement, Munger, PageProcessor, javaScriptItem } from './index.js';
 
 const pluginName = "akashacms-builtin";
 
@@ -48,9 +47,12 @@ export class BuiltInPlugin extends Plugin {
     #config;
     #resize_queue;
 
-	configure(config, options) {
+	configure(config: Configuration, options) {
         this.#config = config;
+        // this.config = config;
+        this.akasha = config.akasha;
         this.options = options ? options : {};
+        this.options.config = config;
         if (typeof this.options.relativizeHeadLinks === 'undefined') {
             this.options.relativizeHeadLinks = true;
         }
@@ -60,7 +62,6 @@ export class BuiltInPlugin extends Plugin {
         if (typeof this.options.relativizeBodyLinks === 'undefined') {
             this.options.relativizeBodyLinks = true;
         }
-        this.options.config = config;
         let moduleDirname = import.meta.dirname;
         // Need this as the place to store Nunjucks macros and templates
         config.addLayoutsDir(path.join(moduleDirname, '..', 'layouts'));
@@ -83,9 +84,9 @@ export class BuiltInPlugin extends Plugin {
             // TODO how to configure this
             // sitemap_title: ....?
         }));
-        config.addMahabhuta(mahabhutaArray(options));
+        config.addMahabhuta(mahabhutaArray(options, config, this.akasha, this));
 
-        const njk = this.config.findRendererName('.html.njk');
+        const njk = this.config.findRendererName('.html.njk') as Renderers.NunjucksRenderer;
         njk.njkenv().addExtension('akstylesheets',
             new stylesheetsExtension(this.config, this, njk)
         );
@@ -151,18 +152,18 @@ export class BuiltInPlugin extends Plugin {
     }
 
     doStylesheets(metadata) {
-    	return _doStylesheets(metadata, this.options);
+    	return _doStylesheets(metadata, this.options, this.config);
     }
 
     doHeaderJavaScript(metadata) {
-    	return _doHeaderJavaScript(metadata, this.options);
+    	return _doHeaderJavaScript(metadata, this.options, this.config);
     }
 
     doFooterJavaScript(metadata) {
-    	return _doFooterJavaScript(metadata, this.options);
+    	return _doFooterJavaScript(metadata, this.options, this.config);
     }
 
-    addImageToResize(src, resizewidth, resizeto, docPath) {
+    addImageToResize(src: string, resizewidth: number, resizeto: string, docPath: string) {
         this.#resize_queue.push({ src, resizewidth, resizeto, docPath });
     }
 
@@ -227,41 +228,46 @@ export class BuiltInPlugin extends Plugin {
 
 }
 
-export const mahabhutaArray = function(options) {
+export const mahabhutaArray = function(
+            options,
+            config?: Configuration,
+            akasha?: any,
+            plugin?: Plugin
+) {
     let ret = new mahabhuta.MahafuncArray(pluginName, options);
-    ret.addMahafunc(new StylesheetsElement());
-    ret.addMahafunc(new HeaderJavaScript());
-    ret.addMahafunc(new FooterJavaScript());
-    ret.addMahafunc(new HeadLinkRelativizer());
-    ret.addMahafunc(new ScriptRelativizer());
-    ret.addMahafunc(new InsertTeaser());
-    ret.addMahafunc(new CodeEmbed());
-    ret.addMahafunc(new AkBodyClassAdd());
-    ret.addMahafunc(new FigureImage());
-    ret.addMahafunc(new img2figureImage());
-    ret.addMahafunc(new ImageRewriter());
-    ret.addMahafunc(new ShowContent());
-    ret.addMahafunc(new SelectElements());
-    ret.addMahafunc(new AnchorCleanup());
+    ret.addMahafunc(new StylesheetsElement(config, akasha, plugin));
+    ret.addMahafunc(new HeaderJavaScript(config, akasha, plugin));
+    ret.addMahafunc(new FooterJavaScript(config, akasha, plugin));
+    ret.addMahafunc(new HeadLinkRelativizer(config, akasha, plugin));
+    ret.addMahafunc(new ScriptRelativizer(config, akasha, plugin));
+    ret.addMahafunc(new InsertTeaser(config, akasha, plugin));
+    ret.addMahafunc(new CodeEmbed(config, akasha, plugin));
+    ret.addMahafunc(new AkBodyClassAdd(config, akasha, plugin));
+    ret.addMahafunc(new FigureImage(config, akasha, plugin));
+    ret.addMahafunc(new img2figureImage(config, akasha, plugin));
+    ret.addMahafunc(new ImageRewriter(config, akasha, plugin));
+    ret.addMahafunc(new ShowContent(config, akasha, plugin));
+    ret.addMahafunc(new SelectElements(config, akasha, plugin));
+    ret.addMahafunc(new AnchorCleanup(config, akasha, plugin));
 
-    ret.addFinalMahafunc(new MungedAttrRemover());
+    ret.addFinalMahafunc(new MungedAttrRemover(config, akasha, plugin));
 
     return ret;
 };
 
-function _doStylesheets(metadata, options) {
+function _doStylesheets(metadata, options, config: Configuration) {
     // console.log(`_doStylesheets ${util.inspect(metadata)}`);
 
     var scripts;
     if (typeof metadata.headerStylesheetsAdd !== "undefined") {
-        scripts = options.config.scripts.stylesheets.concat(metadata.headerStylesheetsAdd);
+        scripts = config.scripts.stylesheets.concat(metadata.headerStylesheetsAdd);
     } else {
-        scripts = options.config.scripts ? options.config.scripts.stylesheets : undefined;
+        scripts = config.scripts ? config.scripts.stylesheets : undefined;
     }
-    // console.log(`ak-stylesheets ${metadata.document.path} ${util.inspect(metadata.headerStylesheetsAdd)} ${util.inspect(options.config.scripts)} ${util.inspect(scripts)}`);
+    // console.log(`ak-stylesheets ${metadata.document.path} ${util.inspect(metadata.headerStylesheetsAdd)} ${util.inspect(config.scripts)} ${util.inspect(scripts)}`);
 
     if (!options) throw new Error('_doStylesheets no options');
-    if (!options.config) throw new Error('_doStylesheets no options.config');
+    if (!config) throw new Error('_doStylesheets no config');
 
     var ret = '';
     if (typeof scripts !== 'undefined') {
@@ -334,13 +340,14 @@ function _doStylesheets(metadata, options) {
 function _doJavaScripts(
     metadata,
     scripts: javaScriptItem[],
-    options
+    options,
+    config: Configuration
 ) {
 	var ret = '';
 	if (!scripts) return ret;
 
     if (!options) throw new Error('_doJavaScripts no options');
-    if (!options.config) throw new Error('_doJavaScripts no options.config');
+    if (!config) throw new Error('_doJavaScripts no config');
 
     for (var script of scripts) {
 		if (!script.href && !script.script) {
@@ -368,8 +375,8 @@ function _doJavaScripts(
                         // console.log(`_doJavaScripts absolute scripthref ${scripthref} in ${util.inspect(metadata.document)} rewrote to ${newHref}`);
                         scripthref = newHref;
                     }
-                    /* if (options.config.root_url) {
-                        let pRootUrl = url.parse(options.config.root_url);
+                    /* if (config.root_url) {
+                        let pRootUrl = url.parse(config.root_url);
                         scripthref = path.normalize(
                                 path.join(pRootUrl.pathname, pHref.pathname)
                         );
@@ -397,8 +404,8 @@ function _doJavaScripts(
         //             // console.log(`_doJavaScripts absolute scripthref ${scripthref} in ${util.inspect(metadata.document)} rewrote to ${newHref}`);
         //             scripthref = newHref;
         //         }
-        //         /* if (options.config.root_url) {
-        //             let pRootUrl = url.parse(options.config.root_url);
+        //         /* if (config.root_url) {
+        //             let pRootUrl = url.parse(config.root_url);
         //             scripthref = path.normalize(
         //                     path.join(pRootUrl.pathname, pHref.pathname)
         //             );
@@ -417,54 +424,54 @@ function _doJavaScripts(
 	return ret;
 }
 
-function _doHeaderJavaScript(metadata, options) {
+function _doHeaderJavaScript(metadata, options, config: Configuration) {
 	var scripts;
 	if (typeof metadata.headerJavaScriptAddTop !== "undefined") {
-		scripts = options.config.scripts.javaScriptTop.concat(metadata.headerJavaScriptAddTop);
+		scripts = config.scripts.javaScriptTop.concat(metadata.headerJavaScriptAddTop);
 	} else {
-		scripts = options.config.scripts ? options.config.scripts.javaScriptTop : undefined;
+		scripts = config.scripts ? config.scripts.javaScriptTop : undefined;
 	}
 	// console.log(`_doHeaderJavaScript ${util.inspect(scripts)}`);
-	// console.log(`_doHeaderJavaScript ${util.inspect(options.config.scripts)}`);
-	return _doJavaScripts(metadata, scripts, options);
+	// console.log(`_doHeaderJavaScript ${util.inspect(config.scripts)}`);
+	return _doJavaScripts(metadata, scripts, options, config);
 }
 
-function _doFooterJavaScript(metadata, options) {
+function _doFooterJavaScript(metadata, options, config: Configuration) {
 	var scripts;
 	if (typeof metadata.headerJavaScriptAddBottom !== "undefined") {
-		scripts = options.config.scripts.javaScriptBottom.concat(metadata.headerJavaScriptAddBottom);
+		scripts = config.scripts.javaScriptBottom.concat(metadata.headerJavaScriptAddBottom);
 	} else {
-		scripts = options.config.scripts ? options.config.scripts.javaScriptBottom : undefined;
+		scripts = config.scripts ? config.scripts.javaScriptBottom : undefined;
 	}
-	return _doJavaScripts(metadata, scripts, options);
+	return _doJavaScripts(metadata, scripts, options, config);
 }
 
-class StylesheetsElement extends mahabhuta.CustomElement {
+class StylesheetsElement extends CustomElement {
 	get elementName() { return "ak-stylesheets"; }
 	async process($element, metadata, setDirty: Function, done?: Function) {
-		let ret =  _doStylesheets(metadata, this.array.options);
+		let ret =  _doStylesheets(metadata, this.array.options, this.config);
         // console.log(`StylesheetsElement `, ret);
         return ret;
 	}
 }
 
-class HeaderJavaScript extends mahabhuta.CustomElement {
+class HeaderJavaScript extends CustomElement {
 	get elementName() { return "ak-headerJavaScript"; }
 	async process($element, metadata, setDirty: Function, done?: Function) {
-		let ret = _doHeaderJavaScript(metadata, this.array.options);
+		let ret = _doHeaderJavaScript(metadata, this.array.options, this.config);
         // console.log(`HeaderJavaScript `, ret);
         return ret;
 	}
 }
 
-class FooterJavaScript extends mahabhuta.CustomElement {
+class FooterJavaScript extends CustomElement {
 	get elementName() { return "ak-footerJavaScript"; }
 	async process($element, metadata, dirty) {
-		return _doFooterJavaScript(metadata, this.array.options);
+		return _doFooterJavaScript(metadata, this.array.options, this.config);
 	}
 }
 
-class HeadLinkRelativizer extends mahabhuta.Munger {
+class HeadLinkRelativizer extends Munger {
     get selector() { return "html head link"; }
     get elementName() { return "html head link"; }
     async process($, $link, metadata, dirty): Promise<string> {
@@ -484,7 +491,7 @@ class HeadLinkRelativizer extends mahabhuta.Munger {
     }
 }
 
-class ScriptRelativizer extends mahabhuta.Munger {
+class ScriptRelativizer extends Munger {
     get selector() { return "script"; }
     get elementName() { return "script"; }
     async process($, $link, metadata, dirty): Promise<string> {
@@ -507,11 +514,11 @@ class ScriptRelativizer extends mahabhuta.Munger {
     }
 }
 
-class InsertTeaser extends mahabhuta.CustomElement {
+class InsertTeaser extends CustomElement {
 	get elementName() { return "ak-teaser"; }
 	async process($element, metadata, dirty) {
         try {
-		return this.array.options.config.akasha.partial(this.array.options.config,
+		return this.akasha.partial(this.config,
                                             "ak_teaser.html.njk", {
 			teaser: typeof metadata["ak-teaser"] !== "undefined"
 				? metadata["ak-teaser"] : metadata.teaser
@@ -523,7 +530,7 @@ class InsertTeaser extends mahabhuta.CustomElement {
 	}
 }
 
-class AkBodyClassAdd extends mahabhuta.PageProcessor {
+class AkBodyClassAdd extends PageProcessor {
 	async process($, metadata, dirty): Promise<string> {
 		if (typeof metadata.akBodyClassAdd !== 'undefined'
 		 && metadata.akBodyClassAdd != ''
@@ -538,7 +545,7 @@ class AkBodyClassAdd extends mahabhuta.PageProcessor {
 	}
 }
 
-class CodeEmbed extends mahabhuta.CustomElement {
+class CodeEmbed extends CustomElement {
     get elementName() { return "code-embed"; }
     async process($element, metadata, dirty) {
         const fn = $element.attr('file-name');
@@ -556,7 +563,7 @@ class CodeEmbed extends mahabhuta.CustomElement {
             txtpath = path.join(path.dirname(metadata.document.renderTo), fn);
         }
 
-        const documents = this.array.options.config.akasha.filecache.documentsCache;
+        const documents = this.akasha.filecache.documentsCache;
         const found = await documents.find(txtpath);
         if (!found) {
             throw new Error(`code-embed file-name ${fn} does not refer to usable file`);
@@ -609,7 +616,7 @@ class CodeEmbed extends mahabhuta.CustomElement {
     }
 }
 
-class FigureImage extends mahabhuta.CustomElement {
+class FigureImage extends CustomElement {
     get elementName() { return "fig-img"; }
     async process($element, metadata, dirty) {
         var template = $element.attr('template');
@@ -622,14 +629,14 @@ class FigureImage extends mahabhuta.CustomElement {
         const width   = $element.attr('width');
         const style   = $element.attr('style');
         const dest    = $element.attr('dest');
-        return this.array.options.config.akasha.partial(
-            this.array.options.config, template, {
+        return this.akasha.partial(
+            this.config, template, {
             href, clazz, id, caption, width, style, dest
         });
     }
 }
 
-class img2figureImage extends mahabhuta.CustomElement {
+class img2figureImage extends CustomElement {
     get elementName() { return 'html body img[figure]'; }
     async process($element, metadata, dirty, done) {
         // console.log($element);
@@ -648,15 +655,15 @@ class img2figureImage extends mahabhuta.CustomElement {
                 ? $element.attr('caption')
                 : "";
         
-        return this.array.options.config.akasha.partial(
-            this.array.options.config, template, {
+        return this.akasha.partial(
+            this.config, template, {
             id, clazz, style, width, href: src, dest, resizewidth, resizeto,
             caption: content
         });
     }
 }
 
-class ImageRewriter extends mahabhuta.Munger {
+class ImageRewriter extends Munger {
     get selector() { return "html body img"; }
     get elementName() { return "html body img"; }
     async process($, $link, metadata, dirty) {
@@ -673,7 +680,7 @@ class ImageRewriter extends mahabhuta.Munger {
         
         if (resizewidth) {
             // Add to a queue that is run at the end 
-            this.array.options.config.plugin(pluginName)
+            this.config.plugin(pluginName)
                 .addImageToResize(src, resizewidth, resizeto, metadata.document.renderTo);
 
             if (resizeto) {
@@ -703,8 +710,8 @@ class ImageRewriter extends mahabhuta.Munger {
         // This does not apply to relative image paths
         // Therefore if it is an absolute local image path, and there is a root_url
         // we must rewrite the src path to start with the root_url
-        if (path.isAbsolute(src) && this.array.options.config.root_url) {
-            let pRootUrl = url.parse(this.array.options.config.root_url);
+        if (path.isAbsolute(src) && this.config.root_url) {
+            let pRootUrl = url.parse(this.config.root_url);
             // Check if the URL has already been rewritten
             if (!src.startsWith(pRootUrl.pathname)) {
                 let newSrc = path.normalize(
@@ -718,7 +725,7 @@ class ImageRewriter extends mahabhuta.Munger {
     }
 }
 
-class ShowContent extends mahabhuta.CustomElement {
+class ShowContent extends CustomElement {
     get elementName() { return "show-content"; }
     async process($element, metadata, dirty) {
         var template = $element.attr('template');
@@ -740,14 +747,14 @@ class ShowContent extends mahabhuta.CustomElement {
             doc2read = href;
         }
         // console.log(`ShowContent ${util.inspect(metadata.document)} ${doc2read}`);
-        const documents = this.array.options.config.akasha.filecache.documentsCache;
+        const documents = this.akasha.filecache.documentsCache;
         const doc = await documents.find(doc2read);
         const data = {
             href, clazz, id, caption, width, style, dest, contentImage,
             document: doc
         };
-        let ret = await this.array.options.config.akasha.partial(
-                this.array.options.config, template, data);
+        let ret = await this.akasha.partial(
+                this.config, template, data);
         // console.log(`ShowContent ${href} ${util.inspect(data)} ==> ${ret}`);
         return ret;
     }
@@ -776,7 +783,7 @@ This was moved into Mahabhuta
 		for (var dprop in data) { d[dprop] = data[dprop]; }
 		d["partialBody"] = txt;
 		log('partial tag fname='+ fname +' attrs '+ util.inspect(data));
-		return render.partial(this.array.options.config, fname, d)
+		return render.partial(this.config, fname, d)
 		.then(html => { return html; })
 		.catch(err => {
 			error(new Error("FAIL partial file-name="+ fname +" because "+ err));
@@ -792,7 +799,7 @@ module.exports.mahabhuta.addMahafunc(new Partial()); */
 //     <element></element>
 // </select-elements>
 //
-class SelectElements extends mahabhuta.Munger {
+class SelectElements extends Munger {
     get selector() { return "select-elements"; }
     get elementName() { return "select-elements"; }
 
@@ -834,16 +841,16 @@ class SelectElements extends mahabhuta.Munger {
     }
 }
 
-class AnchorCleanup extends mahabhuta.Munger {
+class AnchorCleanup extends Munger {
     get selector() { return "html body a[munged!='yes']"; }
     get elementName() { return "html body a[munged!='yes']"; }
 
     async process($, $link, metadata, dirty) {
         var href     = $link.attr('href');
         var linktext = $link.text();
-        const documents = this.array.options.config.akasha.filecache.documentsCache;
+        const documents = this.akasha.filecache.documentsCache;
         // await documents.isReady();
-        const assets = this.array.options.config.akasha.filecache.assetsCache;
+        const assets = this.akasha.filecache.assetsCache;
         // await assets.isReady();
         // console.log(`AnchorCleanup ${href} ${linktext}`);
         if (href && href !== '#') {
@@ -852,7 +859,7 @@ class AnchorCleanup extends mahabhuta.Munger {
             if (!uHref.pathname) return "ok";
 
             /* if (metadata.document.path === 'index.html.md') {
-                console.log(`AnchorCleanup metadata.document.path ${metadata.document.path} href ${href} uHref.pathname ${uHref.pathname} this.array.options.config.root_url ${this.array.options.config.root_url}`);
+                console.log(`AnchorCleanup metadata.document.path ${metadata.document.path} href ${href} uHref.pathname ${uHref.pathname} this.config.root_url ${this.config.root_url}`);
                 console.log($.html());
             } */
 
@@ -913,15 +920,15 @@ class AnchorCleanup extends mahabhuta.Munger {
             //        prefixed with the subdirectory
             //
             // Check to see if href must be updated for config.root_url
-            if (this.array.options.config.root_url) {
-                let pRootUrl = url.parse(this.array.options.config.root_url);
+            if (this.config.root_url) {
+                let pRootUrl = url.parse(this.config.root_url);
                 // Check if the URL has already been rewritten
                 if (!href.startsWith(pRootUrl.pathname)) {
                     let newHref = path.normalize(
                         path.join(pRootUrl.pathname, absolutePath)
                     );
                     $link.attr('href', newHref);
-                    /* if (metadata.document.path === 'index.html.md') console.log(`AnchorCleanup metadata.document.path ${metadata.document.path} href ${href} absolutePath ${absolutePath} this.array.options.config.root_url ${this.array.options.config.root_url} newHref ${newHref}`); * /
+                    /* if (metadata.document.path === 'index.html.md') console.log(`AnchorCleanup metadata.document.path ${metadata.document.path} href ${href} absolutePath ${absolutePath} this.config.root_url ${this.config.root_url} newHref ${newHref}`); * /
                 }
             } 
             */
@@ -940,7 +947,7 @@ class AnchorCleanup extends mahabhuta.Munger {
             // console.log(`AnchorCleanup ${metadata.document.path} ${href} findAsset ${(new Date() - startTime) / 1000} seconds`);
 
             // Ask plugins if the href is okay
-            if (this.array.options.config.askPluginsLegitLocalHref(absolutePath)) {
+            if (this.config.askPluginsLegitLocalHref(absolutePath)) {
                 return "ok";
             }
 
@@ -955,18 +962,18 @@ class AnchorCleanup extends mahabhuta.Munger {
             let found = await documents.find(absolutePath);
             // console.log(`AnchorCleanup findRendersTo ${absolutePath} ${util.inspect(found)}`);
             if (!found) {
-                // console.log(`WARNING: Did not find ${href} in ${util.inspect(this.array.options.config.documentDirs)} in ${metadata.document.path} absolutePath ${absolutePath}`);
+                // console.log(`WARNING: Did not find ${href} in ${util.inspect(this.config.documentDirs)} in ${metadata.document.path} absolutePath ${absolutePath}`);
                 return "ok";
             }
             // console.log(`AnchorCleanup ${metadata.document.path} ${href} findRendersTo ${(new Date() - startTime) / 1000} seconds`);
 
             // If this is a directory, there might be /path/to/index.html so we try for that.
-            // The problem is that this.array.options.config.findRendererPath would fail on just /path/to but succeed
+            // The problem is that this.config.findRendererPath would fail on just /path/to but succeed
             // on /path/to/index.html
             if (found.isDirectory) {
                 found = await documents.find(path.join(absolutePath, "index.html"));
                 if (!found) {
-                    throw new Error(`Did not find ${href} in ${util.inspect(this.array.options.config.documentDirs)} in ${metadata.document.path}`);
+                    throw new Error(`Did not find ${href} in ${util.inspect(this.config.documentDirs)} in ${metadata.document.path}`);
                 }
             }
             // Otherwise look into filling emptiness with title
@@ -983,7 +990,7 @@ class AnchorCleanup extends mahabhuta.Munger {
             }
 
             /*
-            var renderer = this.array.options.config.findRendererPath(found.vpath);
+            var renderer = this.config.findRendererPath(found.vpath);
             // console.log(`AnchorCleanup ${metadata.document.path} ${href} findRendererPath ${(new Date() - startTime) / 1000} seconds`);
             if (renderer && renderer.metadata) {
                 let docmeta = found.docMetadata;
@@ -1021,7 +1028,7 @@ class AnchorCleanup extends mahabhuta.Munger {
  * Removes the <code>munged=yes</code> attribute that is added
  * by <code>AnchorCleanup</code>.
  */
-class MungedAttrRemover extends mahabhuta.Munger {
+class MungedAttrRemover extends Munger {
     get selector() { return 'html body a[munged]'; }
     get elementName() { return 'html body a[munged]'; }
     async process($, $element, metadata, setDirty: Function, done?: Function): Promise<string> {
