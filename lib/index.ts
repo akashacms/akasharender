@@ -40,6 +40,8 @@ export * as mahabhuta from 'mahabhuta';
 import * as cheerio from 'cheerio';
 import mahaPartial from 'mahabhuta/maha/partial.js';
 
+export * from './mahafuncs.js';
+
 import * as relative from 'relative';
 export * as relative from 'relative';
 

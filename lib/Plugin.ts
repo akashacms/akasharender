@@ -17,10 +17,33 @@
  *  limitations under the License.
  */
 
+import { Configuration } from "./index.js";
+
+/*
+ * Ideally, the options object would have a declared data type,
+ * and TypeScript could help us enforce types.
+ *
+ * The base type has a link to the config, and each Plugin
+ * adds its own fields.  In loosey-goosey JavaScript we just
+ * declare a blank object and add fields as we wish.
+ *
+ * I attempted to use this as a base type, then use Union
+ * types in each Plugin.  The type machinations became
+ * impossible, unfortunately.
+ *
+export type PluginBaseOptions = {
+    config?: Configuration
+};
+ *
+ * The solution is adding a new attribute, config.  Any
+ * plugin can now get the config with this.config.
+ */
+
 export class Plugin {
 
     #name: string;
-    #options: any;
+    #options;
+    #config: Configuration;
     #akasha;
 
     constructor(name) {
@@ -29,6 +52,8 @@ export class Plugin {
 
     set options(newOptions) { this.#options = newOptions; }
     get options() { return this.#options; }
+    set config(newConfig) { this.#config = newConfig; }
+    get config(): Configuration { return this.#config; }
     get akasha() { return this.#akasha; }
     set akasha(_akasha) { this.#akasha = _akasha; }
 
