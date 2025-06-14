@@ -2,7 +2,7 @@
 
 /**
  *
- * Copyright 2014-2022 David Herron
+ * Copyright 2014-2025 David Herron
  *
  * This file is part of AkashaCMS (http://akashacms.com/).
  *
