@@ -34,7 +34,7 @@
     "dopublish": "npm publish --access public"
   },
   "engines": {
-    "node": ">=20.x"
+    "node": ">=24.x"
   },
   "main": "dist/index.js",
   "type": "module",
@@ -45,31 +45,34 @@
   "dependencies": {
     "@akashacms/renderers": "^0.9.x",
     "@akashacms/stacked-dirs": "^0.9.x",
-    "commander": "^12.1.x",
-    "debug": "^4.3.x",
-    "fastq": "^1.17.x",
-    "gh-pages": "^6.2.x",
+    "commander": "^14.x",
+    "fastq": "^1.19.x",
+    "gh-pages": "^6.3.x",
     "gray-matter": "^4.x",
-    "highlight.js": "^11.10.x",
-    "html-entities": "^2.5.2",
+    "highlight.js": "^11.11.x",
+    "html-entities": "^2.6.x",
     "mahabhuta": "^0.8.x",
     "micromatch": "^4.0.8",
     "relative": "^3.0.x",
     "rss": "^1.2.x",
-    "sharp": "^0.33.x",
+    "sharp": "^0.34.x",
     "sq3-kv-data-store": "^1.0.x",
     "sqlite-regex": "^0.2.4-alpha.1",
     "sqlite3": "^5.1.7",
-    "sqlite3orm": "^2.7.3",
-    "uuid": "^11.0.x",
-    "zx": "^8.2.1"
+    "sqlite3orm": "^2.7.x",
+    "uuid": "^11.1.x",
+    "zx": "^8.5.x"
   },
   "license": "Apache-2.0",
   "devDependencies": {
-    "@types/node": "^22.15.29",
+    "@types/node": "^24.0.1",
     "typescript": "^5.8.3"
   },
   "peerDependencies": {
     "cheerio": "^1.0.0-rc.12"
+  },
+  "overrides": {
+    "rimraf@<4": "5.0.10",
+    "glob@<9": "10.4.5"
   }
 }
