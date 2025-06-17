@@ -164,6 +164,7 @@ export class BuiltInPlugin extends Plugin {
     }
 
     addImageToResize(src: string, resizewidth: number, resizeto: string, docPath: string) {
+        // console.log(`addImageToResize ${src} resizewidth ${resizewidth} resizeto ${resizeto}`)
         this.#resize_queue.push({ src, resizewidth, resizeto, docPath });
     }
 
@@ -274,11 +275,19 @@ function _doStylesheets(metadata, options, config: Configuration) {
         for (var style of scripts) {
 
             let stylehref = style.href;
-            let pHref = url.parse(style.href, true, true);
+            let uHref = new URL(style.href, 'http://example.com');
             // console.log(`_doStylesheets process ${stylehref}`);
-            if (!pHref.protocol && !pHref.hostname && !pHref.slashes) {
+            if (uHref.origin === 'http://example.com') {
                 // This is a local URL
                 // Only relativize if desired
+
+                // The bit with 'http://example.com' means there
+                // won't be an exception thrown for a local URL.
+                // But, in such a case, uHref.pathname would
+                // start with a slash.  Therefore, to correctly
+                // determine if this URL is absolute we must check
+                // with the original URL string, which is in
+                // the stylehref variable.
                 if (options.relativizeHeadLinks
                  && path.isAbsolute(stylehref)) {
                     /* if (!metadata) {
@@ -365,8 +374,8 @@ function _doJavaScripts(
         const doHref = (href) => {
             if (href) {
                 let scripthref = href;
-                let pHref = url.parse(href, true, true);
-                if (!pHref.protocol && !pHref.hostname && !pHref.slashes) {
+                let uHref = new URL(href, 'http://example.com');
+                if (uHref.origin === 'http://example.com') {
                     // This is a local URL
                     // Only relativize if desired
                     if (options.relativizeScriptLinks
@@ -375,12 +384,6 @@ function _doJavaScripts(
                         // console.log(`_doJavaScripts absolute scripthref ${scripthref} in ${util.inspect(metadata.document)} rewrote to ${newHref}`);
                         scripthref = newHref;
                     }
-                    /* if (config.root_url) {
-                        let pRootUrl = url.parse(config.root_url);
-                        scripthref = path.normalize(
-                                path.join(pRootUrl.pathname, pHref.pathname)
-                        );
-                    } */
                 }
                 return `src="${encode(scripthref)}"`;
             } else {
@@ -389,38 +392,7 @@ function _doJavaScripts(
         };
         let ht = `<script ${doType(script.lang)} ${doHref(script.href)}>${script.script}</script>`;
         ret += ht;
-
-        // let $ = mahabhuta.parse('<script ></script>');
-        // if (script.lang) $('script').attr('type', script.lang);
-        // if (script.href) {
-        //     let scripthref = script.href;
-        //     let pHref = url.parse(script.href, true, true);
-        //     if (!pHref.protocol && !pHref.hostname && !pHref.slashes) {
-        //         // This is a local URL
-        //         // Only relativize if desired
-        //         if (options.relativizeScriptLinks
-        //          && path.isAbsolute(scripthref)) {
-        //             let newHref = relative(`/${metadata.document.renderTo}`, scripthref);
-        //             // console.log(`_doJavaScripts absolute scripthref ${scripthref} in ${util.inspect(metadata.document)} rewrote to ${newHref}`);
-        //             scripthref = newHref;
-        //         }
-        //         /* if (config.root_url) {
-        //             let pRootUrl = url.parse(config.root_url);
-        //             scripthref = path.normalize(
-        //                     path.join(pRootUrl.pathname, pHref.pathname)
-        //             );
-        //         } */
-        //     }
-        //     $('script').attr('src', scripthref);
-        // }
-        // if (script.script) {
-        //     $('script').append(script.script);
-        // }
-        // // Emit only the <script> portion.
-        // // Using .html() emits a full <html><body>...
-        // ret +=  $.html(); // $('script').prop('outerHTML');
-	}
-	// console.log('_doJavaScripts '+ ret);
+    }
 	return ret;
 }
 
@@ -479,8 +451,8 @@ class HeadLinkRelativizer extends Munger {
         if (!this.array.options.relativizeHeadLinks) return;
         let href = $link.attr('href');
 
-        let pHref = url.parse(href, true, true);
-        if (!pHref.protocol && !pHref.hostname && !pHref.slashes) {
+        let uHref = new URL(href, 'http://example.com');
+        if (uHref.origin === 'http://example.com') {
             // It's a local link
             if (path.isAbsolute(href)) {
                 // It's an absolute local link
@@ -501,8 +473,8 @@ class ScriptRelativizer extends Munger {
 
         if (href) {
             // There is a link
-            let pHref = url.parse(href, true, true);
-            if (!pHref.protocol && !pHref.hostname && !pHref.slashes) {
+            let uHref = new URL(href, 'http://example.com');
+            if (uHref.origin === 'http://example.com') {
                 // It's a local link
                 if (path.isAbsolute(href)) {
                     // It's an absolute local link
@@ -671,8 +643,14 @@ class ImageRewriter extends Munger {
 
         // We only do rewrites for local images
         let src = $link.attr('src');
-        const uSrc = url.parse(src, true, true);
-        if (uSrc.protocol || uSrc.slashes) return "ok";
+        // For local URLs, this new URL call will
+        // make uSrc.origin === http://example.com
+        // Hence, if some other domain appears
+        // then we konw it's not a local image.
+        const uSrc = new URL(src, 'http://example.com');
+        if (uSrc.origin !== 'http://example.com') {
+            return "ok";
+        }
         
         // Are we asked to resize the image?
         const resizewidth = $link.attr('resize-width');
@@ -701,26 +679,6 @@ class ImageRewriter extends Munger {
             src = newSrc;
         }
 
-        /*
-        // The idea here is for every local image src to be an absolute URL
-        // That then requires every local image src to be prefixed with any
-        // subdirectory contained in config.root_url
-        // 
-        // Check to see if src must be updated for config.root_url
-        // This does not apply to relative image paths
-        // Therefore if it is an absolute local image path, and there is a root_url
-        // we must rewrite the src path to start with the root_url
-        if (path.isAbsolute(src) && this.config.root_url) {
-            let pRootUrl = url.parse(this.config.root_url);
-            // Check if the URL has already been rewritten
-            if (!src.startsWith(pRootUrl.pathname)) {
-                let newSrc = path.normalize(
-                    path.join(pRootUrl.pathname, src)
-                );
-                $link.attr('src', newSrc);
-            }
-        }
-        */
         return "ok";
     }
 }
@@ -854,8 +812,8 @@ class AnchorCleanup extends Munger {
         // await assets.isReady();
         // console.log(`AnchorCleanup ${href} ${linktext}`);
         if (href && href !== '#') {
-            var uHref = url.parse(href, true, true);
-            if (uHref.protocol || uHref.slashes) return "ok";
+            const uHref = new URL(href, 'http://example.com');
+            if (uHref.origin !== 'http://example.com') return "ok";
             if (!uHref.pathname) return "ok";
 
             /* if (metadata.document.path === 'index.html.md') {
@@ -911,27 +869,6 @@ class AnchorCleanup extends Munger {
                 $link.attr('href', newHref);
                 // console.log(`AnchorCleanup de-absolute href ${href} in ${util.inspect(metadata.document)} to ${newHref}`);
             }
-
-            /*
-            // The idea for this section is to 
-            //     a) ensure all relative paths are made absolute
-            //     b) therefore all absolute paths when config.root_url
-            //        is for a nested subdirectory must have the path
-            //        prefixed with the subdirectory
-            //
-            // Check to see if href must be updated for config.root_url
-            if (this.config.root_url) {
-                let pRootUrl = url.parse(this.config.root_url);
-                // Check if the URL has already been rewritten
-                if (!href.startsWith(pRootUrl.pathname)) {
-                    let newHref = path.normalize(
-                        path.join(pRootUrl.pathname, absolutePath)
-                    );
-                    $link.attr('href', newHref);
-                    /* if (metadata.document.path === 'index.html.md') console.log(`AnchorCleanup metadata.document.path ${metadata.document.path} href ${href} absolutePath ${absolutePath} this.config.root_url ${this.config.root_url} newHref ${newHref}`); * /
-                }
-            } 
-            */
 
             // Look to see if it's an asset file
             let foundAsset;

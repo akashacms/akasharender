@@ -1421,11 +1421,11 @@ export class DocumentsFileCache
 
                 // Compute the URL this document will render to
                 if (this.config.root_url) {
-                    let pRootUrl = url.parse(this.config.root_url);
-                    pRootUrl.pathname = path.normalize(
-                            path.join(pRootUrl.pathname, info.metadata.document.renderTo)
+                    let uRootUrl = new URL(this.config.root_url, 'http://example.com');
+                    uRootUrl.pathname = path.normalize(
+                            path.join(uRootUrl.pathname, info.metadata.document.renderTo)
                     );
-                    info.metadata.rendered_url = url.format(pRootUrl);
+                    info.metadata.rendered_url = uRootUrl.toString();
                 } else {
                     info.metadata.rendered_url = info.metadata.document.renderTo;
                 }
