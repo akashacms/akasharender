@@ -44,15 +44,15 @@
     "akasharender": "dist/cli.js"
   },
   "dependencies": {
-    "@akashacms/renderers": "../renderers",
-    "@akashacms/stacked-dirs": "../stacked-directories",
+    "@akashacms/renderers": "akashacms/rendering-engines",
+    "@akashacms/stacked-dirs": "akashacms/stacked-directories",
     "commander": "^14.x",
     "fastq": "^1.19.x",
     "gh-pages": "^6.3.x",
     "gray-matter": "^4.x",
     "highlight.js": "^11.11.x",
     "html-entities": "^2.6.x",
-    "mahabhuta": "../mahabhuta",
+    "mahabhuta": "^0.9.x",
     "micromatch": "^4.0.8",
     "relative": "^3.0.x",
     "rss": "^1.2.x",
