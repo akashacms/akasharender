@@ -1,6 +1,7 @@
 ---
 layout: default-once.html.njk
 title: Code embed
+publicationDate: 2021-10-16
 ---
 
 Test using `file-name` only, using CSS, with relative path

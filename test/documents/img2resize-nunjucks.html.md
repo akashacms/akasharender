@@ -1,6 +1,7 @@
 ---
 title: Converting image to figure/image test
 layout: default-once.html.njk
+publicationDate: 2021-10-29
 ---
 
 This image should be left alone

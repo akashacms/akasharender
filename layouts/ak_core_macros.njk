@@ -1,13 +1,19 @@
 {% macro stylesheets() -%}
-{{ config.plugin("akashacms-builtin").doStylesheets({ document: document, headerStylesheetsAdd: headerStylesheetsAdd }) }}
+{# {{ config.plugin("akashacms-builtin").doStylesheets({ document: document, headerStylesheetsAdd: headerStylesheetsAdd }) }} #}
+{% akstylesheets %}
+{% endakstylesheets %}
 {%- endmacro %}
 
 {% macro headerJavaScript() -%}
-{{ config.plugin("akashacms-builtin").doHeaderJavaScript({ document: document, headerJavaScriptAddTop: headerJavaScriptAddTop }) }}
+{# {{ config.plugin("akashacms-builtin").doHeaderJavaScript({ document: document, headerJavaScriptAddTop: headerJavaScriptAddTop }) }} #}
+{% akheaderjs %}
+{% endakheaderjs %}
 {%- endmacro %}
 
 {% macro footerJavaScript() -%}
-{{ config.plugin("akashacms-builtin").doFooterJavaScript({ document: document, headerJavaScriptAddBottom: headerJavaScriptAddBottom }) }}
+{# {{ config.plugin("akashacms-builtin").doFooterJavaScript({ document: document, headerJavaScriptAddBottom: headerJavaScriptAddBottom }) }} #}
+{% akfooterjs %}
+{% endakfooterjs %}
 {%- endmacro %}
 
 {% macro rssHeaderMeta(href) -%}

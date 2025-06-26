@@ -1,6 +1,7 @@
 ---
 layout: default-once.html.liquid
 title: Show Content
+publicationDate: 2021-11-14
 ---
 
 <show-content id="simple" href="/shown-content.html"></show-content>

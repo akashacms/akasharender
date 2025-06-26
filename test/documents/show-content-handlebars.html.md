@@ -1,6 +1,7 @@
 ---
 layout: default-once.html.handlebars
 title: Show Content
+publicationDate: 2021-11-13
 ---
 
 <show-content id="simple" href="/shown-content.html"></show-content>

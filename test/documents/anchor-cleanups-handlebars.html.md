@@ -1,6 +1,7 @@
 ---
 layout: default-once.html.handlebars
 title: Anchor cleanups
+publicationDate: 2021-10-01
 ---
 
 <a href="http://external.url" id="not-affected"></a>

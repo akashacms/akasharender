@@ -1,6 +1,7 @@
 ---
 layout: default-once.html.njk
 title: Show Content
+publicationDate: 2021-11-15
 ---
 
 <show-content id="simple" href="/shown-content.html"></show-content>

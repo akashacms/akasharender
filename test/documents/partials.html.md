@@ -1,6 +1,7 @@
 ---
 layout: default.html.ejs
 title: Partials
+publicationDate: 2021-11-11
 ---
 
 <partial file-name='helloworld.html'></partial>

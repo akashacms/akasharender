@@ -1,7 +1,9 @@
 // This config file is for testing badly formatted documents
 // The documents-bad directory should only contain documents with bad formatting
 
-const akasha   = require('../index');
+(async () => {
+
+const akasha   = await import('../dist/index.js');
 
 config = new akasha.Configuration();
 config.rootURL("https://example.akashacms.com");
@@ -50,3 +52,9 @@ config.setConcurrency(5);
 config.prepare();
 
 module.exports = config;
+
+
+})()
+.catch(err => {
+    console.error(err.stack);
+});

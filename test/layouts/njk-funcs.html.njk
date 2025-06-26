@@ -13,8 +13,12 @@
 <title>{{ title | escape }}</title>
 {% import "ak_core_macros.njk" as ak_core with context %}
 
-{{ ak_core.stylesheets() }}
-{{ ak_core.headerJavaScript() }}
+{# {{ ak_core.stylesheets() }} #}
+{% akstylesheets %}
+{% endakstylesheets %}
+{# {{ ak_core.headerJavaScript() }} #}
+{% akheaderjs %}
+{% endakheaderjs %}
 {{ ak_core.rssHeaderMeta("/rss-for-header.xml") }}
 {{ ak_core.externalStylesheet("http://external.site/foo.css") }}
 {{ ak_core.DNSPrefetch("we must have control", [ "foo1.com", "foo2.com", "foo3.com" ] )}}
@@ -36,6 +40,8 @@
     {{ content }}
 </article>
 
-{{ ak_core.footerJavaScript() }}
+{# {{ ak_core.footerJavaScript() }} #}
+{% akfooterjs %}
+{% endakfooterjs %}
 </body>
 </html>

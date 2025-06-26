@@ -15,6 +15,7 @@ AkashaRender has several built-in rendering engines.  You don't need to do anyth
 Class | Type | Produces | Extension 
 ------|------|----------|-----------
 MarkdownRenderer | Markdown | HTML | `example.html.md`
+MarkdocRenderer | Markdoc | HTML | `example.html.markdoc`
 AsciidocRenderer | AsciiDoc | HTML | `example.html.adoc`
 EJSRenderer | EJS | HTML or PHP | `example.html.ejs` or `example.php.ejs`
 LiquidRenderer | Liquid | HTML | `example.html.liquid`
@@ -25,7 +26,7 @@ JSONRenderer | JSON | HTML | `example.html.json`
 
 Using one of these is very simple.  Just add a file into a _documents_ directory with a matching filename extension, and follow the format outlined in [](3-create-content.html).
 
-Both MarkdownRenderer and EJSRenderer share HTML rendering code via the HTMLRenderer class.  The layout template processing algorithm, and the use of Mahabhuta for custom DOM processing, are both implemented in HTMLRenderer.
+Several engines like MarkdownRenderer and EJSRenderer share HTML rendering code via the HTMLRenderer class.  The layout template processing algorithm, and the use of Mahabhuta for custom DOM processing, are both implemented in HTMLRenderer.
 
 # Creating and adding a new rendering engine
 
@@ -52,18 +53,13 @@ akasha.registerRenderer(new FooBarHTMLRenderer());
 
 ## Renderer class methods
 
-The Renderer class has a few simple methods for you to implement.  It may be useful to study the source code:
+The rendering engines, and the _Renderer_ class, are defined in the `@akashacms/renderers` package.  This package is designed so it could possibly be used by other content management systems, but was created by extracting code that was originally developed for AkashaCMS.
 
-* AsciidocRenderer: [akashacms/akasharender/render-asciidoc.js](https://github.com/akashacms/akasharender/blob/master/render-asciidoc.js)
-* CSSLESSRenderer: [akashacms/akasharender/render-cssless.js](https://github.com/akashacms/akasharender/blob/master/render-cssless.js)
-* EJSRenderer: [akashacms/akasharender/render-ejs.js](https://github.com/akashacms/akasharender/blob/master/render-ejs.js)
-* LiquidRenderer: [akashacms/akasharender/render-liquid.js](https://github.com/akashacms/akasharender/blob/master/render-liquid.js)
-* NunjucksRenderer: [akashacms/akasharender/render-nunjucks.js](https://github.com/akashacms/akasharender/blob/master/render-nunjucks.js)
-* HandlebarsRenderer: [akashacms/akasharender/render-handlebars.js](https://github.com/akashacms/akasharender/blob/master/render-handlebars.js)
-* MarkdownRenderer: [akashacms/akasharender/render-md.js](https://github.com/akashacms/akasharender/blob/master/render-md.js)
-* JSONRenderer: [akashacms/akasharender/render-json.js](https://github.com/akashacms/akasharender/blob/master/render-json.js)
-* HTMLRenderer: [akashacms/akasharender/HTMLRenderer.js](https://github.com/akashacms/akasharender/blob/master/HTMLRenderer.js)
-* Renderer: [akashacms/akasharender/Renderer.js](https://github.com/akashacms/akasharender/blob/master/Renderer.js)
+The source code is at:  https://github.com/akashacms/rendering-engines
+
+The documentation website is at: https://akashacms.github.io/rendering-engines/index.html
+
+Each Renderer is defined by a subclass of the Renderer class.  There are plenty of rendering engines defined in the package, and it is easy to create your own if desired.
 
 The Renderer constructor identifies the _name_ of the Renderer, and the regular expression used to match filenames:
 
