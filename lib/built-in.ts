@@ -816,6 +816,8 @@ class AnchorCleanup extends Munger {
             if (uHref.origin !== 'http://example.com') return "ok";
             if (!uHref.pathname) return "ok";
 
+            // console.log(`AnchorCleanup is local ${href} ${linktext} uHref ${uHref.pathname}`);
+
             /* if (metadata.document.path === 'index.html.md') {
                 console.log(`AnchorCleanup metadata.document.path ${metadata.document.path} href ${href} uHref.pathname ${uHref.pathname} this.config.root_url ${this.config.root_url}`);
                 console.log($.html());
@@ -840,11 +842,12 @@ class AnchorCleanup extends Munger {
 
             let absolutePath;
 
-            if (!path.isAbsolute(uHref.pathname)) {
-                absolutePath = path.join(path.dirname(metadata.document.path), uHref.pathname);
-                // console.log(`***** AnchorCleanup FIXED href to ${uHref.pathname}`);
+            if (!path.isAbsolute(href)) {
+                absolutePath = path.join(path.dirname(metadata.document.path), href);
+                // console.log(`AnchorCleanup href ${href} uHref.pathname ${uHref.pathname} not absolute, absolutePath ${absolutePath}`);
             } else {
-                absolutePath = uHref.pathname;
+                absolutePath = href;
+                // console.log(`AnchorCleanup href ${href} uHref.pathname ${uHref.pathname} absolute, absolutePath ${absolutePath}`);
             }
 
             // The idea for this section is to ensure all local href's are 
@@ -877,7 +880,8 @@ class AnchorCleanup extends Munger {
             } catch (e) {
                 foundAsset = undefined;
             }
-            if (foundAsset) { // && foundAsset.length > 0) {
+            if (foundAsset) {
+                // console.log(`AnchorCleanup is asset ${absolutePath}`);
                 return "ok";
             }
 
@@ -885,6 +889,7 @@ class AnchorCleanup extends Munger {
 
             // Ask plugins if the href is okay
             if (this.config.askPluginsLegitLocalHref(absolutePath)) {
+                // console.log(`AnchorCleanup is legit local href ${absolutePath}`);
                 return "ok";
             }
 
@@ -896,10 +901,13 @@ class AnchorCleanup extends Munger {
             }
 
             // Does it exist in documents dir?
+            if (absolutePath === '/') {
+                absolutePath = '/index.html';
+            }
             let found = await documents.find(absolutePath);
             // console.log(`AnchorCleanup findRendersTo ${absolutePath} ${util.inspect(found)}`);
             if (!found) {
-                // console.log(`WARNING: Did not find ${href} in ${util.inspect(this.config.documentDirs)} in ${metadata.document.path} absolutePath ${absolutePath}`);
+                console.log(`WARNING: Did not find ${href} in ${util.inspect(this.config.documentDirs)} in ${metadata.document.path} absolutePath ${absolutePath}`);
                 return "ok";
             }
             // console.log(`AnchorCleanup ${metadata.document.path} ${href} findRendersTo ${(new Date() - startTime) / 1000} seconds`);
@@ -921,8 +929,10 @@ class AnchorCleanup extends Munger {
                 $link.attr('title', docmeta.title);
             }
             if (docmeta && docmeta.title) {
+                // console.log(`AnchorCleanup changed link text ${href} to ${docmeta.title}`);
                 $link.text(docmeta.title);
             } else {
+                // console.log(`AnchorCleanup changed link text ${href} to ${href}`);
                 $link.text(href);
             }
 
