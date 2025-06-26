@@ -1,6 +1,7 @@
 ---
 layout: default-once.html.njk
 title: Figure/Image Formatted with Liquid template
+publicationDate: 2021-10-21
 ---
 
 <fig-img href="/simple-fig-img.jpg"></fig-img>

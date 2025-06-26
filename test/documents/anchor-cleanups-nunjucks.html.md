@@ -1,6 +1,7 @@
 ---
 layout: default-once.html.njk
 title: Anchor cleanups
+publicationDate: 2021-10-03
 ---
 
 <a href="http://external.url" id="not-affected"></a>

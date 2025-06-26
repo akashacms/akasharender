@@ -11,8 +11,12 @@
 <meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
 <title>{{ title | escape }}</title>
-<ak-stylesheets></ak-stylesheets>
-<ak-headerJavaScript></ak-headerJavaScript>
+{# <ak-stylesheets></ak-stylesheets> #}
+{% akstylesheets %}
+{% endakstylesheets %}
+{# <ak-headerJavaScript></ak-headerJavaScript> #}
+{% akheaderjs %}
+{% endakheaderjs %}
 <rss-header-meta href="/rss-for-header.xml"></rss-header-meta>
 <external-stylesheet href="http://external.site/foo.css"></external-stylesheet>
 <dns-prefetch 
@@ -32,6 +36,8 @@
     {{ content }}
 </article>
 
-<ak-footerJavaScript></ak-footerJavaScript>
+{# <ak-footerJavaScript></ak-footerJavaScript> #}
+{% akfooterjs %}
+{% endakfooterjs %}
 </body>
 </html>

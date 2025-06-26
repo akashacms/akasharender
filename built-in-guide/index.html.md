@@ -9,6 +9,22 @@ AkashaRender includes a "built-in" plugin with custom tags useful for any target
 
 There's nothing to do, the built-in plugin is, well, built-in to AkashaRender.
 
+# Nunjucks macros
+
+This plugin makes macros available for Nunjucks templates.  To use these add this to your page template(s):
+
+```html
+{% import "ak_core_macros.njk" as ak_core with context %}
+```
+
+With that, macros can be invoked this way:
+
+```html
+{{ ak_core.rssHeaderMeta("/rss-for-header.xml") }}
+```
+
+
+
 # Simplification for `figure/img` tags
 
 This construct is recommended in the HTML5 world for its microformat goodness
@@ -136,6 +152,19 @@ headerStylesheetsAdd:
 ---
 ```
 
+For Nunjucks templates, this custom tag can be used:
+
+```html
+{% akstylesheets %}
+{% endakstylesheets %}
+```
+
+Also available is this macro:
+
+```html
+{{ ak_core.stylesheets() }}
+```
+
 # JavaScript
 
 JavaScript tags can be added either at the top of the page, in the `<head>` section, or at the bottom of the page, depending on your preferences.  AkashaRender supports declaring the JavaScript files to be put in which section.
@@ -173,6 +202,23 @@ headerJavaScriptAddTop:
 ```
 
 This specifies JavaScript at the top of the page, use `headerJavaScriptAddBottom` for JavaScript at the bottom of the page.
+
+
+For Nunjucks templates, this custom tag can be used:
+
+```html
+
+{# header JS #}
+
+{% akheaderjs %}
+{% endakheaderjs %}
+
+{# footer JS #}
+
+{% akfooterjs %}
+{% endakfooterjs %}
+```
+
 
 # Teaser content
 

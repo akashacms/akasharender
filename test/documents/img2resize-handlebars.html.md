@@ -1,6 +1,7 @@
 ---
 title: Converting image to figure/image test
 layout: default-once.html.handlebars
+publicationDate: 2021-10-27
 ---
 
 This image should be left alone

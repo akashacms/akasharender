@@ -2,6 +2,7 @@
 layout: default.html.ejs
 title: JSON example
 JSONFormatter: json-format.html.ejs
+publicationDate: 2021-11-04
 ---
 {
     "Row1": "value 1",

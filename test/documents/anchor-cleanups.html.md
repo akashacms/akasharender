@@ -1,6 +1,7 @@
 ---
 layout: default.html.ejs
 title: Anchor cleanups
+publicationDate: 2021-10-05
 ---
 
 <a href="http://external.url" id="not-affected"></a>

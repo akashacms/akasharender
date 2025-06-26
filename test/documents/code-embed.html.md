@@ -1,6 +1,7 @@
 ---
 layout: default.html.ejs
 title: Code embed
+publicationDate: 2021-10-17
 ---
 
 Test using `file-name` only, using CSS, with relative path

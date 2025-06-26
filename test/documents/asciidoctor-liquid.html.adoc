@@ -3,6 +3,7 @@ layout: default-once.html.liquid
 title: Asciidoctor Test
 note: Cobbled together from See http://asciidoctor.org documentation
 attributeName:  attribute Value From metaData LiNe
+publicationDate: 2021-10-07
 theTeaser: |
   <p>This is a paragraph in a long attribute.</p>
 

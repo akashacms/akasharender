@@ -1,6 +1,6 @@
 {
   "name": "akasharender",
-  "version": "0.8.3",
+  "version": "0.9.2",
   "description": "Rendering support for generating static HTML websites or EPUB eBooks",
   "keywords": [
     "content management system",
@@ -17,52 +17,63 @@
     "blog",
     "akashacms"
   ],
+  "author": {
+    "name": "David Herron",
+    "email": "david@davidherron.com",
+    "url": "http://akashacms.com"
+  },
   "homepage": "https://akashacms.com/akasharender/toc.html",
+  "license": "Apache-2.0",
   "repository": {
     "type": "git",
     "url": "git://github.com/akashacms/akasharender.git"
   },
-  "engines": {
-    "node": ">=12.2.1"
-  },
-  "main": "index.js",
-  "bin": {
-    "akasharender": "cli.js"
-  },
-  "dependencies": {
-    "@akashacms/stacked-dirs": "akashacms/stacked-directories",
-    "asciidoctor.js": "^1.5.x",
-    "commander": "^7.1.x",
-    "debug": "^4.3.x",
-    "ejs": "^3.1.x",
-    "fastq": "^1.11.x",
-    "forerunnerdb": "^2.0.22",
-    "fs-extra": ">=7.0.x",
-    "gh-pages": "^3.1.x",
-    "gray-matter": "^4.x",
-    "handlebars": "^4.7.x",
-    "highlight.js": "^11.3.x",
-    "less": ">=3.12.x",
-    "liquidjs": "^9.28.x",
-    "mahabhuta": "0.8.x",
-    "markdown-it": "^12.x",
-    "minimatch": "^3.0.4",
-    "nunjucks": "^3.2.x",
-    "oembetter": "^1.0.x",
-    "relative": "^3.0.x",
-    "rss": "^1.2.x",
-    "sharp": "^0.29.x",
-    "uuid": "^8.3.x"
-  },
-  "devDependencies": {},
   "scripts": {
+    "watch": "tsc -w",
+    "build": "tsc",
     "dotest": "cd test && npm test",
     "dopublish": "npm publish --access public"
   },
-  "author": {
-    "name": "David Herron",
-    "email": "david@davidherron.com",
-    "url": "http://davidherron.com"
+  "engines": {
+    "node": ">=24.x"
   },
-  "license": "ISC"
+  "main": "dist/index.js",
+  "type": "module",
+  "types": "dist/index.js",
+  "bin": {
+    "akasharender": "dist/cli.js"
+  },
+  "dependencies": {
+    "@akashacms/renderers": "akashacms/rendering-engines",
+    "@akashacms/stacked-dirs": "akashacms/stacked-directories",
+    "commander": "^14.x",
+    "fastq": "^1.19.x",
+    "gh-pages": "^6.3.x",
+    "gray-matter": "^4.x",
+    "highlight.js": "^11.11.x",
+    "html-entities": "^2.6.x",
+    "mahabhuta": "^0.9.x",
+    "micromatch": "^4.0.8",
+    "relative": "^3.0.x",
+    "rss": "^1.2.x",
+    "sharp": "^0.34.x",
+    "sq3-kv-data-store": "^1.0.x",
+    "sqlite-regex": "^0.2.4-alpha.1",
+    "sqlite3": "^5.1.7",
+    "sqlite3orm": "^2.7.x",
+    "uuid": "^11.1.x",
+    "zx": "^8.5.x"
+  },
+  "devDependencies": {
+    "@types/node": "^24.0.1",
+    "typescript": "^5.8.3"
+  },
+  "peerDependencies": {
+    "cheerio": "^1.1.x",
+    "got": "^14.4.x"
+  },
+  "overrides": {
+    "rimraf@<4": "5.0.10",
+    "glob@<9": "10.4.5"
+  }
 }
