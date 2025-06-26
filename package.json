@@ -69,7 +69,8 @@
     "typescript": "^5.8.3"
   },
   "peerDependencies": {
-    "cheerio": "^1.1.x"
+    "cheerio": "^1.1.x",
+    "got": "^14.4.x"
   },
   "overrides": {
     "rimraf@<4": "5.0.10",
