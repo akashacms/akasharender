@@ -1481,9 +1481,28 @@ export class DocumentsFileCache
     }
 
     protected async deleteDocTagGlue(vpath) {
-        await tagGlueDAO.deleteAll({
-            docvpath: vpath
-        } as Where<TagGlue>);
+        try {
+            await tagGlueDAO.deleteAll({
+                docvpath: vpath
+            } as Where<TagGlue>);
+        } catch (err) {
+            // ignore
+            // This can throw an error like:
+            // documentsCache ERROR {
+            //     code: 'changed',
+            //     name: 'documents',
+            //     vpath: '_mermaid/render3356739382.mermaid',
+            //     error: Error: delete from 'TAGGLUE' failed: nothing changed
+            //      ... stack trace
+            // }
+            // In such a case there is no tagGlue for the document.
+            // This "error" is spurious.
+            //
+            // TODO Is there another query to run that will
+            // not throw an error if nothing was changed?
+            // In other words, this could hide a legitimate
+            // error.
+        }
     }
 
     protected async addDocTagGlue(vpath, tags) {
