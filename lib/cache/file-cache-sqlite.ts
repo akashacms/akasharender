@@ -2166,6 +2166,10 @@ export class DocumentsFileCache
             });
         }
 
+        const regexSQL = {
+            or: []
+        };
+
         // This is as a special favor to
         // @akashacms/plugins-blog-podcast.  The
         // blogtag metadata value is expensive to
@@ -2175,6 +2179,22 @@ export class DocumentsFileCache
         // SQL query on a field where there
         // can be an index.
         if (
+            typeof options.blogtags !== 'undefined'
+         && typeof options.blogtags === 'string'
+        ) {
+            throw new Error(`search ERROR invalid blogtags array ${util.inspect(options.blogtags)}`);
+        }
+        if (
+            typeof options.blogtags !== 'undefined'
+         && Array.isArray(options.blogtags)
+        ) {
+            for (const blogtag of options.blogtags) {
+                regexSQL.or.push({
+                    blogtag: { eq: blogtag }
+                });
+            }
+        }
+        else if (
             typeof options.blogtag === 'string'
         ) {
             selector.and.push({
@@ -2200,9 +2220,6 @@ export class DocumentsFileCache
         //     `});
         // }
 
-        const regexSQL = {
-            or: []
-        };
         if (
             typeof options.pathmatch === 'string'
         ) {
@@ -2310,7 +2327,7 @@ export class DocumentsFileCache
             delete selector.and;
         }
 
-        // console.log(selector);
+        // console.log(util.inspect(selector.and, false, 10));
 
         // Select based on things we can query
         // directly from  the Document object.
@@ -2320,8 +2337,10 @@ export class DocumentsFileCache
                 selector
             );
         } catch (err: any) {
-            throw new Error(`DocumentsFileCache.search caught error in selectAll with selector ${util.inspect(selector)} - ${err.message}`);
+            throw new Error(`DocumentsFileCache.search caught error in selectAll with selector ${util.inspect(selector, false, 10)} - ${err.message}`);
         }
+
+        // console.log(result1.length);
 
         // If the search options include layout(s)
         // we check docMetadata.layout
