@@ -88,11 +88,6 @@ export declare class Document {
 }
 type TdocumentssDAO = BaseDAO<Document>;
 export declare const documentsDAO: BaseDAO<Document>;
-declare class TagGlue {
-    docvpath: string;
-    tagName: string;
-}
-export declare const tagGlueDAO: BaseDAO<TagGlue>;
 /**
  * Type for return from paths method.  The fields here
  * are whats in the Asset/Layout/Partial classes above
@@ -217,7 +212,7 @@ export declare class DocumentsFileCache extends BaseFileCache<Document, Tdocumen
     constructor(config: Configuration, name: string, dirs: dirToMount[]);
     gatherInfoData(info: any): void;
     protected deleteDocTagGlue(vpath: any): Promise<void>;
-    protected addDocTagGlue(vpath: any, tags: any): Promise<void>;
+    protected addDocTagGlue(vpath: string, tags: string | string[]): Promise<void>;
     protected updateDocInDB(info: any): Promise<void>;
     protected insertDocToDB(info: any): Promise<void>;
     handleUnlinked(name: any, info: any): Promise<void>;

@@ -44,6 +44,7 @@ import {
 import { sqdb } from '../sqdb.js';
 import { Configuration, dirToMount } from '../index.js';
 import fastq from 'fastq';
+import { TagGlue } from './tag-glue.js';
 
 ///////////// Assets table
 
@@ -443,49 +444,8 @@ await documentsDAO.createIndex('docs_dirname');
 await documentsDAO.createIndex('docs_parentDir');
 await documentsDAO.createIndex('docs_blogtag');
 
-@table({ name: 'TAGGLUE' })
-class TagGlue {
-
-    @field({ name: 'docvpath', dbtype: 'TEXT' })
-    // @fk('tag_docvpath', 'DOCUMENTS', 'vpath')
-    @index('tagglue_vpath')
-    docvpath: string;
-
-    @field({ name: 'tagName', dbtype: 'TEXT' })
-    // @fk('tag_slug', 'TAGS', 'slug')
-    @index('tagglue_name')
-    tagName: string;
-}
-
-await schema().createTable(sqdb, 'TAGGLUE');
-export const tagGlueDAO = new BaseDAO<TagGlue>(TagGlue, sqdb);
-
-await tagGlueDAO.createIndex('tagglue_vpath');
-await tagGlueDAO.createIndex('tagglue_name');
-
-// @table({ name: 'TAGS' })
-// class Tag {
-//     @field({
-//         name: 'tagname',
-//         dbtype: 'TEXT'
-//     })
-//     tagname: string;
-
-//     @id({
-//         name: 'slug', dbtype: 'TEXT'
-//     })
-//     @index('tag_slug')
-//     slug: string;
-
-//     @field({
-//         name: 'description', dbtype: 'TEXT'
-//     })
-//     description?: string;
-// }
-
-// await schema().createTable(sqdb, 'TAGS');
-// const tagsDAO = new BaseDAO<Tag>(Tag, sqdb);
-
+const tglue = new TagGlue();
+tglue.init(sqdb._db);
 
 // Convert AkashaCMS mount points into the mountpoint
 // used by DirsWatcher
@@ -1482,9 +1442,7 @@ export class DocumentsFileCache
 
     protected async deleteDocTagGlue(vpath) {
         try {
-            await tagGlueDAO.deleteAll({
-                docvpath: vpath
-            } as Where<TagGlue>);
+            await tglue.deleteTagGlue(vpath);
         } catch (err) {
             // ignore
             // This can throw an error like:
@@ -1505,14 +1463,16 @@ export class DocumentsFileCache
         }
     }
 
-    protected async addDocTagGlue(vpath, tags) {
-        for (const tag of tags) {
-            const glue = await tagGlueDAO.insert({
-                docvpath: vpath,
-                tagName: tag
-            });
-            // console.log('addDocTagGlue', glue);
+    protected async addDocTagGlue(vpath: string, tags: string | string[]) {
+        if (typeof tags !== 'string'
+         && !Array.isArray(tags)
+        ) {
+            throw new Error(`addDocTagGlue must be given a tags array, was given: ${util.inspect(tags)}`);
         }
+        await tglue.addTagGlue(vpath, 
+            Array.isArray(tags)
+            ? tags
+            : [ tags ]);
     }
 
     protected async updateDocInDB(info) {
@@ -1544,10 +1504,8 @@ export class DocumentsFileCache
 
         await this.dao.update(docInfo);
 
-        await this.deleteDocTagGlue(docInfo.vpath);
-        await this.addDocTagGlue(
-            docInfo.vpath, docInfo.tags
-        );
+        await tglue.deleteTagGlue(docInfo.vpath);
+        await tglue.addTagGlue(docInfo.vpath, docInfo.tags);
     }
 
     protected async insertDocToDB(info: any) {
@@ -1584,7 +1542,7 @@ export class DocumentsFileCache
 
     async handleUnlinked(name: any, info: any): Promise<void> {
         await super.handleUnlinked(name, info);
-        await this.deleteDocTagGlue(info.vpath);
+        tglue.deleteTagGlue(info.vpath);
     }
 
     async indexChain(_fpath) {
@@ -1947,37 +1905,15 @@ export class DocumentsFileCache
         // [ { vpath: 'teaser-content.html.md' } ]
         // [ 'teaser-content.html.md' ]
 
-        let tagstring = ` ( ${tags.map(t => {
-            return `'${t.indexOf("'") >= 0
-                ? t.replaceAll("'", "''")
-                : t}'`;
-        }).join(',')} ) `;
-
         // console.log(`documentsWithTag ${util.inspect(tags)} ${tagstring}`);
 
-        // ${tagstring} is an encoding of the tags passed as
-        // parameters as something SQLITE can use with an IN operator.
-        //
-        //  WHERE tagName IN ( 'Tag1', 'Tag2' )
-        //
-        // When the tag names have single or double quotes some special
-        // care is required as discussed above. 
+        const vpaths = await tglue.pathsForTag(tags);
+        
+        // console.log(vpaths);
 
-        const res = await this.dao.sqldb.all(`
-            SELECT DISTINCT docvpath AS vpath
-            FROM TAGGLUE
-            WHERE tagName IN ${tagstring}
-        `);
-
-        // console.log(res);
-
-        if (!Array.isArray(res)) {
-            throw new Error(`documentsWithTag non-Array result ${util.inspect(res)}`);
+        if (!Array.isArray(vpaths)) {
+            throw new Error(`documentsWithTag non-Array result ${util.inspect(vpaths)}`);
         }
-
-        const vpaths = res.map(r => {
-            return r.vpath;
-        });
 
         return vpaths;
     }
@@ -1990,56 +1926,8 @@ export class DocumentsFileCache
      * @returns 
      */
     async tags() {
-        // const res = await this.dao.sqldb.all(`
-        //     SELECT
-        //         DISTINCT json_extract(docMetadata, '$.tags') AS tags
-        //     FROM DOCUMENTS, json_each(tags)
-        // `) as unknown as Array<{
-        //     tags: string[]
-        // }>;
-
-        const res = await this.dao.sqldb.all(`
-            SELECT DISTINCT tagName FROM TAGGLUE
-        `) as unknown as Array<{
-            tagName: string
-        }>;
-
-        const tags = res.map(tag => {
-            return tag.tagName
-        });
-
-        // console.log(res);
-
-        // The query above produces this result:
-        //
-        // {
-        //     tags: '["Tag1","Tag2","Tag3"]'
-        // },
-        // {
-        //     tags: '["Tag-string-1","Tag-string-2","Tag-string-3"]'
-        // }
-        //
-        // In other words, the tags array arrives
-        // as JSON which we must parse.
-
-        // const tags = new Set();
-        // for (const item of res) {
-        //     if (!('tags' in item)) continue;
-        //     let tagsP = [];
-        //     if (typeof item.tags === 'string') {
-        //         tagsP = JSON.parse(item.tags);
-        //     } else if (Array.isArray(item.tags)) {
-        //         tagsP = item.tags;
-        //     }
-        //     for (const tag of tagsP) {
-        //         tags.add(tag);
-        //     }
-        // }
-
-        // The Set class made sure to weed out
-        // duplicate tags.  With Array.from
-        // we can make the set into an array
-        // which can be sorted.
+        const tags = await tglue.tags();
+        
         const ret = Array.from(tags);
         return ret.sort((a: string, b: string) => {
             var tagA = a.toLowerCase();
@@ -2114,7 +2002,7 @@ export class DocumentsFileCache
             } else if (Array.isArray(options.mime)) {
                 selector.and.push({
                     mime: {
-                        in: options.mime
+                        isIn: options.mime
                     }
                 });
             } /* else {
@@ -2188,11 +2076,11 @@ export class DocumentsFileCache
             typeof options.blogtags !== 'undefined'
          && Array.isArray(options.blogtags)
         ) {
-            for (const blogtag of options.blogtags) {
-                regexSQL.or.push({
-                    blogtag: { eq: blogtag }
-                });
-            }
+            selector.and.push({
+                blogtag: {
+                    isIn: options.blogtags
+                }
+            });
         }
         else if (
             typeof options.blogtag === 'string'
@@ -2327,7 +2215,7 @@ export class DocumentsFileCache
             delete selector.and;
         }
 
-        // console.log(util.inspect(selector.and, false, 10));
+        console.log(util.inspect(selector.and, false, 10));
 
         // Select based on things we can query
         // directly from  the Document object.
@@ -2340,7 +2228,7 @@ export class DocumentsFileCache
             throw new Error(`DocumentsFileCache.search caught error in selectAll with selector ${util.inspect(selector, false, 10)} - ${err.message}`);
         }
 
-        // console.log(result1.length);
+        console.log(result1.length);
 
         // If the search options include layout(s)
         // we check docMetadata.layout
