@@ -695,6 +695,138 @@ export class BaseFileCache<
         info.renderPath = info.vpath;
     }
 
+    protected cvtRowToObj(obj: any) {
+        throw new Error(`BaseFileCache.cvtRowToObj must be overridden`);
+    }
+
+    protected cvtRowToObjBASE(obj: any, dest: any): void {
+
+        if (typeof obj !== 'object') {
+            throw new Error(`BaseFileCache.cvtRowToObjBASE must receive an object, got ${util.inspect(obj)}`);
+        }
+        if (typeof obj.vpath !== 'undefined') {
+            if (typeof obj.vpath !== 'string') {
+                throw new Error(`BaseFileCache.cvtRowToObjBASE must have a vpath, got ${util.inspect(obj)}`);
+            } else {
+                dest.vpath = obj.vpath;
+            }
+        }
+        if (typeof obj.mime !== 'undefined'
+         && obj.mime !== null
+        ) {
+            if (typeof obj.mime !== 'string') {
+                throw new Error(`BaseFileCache.cvtRowToObjBASE must have a mime, got ${util.inspect(obj)}`);
+            } else {
+                dest.mime = obj.mime;
+            }
+        }
+        if (typeof obj.mounted !== 'undefined') {
+            if (typeof obj.mounted !== 'string') {
+                throw new Error(`BaseFileCache.cvtRowToObjBASE must have a mounted, got ${util.inspect(obj)}`);
+            } else {
+                dest.mounted = obj.mounted;
+            }
+        }
+        if (typeof obj.mountPoint !== 'undefined') {
+            if (typeof obj.mountPoint !== 'string') {
+                throw new Error(`BaseFileCache.cvtRowToObjBASE must have a mountPoint, got ${util.inspect(obj)}`);
+            } else {
+                dest.mountPoint = obj.mountPoint;
+            }
+        }
+        if (typeof obj.pathInMounted !== 'undefined') {
+            if (typeof obj.pathInMounted !== 'string') {
+                throw new Error(`BaseFileCache.cvtRowToObjBASE must have a pathInMounted, got ${util.inspect(obj)}`);
+            } else {
+                dest.pathInMounted = obj.pathInMounted;
+            }
+        }
+        if (typeof obj.fspath !== 'undefined') {
+            if (typeof obj.fspath !== 'string') {
+                throw new Error(`BaseFileCache.cvtRowToObjBASE must have a fspath, got ${util.inspect(obj)}`);
+            } else {
+                dest.fspath = obj.fspath;
+            }
+        }
+        if (typeof obj.renderPath !== 'undefined') {
+            if (typeof obj.renderPath !== 'string') {
+                throw new Error(`BaseFileCache.cvtRowToObjBASE must have a renderPath, got ${util.inspect(obj)}`);
+            } else {
+                dest.renderPath = obj.renderPath;
+            }
+        }
+        if (typeof obj.mtimeMs !== 'undefined') {
+            if (typeof obj.mtimeMs !== 'string') {
+                throw new Error(`BaseFileCache.cvtRowToObjBASE must have a mtimeMs, got ${util.inspect(obj)}`);
+            } else {
+                dest.mtimeMs = obj.mtimeMs;
+            }
+        }
+        if (typeof obj.info !== 'undefined') {
+            if (typeof obj.info !== 'string') {
+                throw new Error(`BaseFileCache.cvtRowToObjBASE must have a info, got ${util.inspect(obj)}`);
+            } else {
+                dest.info = JSON.parse(obj.info);
+            }
+        }
+
+    }
+
+    /**
+     * Find an info object based on vpath and mounted.
+     *
+     * @param vpath 
+     * @param mounted 
+     * @returns 
+     */
+    protected async findPathMounted(vpath: string, mounted: string) {
+        
+        const found = await this.dao.sqldb.all(`
+            SELECT vpath, mounted
+            FROM ${this.dao.table.quotedName}
+            WHERE 
+            vpath = $vpath AND mounted = $mounted
+        `, {
+            $vpath: vpath,
+            $mounted: mounted
+        });
+        const mapped = <any[]>found.map(item => {
+            return this.cvtRowToObj(item);
+        });
+        for (const item of mapped) {
+            this.gatherInfoData(item);
+        }
+        return mapped;
+    }
+
+    /**
+     * Find an info object by the vpath.
+     *
+     * @param vpath 
+     * @returns 
+     */
+    protected async findByPath(vpath: string) {
+
+        // console.log(`findByPath ${this.dao.table.quotedName} ${vpath}`);
+
+        const found = await this.dao.sqldb.all(`
+            SELECT *
+            FROM ${this.dao.table.quotedName}
+            WHERE 
+            vpath = $vpath OR renderPath = $vpath
+        `, {
+            $vpath: vpath
+        });
+
+        const mapped = <any[]>found.map(item => {
+            return this.cvtRowToObj(item);
+        });
+        for (const item of mapped) {
+            this.gatherInfoData(item);
+        }
+        return mapped;
+    }
+
     async handleChanged(name, info) {
         // console.log(`PROCESS ${name} handleChanged`, info.vpath);
         if (this.ignoreFile(info)) {
@@ -709,10 +841,12 @@ export class BaseFileCache<
         this.gatherInfoData(info);
         info.stack = undefined;
 
-        const result = await this.dao.selectAll({
-            vpath: { eq: info.vpath },
-            mounted: { eq: info.mounted }
-        } as Filter<T>);
+        const result = await this.findPathMounted(info.vpath, info.mounted);
+
+        // const result = await this.dao.selectAll({
+        //     vpath: { eq: info.vpath },
+        //     mounted: { eq: info.mounted }
+        // } as Filter<T>);
 
         if (
             !Array.isArray(result)
@@ -1002,18 +1136,24 @@ export class BaseFileCache<
 
         const fcache = this;
 
-        const result1 = await this.dao.selectAll({
-            or: [
-                { vpath: { eq: fpath }},
-                { renderPath: { eq: fpath }}
-            ]
-        } as Filter<T>);
+        const result1 = await this.findByPath(fpath);
+
+        // const result1 = await this.dao.selectAll({
+        //     or: [
+        //         { vpath: { eq: fpath }},
+        //         { renderPath: { eq: fpath }}
+        //     ]
+        // } as Filter<T>);
 
         // console.log(`find ${_fpath} ${fpath} ==> result1 ${util.inspect(result1)} `);
 
-        const result2 = result1.filter(item => {
+        const result2 = <any[]>result1.filter(item => {
             return !(fcache.ignoreFile(item));
         });
+
+        // for (const result of result2) {
+        //     this.gatherInfoData(result);
+        // }
 
         // console.log(`find ${_fpath} ${fpath} ==> result2 ${util.inspect(result2)} `);
 
@@ -1122,19 +1262,48 @@ export class BaseFileCache<
         return undefined;
     }
 
+    // TODO Is this function used anywhere?
     async findAll() {
 
         const fcache = this;
 
-        const result1 = await this.dao.selectAll({
-        } as Filter<T>);
+        // const result1 = await this.dao.selectAll({
+        // } as Filter<T>);
+
+        const result1 = await this.dao.sqldb.all(`
+            SELECT * FROM ${this.dao.table.quotedName}
+        `, {});
 
         const result2 = result1.filter(item => {
             // console.log(`findAll ?ignore? ${item.vpath}`);
             return !(fcache.ignoreFile(item));
         });
-        return result2;
+        const result3 = result2.map(item => {
+            return this.cvtRowToObj(item);
+        })
+        return result3;
     }
+}
+
+export class AssetsFileCache<
+    T extends Asset,
+    Tdao extends BaseDAO<T>
+> extends BaseFileCache<T, Tdao> {
+    constructor(
+        config: Configuration,
+        name: string,
+        dirs: dirToMount[],
+        dao: Tdao
+    ) {
+        super(config, name, dirs, dao);
+    }
+
+    protected cvtRowToObj(obj: any): Asset {
+        const ret: Asset = new Asset();
+        this.cvtRowToObjBASE(obj, ret);
+        return ret;
+    }
+
 }
 
 export class TemplatesFileCache<
@@ -1146,9 +1315,65 @@ export class TemplatesFileCache<
         config: Configuration,
         name: string,
         dirs: dirToMount[],
-        dao: Tdao
+        dao: Tdao,
+        type: "layout" | "partial"
     ) {
         super(config, name, dirs, dao);
+        this.#type = type;
+    }
+
+    // Because this class serves two purposes, Layout
+    // and Partials, this flag helps to distinguish.
+    // Any place, like cvtRowToObj, which needs to know
+    // which is which can use these getters to do
+    // the right thing.
+
+    #type: "layout" | "partial";
+    get isLayout() { return this.#type === "layout"; }
+    get isPartial() { return this.#type === "partial"; }
+
+    protected cvtRowToObj(obj: any): Layout | Partial {
+        const ret: Layout | Partial = 
+                this.isLayout ? new Layout() : new Partial();
+        this.cvtRowToObjBASE(obj, ret);
+
+        if (typeof obj.docMetadata !== 'undefined'
+         && obj.docMetadata !== null
+        ) {
+            if (typeof obj.docMetadata !== 'string') {
+                throw new Error(`TemplatesFileCache.cvtRowToObj must have a docMetadata, got ${util.inspect(obj)}`);
+            } else {
+                ret.docMetadata = obj.docMetadata;
+            }
+        }
+        if (typeof obj.docContent !== 'undefined'
+         && obj.docContent !== null
+        ) {
+            if (typeof obj.docContent !== 'string') {
+                throw new Error(`TemplatesFileCache.cvtRowToObj must have a docContent, got ${util.inspect(obj)}`);
+            } else {
+                ret.docContent = obj.docContent;
+            }
+        }
+        if (typeof obj.docBody !== 'undefined'
+         && obj.docBody !== null
+        ) {
+            if (typeof obj.docBody !== 'string') {
+                throw new Error(`TemplatesFileCache.cvtRowToObj must have a docBody, got ${util.inspect(obj)}`);
+            } else {
+                ret.docBody = obj.docBody;
+            }
+        }
+        if (typeof obj.metadata !== 'undefined'
+         && obj.metadata !== null
+        ) {
+            if (typeof obj.metadata !== 'string') {
+                throw new Error(`TemplatesFileCache.cvtRowToObj must have a metadata, got ${util.inspect(obj)}`);
+            } else {
+                ret.metadata = obj.metadata;
+            }
+        }
+        return ret;
     }
 
     /**
@@ -1258,6 +1483,49 @@ export class DocumentsFileCache
         dirs: dirToMount[]
     ) {
         super(config, name, dirs, documentsDAO);
+    }
+
+    protected cvtRowToObj(obj: any): Document {
+        const ret: Document = new Document();
+        this.cvtRowToObjBASE(obj, ret);
+
+        if (typeof obj.docMetadata !== 'undefined'
+         && obj.docMetadata !== null
+        ) {
+            if (typeof obj.docMetadata !== 'string') {
+                throw new Error(`DocumentsFileCache.cvtRowToObj must have a docMetadata, got ${util.inspect(obj)}`);
+            } else {
+                ret.docMetadata = obj.docMetadata;
+            }
+        }
+        if (typeof obj.docContent !== 'undefined'
+         && obj.docContent !== null
+        ) {
+            if (typeof obj.docContent !== 'string') {
+                throw new Error(`DocumentsFileCache.cvtRowToObj must have a docContent, got ${util.inspect(obj)}`);
+            } else {
+                ret.docContent = obj.docContent;
+            }
+        }
+        if (typeof obj.docBody !== 'undefined'
+         && obj.docBody !== null
+        ) {
+            if (typeof obj.docBody !== 'string') {
+                throw new Error(`DocumentsFileCache.cvtRowToObj must have a docBody, got ${util.inspect(obj)}`);
+            } else {
+                ret.docBody = obj.docBody;
+            }
+        }
+        if (typeof obj.metadata !== 'undefined'
+         && obj.metadata !== null
+        ) {
+            if (typeof obj.metadata !== 'string') {
+                throw new Error(`DocumentsFileCache.cvtRowToObj must have a metadata, got ${util.inspect(obj)}`);
+            } else {
+                ret.metadata = obj.metadata;
+            }
+        }
+        return ret;
     }
 
     gatherInfoData(info) {
@@ -2215,7 +2483,7 @@ export class DocumentsFileCache
             delete selector.and;
         }
 
-        console.log(util.inspect(selector.and, false, 10));
+        // console.log(util.inspect(selector.and, false, 10));
 
         // Select based on things we can query
         // directly from  the Document object.
@@ -2228,7 +2496,7 @@ export class DocumentsFileCache
             throw new Error(`DocumentsFileCache.search caught error in selectAll with selector ${util.inspect(selector, false, 10)} - ${err.message}`);
         }
 
-        console.log(result1.length);
+        // console.log(result1.length);
 
         // If the search options include layout(s)
         // we check docMetadata.layout
@@ -2449,7 +2717,7 @@ export class DocumentsFileCache
     // https://www.npmjs.com/package/sqlite-regex
 }
 
-export var assetsCache: BaseFileCache< Asset, typeof assetsDAO>;
+export var assetsCache: AssetsFileCache< Asset, typeof assetsDAO>;
 export var partialsCache: TemplatesFileCache<Partial, typeof partialsDAO>;
 export var layoutsCache: TemplatesFileCache<Layout, typeof layoutsDAO>;
 export var documentsCache: DocumentsFileCache;
@@ -2458,7 +2726,7 @@ export async function setup(
     config: Configuration
 ): Promise<void> {
 
-    assetsCache = new BaseFileCache<Asset, TassetsDAO>(
+    assetsCache = new AssetsFileCache<Asset, TassetsDAO>(
         config,
         'assets',
         config.assetDirs,
@@ -2476,7 +2744,8 @@ export async function setup(
         config,
         'partials',
         config.partialsDirs,
-        partialsDAO
+        partialsDAO,
+        "partial"
     );
     await partialsCache.setup();
 
@@ -2490,7 +2759,8 @@ export async function setup(
         config,
         'layouts',
         config.layoutDirs,
-        layoutsDAO
+        layoutsDAO,
+        "layout"
     );
     await layoutsCache.setup();
 

@@ -129,6 +129,23 @@ export declare class BaseFileCache<T extends Asset | Layout | Partial | Document
      */
     setup(): Promise<void>;
     gatherInfoData(info: T): void;
+    protected cvtRowToObj(obj: any): void;
+    protected cvtRowToObjBASE(obj: any, dest: any): void;
+    /**
+     * Find an info object based on vpath and mounted.
+     *
+     * @param vpath
+     * @param mounted
+     * @returns
+     */
+    protected findPathMounted(vpath: string, mounted: string): Promise<any[]>;
+    /**
+     * Find an info object by the vpath.
+     *
+     * @param vpath
+     * @returns
+     */
+    protected findByPath(vpath: string): Promise<any[]>;
     handleChanged(name: any, info: any): Promise<void>;
     protected updateDocInDB(info: any): Promise<void>;
     /**
@@ -192,10 +209,18 @@ export declare class BaseFileCache<T extends Asset | Layout | Partial | Document
      * @returns
      */
     findSync(_fpath: any): VPathData | undefined;
-    findAll(): Promise<T[]>;
+    findAll(): Promise<void[]>;
+}
+export declare class AssetsFileCache<T extends Asset, Tdao extends BaseDAO<T>> extends BaseFileCache<T, Tdao> {
+    constructor(config: Configuration, name: string, dirs: dirToMount[], dao: Tdao);
+    protected cvtRowToObj(obj: any): Asset;
 }
 export declare class TemplatesFileCache<T extends Layout | Partial, Tdao extends BaseDAO<T>> extends BaseFileCache<T, Tdao> {
-    constructor(config: Configuration, name: string, dirs: dirToMount[], dao: Tdao);
+    #private;
+    constructor(config: Configuration, name: string, dirs: dirToMount[], dao: Tdao, type: "layout" | "partial");
+    get isLayout(): boolean;
+    get isPartial(): boolean;
+    protected cvtRowToObj(obj: any): Layout | Partial;
     /**
      * Gather the additional data suitable
      * for Partial and Layout templates.  The
@@ -210,6 +235,7 @@ export declare class TemplatesFileCache<T extends Layout | Partial, Tdao extends
 }
 export declare class DocumentsFileCache extends BaseFileCache<Document, TdocumentssDAO> {
     constructor(config: Configuration, name: string, dirs: dirToMount[]);
+    protected cvtRowToObj(obj: any): Document;
     gatherInfoData(info: any): void;
     protected deleteDocTagGlue(vpath: any): Promise<void>;
     protected addDocTagGlue(vpath: string, tags: string | string[]): Promise<void>;
@@ -344,7 +370,7 @@ export declare class DocumentsFileCache extends BaseFileCache<Document, Tdocumen
      */
     search(options: any): Promise<Array<Document>>;
 }
-export declare var assetsCache: BaseFileCache<Asset, typeof assetsDAO>;
+export declare var assetsCache: AssetsFileCache<Asset, typeof assetsDAO>;
 export declare var partialsCache: TemplatesFileCache<Partial, typeof partialsDAO>;
 export declare var layoutsCache: TemplatesFileCache<Layout, typeof layoutsDAO>;
 export declare var documentsCache: DocumentsFileCache;
