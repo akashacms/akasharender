@@ -946,10 +946,18 @@ export class BaseFileCache<
 
         await this.config.hookFileUnlinked(name, info);
 
-        await this.#dao.deleteAll({
-            vpath: { eq: info.vpath },
-            mounted: { eq: info.mounted }
-        } as Where<T>);
+        await this.#dao.sqldb.run(`
+            DELETE FROM ${this.dao.table.quotedName}
+            WHERE
+            vpath = $vpath AND mounted = $mounted
+        `, {
+            $vpath: info.vpath,
+            $mounted: info.mounted
+        });
+        // await this.#dao.deleteAll({
+        //     vpath: { eq: info.vpath },
+        //     mounted: { eq: info.mounted }
+        // } as Where<T>);
     }
 
     async handleReady(name) {
