@@ -819,6 +819,12 @@ describe('Documents cache', function() {
         }
     })
 
+    // For these next three, the dirname field
+    // had been compared to '.' rather than '/'.
+    // The find function had not been calling
+    // the gatherInfoData function.  That function
+    // converts dirname=. into dirname=/
+    
     it('should find /index.html.md', async function() {
         const found = await filecache.documentsCache.find('/index.html.md');
 
@@ -829,7 +835,7 @@ describe('Documents cache', function() {
         assert.equal(found.pathInMounted, 'index.html.md');
         assert.equal(found.vpath, 'index.html.md');
         assert.equal(found.renderPath, 'index.html');
-        assert.equal(found.dirname, '.');
+        assert.equal(found.dirname, '/');
     });
 
     it('should find index.html.md', async function() {
@@ -841,7 +847,7 @@ describe('Documents cache', function() {
         assert.equal(found.pathInMounted, 'index.html.md');
         assert.equal(found.vpath, 'index.html.md');
         assert.equal(found.renderPath, 'index.html');
-        assert.equal(found.dirname, '.');
+        assert.equal(found.dirname, '/');
     });
 
     it('should find index.html', async function() {
@@ -853,7 +859,7 @@ describe('Documents cache', function() {
         assert.equal(found.pathInMounted, 'index.html.md');
         assert.equal(found.vpath, 'index.html.md');
         assert.equal(found.renderPath, 'index.html');
-        assert.equal(found.dirname, '.');
+        assert.equal(found.dirname, '/');
     });
 
     function filezContains(siblings, vpath) {
