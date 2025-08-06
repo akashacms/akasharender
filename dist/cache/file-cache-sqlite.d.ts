@@ -331,7 +331,6 @@ export declare class DocumentsFileCache extends BaseFileCache<Document, Tdocumen
      *
      * @returns
      */
-    documentsWithTags(): Promise<Document[]>;
     documentsWithTag(tagnm: string | string[]): Promise<Array<string>>;
     /**
      * Get an array of tags used by all documents.

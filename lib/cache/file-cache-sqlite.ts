@@ -2087,30 +2087,30 @@ export class DocumentsFileCache
      *
      * @returns 
      */
-    async documentsWithTags() {
-        const docs = new Array<Document>();
-        await this.dao.selectEach(
-            (err, doc) => {
-                if (doc
-                 && doc.docMetadata
-                 && doc.docMetadata.tags
-                 && Array.isArray(
-                    doc.docMetadata.tags
-                 )
-                 && doc.docMetadata.tags.length >= 1
-                ) {
-                    docs.push(doc);
-                }
-            },
-            {
-                rendersToHTML: { eq: true },
-                info: { isNotNull: true }
-            } as Where<Document>
-        );
+    // async documentsWithTags() {
+    //     const docs = new Array<Document>();
+    //     await this.dao.selectEach(
+    //         (err, doc) => {
+    //             if (doc
+    //              && doc.docMetadata
+    //              && doc.docMetadata.tags
+    //              && Array.isArray(
+    //                 doc.docMetadata.tags
+    //              )
+    //              && doc.docMetadata.tags.length >= 1
+    //             ) {
+    //                 docs.push(doc);
+    //             }
+    //         },
+    //         {
+    //             rendersToHTML: { eq: true },
+    //             info: { isNotNull: true }
+    //         } as Where<Document>
+    //     );
 
-        // console.log(docs);
-        return docs;
-    }
+    //     // console.log(docs);
+    //     return docs;
+    // }
 
     async documentsWithTag(tagnm: string | string[])
         : Promise<Array<string>>
