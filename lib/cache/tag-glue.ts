@@ -74,7 +74,7 @@ export class TagGlue {
     // TODO return value
     async pathsForTag(tagName: string | string[]): Promise<string[]> {
         const rows = [];
-        console.log(`pathsForTag ${util.inspect(tagName)}`);
+        // console.log(`pathsForTag ${util.inspect(tagName)}`);
         await new Promise((resolve, reject) => {
             if (typeof tagName === 'string') {
                 this.db.each(`
@@ -105,7 +105,7 @@ export class TagGlue {
                         : t}'`;
                 }).join(',')} ) `;
 
-                console.log(tagstring);
+                // console.log(tagstring);
 
                 this.db.each(`
                     SELECT DISTINCT docvpath AS vpath

@@ -205,7 +205,7 @@ export declare class Configuration {
     get cacheDir(): string;
     get akasha(): any;
     documentsCache(): Promise<filecache.DocumentsFileCache>;
-    assetsCache(): Promise<filecache.BaseFileCache<filecache.Asset, import("sqlite3orm").BaseDAO<filecache.Asset>>>;
+    assetsCache(): Promise<filecache.AssetsFileCache<filecache.Asset, import("sqlite3orm").BaseDAO<filecache.Asset>>>;
     layoutsCache(): Promise<filecache.TemplatesFileCache<filecache.Layout, import("sqlite3orm").BaseDAO<filecache.Layout>>>;
     partialsCache(): Promise<filecache.TemplatesFileCache<filecache.Partial, import("sqlite3orm").BaseDAO<filecache.Partial>>>;
     /**
