@@ -1059,19 +1059,35 @@ export class BaseFileCache<
         // seems meant to eliminate duplicates.
         const vpathsSeen = new Set();
 
-        const selector = {
-            order: { mtimeMs: true }
-        } as any;
-        if (typeof rootP === 'string'
-        && rootP.length >= 1) {
-            selector.renderPath = {
-                isLike: `${rootP}%`
-                // sql: ` renderPath regexp '^${rootP}' `
-            };
-        }
-        // console.log(`paths ${util.inspect(selector)}`);
-        const result = await this.dao.selectAll(selector);
-        const result2 = result.filter(item => {
+        const results = await this.dao.sqldb.all(
+        (typeof rootP === 'string') ?
+        `
+            SELECT * FROM ${this.dao.table.quotedName}
+            WHERE
+            renderPath LIKE $rootP
+            ORDER BY mtimeMs ASC
+        `
+        : `
+            SELECT * FROM ${this.dao.table.quotedName}
+            ORDER BY mtimeMs ASC
+        `,
+        (typeof rootP === 'string')
+        ? { $rootP: `${rootP}%` }
+        : {})
+
+        // const selector = {
+        //     order: { mtimeMs: true }
+        // } as any;
+        // if (typeof rootP === 'string'
+        // && rootP.length >= 1) {
+        //     selector.renderPath = {
+        //         isLike: `${rootP}%`
+        //         // sql: ` renderPath regexp '^${rootP}' `
+        //     };
+        // }
+        // // console.log(`paths ${util.inspect(selector)}`);
+        // const result = await this.dao.selectAll(selector);
+        const result2 = results.filter(item => {
             // console.log(`paths ?ignore? ${item.vpath}`);
             if (fcache.ignoreFile(item)) {
                 return false;
@@ -1083,18 +1099,14 @@ export class BaseFileCache<
                 return true;
             }
         });
-        // const result3 = result2.sort((a, b) => {
-        //     // We need these to be one of the concrete
-        //     // types so that the mtimeMs field is
-        //     // recognized by TypeScript.  The Asset
-        //     // class is a good substitute for the base
-        //     // class of cached files.
-        //     const aa = <Asset>a;
-        //     const bb = <Asset>b;
-        //     if (aa.mtimeMs < bb.mtimeMs) return 1;
-        //     if (aa.mtimeMs === bb.mtimeMs) return 0;
-        //     if (aa.mtimeMs > bb.mtimeMs) return -1;
-        // });
+
+        const mapped = <any[]>result2.map(item => {
+            return this.cvtRowToObj(item);
+        });
+        for (const item of mapped) {
+            this.gatherInfoData(item);
+        }
+        return mapped;
 
         // This stage converts the items 
         // received by this function into
@@ -1116,14 +1128,6 @@ export class BaseFileCache<
         //     });
         // }
 
-        // console.log(result2/*.map(item => {
-        //     return {
-        //         vpath: item.vpath,
-        //         mtimeMs: item.mtimeMs
-        //     };
-        // }) */);
-
-        return result2;
     }
 
     /**
@@ -1895,7 +1899,7 @@ export class DocumentsFileCache
         // if (dirname === '.') dirname = '/';
 
         const siblings = await this.dao.sqldb.all(`
-            SELECT * FROM DOCUMENTS
+            SELECT * FROM ${this.dao.table.quotedName}
             WHERE
             dirname = $dirname AND
             vpath <> $vpath AND

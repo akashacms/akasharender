@@ -1552,13 +1552,15 @@ describe('Layouts cache', function() {
         const layouts = filecache.layoutsCache;
         await layouts.isReady();
 
+        // console.log(filecache.layoutsCache.dirs);
+
         let found = await filecache.layoutsCache.paths();
 
         assert.isDefined(found);
         assert.isArray(found);
 
         for (let pathinfo of found) {
-            // console.log(`find only layouts paths pathinfo=`, pathinfo);
+            // console.log(`find only layouts paths pathinfo=`, pathinfo.vpath);
             assert.isTrue(isPathAllowed(pathinfo, allowed_paths), util.inspect(pathinfo));
         }
     });
