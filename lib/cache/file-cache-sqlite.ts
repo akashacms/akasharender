@@ -1894,16 +1894,37 @@ export class DocumentsFileCache
         let dirname = path.dirname(vpath);
         // if (dirname === '.') dirname = '/';
 
-        const siblings = await this.dao.selectAll({
-            dirname: { eq: dirname },
-            // The siblings cannot include the self.
-            vpath: { neq: vpath },
-            renderPath: { neq: vpath },
-            rendersToHTML: true
+        const siblings = await this.dao.sqldb.all(`
+            SELECT * FROM DOCUMENTS
+            WHERE
+            dirname = $dirname AND
+            vpath <> $vpath AND
+            renderPath <> $vpath AND
+            rendersToHtml = true
+        `, {
+            $dirname: dirname,
+            $vpath: vpath
         });
-        return siblings.filter(item => {
+
+        // const siblings = await this.dao.selectAll({
+        //     dirname: { eq: dirname },
+        //     // The siblings cannot include the self.
+        //     vpath: { neq: vpath },
+        //     renderPath: { neq: vpath },
+        //     rendersToHTML: true
+        // });
+        const ignored = siblings.filter(item => {
             return !this.ignoreFile(item);
         });
+
+        const mapped = ignored.map(item => {
+            return this.cvtRowToObj(item);
+        });
+        for (const item of mapped) {
+            this.gatherInfoData(item);
+        }
+        return mapped;
+
     }
 
     /**

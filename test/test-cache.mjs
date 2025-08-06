@@ -876,7 +876,7 @@ describe('Documents cache', function() {
     it('should find siblings for index.html', async function() {
         const siblings = await filecache.documentsCache.siblings('index.html.md');
         for (const sibling of siblings) {
-            assert.equal(sibling.dirname, '.');
+            assert.equal(sibling.dirname, '/');
         }
         // console.log(siblings);
         assert.isOk(filezContains(siblings, 'img2figimg-liquid.html.md'));
@@ -1227,6 +1227,7 @@ describe('Documents cache', function() {
     
     it('should find siblings for /subdir/show-content-local.html.md', async function() {
         const siblings = await filecache.documentsCache.siblings('subdir/show-content-local.html.md');
+        // console.log(siblings);
         assert.isOk(filezContains(siblings, 'subdir/index.html.md'));
         assert.isNotOk(filezContains(siblings, 'subdir/show-content-local.html.md'));
         assert.isOk(filezContains(siblings, 'subdir/shown-content-local.html.md'));
