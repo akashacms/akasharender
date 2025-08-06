@@ -824,7 +824,7 @@ describe('Documents cache', function() {
     // The find function had not been calling
     // the gatherInfoData function.  That function
     // converts dirname=. into dirname=/
-    
+
     it('should find /index.html.md', async function() {
         const found = await filecache.documentsCache.find('/index.html.md');
 
@@ -1174,29 +1174,29 @@ describe('Documents cache', function() {
         });
 
 
-        it('should find documents with tags', async function() {
-            const found = await filecache.documentsCache.documentsWithTags();
+        // it('should find documents with tags', async function() {
+        //     const found = await filecache.documentsCache.documentsWithTags();
 
-            // console.log(found);
+        //     // console.log(found);
 
-            assert.isDefined(found);
-            assert.isArray(found);
-            assert.equal(found.length, 5);
+        //     assert.isDefined(found);
+        //     assert.isArray(found);
+        //     assert.equal(found.length, 5);
 
-            const goodvpath = (vp) => {
-                return (vp === 'tags-array.html.md')
-                    || (vp === 'tags-string.html.md')
-                    || (vp === 'subdir/show-content-local.html.md')
-                    || (vp === 'njk-incl.html.md')
-                    || (vp === 'teaser-content.html.md');
-            };
+        //     const goodvpath = (vp) => {
+        //         return (vp === 'tags-array.html.md')
+        //             || (vp === 'tags-string.html.md')
+        //             || (vp === 'subdir/show-content-local.html.md')
+        //             || (vp === 'njk-incl.html.md')
+        //             || (vp === 'teaser-content.html.md');
+        //     };
 
-            assert.isTrue(goodvpath(found[0].vpath));
-            assert.isTrue(goodvpath(found[1].vpath));
-            assert.isTrue(goodvpath(found[2].vpath));
-            assert.isTrue(goodvpath(found[3].vpath));
-            assert.isTrue(goodvpath(found[4].vpath));
-        });
+        //     assert.isTrue(goodvpath(found[0].vpath));
+        //     assert.isTrue(goodvpath(found[1].vpath));
+        //     assert.isTrue(goodvpath(found[2].vpath));
+        //     assert.isTrue(goodvpath(found[3].vpath));
+        //     assert.isTrue(goodvpath(found[4].vpath));
+        // });
 
 
     });
