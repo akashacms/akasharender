@@ -1211,7 +1211,8 @@ describe('Documents cache', function() {
             }
             // console.log(desc);
             assert.isBoolean(errored);
-            assert.isTrue(errored);
+            assert.isFalse(errored);
+            assert.equal(typeof desc, 'undefined');
         });
 
         it('should not find description for Unknown tag', async function() {
@@ -1225,7 +1226,8 @@ describe('Documents cache', function() {
             }
             // console.log(desc);
             assert.isBoolean(errored);
-            assert.isTrue(errored);
+            assert.isFalse(errored);
+            assert.equal(typeof desc, 'undefined');
         });
 
 

@@ -1763,7 +1763,7 @@ export class DocumentsFileCache
     }
 
     async getTagDescription(tag: string)
-        : Promise<string>
+        : Promise<string | undefined>
     {
         return tdesc.getDesc(tag);
     }
