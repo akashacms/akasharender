@@ -44,7 +44,7 @@ import {
 import { sqdb } from '../sqdb.js';
 import { Configuration, dirToMount } from '../index.js';
 import fastq from 'fastq';
-import { TagGlue } from './tag-glue.js';
+import { TagGlue, TagDescriptions } from './tag-glue.js';
 
 ///////////// Assets table
 
@@ -446,6 +446,9 @@ await documentsDAO.createIndex('docs_blogtag');
 
 const tglue = new TagGlue();
 tglue.init(sqdb._db);
+
+const tdesc = new TagDescriptions();
+tdesc.init(sqdb._db);
 
 // Convert AkashaCMS mount points into the mountpoint
 // used by DirsWatcher
@@ -1753,6 +1756,16 @@ export class DocumentsFileCache
             Array.isArray(tags)
             ? tags
             : [ tags ]);
+    }
+
+    async addTagDescription(tag: string, description: string) {
+        return tdesc.addDesc(tag, description);
+    }
+
+    async getTagDescription(tag: string)
+        : Promise<string>
+    {
+        return tdesc.getDesc(tag);
     }
 
     protected async updateDocInDB(info) {

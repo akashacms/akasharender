@@ -987,6 +987,46 @@ export class Configuration {
 
     get metadata() { return this.#metadata; }
 
+    #descriptions: Array<{
+        tagName: string,
+        description: string
+    }>;
+
+    /**
+     * Add tag descriptions to the database.  The purpose
+     * is for example a tag index page can give a
+     * description at the top of the page.
+     *
+     * @param tagdescs 
+     */
+    async addTagDescriptions(tagdescs: Array<{
+        tagName: string,
+        description: string
+    }>) {
+        if (!Array.isArray(tagdescs)) {
+            throw new Error(`addTagDescriptions must be given an array of tag descriptions`);
+        }
+        for (const desc of tagdescs) {
+            if (typeof desc.tagName !== 'string'
+             || typeof desc.description !== 'string'
+             ) {
+                throw new Error(`Incorrect tag description ${util.inspect(desc)}`);
+            }
+        }
+        this.#descriptions = tagdescs;
+    }
+
+    async #saveDescriptionsToDB() {
+        const documents = filecache.documentsCache;
+        if (Array.isArray(this.#descriptions)) {
+            for (const desc of this.#descriptions) {
+                await documents.addTagDescription(
+                    desc.tagName, desc.description
+                );
+            }
+        }
+    }
+
     /**
     * Document the URL for a website project.
     * @param {string} root_url
@@ -1184,6 +1224,16 @@ export class Configuration {
                 await plugin.onPluginCacheSetup(config);
             }
         }
+
+        // SPECIAL TREATMENT
+        // The tag descriptions need to be installed
+        // in the database.  It is impossible to do
+        // that during Configuration setup in
+        // the addTagDescriptions method.
+        // This function is invoked after the database
+        // is setup.
+
+        await this.#saveDescriptionsToDB();
     }
 
     /**

@@ -19,6 +19,17 @@ describe('Initialize cache test configuration', function() {
             config.rootURL("https://example.akashacms.com");
             config.configDir = __dirname;
             config
+                .addTagDescriptions([
+                    {
+                        tagName: 'NJK',
+                        description: 'NJK Template'
+                    },
+                    {
+                        tagName: 'Tag1',
+                        description: 'Tag1'
+                    }
+                ]);
+            config
                 .addAssetsDir({
                     src: 'assets2',
                     dest: '/',
@@ -1171,6 +1182,50 @@ describe('Documents cache', function() {
                 "Teaser's",
                 "Teasers",
             ]);
+        });
+
+        it('should find description for NJK tag', async function() {
+            const desc = await filecache
+                .documentsCache.getTagDescription('NJK');
+            assert.isDefined(desc);
+            assert.isString(desc);
+            assert.equal(desc, 'NJK Template');
+        });
+
+        it('should find description for Tag1 tag', async function() {
+            const desc = await filecache
+                .documentsCache.getTagDescription('Tag1');
+            assert.isDefined(desc);
+            assert.isString(desc);
+            assert.equal(desc, 'Tag1');
+        });
+
+        it('should not find description for Tag3', async function() {
+            let desc;
+            let errored = false;
+            try {
+                desc = await filecache
+                .documentsCache.getTagDescription('Tag3');
+            } catch (e) {
+                errored = true;
+            }
+            // console.log(desc);
+            assert.isBoolean(errored);
+            assert.isTrue(errored);
+        });
+
+        it('should not find description for Unknown tag', async function() {
+            let desc;
+            let errored = false;
+            try {
+                desc = await filecache
+                .documentsCache.getTagDescription('UnKnOwN');
+            } catch (e) {
+                errored = true;
+            }
+            // console.log(desc);
+            assert.isBoolean(errored);
+            assert.isTrue(errored);
         });
 
 
