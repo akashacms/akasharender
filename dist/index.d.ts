@@ -286,6 +286,17 @@ export declare class Configuration {
     addMetadata(index: string, value: any): this;
     get metadata(): any;
     /**
+     * Add tag descriptions to the database.  The purpose
+     * is for example a tag index page can give a
+     * description at the top of the page.
+     *
+     * @param tagdescs
+     */
+    addTagDescriptions(tagdescs: Array<{
+        tagName: string;
+        description: string;
+    }>): Promise<void>;
+    /**
     * Document the URL for a website project.
     * @param {string} root_url
     * @returns {Configuration}

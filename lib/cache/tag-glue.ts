@@ -15,12 +15,17 @@ export class TagGlue {
         this.#db = db;
 
         await this.db.run(`
-        CREATE TABLE IF NOT EXISTS TAGGLUE (
+        CREATE TABLE IF NOT EXISTS
+        TAGGLUE (
             docvpath STRING,
-            tagName STRING
+            tagName STRING UNIQUE
         );
-        CREATE INDEX IF NOT EXISTS tagglue_vpath on TAGGLUE (vpath);
-        CREATE INDEX IF NOT EXISTS tagglue_name  on TAGGLUE (tagName);
+        CREATE INDEX IF NOT EXISTS 
+            tagglue_vpath on TAGGLUE (docvpath);
+        CREATE INDEX IF NOT EXISTS
+            tagglue_name  on TAGGLUE (tagName);
+        CREATE UNIQUE INDEX IF NOT EXISTS
+            tagglue_tuple ON TAGGLUE (docvpath, tagName)
         `);
     }
 
@@ -40,7 +45,7 @@ export class TagGlue {
         }
     }
 
-    async deleteTagGlue(vpath) {
+    async deleteTagGlue(vpath: string) {
         try {
             await this.db.run(
                 `DELETE FROM TAGGLUE WHERE docvpath = $vpath`, {
@@ -71,8 +76,9 @@ export class TagGlue {
         });
     }
 
-    // TODO return value
-    async pathsForTag(tagName: string | string[]): Promise<string[]> {
+    async pathsForTag(tagName: string | string[])
+        : Promise<string[]>
+    {
         const rows = [];
         // console.log(`pathsForTag ${util.inspect(tagName)}`);
         await new Promise((resolve, reject) => {
@@ -141,3 +147,80 @@ export class TagGlue {
 
 }
 
+export class TagDescriptions {
+
+    #db: Database;
+
+    get db(): Database { return this.#db; }
+
+    async init(db: Database) {
+        this.#db = db;
+
+        await this.db.run(`
+        CREATE TABLE IF NOT EXISTS
+        TAGDESCRIPTION (
+            tagName STRING UNIQUE,
+            description STRING
+        );
+        CREATE UNIQUE INDEX IF NOT EXISTS
+            tagdesc_name  on TAGDESCRIPTION (tagName);
+        `);
+    }
+
+    async addDesc(tag: string, description: string) {
+        await this.db.run(`
+        INSERT INTO TAGDESCRIPTION (
+            tagName, description
+        )
+        VALUES (
+            $tag, $desc
+        )
+        `, {
+            $tag: tag,
+            $desc: description
+        });
+    }
+
+    async deleteDesc(tag: string) {
+        try {
+            await this.db.run(
+                `DELETE FROM TAGDESCRIPTION
+                WHERE tagName = $tag`, {
+                    $tag: tag
+                }
+            );
+        } catch (err) {
+        }
+    }
+
+    async getDesc(tag: string): Promise<string> {
+
+        const rows = [];
+        const count = await new Promise((resolve, reject) => {
+            this.db.each(`SELECT description FROM TAGDESCRIPTION
+                WHERE tagName = $tag`, {
+                    $tag: tag
+                },
+                (err, row) => {
+                    if (err) reject(err);
+                    rows.push(row);
+                },
+                (err, count) => {
+                    if (err) reject(err);
+                    resolve(count);
+                }
+            );
+        });
+        if (rows.length <= 0) {
+            throw new Error(`No tag information found for ${util.inspect(tag)}`);
+        }
+        if (rows.length > 1) {
+            throw new Error(`UNEXPECTED CONDITION more than one tag entry for ${util.inspect(tag)}`);
+        }
+        return (rows[0].description === null
+            || typeof rows[0].description === 'undefined'
+        )
+            ? undefined
+            : rows[0].description;
+    }
+}
