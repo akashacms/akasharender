@@ -18,7 +18,7 @@ export class TagGlue {
         CREATE TABLE IF NOT EXISTS
         TAGGLUE (
             docvpath STRING,
-            tagName STRING UNIQUE
+            tagName STRING
         );
         CREATE INDEX IF NOT EXISTS 
             tagglue_vpath on TAGGLUE (docvpath);
@@ -193,7 +193,7 @@ export class TagDescriptions {
         }
     }
 
-    async getDesc(tag: string): Promise<string> {
+    async getDesc(tag: string): Promise<string | undefined> {
 
         const rows = [];
         const count = await new Promise((resolve, reject) => {
@@ -212,7 +212,8 @@ export class TagDescriptions {
             );
         });
         if (rows.length <= 0) {
-            throw new Error(`No tag information found for ${util.inspect(tag)}`);
+            // throw new Error(`No tag information found for ${util.inspect(tag)}`);
+            return undefined;
         }
         if (rows.length > 1) {
             throw new Error(`UNEXPECTED CONDITION more than one tag entry for ${util.inspect(tag)}`);

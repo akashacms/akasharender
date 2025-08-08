@@ -14,6 +14,6 @@ export declare class TagDescriptions {
     init(db: Database): Promise<void>;
     addDesc(tag: string, description: string): Promise<void>;
     deleteDesc(tag: string): Promise<void>;
-    getDesc(tag: string): Promise<string>;
+    getDesc(tag: string): Promise<string | undefined>;
 }
 //# sourceMappingURL=tag-glue.d.ts.map

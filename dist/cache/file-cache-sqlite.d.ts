@@ -240,7 +240,7 @@ export declare class DocumentsFileCache extends BaseFileCache<Document, Tdocumen
     protected deleteDocTagGlue(vpath: any): Promise<void>;
     protected addDocTagGlue(vpath: string, tags: string | string[]): Promise<void>;
     addTagDescription(tag: string, description: string): Promise<void>;
-    getTagDescription(tag: string): Promise<string>;
+    getTagDescription(tag: string): Promise<string | undefined>;
     protected updateDocInDB(info: any): Promise<void>;
     protected insertDocToDB(info: any): Promise<void>;
     handleUnlinked(name: any, info: any): Promise<void>;
