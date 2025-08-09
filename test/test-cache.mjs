@@ -2510,9 +2510,13 @@ describe('Search', function() {
             dateErrors.push(`findBlogDocs ${b.renderPath} BAD DATE publB ${publB}`);
         } */
 
-        if (aPublicationDate < bPublicationDate) return -1;
-        else if (aPublicationDate === bPublicationDate) return 0;
-        else return 1;
+        if (aPublicationDate < bPublicationDate) {
+            return -1;
+        } else if (aPublicationDate === bPublicationDate) {
+            return 0;
+        } else {
+            return 1;
+        }
     };
 
     it('should select sort by custom sort function', async function() {
@@ -2538,6 +2542,7 @@ describe('Search', function() {
                 ? doc.metadata.publicationDate : doc.publicationDate;
             let docPublicationDate = Date.parse(publDoc);
             // console.log(`${doc.vpath} ${docPublicationDate} >= ${lastpublDate}`);
+            // console.log(`reverse sort ${doc.vpath} ${publDoc} ${docPublicationDate} ${lastpublDate}`);
             assert.isTrue(docPublicationDate >= lastpublDate);
             lastpublDate = docPublicationDate;
         }
