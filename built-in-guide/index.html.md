@@ -23,8 +23,6 @@ With that, macros can be invoked this way:
 {{ ak_core.rssHeaderMeta("/rss-for-header.xml") }}
 ```
 
-
-
 # Simplification for `figure/img` tags
 
 This construct is recommended in the HTML5 world for its microformat goodness
@@ -219,6 +217,28 @@ For Nunjucks templates, this custom tag can be used:
 {% endakfooterjs %}
 ```
 
+<!-- In retrospect it seems to be a non-starter to
+     incorporate tagged-content code into Akasharender
+     core, and the built-in plugin.
+     
+# Document tags
+
+In some cases a website uses tags to aid in categorizing documents by vocabulary terms.
+
+Tags are added to a document with the metadata element, `tags`, which is to be an array of strings each of which is a tag name.
+
+```yaml
+tags:
+  - Tag1
+  - Tag2
+```
+
+The custom tab `<ak-tags-for-document>` renders the document tags via the template `ak_document_tags.html.njk`.  It is meant to be used towards the top of the document, providing links to tag index pages.  These pages are meant to list all documents categorized with a certain tag.
+
+THIS FEATURE IS INCOMPLETE BECAUSE TAG INDEX PAGES ARE NOT BEING GENERATED.
+
+THE GENERATION OF TAG INDEX PAGES SHOULD NOT BE IN built-in and probably not in akashacms-base.
+-->
 
 # Teaser content
 

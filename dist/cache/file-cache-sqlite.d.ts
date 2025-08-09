@@ -362,14 +362,17 @@ export declare class DocumentsFileCache extends BaseFileCache<Document, Tdocumen
         thumbnail?: string;
     }>;
     /**
-     * Perform descriptive search operations
-     * with many options.  They are converted
-     * into a selectAll statement.
+     * Perform descriptive search operations using direct SQL queries
+     * for better performance and scalability.
      *
-     * @param options
-     * @returns
+     * @param options Search options object
+     * @returns Promise<Array<Document>>
      */
     search(options: any): Promise<Array<Document>>;
+    /**
+     * Build SQL query and parameters for search options
+     */
+    private buildSearchQuery;
 }
 export declare var assetsCache: AssetsFileCache<Asset, typeof assetsDAO>;
 export declare var partialsCache: TemplatesFileCache<Partial, typeof partialsDAO>;

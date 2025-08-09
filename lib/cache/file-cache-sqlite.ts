@@ -1659,6 +1659,10 @@ export class DocumentsFileCache
                 }
                 info.docMetadata.tags = info.metadata.tags;
 
+                if (info.metadata.blogtag) {
+                    info.blogtag = info.metadata.blogtag;
+                }
+                
                 // The root URL for the project
                 info.metadata.root_url = this.config.root_url;
 
@@ -2289,460 +2293,247 @@ export class DocumentsFileCache
 
 
     /**
-     * Perform descriptive search operations
-     * with many options.  They are converted
-     * into a selectAll statement.
+     * Perform descriptive search operations using direct SQL queries
+     * for better performance and scalability.
      *
-     * @param options 
-     * @returns 
+     * @param options Search options object
+     * @returns Promise<Array<Document>>
      */
     async search(options): Promise<Array<Document>> {
-
-        // console.log(`search `, options);
-
         const fcache = this;
-        const vpathsSeen = new Set();
+        
+        try {
+            const { sql, params } = this.buildSearchQuery(options);
+            // console.log(`search ${sql}`);
+            const results = await this.dao.sqldb.all(sql, params);
+            
+            // Convert raw SQL results to Document objects
+            const documents = results.map(row => this.cvtRowToObj(row));
+            
+            // Gather additional info data for each result FIRST
+            // This is crucial because filters and sort functions may depend on this data
+            for (const item of documents) {
+                this.gatherInfoData(item);
+            }
+            
+            // Apply post-SQL filters that can't be done in SQL
+            let filteredResults = documents;
+            
+            // Filter by renderers (requires config lookup)
+            if (options.renderers && Array.isArray(options.renderers)) {
+                filteredResults = filteredResults.filter(item => {
+                    let renderer = fcache.config.findRendererPath(item.vpath);
+                    if (!renderer) return false;
+                    
+                    let found = false;
+                    for (const r of options.renderers) {
+                        if (typeof r === 'string' && r === renderer.name) {
+                            found = true;
+                        } else if (typeof r === 'object' || typeof r === 'function') {
+                            console.error('WARNING: Matching renderer by object class is no longer supported', r);
+                        }
+                    }
+                    return found;
+                });
+            }
+            
+            // Apply custom filter function
+            if (options.filterfunc) {
+                filteredResults = filteredResults.filter(item => {
+                    return options.filterfunc(fcache.config, options, item);
+                });
+            }
+            
+            // Apply custom sort function (if SQL sorting wasn't used)
+            if (typeof options.sortFunc === 'function') {
+                filteredResults = filteredResults.sort(options.sortFunc);
+            }
+            
+            return filteredResults;
+            
+        } catch (err: any) {
+            throw new Error(`DocumentsFileCache.search error: ${err.message}`);
+        }
+    }
 
-        const selector = {
-            and: []
-        } as any;
+    /**
+     * Build SQL query and parameters for search options
+     */
+    private buildSearchQuery(options): { sql: string, params: any } {
+        const params: any = {};
+        const whereClauses: string[] = [];
+        const joins: string[] = [];
+        let paramCounter = 0;
+        
+        // Helper to create unique parameter names
+        const addParam = (value: any): string => {
+            const paramName = `$param${++paramCounter}`;
+            params[paramName] = value;
+            return paramName;
+        };
+        
+        // Base query
+        let sql = `SELECT DISTINCT d.* FROM ${this.dao.table.quotedName} d`;
+        
+        // MIME type filtering
         if (options.mime) {
             if (typeof options.mime === 'string') {
-                selector.and.push({
-                    mime: {
-                        eq: options.mime
-                    }
-                });
+                whereClauses.push(`d.mime = ${addParam(options.mime)}`);
             } else if (Array.isArray(options.mime)) {
-                selector.and.push({
-                    mime: {
-                        isIn: options.mime
-                    }
-                });
-            } /* else {
-                throw new Error(`Incorrect MIME check ${options.mime}`);
-            } */
+                const placeholders = options.mime.map(mime => addParam(mime)).join(', ');
+                whereClauses.push(`d.mime IN (${placeholders})`);
+            }
         }
-        if (
-            typeof options.rendersToHTML === 'boolean'
-        ) {
-            selector.and.push({
-                rendersToHTML: {
-                    eq: options.rendersToHTML
-                }
-            });
+        
+        // Renders to HTML filtering
+        if (typeof options.rendersToHTML === 'boolean') {
+            whereClauses.push(`d.rendersToHTML = ${addParam(options.rendersToHTML ? 1 : 0)}`);
         }
-
-        if (typeof options?.rootPath === 'string') {
-            selector.and.push({
-                renderPath: {
-                    isLike: `${options.rootPath}%`
-                    // sql: ` renderPath like '${options.rootPath}%' `
-                }
-            });
+        
+        // Root path filtering
+        if (typeof options.rootPath === 'string') {
+            whereClauses.push(`d.renderPath LIKE ${addParam(options.rootPath + '%')}`);
         }
-
-        // For glob and renderglob handle
-        // strings with single-quote characters
-        // as per discussion in documentsWithTag
-
-        if (
-            options.glob
-         && typeof options.glob === 'string'
-        ) {
-            selector.and.push({
-                sql: `T.vpath GLOB '${options.glob.indexOf("'") >= 0
-                    ? options.glob.replaceAll("'", "''")
-                    : options.glob}'`
-            });
+        
+        // Glob pattern matching
+        if (options.glob && typeof options.glob === 'string') {
+            const escapedGlob = options.glob.indexOf("'") >= 0 
+                ? options.glob.replaceAll("'", "''") 
+                : options.glob;
+            whereClauses.push(`d.vpath GLOB ${addParam(escapedGlob)}`);
         }
-
-        if (
-            options.renderglob
-         && typeof options.renderglob === 'string'
-        ) {
-            selector.and.push({
-                sql: `T.renderPath GLOB '${options.renderglob.indexOf("'") >= 0
-                ? options.renderglob.replaceAll("'", "''")
-                : options.renderglob}'`
-            });
+        
+        // Render glob pattern matching
+        if (options.renderglob && typeof options.renderglob === 'string') {
+            const escapedGlob = options.renderglob.indexOf("'") >= 0 
+                ? options.renderglob.replaceAll("'", "''") 
+                : options.renderglob;
+            whereClauses.push(`d.renderPath GLOB ${addParam(escapedGlob)}`);
         }
-
-        const regexSQL = {
-            or: []
-        };
-
-        // This is as a special favor to
-        // @akashacms/plugins-blog-podcast.  The
-        // blogtag metadata value is expensive to
-        // search for as a field in the JSON
-        // metadata.  By promoting this to a
-        // regular field it becomes a regular
-        // SQL query on a field where there
-        // can be an index.
-        if (
-            typeof options.blogtags !== 'undefined'
-         && typeof options.blogtags === 'string'
-        ) {
+        
+        // Blog tag filtering
+        if (typeof options.blogtag === 'string') {
+            whereClauses.push(`d.blogtag = ${addParam(options.blogtag)}`);
+        } else if (Array.isArray(options.blogtags)) {
+            const placeholders = options.blogtags.map(tag => addParam(tag)).join(', ');
+            whereClauses.push(`d.blogtag IN (${placeholders})`);
+        } else if (typeof options.blogtags === 'string') {
             throw new Error(`search ERROR invalid blogtags array ${util.inspect(options.blogtags)}`);
         }
-        if (
-            typeof options.blogtags !== 'undefined'
-         && Array.isArray(options.blogtags)
-        ) {
-            selector.and.push({
-                blogtag: {
-                    isIn: options.blogtags
-                }
-            });
+        
+        // Tag filtering using TAGGLUE table
+        if (options.tag && typeof options.tag === 'string') {
+            joins.push(`INNER JOIN TAGGLUE tg ON d.vpath = tg.docvpath`);
+            whereClauses.push(`tg.tagName = ${addParam(options.tag)}`);
         }
-        else if (
-            typeof options.blogtag === 'string'
-        ) {
-            selector.and.push({
-                blogtag: {
-                    eq: options.blogtag
+        
+        // Layout filtering
+        if (options.layouts) {
+            if (Array.isArray(options.layouts)) {
+                if (options.layouts.length === 1) {
+                    whereClauses.push(`d.layout = ${addParam(options.layouts[0])}`);
+                } else if (options.layouts.length > 1) {
+                    const placeholders = options.layouts.map(layout => addParam(layout)).join(', ');
+                    whereClauses.push(`d.layout IN (${placeholders})`);
                 }
-            });
+            } else {
+                whereClauses.push(`d.layout = ${addParam(options.layouts)}`);
+            }
         }
-
-        // This is possibly a way to implement options.tag.
-        // The code is derived from the sqlite3orm documentation.
-        // if (
-        //     options.tag
-        //     && typeof options.tag === 'string'
-        // ) {
-        //     selector.and.push({
-        //         sql: `
-        //     EXISTS (
-        //         SELECT 1
-        //         FROM TAGGLUE tg
-        //         WHERE tg.tagName = ${options.tag}
-        //     )
-        //     `});
-        // }
-
-        if (
-            typeof options.pathmatch === 'string'
-        ) {
-            regexSQL.or.push({
-                sql: ` vpath regexp '${options.pathmatch}' `
-            });
-        } else if (
-            options.pathmatch instanceof RegExp
-        ) {
-            regexSQL.or.push({
-                sql: ` vpath regexp '${options.pathmatch.source}' `
-            });
+        
+        // Path regex matching
+        const regexClauses: string[] = [];
+        if (typeof options.pathmatch === 'string') {
+            regexClauses.push(`d.vpath regexp ${addParam(options.pathmatch)}`);
+        } else if (options.pathmatch instanceof RegExp) {
+            regexClauses.push(`d.vpath regexp ${addParam(options.pathmatch.source)}`);
         } else if (Array.isArray(options.pathmatch)) {
             for (const match of options.pathmatch) {
                 if (typeof match === 'string') {
-                    regexSQL.or.push({
-                        sql: ` vpath regexp '${match}' `
-                    });
+                    regexClauses.push(`d.vpath regexp ${addParam(match)}`);
                 } else if (match instanceof RegExp) {
-                    regexSQL.or.push({
-                        sql: ` vpath regexp '${match.source}' `
-                    });
+                    regexClauses.push(`d.vpath regexp ${addParam(match.source)}`);
                 } else {
                     throw new Error(`search ERROR invalid pathmatch regexp ${util.inspect(match)}`);
                 }
             }
         } else if ('pathmatch' in options) {
-            // There's a pathmatch field, that
-            // isn't correct
             throw new Error(`search ERROR invalid pathmatch ${util.inspect(options.pathmatch)}`);
         }
-
-        if (options.layouts) {
-            if (Array.isArray(options.layouts)
-             && options.layouts.length >= 2
-            ) {
-                for (const layout of options.layouts) {
-                    regexSQL.or.push({
-                        layout: { eq: layout }
-                    });
-                }
-            } else if (Array.isArray(options.layout)
-             && options.layouts.length === 1
-            ) {
-                selector.and.push({
-                    layout: {
-                        eq: options.layouts[0]
-                    }
-                });
-            } else {
-                selector.and.push({
-                    layout: {
-                        eq: options.layouts
-                    }
-                });
-            }
-        }
-
-        // Attempting to do the following:
-        //
-        // sqlite> select vpath, renderPath from DOCUMENTS where renderPath regexp '/index.html$';
-        // hier-broke/dir1/dir2/index.html.md|hier-broke/dir1/dir2/index.html
-        // hier/dir1/dir2/index.html.md|hier/dir1/dir2/index.html
-        // hier/dir1/index.html.md|hier/dir1/index.html
-        // hier/imgdir/index.html.md|hier/imgdir/index.html
-        // hier/index.html.md|hier/index.html
-        // subdir/index.html.md|subdir/index.html
-
-        if (
-            typeof options.renderpathmatch === 'string'
-        ) {
-            regexSQL.or.push({
-                sql: ` renderPath regexp '${options.renderpathmatch}' `
-            });
-        } else if (
-            options.renderpathmatch instanceof RegExp
-        ) {
-            regexSQL.or.push({
-                sql: ` renderPath regexp '${options.renderpathmatch.source}' `
-            });
+        
+        // Render path regex matching
+        if (typeof options.renderpathmatch === 'string') {
+            regexClauses.push(`d.renderPath regexp ${addParam(options.renderpathmatch)}`);
+        } else if (options.renderpathmatch instanceof RegExp) {
+            regexClauses.push(`d.renderPath regexp ${addParam(options.renderpathmatch.source)}`);
         } else if (Array.isArray(options.renderpathmatch)) {
             for (const match of options.renderpathmatch) {
                 if (typeof match === 'string') {
-                    regexSQL.or.push({
-                        sql: ` renderPath regexp '${match}' `
-                    });
+                    regexClauses.push(`d.renderPath regexp ${addParam(match)}`);
                 } else if (match instanceof RegExp) {
-                    regexSQL.or.push({
-                        sql: ` renderPath regexp '${match.source}' `
-                    });
+                    regexClauses.push(`d.renderPath regexp ${addParam(match.source)}`);
                 } else {
                     throw new Error(`search ERROR invalid renderpathmatch regexp ${util.inspect(match)}`);
                 }
             }
         } else if ('renderpathmatch' in options) {
-            throw new Error(`search ERROR invalid renderpathmatch ${util.inspect(options.pathmatch)}`);
+            throw new Error(`search ERROR invalid renderpathmatch ${util.inspect(options.renderpathmatch)}`);
         }
-        if (regexSQL.or.length >= 1) {
-            selector.and.push({ or: regexSQL.or });
-        }
-
-        if (Array.isArray(selector.and)
-         && selector.and.length <= 0
-        ) {
-            delete selector.and;
-        }
-
-        // console.log(util.inspect(selector.and, false, 10));
-
-        // Select based on things we can query
-        // directly from  the Document object.
-        let result1;
-        try {
-            result1 = await this.dao.selectAll(
-                selector
-            );
-        } catch (err: any) {
-            throw new Error(`DocumentsFileCache.search caught error in selectAll with selector ${util.inspect(selector, false, 10)} - ${err.message}`);
-        }
-
-        // console.log(result1.length);
-
-        // If the search options include layout(s)
-        // we check docMetadata.layout
-        // NOW MOVED ABOVE
-        const result2 = result1;
-
-        // TODO - rewrite against tags column
-        //   and the tagglue table
-        //   HENCE this should be movable to SQL
-
-        // Check for match against tags
-        const result3 =
-
-        // First - No existing code uses this feature.
-        // Second - Tags have been redesigned.  Until now,
-        //    "item.tags" and "item.docMetadata.tags" are
-        //    arrays.  SQLITE doesn't have a field type for
-        //    arrays, and therefore it's stored as JSON, which
-        //    is slow for comparisons.
-        // Third - the new design, TAGGLUE, will have one row
-        //    for each tag in each document.  Hence it's
-        //    trivial to find all documents with a given tag
-        //    using SQL.
-        // Fourth - The test suite includes tests for
-        //    this feature.
-        // Fifth - there is a possible SQL implementation
-        //    earlier in the code.
-
-            (
-                options.tag
-                && typeof options.tag === 'string'
-            ) ? result2.filter(item => {
-                if (item.vpath
-                 && item.docMetadata
-                 && item.docMetadata.tags
-                 && Array.isArray(item.docMetadata.tags)
-                ) {
-                    if (item.docMetadata.tags.includes(options.tag)) {
-                        return true;
-                    } else {
-                        return false;
-                    }
-                } else {
-                    return false;
-                }
-            })
-            : result2;
-
-        const result4 = result3;
-            // (
-            //     options.rootPath
-            //  && typeof options.rootPath === 'string'
-            // ) ? result3.filter(item => {
-            //     if (item.vpath
-            //      && item.renderPath
-            //     ) {
-            //         // console.log(`search ${item.vpath} ${item.renderPath} ${options.rootPath}`);
-            //         if (item.renderPath.startsWith(options.rootPath)) {
-            //             return true;
-            //         } else {
-            //             return false;
-            //         }
-            //     } else {
-            //         return false;
-            //     }
-            // })
-            // : result3;
-
-        const result5 = result4;
-        // This is now SQL
-            // (
-            //     options.glob
-            //  && typeof options.glob === 'string'
-            // ) ? result4.filter(item => {
-            //     if (item.vpath) {
-            //         return micromatch.isMatch(item.vpath, options.glob);
-            //     } else {
-            //         return false;
-            //     }
-            // })
-            // : result4;
-
-        const result6 = result5;
-        // This is now SQL
-            // (
-            //     options.renderglob
-            // && typeof options.renderglob === 'string'
-            // ) ? result5.filter(item => {
-            //     if (item.renderPath) {
-            //         return micromatch.isMatch(item.renderPath, options.renderglob);
-            //     } else {
-            //         return false;
-            //     }
-            // })
-            // : result5;
-
-        const result7 =
-            (
-                options.renderers
-             && Array.isArray(options.renderers)
-            ) ? result6.filter(item => {
-
-                let renderer = fcache.config.findRendererPath(item.vpath);
-                // console.log(`renderer for ${obj.vpath} `, renderer);
-                if (!renderer) return false;
-
-                let found = false;
-                for (const r of options.renderers) {
-                    // console.log(`check renderer ${typeof r} ${renderer.name} ${renderer instanceof r}`);
-                    if (typeof r === 'string'
-                     && r === renderer.name) {
-                        found = true;
-                    } else if (typeof r === 'object'
-                     || typeof r === 'function') {
-                        console.error('WARNING: Matching renderer by object class is no longer supported', r);
-                    }
-                }
-                return found;
-            })
-            : result6;
-
-        const result8 =
-            (options.filterfunc)
-            ? result7.filter(item => {
-                return options.filterfunc(
-                    fcache.config,
-                    options,
-                    item
-                );
-            })
-            : result7;
-
         
-        let result9 = result8;
-        if (
-            typeof options.sortBy === 'string'
-         && (
-             options.sortBy === 'publicationDate'
-          || options.sortBy === 'publicationTime'
-         )
-        ) {
-            result9 = result8.sort((a, b) => {
-                let aDate = a.metadata
-                         && a.metadata.publicationDate
-                    ? new Date(a.metadata.publicationDate)
-                    : new Date(a.mtimeMs);
-                let bDate = b.metadata 
-                         && b.metadata.publicationDate
-                    ? new Date(b.metadata.publicationDate)
-                    : new Date(b.mtimeMs);
-                if (aDate === bDate) return 0;
-                if (aDate > bDate) return -1;
-                if (aDate < bDate) return 1;
-            });
-        } else if (
-            typeof options.sortBy === 'string'
-         && options.sortBy === 'dirname'
-        ) {
-            result9 = result8.sort((a, b) => {
-                if (a.dirname === b.dirname) return 0;
-                if (a.dirname < b.dirname) return -1;
-                if (a.dirname > b.dirname) return 1;
-            });
+        if (regexClauses.length > 0) {
+            whereClauses.push(`(${regexClauses.join(' OR ')})`);
         }
-
-        let result9a = result9;
-        if (typeof options.sortFunc === 'function') {
-            result9a = result9.sort(options.sortFunc);
+        
+        // Add JOINs to query
+        if (joins.length > 0) {
+            sql += ' ' + joins.join(' ');
         }
-
-        let result10 = result9a;
-        if (
-            typeof options.sortByDescending === 'boolean'
-         || typeof options.reverse === 'boolean'
-        ) {
-            if (typeof options.sortByDescending === 'boolean'
-             && options.sortByDescending
-            ) {
-                result10 = result9a.reverse();
+        
+        // Add WHERE clause
+        if (whereClauses.length > 0) {
+            sql += ' WHERE ' + whereClauses.join(' AND ');
+        }
+        
+        // Add ORDER BY clause
+        let orderBy = '';
+        if (typeof options.sortBy === 'string') {
+            // Handle special cases that need JSON extraction or complex logic
+            if (options.sortBy === 'publicationDate' || options.sortBy === 'publicationTime') {
+                // Use COALESCE to handle null publication dates
+                orderBy = `ORDER BY COALESCE(
+                    json_extract(d.metadata, '$.publicationDate'), 
+                    d.mtimeMs
+                )`;
+            } else {
+                // For all other fields, sort by the column directly
+                // This allows sorting by any valid column in the DOCUMENTS table
+                orderBy = `ORDER BY d.${options.sortBy}`;
             }
-            if (typeof options.reverse === 'boolean'
-             && options.reverse
-            ) {
-                result10 = result9a.reverse();
+        } else if (options.reverse || options.sortByDescending) {
+            // If reverse/sortByDescending is specified without sortBy, 
+            // use a default ordering (by modification time)
+            orderBy = 'ORDER BY d.mtimeMs';
+        }
+        
+        // Handle sort direction
+        if (orderBy) {
+            if (options.sortByDescending || options.reverse) {
+                orderBy += ' DESC';
+            } else {
+                orderBy += ' ASC';
             }
+            sql += ' ' + orderBy;
         }
-
-        let result11 = result10;
-        if (typeof options.offset === 'number') {
-            result11 = result10.slice(options.offset);
-        }
-
-        let result12 = result11;
+        
+        // Add LIMIT and OFFSET
         if (typeof options.limit === 'number') {
-            result12 = result11.slice(
-                0, options.limit - 1
-            );
+            sql += ` LIMIT ${addParam(options.limit)}`;
         }
-
-        return result12;
+        if (typeof options.offset === 'number') {
+            sql += ` OFFSET ${addParam(options.offset)}`;
+        }
+        
+        return { sql, params };
     }
 
     // Skip tags for now.  Should be easy.

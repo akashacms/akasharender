@@ -168,6 +168,51 @@ export class BuiltInPlugin extends Plugin {
         this.#resize_queue.push({ src, resizewidth, resizeto, docPath });
     }
 
+    // This section was added in the possibility of
+    // moving tagged-content into the core.
+    // After trying this, that seems like a non-starter
+    // of a project idea.
+
+    // #pathIndexes: string;
+
+    // set pathIndexes(indexes) { this.#pathIndexes = indexes; }
+    // get pathIndexes()        { return this.#pathIndexes; }
+
+    // tagPageUrl(config, tagName) {
+    //     if (typeof this.#pathIndexes !== 'string') {
+    //         console.error(`BuiltInPlugin pathIndexes has not been set ${util.inspect(this.#pathIndexes)}`);
+    //     }
+    //     if (this.pathIndexes.endsWith('/')) {
+    //         return this.pathIndexes + tag2encode4url(tagName) +'.html';
+    //     } else {
+    //         return this.pathIndexes +'/'+ tag2encode4url(tagName) +'.html';
+    //     }
+    // }
+
+    // async doTagsForDocument(config, metadata, template) {
+    //     const documents = this.akasha.filecache.documentsCache;
+    //     const plugin = this;
+    //         console.log('doTagsForDocument '+ util.inspect(metadata));
+    //     const taglist = (
+    //             'tags' in metadata
+    //           && Array.isArray(metadata.tags)
+    //         ) ? metadata.tags : [];
+    //     if (taglist) {
+    //         const tagzlist = [];
+    //         for (const tag of taglist) {
+    //             tagzlist.push({
+    //                 tagName: tag,
+    //                 tagUrl: plugin.tagPageUrl(config, tag),
+    //                 description: await documents.getTagDescription(tag)
+    //             });
+    //         }
+    //         console.log('doTagsForDocument '+ util.inspect(taglist));
+    //         return this.akasha.partial(config, template, {
+    //             tagz: tagzlist
+    //         });
+    //     } else return "";
+    // }
+
     async onSiteRendered(config) {
 
         const documents = this.akasha.filecache.documentsCache;
@@ -236,6 +281,7 @@ export const mahabhutaArray = function(
             plugin?: Plugin
 ) {
     let ret = new mahabhuta.MahafuncArray(pluginName, options);
+    // ret.addMahafunc(new TagsForDocumentElement(config, akasha, plugin));
     ret.addMahafunc(new StylesheetsElement(config, akasha, plugin));
     ret.addMahafunc(new HeaderJavaScript(config, akasha, plugin));
     ret.addMahafunc(new FooterJavaScript(config, akasha, plugin));
@@ -255,6 +301,15 @@ export const mahabhutaArray = function(
 
     return ret;
 };
+
+// class TagsForDocumentElement extends CustomElement {
+//     get elementName() { return "ak-tags-for-document"; }
+//     async process($element, metadata, dirty, done) {
+//         const plugin = this.config.plugin(pluginName);
+//         return await plugin.doTagsForDocument(this.config,
+//                 metadata, "ak_document_tags.html.njk");
+//     }
+// }
 
 function _doStylesheets(metadata, options, config: Configuration) {
     // console.log(`_doStylesheets ${util.inspect(metadata)}`);
