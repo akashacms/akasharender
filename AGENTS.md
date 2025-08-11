@@ -32,7 +32,66 @@ The scope for AkashaCMS is rendering static HTML websites, rendering EPUB books 
 - Caching: SQLite-based file caching in `lib/cache/`.  The file information is gathered by the Stacked Directories feature, and also supports dynamically updating files that change in the filesystem.
 - Testing: Mocha with Chai assertions, ES modules (.mjs files)
 
-## Core Dependencies (Sibling Workspaces)
+## Configuring an AkashaCMS project
+
+The sibling directories ../akashacms-blog-skeleton, ../akashacms-example, ../akashacms-skeleton, ../akashacms-website, ../open-source-site, and ../pdf-document-construction-set/guide all contain examples of an AkashaCMS project which renders to a website.
+
+The key features of a project directory are:
+
+1. `package.json` containing dependencies to packages required by the project, as well as scripts used for building, previewing, or deploying the website
+2. `config.mjs` containing configuration declarations, in JavaScript, for the project
+
+In the configuration, one lists:
+
+* the required plugins, their configuration.  A plugin is added using the `use` function.
+* the directories in which to find assets, partial templates, layout templates, and documents.  This is done with `addAssetsDir`, `.addPartialsDir`, `addLayoutsDir`, and `addDocumentsDir` function calls.
+* possible configuration for Markdown-IT, such as plugins from its ecosystem -- such configuration is accessed with `config.findRendererName('.html.md')`
+* adding JavaScript references for the top of the document (using `addHeaderJavaScript`) or the bottom of the document (using `addFooterJavaScript`)
+* Adding CSS stylesheet references (using `addStylesheet`)
+
+The `config.prepare` function prepares the configuration for use.
+
+The `export default config` declaration makes it available for use by AkashaRender.
+
+## Rendering an AkashaCMS project into a website
+
+With the configuration of an AkashaCMS project directory, and with the creation of files related to the project, one runs the command:
+
+```shell
+npx akasharender render config.mjs
+```
+
+The file `lib/cli.mjs` serves as an example of invoking various API methods in AkashaRender.  The `render` command is useful to see how the configuration object and other parts of the system work together.
+
+It starts with importing the configuration:
+
+```js
+const config = (await import(
+    path.join(process.cwd(), configFN)
+)).default;
+```
+
+It's used this way because the pathname for the configuration is not known at compile time, but at execution time.
+
+Next:
+
+```js
+let akasha = config.akasha;
+await akasha.setup(config);
+await data.removeAll();
+if (cmdObj.copyAssets) {
+    await config.copyAssets();
+}
+let results = await akasha.render(config);
+```
+
+Running `akasha.setup` performs additional setup.  The primary step there is to use the StackedDirs package to read all file information into the caches.
+
+The `copyAssets` function copies the asset files into the output directory.
+
+The `render` function renders all files in the documents directories into the output directory, using the plugin templates and layout templates as appropriate.
+
+## Core Dependencies
 - **mahabhuta**: DOM manipulation engine for post-processing HTML (../mahabhuta, https://www.npmjs.com/package/mahabhuta, https://github.com/akashacms/mahabhuta).
 - **@akashacms/stacked-dirs**: Virtual file system for layered directory structures, as well as interactive watching for file changes. (../stacked-directories, https://www.npmjs.com/package/@akashacms/stacked-dirs, https://akashacms.github.io/stacked-directories/, https://github.com/akashacms/stacked-directories)
 - **@akashacms/renderers**: Template rendering engines (Markdown, EJS, Nunjucks, etc.) (../renderers, https://www.npmjs.com/package/@akashacms/renderers, https://github.com/akashacms/rendering-engines)
