@@ -28,7 +28,11 @@ export declare class Asset {
     pathInMounted: string;
     fspath: string;
     renderPath: string;
+    dirname: string;
+    rendersToHTML: boolean;
     mtimeMs: string;
+    docMetadata: any;
+    metadata: any;
     info: any;
 }
 type TassetsDAO = BaseDAO<Asset>;
@@ -41,6 +45,8 @@ export declare class Partial {
     pathInMounted: string;
     fspath: string;
     renderPath: string;
+    dirname: string;
+    rendersToHTML: boolean;
     mtimeMs: string;
     docMetadata: any;
     docContent: any;
@@ -57,6 +63,8 @@ export declare class Layout {
     pathInMounted: string;
     fspath: string;
     renderPath: string;
+    dirname: string;
+    rendersToHTML: boolean;
     mtimeMs: string;
     docMetadata: any;
     docContent: any;
@@ -77,6 +85,7 @@ export declare class Document {
     dirname: string;
     parentDir: string;
     mtimeMs: string;
+    baseMetadata: any;
     docMetadata: any;
     docContent: string;
     docBody: string;
@@ -192,6 +201,22 @@ export declare class BaseFileCache<T extends Asset | Layout | Partial | Document
      * initial indexing has happened.
      */
     isReady(): Promise<boolean>;
+    /**
+     * Return simple information about each
+     * path in the collection.  The return
+     * type is an array of PathsReturnType.
+     *
+     * I found two uses for this function.
+     * In copyAssets, the vpath and other
+     * simple data is used for copying items
+     * to the output directory.
+     * In render.ts, the simple fields are
+     * used to then call find to retrieve
+     * the full information.
+     *
+     * @param rootPath
+     * @returns
+     */
     paths(rootPath?: string): Promise<Array<PathsReturnType>>;
     /**
      * Find the file within the cache.
@@ -209,7 +234,6 @@ export declare class BaseFileCache<T extends Asset | Layout | Partial | Document
      * @returns
      */
     findSync(_fpath: any): VPathData | undefined;
-    findAll(): Promise<void[]>;
 }
 export declare class AssetsFileCache<T extends Asset, Tdao extends BaseDAO<T>> extends BaseFileCache<T, Tdao> {
     constructor(config: Configuration, name: string, dirs: dirToMount[], dao: Tdao);

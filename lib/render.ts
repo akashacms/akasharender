@@ -237,6 +237,12 @@ export async function renderDocument(
 
     // Render the main content
 
+    if (typeof docInfo.docContent !== 'string'
+     || typeof docInfo.docBody !== 'string'
+    ) {
+        // console.warn(`No content to render for `, docInfo);
+    }
+
     const rc = <RenderingContext>{
         fspath: docInfo.vpath,
         content: docInfo.docContent,
@@ -267,6 +273,7 @@ export async function renderDocument(
 
     let layoutFormat;
     let layoutRendered;
+    let result;
     // console.log(`renderDocument layout ${docInfo?.metadata?.layout} docMetadata ${util.inspect(docInfo.docMetadata)} metadata ${util.inspect(docInfo.metadata)}`);
     if (docInfo?.metadata?.layout) {
 
@@ -295,7 +302,7 @@ export async function renderDocument(
         rcLayout.metadata.content = docRendered;
 
         try {
-            const result
+            result
                 = await renderContent(config, rcLayout);
             layoutFormat = result.format;
             layoutRendered = result.rendered;
@@ -309,7 +316,7 @@ export async function renderDocument(
         layoutRendered = docRendered;
     }
 
-    // console.log(`renderDocument ${docInfo.vpath} after layout render format ${layoutFormat} `);
+    // console.log(`renderDocument ${docInfo.vpath} after layout render format ${layoutFormat} `, result);
 
     const renderSecondRender = new Date();
     await data.report(docInfo.mountPoint,
