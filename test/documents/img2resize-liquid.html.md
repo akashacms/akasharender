@@ -30,7 +30,7 @@ This image should be encased in a `<figure>`, with a `<figcaption>`, resized to 
 
 This tests an image in an assets directory
 
-<img id="resizerss" src="rss_button.png" resize-width="50">
+<img id="resizerss" src="rss_button.png" resize-width="50" resize-to="rss_button-png.png">
 
 This tests converting an image from PNG to JPEG
 
