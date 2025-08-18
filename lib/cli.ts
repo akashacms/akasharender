@@ -29,6 +29,7 @@ import path from 'node:path';
 import util from 'node:util';
 import * as data from './data.js';
 import YAML from 'js-yaml';
+import { profiler, sqlProfiler } from './performance-utils.js';
 
 const _watchman = import('./cache/watchman.js');
 
@@ -178,6 +179,89 @@ program
                 output.close();
             }
             await akasha.closeCaches();
+        } catch (e) {
+            console.error(`render command ERRORED ${e.stack}`);
+        }
+    });
+
+program
+    .command('render-profiled <configFN>')
+    .description('Render a site into output directory')
+    .option('--quiet', 'Do not print the rendering report')
+    .option('--copy-assets', 'First, copy the assets')
+    .option('--results-to <resultFile>', 'Store the results into the named file')
+    .option('--perfresults <perfResultsFile>', 'Store the time to render each document')
+    .action(async (configFN, cmdObj) => {
+        // console.log(`render: akasha: ${util.inspect(akasha)}`);
+        try {
+            const config = (await import(
+                path.join(process.cwd(), configFN)
+            )).default;
+            let akasha = config.akasha;
+            await akasha.setup(config);
+            await data.removeAll();
+            if (cmdObj.copyAssets) {
+                await config.copyAssets();
+            }
+            profiler.enable();
+            sqlProfiler.enable();
+            let results = await akasha.render(config);
+            if (!cmdObj.quiet) {
+                for (let result of results) {
+
+                    // TODO --- if AKASHARENDER_TRACE_RENDER then output tracing data
+                    // TODO --- also set process.env.GLOBFS_TRACE=1
+
+                    if (result.error) {
+                        console.error(result.error);
+                    } else {
+                        console.log(result.result);
+                        // console.log(util.inspect(result.result));
+                    }
+                }
+            }
+            if (cmdObj.resultsTo) {
+                const output = fs.createWriteStream(cmdObj.resultsTo);
+                for (let result of results) {
+                    if (result.error) {
+                        output.write('****ERROR '+ result.error + '\n');
+                    } else {
+                        output.write(result.result + '\n');
+                        // console.log(util.inspect(result.result));
+                    }
+                }
+                output.close();
+            }
+            if (cmdObj.perfresults) {
+                const output = fs.createWriteStream(cmdObj.perfresults);
+                for (let result of results) {
+                    if (result.error) {
+                        // Ignore
+                    } else if (result.result.startsWith('COPY')) {
+                        // Ignore
+                    } else {
+                        let results = result.result.split('\n');
+                        let perf = results[0];
+                        let matches = perf.match(/.* ==> (.*) \(([0-9\.]+) seconds\)$/);
+                        if (!matches) continue;
+                        if (matches.length < 3) continue;
+                        let fn = matches[1];
+                        let time = matches[2];
+                        let report = `${time} ${fn}`;
+                        for (let i = 1; i < results.length; i++) {
+                            let stages = results[i].match(/(FRONTMATTER|FIRST RENDER|SECOND RENDER|MAHABHUTA|RENDERED) ([0-9\.]+) seconds$/);
+                            if (!stages || stages.length < 3) continue;
+                            report += ` ${stages[1]} ${stages[2]}`;
+                        }
+                        output.write(`${report}\n`);
+                    }
+                }
+                output.close();
+            }
+            await akasha.closeCaches();
+
+            console.log(profiler.getReport());
+            console.log(sqlProfiler.getReport());
         } catch (e) {
             console.error(`render command ERRORED ${e.stack}`);
         }
@@ -460,6 +544,33 @@ program
             await akasha.closeCaches();
         } catch (e) {
             console.error(`index-files command ERRORED ${e.stack}`);
+        }
+    });
+
+program
+    .command('index-chain <configFN> startPath')
+    .description('List the index chain starting from the path')
+    .action(async (configFN, startPath) => {
+        // console.log(`render: akasha: ${util.inspect(akasha)}`);
+        try {
+            const config = (await import(
+                path.join(process.cwd(), configFN)
+            )).default;
+            let akasha = config.akasha;
+            await akasha.setup(config);
+            const docinfo = await akasha.filecache.documentsCache.indexChain(startPath);
+            console.log(`index chain ${startPath} `, docinfo.map(index => {
+                return {
+                    vpath: index.vpath,
+                    renderPath: index.renderPath,
+                    mountPoint: index.mountPoint,
+                    pathInMounted: index.pathInMounted,
+                    dirname: index.dirname
+                }
+            }));
+            await akasha.closeCaches();
+        } catch (e) {
+            console.error(`index-chain command ERRORED ${e.stack}`);
         }
     });
 

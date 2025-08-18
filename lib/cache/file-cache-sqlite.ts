@@ -97,13 +97,41 @@ export class Asset {
     renderPath: string;
 
     @field({
+        name: 'dirname', dbtype: 'TEXT'
+    })
+    @index('asset_dirname')
+    dirname: string;
+
+    @field({
+        name: 'rendersToHTML', dbtype: 'INTEGER'
+    })
+    @index('assets_rendersToHTML')
+    rendersToHTML: boolean;
+
+    @field({
         name: 'mtimeMs',
         dbtype: "TEXT DEFAULT(datetime('now') || 'Z')"
     })
+    @index('asset_mtimeMs')
     mtimeMs: string;
 
     @field({
-        name: 'info', dbtype: 'TEXT', isJson: true
+        name: 'docMetadata', dbtype: 'TEXT',
+        isJson: true
+    })
+    @index('asset_docMetadata')
+    docMetadata: any;
+
+    @field({
+        name: 'metadata', dbtype: 'TEXT',
+        isJson: true
+    })
+    @index('asset_metadata')
+    metadata: any;
+
+    @field({
+        name: 'info', dbtype: 'TEXT',
+        isJson: true
     })
     info: any;
 
@@ -120,6 +148,11 @@ await assetsDAO.createIndex('asset_mountPoint');
 await assetsDAO.createIndex('asset_pathInMounted');
 await assetsDAO.createIndex('asset_fspath');
 await assetsDAO.createIndex('asset_renderPath');
+await assetsDAO.createIndex('assets_rendersToHTML');
+await assetsDAO.createIndex('asset_dirname');
+await assetsDAO.createIndex('asset_mtimeMs');
+await assetsDAO.createIndex('asset_docMetadata');
+await assetsDAO.createIndex('asset_metadata');
 
 //////////// Partials Table
 
@@ -172,9 +205,22 @@ export class Partial {
     renderPath: string;
 
     @field({
+        name: 'dirname', dbtype: 'TEXT'
+    })
+    @index('partial_dirname')
+    dirname: string;
+
+    @field({
+        name: 'rendersToHTML', dbtype: 'INTEGER'
+    })
+    @index('partial_rendersToHTML')
+    rendersToHTML: boolean;
+
+    @field({
         name: 'mtimeMs',
         dbtype: "TEXT DEFAULT(datetime('now') || 'Z')"
     })
+    @index('partial_mtimeMs')
     mtimeMs: string;
 
     @field({
@@ -183,17 +229,18 @@ export class Partial {
     docMetadata: any;
 
     @field({
-        name: 'docContent', dbtype: 'TEXT', isJson: true
+        name: 'docContent', dbtype: 'TEXT'
     })
     docContent: any;
 
     @field({
-        name: 'docBody', dbtype: 'TEXT', isJson: true
+        name: 'docBody', dbtype: 'TEXT'
     })
     docBody: any;
 
     @field({
-        name: 'metadata', dbtype: 'TEXT', isJson: true
+        name: 'metadata', dbtype: 'TEXT',
+        isJson: true
     })
     metadata: any;
 
@@ -214,6 +261,9 @@ await partialsDAO.createIndex('partial_mountPoint');
 await partialsDAO.createIndex('partial_pathInMounted');
 await partialsDAO.createIndex('partial_fspath');
 await partialsDAO.createIndex('partial_renderPath');
+await partialsDAO.createIndex('partial_dirname');
+await partialsDAO.createIndex('partial_rendersToHTML');
+await partialsDAO.createIndex('partial_mtimeMs');
 
 ///////////////// Layouts Table
 
@@ -266,9 +316,22 @@ export class Layout {
     renderPath: string;
 
     @field({
+        name: 'dirname', dbtype: 'TEXT'
+    })
+    @index('layout_dirname')
+    dirname: string;
+
+    @field({
+        name: 'rendersToHTML', dbtype: 'INTEGER'
+    })
+    @index('layout_rendersToHTML')
+    rendersToHTML: boolean;
+
+    @field({
         name: 'mtimeMs',
         dbtype: "TEXT DEFAULT(datetime('now') || 'Z')"
     })
+    @index('layout_mtimeMs')
     mtimeMs: string;
 
     @field({
@@ -277,12 +340,12 @@ export class Layout {
     docMetadata: any;
 
     @field({
-        name: 'docContent', dbtype: 'TEXT', isJson: true
+        name: 'docContent', dbtype: 'TEXT'
     })
     docContent: any;
 
     @field({
-        name: 'docBody', dbtype: 'TEXT', isJson: true
+        name: 'docBody', dbtype: 'TEXT'
     })
     docBody: any;
 
@@ -309,6 +372,9 @@ await layoutsDAO.createIndex('layout_mountPoint');
 await layoutsDAO.createIndex('layout_pathInMounted');
 await layoutsDAO.createIndex('layout_fspath');
 await layoutsDAO.createIndex('layout_renderPath');
+await layoutsDAO.createIndex('layout_rendersToHTML');
+await layoutsDAO.createIndex('layout_dirname');
+await layoutsDAO.createIndex('layout_mtimeMs');
 
 /////////////// Documents Table
 
@@ -382,20 +448,28 @@ export class Document {
         name: 'mtimeMs',
         dbtype: "TEXT DEFAULT(datetime('now') || 'Z')"
     })
+    @index('docs_mtimeMs')
     mtimeMs: string;
 
     @field({
-        name: 'docMetadata', dbtype: 'TEXT', isJson: true
+        name: 'baseMetadata', dbtype: 'TEXT',
+        isJson: true
+    })
+    baseMetadata: any;
+
+    @field({
+        name: 'docMetadata', dbtype: 'TEXT',
+        isJson: true
     })
     docMetadata: any;
 
     @field({
-        name: 'docContent', dbtype: 'TEXT', isJson: false
+        name: 'docContent', dbtype: 'TEXT'
     })
     docContent: string;
 
     @field({
-        name: 'docBody', dbtype: 'TEXT', isJson: false
+        name: 'docBody', dbtype: 'TEXT'
     })
     docBody: string;
 
@@ -407,6 +481,7 @@ export class Document {
     @field({
         name: 'tags', dbtype: 'TEXT', isJson: true
     })
+    @index('docs_tags')
     tags: any;
 
     @field({
@@ -416,7 +491,7 @@ export class Document {
     layout: string;
 
     @field({
-        name: 'blogtag', dbtype: 'TEXT', isJson: false
+        name: 'blogtag', dbtype: 'TEXT'
     })
     @index('docs_blogtag')
     blogtag: string;
@@ -442,7 +517,20 @@ await documentsDAO.createIndex('docs_renderPath');
 await documentsDAO.createIndex('docs_rendersToHTML');
 await documentsDAO.createIndex('docs_dirname');
 await documentsDAO.createIndex('docs_parentDir');
+await documentsDAO.createIndex('docs_mtimeMs');
+await documentsDAO.createIndex('docs_tags');
+await documentsDAO.createIndex('docs_layout');
 await documentsDAO.createIndex('docs_blogtag');
+
+await documentsDAO.sqldb.run(`
+    CREATE INDEX IF NOT EXISTS 
+    idx_docs_metadata_json ON 
+    DOCUMENTS(json_extract(metadata, '$.publicationDate'));
+`);
+await documentsDAO.sqldb.run(`
+    CREATE INDEX IF NOT EXISTS 
+    idx_docs_render_path_pattern ON DOCUMENTS(renderPath);
+`);
 
 const tglue = new TagGlue();
 tglue.init(sqdb._db);
@@ -758,6 +846,45 @@ export class BaseFileCache<
                 dest.renderPath = obj.renderPath;
             }
         }
+        if (typeof obj.dirname !== 'undefined') {
+            if (typeof obj.dirname !== 'string') {
+                throw new Error(`BaseFileCache.cvtRowToObjBASE must have a dirname, got ${util.inspect(obj)}`);
+            } else {
+                dest.dirname = obj.dirname;
+            }
+        }
+        if (typeof obj.rendersToHTML !== 'undefined'
+         || obj.rendersToHTML === null
+        ) {
+            if (typeof obj.rendersToHTML === 'number') {
+                if (obj.rendersToHTML === 0) {
+                    // if (obj.renderPath.match(/.*\.html$/)) {
+                    //     console.log(`${obj.renderPath} === 0 === FALSE`);
+                    // }
+                    dest.rendersToHTML = false;
+                } else if (obj.rendersToHTML === 1) {
+                    // if (obj.renderPath.match(/.*\.html$/)) {
+                    //     console.log(`${obj.renderPath} === 1 === TRUE`);
+                    // }
+                    dest.rendersToHTML = true;
+                } else {
+                    throw new Error(`BaseFileCache.cvtRowToObjBASE rendersToHTML incorrect value, got ${util.inspect(obj)}`);
+                }
+            } else if (obj.rendersToHTML === null) {
+                dest.rendersToHTML = false;
+            } else {
+                throw new Error(`BaseFileCache.cvtRowToObjBASE must have a INTEGER rendersToHTML, got ${util.inspect(obj)}`);
+            }
+        } else {
+
+            // if (obj.renderPath.match(/.*\.html$/)) {
+            //     console.log(`${obj.renderPath} default to FALSE`);
+            // }
+            dest.rendersToHTML = false;
+        }
+        // if (obj.renderPath.match(/.*\.html$/)) {
+        //     console.log(`${obj.renderPath} ${obj.rendersToHTML} ${dest.rendersToHTML}`);
+        // }
         if (typeof obj.mtimeMs !== 'undefined') {
             if (typeof obj.mtimeMs !== 'string') {
                 throw new Error(`BaseFileCache.cvtRowToObjBASE must have a mtimeMs, got ${util.inspect(obj)}`);
@@ -765,12 +892,38 @@ export class BaseFileCache<
                 dest.mtimeMs = obj.mtimeMs;
             }
         }
+        if (typeof obj.docMetadata !== 'undefined') {
+            if (obj.docMetadata === null) {
+                dest.docMetadata = {};
+            } else if (typeof obj.docMetadata !== 'string') {
+                throw new Error(`BaseFileCache.cvtRowToObjBASE must have a docMetadata, got ${util.inspect(obj)}`);
+            } else {
+                dest.docMetadata = JSON.parse(obj.docMetadata);
+            }
+        } else {
+            dest.docMetadata = {};
+        }
+        if (typeof obj.metadata !== 'undefined') {
+            if (obj.metadata === null) {
+                dest.metadata = {};
+            } else if (typeof obj.metadata !== 'string') {
+                throw new Error(`BaseFileCache.cvtRowToObjBASE must have a metadata, got ${util.inspect(obj)}`);
+            } else {
+                dest.metadata = JSON.parse(obj.metadata);
+            }
+        } else {
+            dest.metadata = {};
+        }
         if (typeof obj.info !== 'undefined') {
-            if (typeof obj.info !== 'string') {
+            if (obj.info === null) {
+                dest.info = {};
+            } else if (typeof obj.info !== 'string') {
                 throw new Error(`BaseFileCache.cvtRowToObjBASE must have a info, got ${util.inspect(obj)}`);
             } else {
                 dest.info = JSON.parse(obj.info);
             }
+        } else {
+            dest.info = {};
         }
 
     }
@@ -794,11 +947,8 @@ export class BaseFileCache<
             $mounted: mounted
         });
         const mapped = <any[]>found.map(item => {
-            return this.cvtRowToObj(item);
+            return { vpath: item.vpath, mounted: item.mounted }
         });
-        for (const item of mapped) {
-            this.gatherInfoData(item);
-        }
         return mapped;
     }
 
@@ -824,9 +974,9 @@ export class BaseFileCache<
         const mapped = <any[]>found.map(item => {
             return this.cvtRowToObj(item);
         });
-        for (const item of mapped) {
-            this.gatherInfoData(item);
-        }
+        // for (const item of mapped) {
+        //     this.gatherInfoData(item);
+        // }
         return mapped;
     }
 
@@ -872,11 +1022,11 @@ export class BaseFileCache<
             mounted: info.mounted,
             mountPoint: info.mountPoint,
             pathInMounted: info.pathInMounted,
-            mtimeMs: new Date(info.statsMtime).toISOString(),
             fspath: path.join(info.mounted, info.pathInMounted),
             renderPath: info.renderPath,
-            rendersToHTML: info.rendersToHTML,
             dirname: path.dirname(info.renderPath),
+            rendersToHTML: false,
+            mtimeMs: new Date(info.statsMtime).toISOString(),
             docMetadata: info.docMetadata,
             // docContent: info.docContent,
             // docBody: info.docBody,
@@ -928,11 +1078,11 @@ export class BaseFileCache<
             mounted: info.mounted,
             mountPoint: info.mountPoint,
             pathInMounted: info.pathInMounted,
-            mtimeMs: new Date(info.statsMtime).toISOString(),
             fspath: path.join(info.mounted, info.pathInMounted),
             renderPath: info.renderPath,
-            rendersToHTML: info.rendersToHTML,
             dirname: path.dirname(info.renderPath),
+            rendersToHTML: false,
+            mtimeMs: new Date(info.statsMtime).toISOString(),
             docMetadata: info.docMetadata,
             // docContent: info.docContent,
             // docBody: info.docBody,
@@ -1047,6 +1197,22 @@ export class BaseFileCache<
         return true;
     }
 
+    /**
+     * Return simple information about each
+     * path in the collection.  The return
+     * type is an array of PathsReturnType.
+     * 
+     * I found two uses for this function.
+     * In copyAssets, the vpath and other
+     * simple data is used for copying items
+     * to the output directory.
+     * In render.ts, the simple fields are
+     * used to then call find to retrieve
+     * the full information.
+     *
+     * @param rootPath 
+     * @returns 
+     */
     async paths(rootPath?: string)
         : Promise<Array<PathsReturnType>>
     {
@@ -1062,16 +1228,25 @@ export class BaseFileCache<
         // seems meant to eliminate duplicates.
         const vpathsSeen = new Set();
 
+        // Select the fields in PathsReturnType
         const results = await this.dao.sqldb.all(
         (typeof rootP === 'string') ?
         `
-            SELECT * FROM ${this.dao.table.quotedName}
+            SELECT
+                vpath, mime, mounted, mountPoint,
+                pathInMounted, mtimeMs,
+                info, fspath, renderPath
+            FROM ${this.dao.table.quotedName}
             WHERE
             renderPath LIKE $rootP
             ORDER BY mtimeMs ASC
         `
         : `
-            SELECT * FROM ${this.dao.table.quotedName}
+            SELECT
+                vpath, mime, mounted, mountPoint,
+                pathInMounted, mtimeMs,
+                info, fspath, renderPath
+            FROM ${this.dao.table.quotedName}
             ORDER BY mtimeMs ASC
         `,
         (typeof rootP === 'string')
@@ -1103,13 +1278,7 @@ export class BaseFileCache<
             }
         });
 
-        const mapped = <any[]>result2.map(item => {
-            return this.cvtRowToObj(item);
-        });
-        for (const item of mapped) {
-            this.gatherInfoData(item);
-        }
-        return mapped;
+        return result2;
 
         // This stage converts the items 
         // received by this function into
@@ -1278,26 +1447,26 @@ export class BaseFileCache<
     }
 
     // TODO Is this function used anywhere?
-    async findAll() {
+    // async findAll() {
 
-        const fcache = this;
+    //     const fcache = this;
 
-        // const result1 = await this.dao.selectAll({
-        // } as Filter<T>);
+    //     // const result1 = await this.dao.selectAll({
+    //     // } as Filter<T>);
 
-        const result1 = await this.dao.sqldb.all(`
-            SELECT * FROM ${this.dao.table.quotedName}
-        `, {});
+    //     const result1 = await this.dao.sqldb.all(`
+    //         SELECT * FROM ${this.dao.table.quotedName}
+    //     `, {});
 
-        const result2 = result1.filter(item => {
-            // console.log(`findAll ?ignore? ${item.vpath}`);
-            return !(fcache.ignoreFile(item));
-        });
-        const result3 = result2.map(item => {
-            return this.cvtRowToObj(item);
-        })
-        return result3;
-    }
+    //     const result2 = result1.filter(item => {
+    //         // console.log(`findAll ?ignore? ${item.vpath}`);
+    //         return !(fcache.ignoreFile(item));
+    //     });
+    //     const result3 = result2.map(item => {
+    //         return this.cvtRowToObj(item);
+    //     })
+    //     return result3;
+    // }
 }
 
 export class AssetsFileCache<
@@ -1352,19 +1521,21 @@ export class TemplatesFileCache<
                 this.isLayout ? new Layout() : new Partial();
         this.cvtRowToObjBASE(obj, ret);
 
-        if (typeof obj.docMetadata !== 'undefined'
-         && obj.docMetadata !== null
-        ) {
-            if (typeof obj.docMetadata !== 'string') {
-                throw new Error(`TemplatesFileCache.cvtRowToObj must have a docMetadata, got ${util.inspect(obj)}`);
-            } else {
-                ret.docMetadata = obj.docMetadata;
-            }
-        }
+        // if (typeof obj.docMetadata !== 'undefined'
+        //  && obj.docMetadata !== null
+        // ) {
+        //     if (typeof obj.docMetadata !== 'string') {
+        //         throw new Error(`TemplatesFileCache.cvtRowToObj must have a docMetadata, got ${util.inspect(obj)}`);
+        //     } else {
+        //         ret.docMetadata = obj.docMetadata;
+        //     }
+        // }
         if (typeof obj.docContent !== 'undefined'
          && obj.docContent !== null
         ) {
-            if (typeof obj.docContent !== 'string') {
+            if (obj.docContent === null) {
+                ret.docContent = undefined;
+            } else if (typeof obj.docContent !== 'string') {
                 throw new Error(`TemplatesFileCache.cvtRowToObj must have a docContent, got ${util.inspect(obj)}`);
             } else {
                 ret.docContent = obj.docContent;
@@ -1373,21 +1544,23 @@ export class TemplatesFileCache<
         if (typeof obj.docBody !== 'undefined'
          && obj.docBody !== null
         ) {
-            if (typeof obj.docBody !== 'string') {
+            if (obj.docBody === null) {
+                ret.docBody = undefined;
+            } else if (typeof obj.docBody !== 'string') {
                 throw new Error(`TemplatesFileCache.cvtRowToObj must have a docBody, got ${util.inspect(obj)}`);
             } else {
                 ret.docBody = obj.docBody;
             }
         }
-        if (typeof obj.metadata !== 'undefined'
-         && obj.metadata !== null
-        ) {
-            if (typeof obj.metadata !== 'string') {
-                throw new Error(`TemplatesFileCache.cvtRowToObj must have a metadata, got ${util.inspect(obj)}`);
-            } else {
-                ret.metadata = obj.metadata;
-            }
-        }
+        // if (typeof obj.metadata !== 'undefined'
+        //  && obj.metadata !== null
+        // ) {
+        //     if (typeof obj.metadata !== 'string') {
+        //         throw new Error(`TemplatesFileCache.cvtRowToObj must have a metadata, got ${util.inspect(obj)}`);
+        //     } else {
+        //         ret.metadata = obj.metadata;
+        //     }
+        // }
         return ret;
     }
 
@@ -1455,11 +1628,11 @@ export class TemplatesFileCache<
             mounted: info.mounted,
             mountPoint: info.mountPoint,
             pathInMounted: info.pathInMounted,
-            mtimeMs: new Date(info.statsMtime).toISOString(),
             fspath: path.join(info.mounted, info.pathInMounted),
             renderPath: info.renderPath,
-            rendersToHTML: info.rendersToHTML,
             dirname: path.dirname(info.renderPath),
+            rendersToHTML: info.rendersToHTML,
+            mtimeMs: new Date(info.statsMtime).toISOString(),
             docMetadata: info.docMetadata,
             docContent: info.docContent,
             docBody: info.docBody,
@@ -1475,11 +1648,11 @@ export class TemplatesFileCache<
             mounted: info.mounted,
             mountPoint: info.mountPoint,
             pathInMounted: info.pathInMounted,
-            mtimeMs: new Date(info.statsMtime).toISOString(),
             fspath: path.join(info.mounted, info.pathInMounted),
             renderPath: info.renderPath,
-            rendersToHTML: info.rendersToHTML,
             dirname: path.dirname(info.renderPath),
+            rendersToHTML: info.rendersToHTML,
+            mtimeMs: new Date(info.statsMtime).toISOString(),
             docMetadata: info.docMetadata,
             docContent: info.docContent,
             docBody: info.docBody,
@@ -1504,15 +1677,15 @@ export class DocumentsFileCache
         const ret: Document = new Document();
         this.cvtRowToObjBASE(obj, ret);
 
-        if (typeof obj.docMetadata !== 'undefined'
-         && obj.docMetadata !== null
-        ) {
-            if (typeof obj.docMetadata !== 'string') {
-                throw new Error(`DocumentsFileCache.cvtRowToObj must have a docMetadata, got ${util.inspect(obj)}`);
-            } else {
-                ret.docMetadata = obj.docMetadata;
-            }
-        }
+        // if (typeof obj.docMetadata !== 'undefined'
+        //  && obj.docMetadata !== null
+        // ) {
+        //     if (typeof obj.docMetadata !== 'string') {
+        //         throw new Error(`DocumentsFileCache.cvtRowToObj must have a docMetadata, got ${util.inspect(obj)}`);
+        //     } else {
+        //         ret.docMetadata = obj.docMetadata;
+        //     }
+        // }
         if (typeof obj.docContent !== 'undefined'
          && obj.docContent !== null
         ) {
@@ -1531,15 +1704,24 @@ export class DocumentsFileCache
                 ret.docBody = obj.docBody;
             }
         }
-        if (typeof obj.metadata !== 'undefined'
-         && obj.metadata !== null
+        if (typeof obj.blogtag !== 'undefined'
+         && obj.blogtag !== null
         ) {
-            if (typeof obj.metadata !== 'string') {
-                throw new Error(`DocumentsFileCache.cvtRowToObj must have a metadata, got ${util.inspect(obj)}`);
+            if (typeof obj.blogtag !== 'string') {
+                throw new Error(`DocumentsFileCache.cvtRowToObj must have a blogtag, got ${util.inspect(obj)}`);
             } else {
-                ret.metadata = obj.metadata;
+                ret.blogtag = obj.blogtag;
             }
         }
+        // if (typeof obj.metadata !== 'undefined'
+        //  && obj.metadata !== null
+        // ) {
+        //     if (typeof obj.metadata !== 'string') {
+        //         throw new Error(`DocumentsFileCache.cvtRowToObj must have a metadata, got ${util.inspect(obj)}`);
+        //     } else {
+        //         ret.metadata = obj.metadata;
+        //     }
+        // }
         return ret;
     }
 
@@ -1578,9 +1760,13 @@ export class DocumentsFileCache
             //     info.renderPath
             // );
 
-            info.rendersToHTML = micromatch.isMatch(
-                info.renderPath,
-                '**/*.html')
+            info.rendersToHTML =
+                micromatch.isMatch(
+                    info.renderPath,
+                    '**/*.html')
+             || micromatch.isMatch(
+                    info.renderPath,
+                    '*.html')
             ? true : false;
 
             if (renderer.parseMetadata) {
@@ -1779,12 +1965,16 @@ export class DocumentsFileCache
             mounted: info.mounted,
             mountPoint: info.mountPoint,
             pathInMounted: info.pathInMounted,
-            mtimeMs: new Date(info.statsMtime).toISOString(),
             fspath: path.join(info.mounted, info.pathInMounted),
             renderPath: info.renderPath,
-            rendersToHTML: info.rendersToHTML,
+            rendersToHTML:
+                typeof info.rendersToHTML === 'undefined'
+                ? false
+                : info.rendersToHTML,
             dirname: path.dirname(info.renderPath),
             parentDir: info.parentDir,
+            mtimeMs: new Date(info.statsMtime).toISOString(),
+            baseMetadata: info.baseMetadata,
             docMetadata: info.docMetadata,
             docContent: info.docContent,
             docBody: info.docBody,
@@ -1793,9 +1983,7 @@ export class DocumentsFileCache
                     ? info.metadata.tags
                     : [],
             layout: info.metadata?.layout,
-            blogtag: typeof info.metadata?.blogtag === 'string'
-                ? info.metadata?.blogtag
-                : undefined,
+            blogtag: info.blogtag,
             info,
         };
 
@@ -1812,12 +2000,16 @@ export class DocumentsFileCache
             mounted: info.mounted,
             mountPoint: info.mountPoint,
             pathInMounted: info.pathInMounted,
-            mtimeMs: new Date(info.statsMtime).toISOString(),
             fspath: path.join(info.mounted, info.pathInMounted),
             renderPath: info.renderPath,
-            rendersToHTML: info.rendersToHTML,
+            rendersToHTML:
+                typeof info.rendersToHTML === 'undefined'
+                ? false
+                : info.rendersToHTML,
             dirname: path.dirname(info.renderPath),
             parentDir: info.parentDir,
+            mtimeMs: new Date(info.statsMtime).toISOString(),
+            baseMetadata: info.baseMetadata,
             docMetadata: info.docMetadata,
             docContent: info.docContent,
             docBody: info.docBody,
@@ -1826,9 +2018,7 @@ export class DocumentsFileCache
                     ? info.metadata.tags
                     : [],
             layout: info.metadata?.layout,
-            blogtag: typeof info.metadata?.blogtag === 'string'
-                ? info.metadata?.blogtag
-                : undefined,
+            blogtag: info.blogtag,
             info,
         };
         await this.dao.insert(docInfo);
@@ -1849,13 +2039,10 @@ export class DocumentsFileCache
                     : _fpath;
         const parsed = path.parse(fpath);
 
+        // console.log(`indexChain ${_fpath} ${fpath}`, parsed);
+
         const filez: Document[] = [];
-        const self = await this.dao.selectAll({
-            'or': [
-                { vpath: { eq: fpath } },
-                { renderPath: { eq: fpath } }
-            ]
-        });
+        const self = await this.findByPath(fpath);
         let fileName = fpath;
         if (Array.isArray(self) && self.length >= 1) {
             filez.push(self[0]);
@@ -1873,12 +2060,7 @@ export class DocumentsFileCache
             }
             let lookFor = path.join(parentDir, "index.html");
 
-            const index = await this.dao.selectAll({
-                'or': [
-                    { vpath: { eq: lookFor } },
-                    { renderPath: { eq: lookFor } }
-                ]
-            });
+            const index = await this.findByPath(lookFor);
 
             if (Array.isArray(index) && index.length >= 1) {
                 filez.push(index[0]);
@@ -1913,7 +2095,6 @@ export class DocumentsFileCache
                   ? _fpath.substring(1)
                   : _fpath;
         let dirname = path.dirname(vpath);
-        // if (dirname === '.') dirname = '/';
 
         const siblings = await this.dao.sqldb.all(`
             SELECT * FROM ${this.dao.table.quotedName}
@@ -1927,13 +2108,6 @@ export class DocumentsFileCache
             $vpath: vpath
         });
 
-        // const siblings = await this.dao.selectAll({
-        //     dirname: { eq: dirname },
-        //     // The siblings cannot include the self.
-        //     vpath: { neq: vpath },
-        //     renderPath: { neq: vpath },
-        //     rendersToHTML: true
-        // });
         const ignored = siblings.filter(item => {
             return !this.ignoreFile(item);
         });
@@ -1941,9 +2115,6 @@ export class DocumentsFileCache
         const mapped = ignored.map(item => {
             return this.cvtRowToObj(item);
         });
-        for (const item of mapped) {
-            this.gatherInfoData(item);
-        }
         return mapped;
 
     }
@@ -2281,14 +2452,33 @@ export class DocumentsFileCache
         // The hero image (thumbnail)
         thumbnail?: string;
     }> {
-        const docInfo = await this.find(vpath);
-        return {
-            vpath,
-            renderPath: docInfo.renderPath,
-            title: docInfo.metadata.title,
-            teaser: docInfo.metadata.teaser,
-            // thumbnail
-        };
+
+        const found = await this.dao.sqldb.all(`
+            SELECT *
+            FROM ${this.dao.table.quotedName}
+            WHERE 
+            vpath = $vpath OR renderPath = $vpath
+        `, {
+            $vpath: vpath
+        });
+
+        if (Array.isArray(found)) {
+
+            // const docInfo = await this.find(vpath);
+            return {
+                vpath,
+                renderPath: found[0].renderPath,
+                title: found[0].metadata.title,
+                teaser: found[0].metadata.teaser,
+                // thumbnail
+            };
+        } else {
+            return {
+                vpath,
+                renderPath: undefined,
+                title: undefined
+            };
+        }
     }
 
 
@@ -2312,9 +2502,9 @@ export class DocumentsFileCache
             
             // Gather additional info data for each result FIRST
             // This is crucial because filters and sort functions may depend on this data
-            for (const item of documents) {
-                this.gatherInfoData(item);
-            }
+            // for (const item of documents) {
+            //     this.gatherInfoData(item);
+            // }
             
             // Apply post-SQL filters that can't be done in SQL
             let filteredResults = documents;
