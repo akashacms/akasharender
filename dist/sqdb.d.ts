@@ -16,12 +16,6 @@
  *  See the License for the specific language governing permissions and
  *  limitations under the License.
  */
-/**
- * SQL Database support using SQLITE3.
- *
- * What's supported is SQLITE3ORM - a lightweight
- * ORM that runs on top of SQLITE3.
- */
 import { Database } from 'sqlite3';
 import { SqlDatabase } from 'sqlite3orm';
 import { SQ3DataStore } from 'sq3-kv-data-store';

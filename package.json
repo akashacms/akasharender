@@ -52,6 +52,7 @@
     "gray-matter": "^4.x",
     "highlight.js": "^11.11.x",
     "html-entities": "^2.6.x",
+    "js-base64": "^3.7.8",
     "mahabhuta": "^0.9.x",
     "micromatch": "^4.0.8",
     "relative": "^3.0.x",
