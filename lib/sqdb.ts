@@ -87,7 +87,7 @@ sqdb._db.on('error', err => {
 if (typeof process.env.AK_PROFILE === 'string') {
     sqdb.on('profile', (sql, time) => {
         fs.writeFileSync(process.env.AK_PROFILE,
-            `${Base64.encode(sql)}  ${time}\n`,
+            `${Base64.encode(sql)}\t${time}\n`,
             { flag: "a+" }
         );
     });
