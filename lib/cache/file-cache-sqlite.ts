@@ -2481,6 +2481,12 @@ export class DocumentsFileCache
         }
     }
 
+    // This is a simple cache to hold results
+    // of search operations.  The key side of this
+    // Map is meant to be the stringified selector.
+    private searchCache = new Map<
+            string, { results: Document[], timestamp: number }
+    >();
 
     /**
      * Perform descriptive search operations using direct SQL queries
@@ -2491,6 +2497,23 @@ export class DocumentsFileCache
      */
     async search(options): Promise<Array<Document>> {
         const fcache = this;
+
+        // First, see if the search results are already
+        // computed and in the cache.
+
+        const cacheKey = JSON.stringify(options);
+        const cached = this.searchCache.get(cacheKey);
+
+        // If the cache has an entry, skip computing
+        // anything.
+        if (cached
+         && Date.now() - cached.timestamp < 60000
+        ) { // 1 minute cache
+            return cached.results;
+        }
+
+        // NOTE: Entries are added to the cache at the bottom
+        // of this function
         
         try {
             const { sql, params } = this.buildSearchQuery(options);
@@ -2498,7 +2521,9 @@ export class DocumentsFileCache
             const results = await this.dao.sqldb.all(sql, params);
             
             // Convert raw SQL results to Document objects
-            const documents = results.map(row => this.cvtRowToObj(row));
+            const documents = results.map(row => {
+                return this.cvtRowToObj(row);
+            });
             
             // Gather additional info data for each result FIRST
             // This is crucial because filters and sort functions may depend on this data
@@ -2510,7 +2535,9 @@ export class DocumentsFileCache
             let filteredResults = documents;
             
             // Filter by renderers (requires config lookup)
-            if (options.renderers && Array.isArray(options.renderers)) {
+            if (options.renderers
+             && Array.isArray(options.renderers)
+            ) {
                 filteredResults = filteredResults.filter(item => {
                     let renderer = fcache.config.findRendererPath(item.vpath);
                     if (!renderer) return false;
@@ -2539,6 +2566,10 @@ export class DocumentsFileCache
                 filteredResults = filteredResults.sort(options.sortFunc);
             }
             
+            // Add the results to the cache
+            this.searchCache.set(cacheKey, {
+                results: filteredResults, timestamp: Date.now()
+            });
             return filteredResults;
             
         } catch (err: any) {
@@ -2602,11 +2633,18 @@ export class DocumentsFileCache
         }
         
         // Blog tag filtering
-        if (typeof options.blogtag === 'string') {
-            whereClauses.push(`d.blogtag = ${addParam(options.blogtag)}`);
-        } else if (Array.isArray(options.blogtags)) {
+        // Ensure that the blogtags array is used,
+        // if present, with the blogtag value used
+        // otherwise.
+        //
+        // The purpose for the blogtags value is to
+        // support a pseudo-blog made of the items
+        // from multiple actual blogs.
+        if (Array.isArray(options.blogtags)) {
             const placeholders = options.blogtags.map(tag => addParam(tag)).join(', ');
             whereClauses.push(`d.blogtag IN (${placeholders})`);
+        } else if (typeof options.blogtag === 'string') {
+            whereClauses.push(`d.blogtag = ${addParam(options.blogtag)}`);
         } else if (typeof options.blogtags === 'string') {
             throw new Error(`search ERROR invalid blogtags array ${util.inspect(options.blogtags)}`);
         }

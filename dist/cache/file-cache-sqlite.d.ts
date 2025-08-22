@@ -385,6 +385,7 @@ export declare class DocumentsFileCache extends BaseFileCache<Document, Tdocumen
         teaser?: string;
         thumbnail?: string;
     }>;
+    private searchCache;
     /**
      * Perform descriptive search operations using direct SQL queries
      * for better performance and scalability.
