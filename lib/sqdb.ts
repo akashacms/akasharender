@@ -24,6 +24,8 @@
  * ORM that runs on top of SQLITE3.
  */
 
+import fs from 'node:fs';
+import { Base64 } from 'js-base64';
 import { Database } from 'sqlite3';
 // import sqleanLibs from 'sqlite3-sqlean';
 import * as sqlite_regex from "sqlite-regex";
@@ -68,6 +70,28 @@ sqdb.on('error', err => {
 sqdb._db.on('error', err => {
     console.error(err);
 });
+
+// Profiling SQL queries
+// This might be useful for performance evaluation.
+// The output is TSV separated fields:
+//   1. base64-encoded SQL
+//      This was chosen to prevent newlines in this field
+//      and to keep the format simple
+//   2. Approximate number of milliseconds to execute
+//
+// In practice the number of milliseconds is either
+// zero or one, indicating there isn't enough precision
+// in the code invoking this callback.
+//
+// In other words this doesn't seem terribly useful.
+if (typeof process.env.AK_PROFILE === 'string') {
+    sqdb.on('profile', (sql, time) => {
+        fs.writeFileSync(process.env.AK_PROFILE,
+            `${Base64.encode(sql)}  ${time}\n`,
+            { flag: "a+" }
+        );
+    });
+}
 
 ////////////////////////
 
