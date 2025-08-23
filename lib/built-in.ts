@@ -575,6 +575,9 @@ class AkBodyClassAdd extends PageProcessor {
 class CodeEmbed extends CustomElement {
     get elementName() { return "code-embed"; }
     async process($element, metadata, dirty) {
+
+        // console.log(`CodeEmbed process ${util.inspect(metadata.document, false, 10)}`);
+
         const fn = $element.attr('file-name');
         const lang = $element.attr('lang');
         const id = $element.attr('id');
