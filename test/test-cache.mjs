@@ -2100,6 +2100,13 @@ describe('Search', function() {
             pathmatch: /.json.nowhere$/
         });
 
+        // console.log(found.map(item => {
+        //     return {
+        //         vpath: item.vpath,
+        //         renderPath: item.renderPath
+        //     };
+        // }));
+
         assert.isDefined(found);
         assert.isArray(found);
         assert.equal(found.length, 0);
@@ -2142,7 +2149,7 @@ describe('Search', function() {
 
         assert.isDefined(found);
         assert.isArray(found);
-        assert.isTrue(found.length > 0);
+        assert.equal(found.length, 67);
         for (const doc of found) {
             assert.isOk(doc.renderPath.match(/\.html$/));
         }
@@ -2150,8 +2157,15 @@ describe('Search', function() {
 
     it('should select nothing with nonexistent renderpathmatch RegExp', async function() {
         const found = await filecache.documentsCache.search({
-            renderpathmatch: /.html.nowhere$/
+            renderpathmatch: /.nowhere$/
         });
+
+        // console.log(found.map(item => {
+        //     return {
+        //         vpath: item.vpath,
+        //         renderPath: item.renderPath
+        //     };
+        // }));
 
         assert.isDefined(found);
         assert.isArray(found);
@@ -2289,15 +2303,16 @@ describe('Search', function() {
             blogtag: 'sibling'
         });
 
+        // console.log(found.map(item => {
+        //     return {
+        //         vpath: item.vpath,
+        //         blogtag: item.blogtag
+        //     };
+        // }));
+
         assert.isDefined(found);
         assert.isArray(found);
         assert.isTrue(found.length > 0);
-        console.log(found.map(item => {
-            return {
-                vpath: item.vpath,
-                blogtag: item.blogtag
-            };
-        }))
         for (const doc of found) {
             assert.isDefined(doc.blogtag);
             assert.equal(typeof doc.blogtag, 'string')
