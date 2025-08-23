@@ -394,7 +394,7 @@ export class Document {
     @field({
         name: 'mime', dbtype: 'TEXT'
     })
-    mime: string;
+    mime?: string;
 
     @field({
         name: 'mounted', dbtype: 'TEXT'
@@ -451,50 +451,59 @@ export class Document {
     @index('docs_mtimeMs')
     mtimeMs: string;
 
+    //  GENERATED ALWAYS AS (json_extract(info, '$.baseMetadata')) STORED
     @field({
-        name: 'baseMetadata', dbtype: 'TEXT',
+        name: 'baseMetadata',
+        dbtype: `TEXT`,
         isJson: true
     })
-    baseMetadata: any;
+    baseMetadata?: any;
 
     @field({
         name: 'docMetadata', dbtype: 'TEXT',
         isJson: true
     })
-    docMetadata: any;
+    docMetadata?: any;
 
     @field({
         name: 'docContent', dbtype: 'TEXT'
     })
-    docContent: string;
+    docContent?: string;
 
     @field({
         name: 'docBody', dbtype: 'TEXT'
     })
-    docBody: string;
+    docBody?: string;
 
+    //  GENERATED ALWAYS AS (json_extract(info, '$.metadata')) STORED
     @field({
-        name: 'metadata', dbtype: 'TEXT', isJson: true
+        name: 'metadata',
+        dbtype: `TEXT`,
+        isJson: true
     })
-    metadata: any;
+    metadata?: any;
 
     @field({
-        name: 'tags', dbtype: 'TEXT', isJson: true
+        name: 'tags',
+        dbtype: `TEXT GENERATED ALWAYS AS (json_extract(info, '$.metadata.tags')) STORED`,
+        isJson: true
     })
     @index('docs_tags')
-    tags: any;
+    tags?: any;
 
     @field({
-        name: 'layout', dbtype: 'TEXT', isJson: false
+        name: 'layout',
+        dbtype: `TEXT GENERATED ALWAYS AS (json_extract(metadata, '$.layout')) STORED`
     })
     @index('docs_layout')
-    layout: string;
+    layout?: string;
 
     @field({
-        name: 'blogtag', dbtype: 'TEXT'
+        name: 'blogtag',
+        dbtype: `TEXT GENERATED ALWAYS AS (json_extract(metadata, '$.blogtag')) STORED`
     })
     @index('docs_blogtag')
-    blogtag: string;
+    blogtag?: string;
 
     @field({
         name: 'info', dbtype: 'TEXT', isJson: true
@@ -688,6 +697,7 @@ export class BaseFileCache<
                         code: event.code,
                         name: event.name,
                         vpath: event.info.vpath,
+                        info: event.info,
                         error: e
                     });
                 }
@@ -1845,9 +1855,9 @@ export class DocumentsFileCache
                 }
                 info.docMetadata.tags = info.metadata.tags;
 
-                if (info.metadata.blogtag) {
-                    info.blogtag = info.metadata.blogtag;
-                }
+                // if (info.metadata.blogtag) {
+                //     info.blogtag = info.metadata.blogtag;
+                // }
                 
                 // The root URL for the project
                 info.metadata.root_url = this.config.root_url;
@@ -1982,8 +1992,8 @@ export class DocumentsFileCache
             tags: Array.isArray(info.metadata?.tags)
                     ? info.metadata.tags
                     : [],
-            layout: info.metadata?.layout,
-            blogtag: info.blogtag,
+            // layout: info.layout, // info.metadata?.layout,
+            // blogtag: info.blogtag,
             info,
         };
 
@@ -1994,36 +2004,77 @@ export class DocumentsFileCache
     }
 
     protected async insertDocToDB(info: any) {
-        const docInfo = <Document>{
-            vpath: info.vpath,
-            mime: info.mime,
-            mounted: info.mounted,
-            mountPoint: info.mountPoint,
-            pathInMounted: info.pathInMounted,
-            fspath: path.join(info.mounted, info.pathInMounted),
-            renderPath: info.renderPath,
-            rendersToHTML:
-                typeof info.rendersToHTML === 'undefined'
-                ? false
-                : info.rendersToHTML,
-            dirname: path.dirname(info.renderPath),
-            parentDir: info.parentDir,
-            mtimeMs: new Date(info.statsMtime).toISOString(),
-            baseMetadata: info.baseMetadata,
-            docMetadata: info.docMetadata,
-            docContent: info.docContent,
-            docBody: info.docBody,
-            metadata: info.metadata,
-            tags: Array.isArray(info.metadata?.tags)
-                    ? info.metadata.tags
-                    : [],
-            layout: info.metadata?.layout,
-            blogtag: info.blogtag,
-            info,
-        };
-        await this.dao.insert(docInfo);
+        if (typeof info.rendersToHTML === 'undefined'
+         || info.rendersToHTML === null
+        ) {
+            info.rendersToHTML = false;
+        }
+        if (!info.baseMetadata) info.baseMetadata = {};
+        if (!info.docMetadata) info.docMetadata = {};
+        if (!info.docContent) info.docContent = '';
+        if (!info.docBody) info.docBody = '';
+        if (!info.metadata) info.metadata = {};
+        if (!Array.isArray(info.metadata?.tags)) info.metadata.tags = [];
+        if (!info.metadata.layout) info.metadata.layout = '';
+        if (!info.metadata.blogtag) info.metadata.blogtag = '';
+        const siblings = await this.dao.sqldb.run(
+            `INSERT INTO DOCUMENTS
+                (
+                 vpath, mime,
+                 mounted, mountPoint, pathInMounted,
+                 fspath, renderPath,
+                 rendersToHTML,
+                 dirname, parentDir,
+                 mtimeMs,
+                 baseMetadata,
+                 docMetadata,
+                 docContent,
+                 docBody,
+                 metadata,
+                 info
+                )
+                VALUES (
+                 $vpath, $mime,
+                 $mounted, $mountPoint, $pathInMounted,
+                 $fspath, $renderPath,
+                 $rendersToHTML,
+                 $dirname, $parentDir,
+                 $mtimeMs,
+                 $baseMetadata,
+                 $docMetadata,
+                 $docContent,
+                 $docBody,
+                 $metadata,
+                 $info
+                )
+            `, {
+                $vpath: info.vpath,
+                $mime: info.mime,
+                $mounted: info.mounted,
+                $mountPoint: info.mountPoint,
+                $pathInMounted: info.pathInMounted,
+                $fspath: path.join(
+                    info.mounted, info.pathInMounted
+                ),
+                $renderPath: info.renderPath,
+                $rendersToHTML: info.rendersToHTML,
+                $dirname: path.dirname(info.renderPath),
+                $parentDir: path.dirname(
+                    path.dirname(
+                        info.renderPath
+                )),
+                $mtimeMs: new Date(info.statsMtime).toISOString(),
+                $baseMetadata: JSON.stringify(info.baseMetadata),
+                $docMetadata: JSON.stringify(info.docMetadata),
+                $docContent: info.docContent,
+                $docBody: info.docBody,
+                $metadata: JSON.stringify(info.metadata),
+                $info: JSON.stringify(info)
+            }
+        )
+        // await this.dao.insert(docInfo);
         await this.addDocTagGlue(
-            docInfo.vpath, docInfo.tags
+            info.vpath, info.metadata.tags
         );
     }
 
@@ -2355,12 +2406,12 @@ export class DocumentsFileCache
         //
         // These SQL queries work:
         //
-        // sqlite> select * from TAGGLUE where tagName IN ( 'Something "quited"', "Teaser's" );
+        // sqlite> select * from TAGGLUE where tagName IN ( 'Something "quoted"', "Teaser's" );
         // teaser-content.html.md|Teaser's
-        // teaser-content.html.md|Something "quited"
-        // sqlite> select * from TAGGLUE where tagName IN ( 'Something "quited"', 'Teaser''s' );
+        // teaser-content.html.md|Something "quoted"
+        // sqlite> select * from TAGGLUE where tagName IN ( 'Something "quoted"', 'Teaser''s' );
         // teaser-content.html.md|Teaser's
-        // teaser-content.html.md|Something "quited"
+        // teaser-content.html.md|Something "quoted"
         //
         // But, this does not:
         //
@@ -2389,8 +2440,8 @@ export class DocumentsFileCache
         // docs-with-tags command ERRORED Error: SQLITE_ERROR: near "quoted": syntax error
         //
         // The code below produces:
-        // $ node ../dist/cli.js docs-with-tag config-normal.mjs "Teaser's" 'Something "quited"'
-        // documentsWithTag [ "Teaser's", 'Something "quited"' ]  ( 'Teaser''s','Something "quited"' ) 
+        // $ node ../dist/cli.js docs-with-tag config-normal.mjs "Teaser's" 'Something "quoted"'
+        // documentsWithTag [ "Teaser's", 'Something "quoted"' ]  ( 'Teaser''s','Something "quoted"' ) 
         // [ { vpath: 'teaser-content.html.md' } ]
         // [ 'teaser-content.html.md' ]
 
@@ -2501,8 +2552,34 @@ export class DocumentsFileCache
         // First, see if the search results are already
         // computed and in the cache.
 
-        const cacheKey = JSON.stringify(options);
+        // The issue here is that the options
+        // object can contain RegExp values.
+        // The RegExp object does not have
+        // a toJSON function.  This hook
+        // causes RegExp to return the
+        // .toString() value instead.
+        //
+        // Source: https://stackoverflow.com/questions/20276531/stringifying-a-regular-expression
+        //
+        // A similar issue exists with Functions
+        // in the object.
+        //
+        // Source: https://stackoverflow.com/questions/6754919/json-stringify-function
+        const cacheKey = JSON.stringify(
+            options,
+            function(key, value) {
+                if (value instanceof RegExp) {
+                    return value.toString();
+                } else if (typeof value === 'function') {
+                    return value + ''; // implicitly `toString` it
+                } else {
+                    return value;
+                }
+            }
+        );
         const cached = this.searchCache.get(cacheKey);
+
+        // console.log(`search ${util.inspect(options)} ==> ${cacheKey} ${cached ? 'hasCached' : 'noCached'}`);
 
         // If the cache has an entry, skip computing
         // anything.
@@ -2514,26 +2591,26 @@ export class DocumentsFileCache
 
         // NOTE: Entries are added to the cache at the bottom
         // of this function
-        
+
         try {
             const { sql, params } = this.buildSearchQuery(options);
             // console.log(`search ${sql}`);
             const results = await this.dao.sqldb.all(sql, params);
-            
+
             // Convert raw SQL results to Document objects
             const documents = results.map(row => {
                 return this.cvtRowToObj(row);
             });
-            
+
             // Gather additional info data for each result FIRST
             // This is crucial because filters and sort functions may depend on this data
             // for (const item of documents) {
             //     this.gatherInfoData(item);
             // }
-            
+
             // Apply post-SQL filters that can't be done in SQL
             let filteredResults = documents;
-            
+
             // Filter by renderers (requires config lookup)
             if (options.renderers
              && Array.isArray(options.renderers)
@@ -2553,25 +2630,27 @@ export class DocumentsFileCache
                     return found;
                 });
             }
-            
+
             // Apply custom filter function
             if (options.filterfunc) {
                 filteredResults = filteredResults.filter(item => {
                     return options.filterfunc(fcache.config, options, item);
                 });
             }
-            
+
             // Apply custom sort function (if SQL sorting wasn't used)
             if (typeof options.sortFunc === 'function') {
                 filteredResults = filteredResults.sort(options.sortFunc);
             }
-            
+
             // Add the results to the cache
-            this.searchCache.set(cacheKey, {
-                results: filteredResults, timestamp: Date.now()
-            });
+            if (true) {
+                this.searchCache.set(cacheKey, {
+                    results: filteredResults, timestamp: Date.now()
+                });
+            }
             return filteredResults;
-            
+
         } catch (err: any) {
             throw new Error(`DocumentsFileCache.search error: ${err.message}`);
         }
@@ -2580,22 +2659,27 @@ export class DocumentsFileCache
     /**
      * Build SQL query and parameters for search options
      */
-    private buildSearchQuery(options): { sql: string, params: any } {
+    private buildSearchQuery(options): {
+        sql: string,
+        params: any
+    } {
         const params: any = {};
         const whereClauses: string[] = [];
         const joins: string[] = [];
         let paramCounter = 0;
-        
+
+        // console.log(`buildSearchQuery ${util.inspect(options)}`);
+
         // Helper to create unique parameter names
         const addParam = (value: any): string => {
             const paramName = `$param${++paramCounter}`;
             params[paramName] = value;
             return paramName;
         };
-        
+
         // Base query
         let sql = `SELECT DISTINCT d.* FROM ${this.dao.table.quotedName} d`;
-        
+
         // MIME type filtering
         if (options.mime) {
             if (typeof options.mime === 'string') {
@@ -2605,17 +2689,17 @@ export class DocumentsFileCache
                 whereClauses.push(`d.mime IN (${placeholders})`);
             }
         }
-        
+
         // Renders to HTML filtering
         if (typeof options.rendersToHTML === 'boolean') {
             whereClauses.push(`d.rendersToHTML = ${addParam(options.rendersToHTML ? 1 : 0)}`);
         }
-        
+
         // Root path filtering
         if (typeof options.rootPath === 'string') {
             whereClauses.push(`d.renderPath LIKE ${addParam(options.rootPath + '%')}`);
         }
-        
+
         // Glob pattern matching
         if (options.glob && typeof options.glob === 'string') {
             const escapedGlob = options.glob.indexOf("'") >= 0 
@@ -2623,7 +2707,7 @@ export class DocumentsFileCache
                 : options.glob;
             whereClauses.push(`d.vpath GLOB ${addParam(escapedGlob)}`);
         }
-        
+
         // Render glob pattern matching
         if (options.renderglob && typeof options.renderglob === 'string') {
             const escapedGlob = options.renderglob.indexOf("'") >= 0 
@@ -2631,7 +2715,7 @@ export class DocumentsFileCache
                 : options.renderglob;
             whereClauses.push(`d.renderPath GLOB ${addParam(escapedGlob)}`);
         }
-        
+
         // Blog tag filtering
         // Ensure that the blogtags array is used,
         // if present, with the blogtag value used
@@ -2640,21 +2724,28 @@ export class DocumentsFileCache
         // The purpose for the blogtags value is to
         // support a pseudo-blog made of the items
         // from multiple actual blogs.
+        // if (typeof options.blogtags !== 'undefined'
+        //  || typeof options.blogtag !== 'undefined'
+        // ) {
+        //     console.log(` blogtags ${util.inspect(options.blogtags)} blogtag ${util.inspect(options.blogtag)}`);
+        // }
         if (Array.isArray(options.blogtags)) {
             const placeholders = options.blogtags.map(tag => addParam(tag)).join(', ');
             whereClauses.push(`d.blogtag IN (${placeholders})`);
+            // console.log(`d.blogtag IN (${placeholders})`);
         } else if (typeof options.blogtag === 'string') {
             whereClauses.push(`d.blogtag = ${addParam(options.blogtag)}`);
+            // console.log(`d.blogtag = ${options.blogtag}`);
         } else if (typeof options.blogtags === 'string') {
             throw new Error(`search ERROR invalid blogtags array ${util.inspect(options.blogtags)}`);
         }
-        
+
         // Tag filtering using TAGGLUE table
         if (options.tag && typeof options.tag === 'string') {
             joins.push(`INNER JOIN TAGGLUE tg ON d.vpath = tg.docvpath`);
             whereClauses.push(`tg.tagName = ${addParam(options.tag)}`);
         }
-        
+
         // Layout filtering
         if (options.layouts) {
             if (Array.isArray(options.layouts)) {
@@ -2668,7 +2759,7 @@ export class DocumentsFileCache
                 whereClauses.push(`d.layout = ${addParam(options.layouts)}`);
             }
         }
-        
+
         // Path regex matching
         const regexClauses: string[] = [];
         if (typeof options.pathmatch === 'string') {
@@ -2688,17 +2779,24 @@ export class DocumentsFileCache
         } else if ('pathmatch' in options) {
             throw new Error(`search ERROR invalid pathmatch ${util.inspect(options.pathmatch)}`);
         }
-        
+
         // Render path regex matching
+        // if (typeof options.renderpathmatch !== 'undefined') {
+        //     console.log(util.inspect(options.renderpathmatch, false, 3));
+        // }
         if (typeof options.renderpathmatch === 'string') {
+            // console.log(`d.renderPath regexp string ${options.renderpathmatch}`);
             regexClauses.push(`d.renderPath regexp ${addParam(options.renderpathmatch)}`);
         } else if (options.renderpathmatch instanceof RegExp) {
+            // console.log(`d.renderPath regexp regexp ${options.renderpathmatch.source}`);
             regexClauses.push(`d.renderPath regexp ${addParam(options.renderpathmatch.source)}`);
         } else if (Array.isArray(options.renderpathmatch)) {
             for (const match of options.renderpathmatch) {
                 if (typeof match === 'string') {
+                    // console.log(`d.renderPath regexp array string ${match}`);
                     regexClauses.push(`d.renderPath regexp ${addParam(match)}`);
                 } else if (match instanceof RegExp) {
+                    // console.log(`d.renderPath regexp array regexp ${match.source}`);
                     regexClauses.push(`d.renderPath regexp ${addParam(match.source)}`);
                 } else {
                     throw new Error(`search ERROR invalid renderpathmatch regexp ${util.inspect(match)}`);
@@ -2707,21 +2805,21 @@ export class DocumentsFileCache
         } else if ('renderpathmatch' in options) {
             throw new Error(`search ERROR invalid renderpathmatch ${util.inspect(options.renderpathmatch)}`);
         }
-        
+
         if (regexClauses.length > 0) {
             whereClauses.push(`(${regexClauses.join(' OR ')})`);
         }
-        
+
         // Add JOINs to query
         if (joins.length > 0) {
             sql += ' ' + joins.join(' ');
         }
-        
+
         // Add WHERE clause
         if (whereClauses.length > 0) {
             sql += ' WHERE ' + whereClauses.join(' AND ');
         }
-        
+
         // Add ORDER BY clause
         let orderBy = '';
         if (typeof options.sortBy === 'string') {
@@ -2742,7 +2840,7 @@ export class DocumentsFileCache
             // use a default ordering (by modification time)
             orderBy = 'ORDER BY d.mtimeMs';
         }
-        
+
         // Handle sort direction
         if (orderBy) {
             if (options.sortByDescending || options.reverse) {
@@ -2752,7 +2850,7 @@ export class DocumentsFileCache
             }
             sql += ' ' + orderBy;
         }
-        
+
         // Add LIMIT and OFFSET
         if (typeof options.limit === 'number') {
             sql += ` LIMIT ${addParam(options.limit)}`;
@@ -2760,7 +2858,7 @@ export class DocumentsFileCache
         if (typeof options.offset === 'number') {
             sql += ` OFFSET ${addParam(options.offset)}`;
         }
-        
+
         return { sql, params };
     }
 

@@ -75,7 +75,7 @@ export declare class Layout {
 export declare const layoutsDAO: BaseDAO<Layout>;
 export declare class Document {
     vpath: string;
-    mime: string;
+    mime?: string;
     mounted: string;
     mountPoint: string;
     pathInMounted: string;
@@ -85,14 +85,14 @@ export declare class Document {
     dirname: string;
     parentDir: string;
     mtimeMs: string;
-    baseMetadata: any;
-    docMetadata: any;
-    docContent: string;
-    docBody: string;
-    metadata: any;
-    tags: any;
-    layout: string;
-    blogtag: string;
+    baseMetadata?: any;
+    docMetadata?: any;
+    docContent?: string;
+    docBody?: string;
+    metadata?: any;
+    tags?: any;
+    layout?: string;
+    blogtag?: string;
     info: any;
 }
 type TdocumentssDAO = BaseDAO<Document>;
