@@ -33,18 +33,20 @@ import * as sqlite_regex from "sqlite-regex";
 import { SqlDatabase } from 'sqlite3orm';
 import { SQ3DataStore } from 'sq3-kv-data-store';
 
+import { AsyncDatabase } from 'promised-sqlite3';
+
 /**
  * Subclass the SqlDatabase so we can expose
  * the underlying SQLITE3 Database object and
  * some useful methods on that class.
  */
-export class SqlDatabaseChild extends SqlDatabase {
-    get _db(): Database { return this.db; }
+// export class SqlDatabaseChild extends SqlDatabase {
+//     get _db(): Database { return this.db; }
 
-    loadExtension(filename: string, callback?: (err?: Error | null) => void): Database {
-        return this.db.loadExtension(filename, callback);
-    }
-}
+//     loadExtension(filename: string, callback?: (err?: Error | null) => void): Database {
+//         return this.db.loadExtension(filename, callback);
+//     }
+// }
 
 const dburl = typeof process.env.AK_DB_URL === 'string'
         ? process.env.AK_DB_URL
@@ -52,22 +54,22 @@ const dburl = typeof process.env.AK_DB_URL === 'string'
 
 // Turns on full stack traces
 // SqlDatabase.verbose();
-export const sqdb = new SqlDatabaseChild();
-await sqdb.open(dburl);
+export const sqdb = await AsyncDatabase.open(dburl);
+// await sqdb.open(dburl);
 // await sqdb.open('test.db');
 // sqdb.loadExtension(sqleanLibs.reLibPath);
-sqdb.loadExtension(sqlite_regex.getLoadablePath());
+sqdb.inner.loadExtension(sqlite_regex.getLoadablePath());
 
 // This traces SQL statements
 //
-// sqdb.on('trace', sql => {
+// sqdb.inner.on('trace', sql => {
 //     console.log(sql);
 // });
-sqdb.on('error', err => {
+sqdb.inner.on('error', err => {
     console.error(err);
 });
 
-sqdb._db.on('error', err => {
+sqdb.inner.on('error', err => {
     console.error(err);
 });
 
@@ -85,7 +87,7 @@ sqdb._db.on('error', err => {
 //
 // In other words this doesn't seem terribly useful.
 if (typeof process.env.AK_PROFILE === 'string') {
-    sqdb.on('profile', (sql, time) => {
+    sqdb.inner.on('profile', (sql, time) => {
         fs.writeFileSync(process.env.AK_PROFILE,
             `${Base64.encode(sql)}\t${time}\n`,
             { flag: "a+" }
@@ -99,5 +101,5 @@ export function newSQ3DataStore(name: string)
     : SQ3DataStore
 {
     // console.log(`newSQ3DataStore ${name}`);
-    return new SQ3DataStore(sqdb._db, name);
+    return new SQ3DataStore(sqdb.inner, name);
 }

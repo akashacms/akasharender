@@ -28,8 +28,11 @@ import type { queueAsPromised } from "fastq";
 import { Configuration } from './index.js';
 import { RenderingContext } from '@akashacms/renderers';
 import {
-    DocumentsFileCache, Document
-} from './cache/file-cache-sqlite.js';
+    DocumentsCache
+} from './cache/cache-sqlite.js';
+import {
+    Document
+} from './cache/schema.js';
 
 //////////////////////////////////////////////////////////
 
@@ -427,7 +430,7 @@ export async function renderDocument(
  */
 export async function render(config) {
 
-    const documents = <DocumentsFileCache>config.akasha.filecache.documentsCache;
+    const documents = <DocumentsCache>config.akasha.filecache.documentsCache;
     // await documents.isReady();
     // console.log('CALLING config.hookBeforeSiteRendered');
     await config.hookBeforeSiteRendered();

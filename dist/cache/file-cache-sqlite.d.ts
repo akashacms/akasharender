@@ -18,85 +18,7 @@
  */
 import { dirToWatch, VPathData } from '@akashacms/stacked-dirs';
 import EventEmitter from 'events';
-import { BaseDAO } from 'sqlite3orm';
 import { Configuration, dirToMount } from '../index.js';
-export declare class Asset {
-    vpath: string;
-    mime: string;
-    mounted: string;
-    mountPoint: string;
-    pathInMounted: string;
-    fspath: string;
-    renderPath: string;
-    dirname: string;
-    rendersToHTML: boolean;
-    mtimeMs: string;
-    docMetadata: any;
-    metadata: any;
-    info: any;
-}
-type TassetsDAO = BaseDAO<Asset>;
-export declare const assetsDAO: TassetsDAO;
-export declare class Partial {
-    vpath: string;
-    mime: string;
-    mounted: string;
-    mountPoint: string;
-    pathInMounted: string;
-    fspath: string;
-    renderPath: string;
-    dirname: string;
-    rendersToHTML: boolean;
-    mtimeMs: string;
-    docMetadata: any;
-    docContent: any;
-    docBody: any;
-    metadata: any;
-    info: any;
-}
-export declare const partialsDAO: BaseDAO<Partial>;
-export declare class Layout {
-    vpath: string;
-    mime: string;
-    mounted: string;
-    mountPoint: string;
-    pathInMounted: string;
-    fspath: string;
-    renderPath: string;
-    dirname: string;
-    rendersToHTML: boolean;
-    mtimeMs: string;
-    docMetadata: any;
-    docContent: any;
-    docBody: any;
-    metadata: any;
-    info: any;
-}
-export declare const layoutsDAO: BaseDAO<Layout>;
-export declare class Document {
-    vpath: string;
-    mime?: string;
-    mounted: string;
-    mountPoint: string;
-    pathInMounted: string;
-    fspath: string;
-    renderPath: string;
-    rendersToHTML: boolean;
-    dirname: string;
-    parentDir: string;
-    mtimeMs: string;
-    baseMetadata?: any;
-    docMetadata?: any;
-    docContent?: string;
-    docBody?: string;
-    metadata?: any;
-    tags?: any;
-    layout?: string;
-    blogtag?: string;
-    info: any;
-}
-type TdocumentssDAO = BaseDAO<Document>;
-export declare const documentsDAO: BaseDAO<Document>;
 /**
  * Type for return from paths method.  The fields here
  * are whats in the Asset/Layout/Partial classes above
@@ -114,7 +36,8 @@ export type PathsReturnType = {
     fspath: string;
     renderPath: string;
 };
-export declare class BaseFileCache<T extends Asset | Layout | Partial | Document, Tdao extends BaseDAO<T>> extends EventEmitter {
+export declare class BaseFileCache<T, // extends Asset | Layout | Partial | Document,
+Tdao> extends EventEmitter {
     #private;
     /**
      * @param config AkashaRender Configuration object
@@ -147,14 +70,14 @@ export declare class BaseFileCache<T extends Asset | Layout | Partial | Document
      * @param mounted
      * @returns
      */
-    protected findPathMounted(vpath: string, mounted: string): Promise<any[]>;
+    protected findPathMounted(vpath: string, mounted: string): Promise<void>;
     /**
      * Find an info object by the vpath.
      *
      * @param vpath
      * @returns
      */
-    protected findByPath(vpath: string): Promise<any[]>;
+    protected findByPath(vpath: string): Promise<void>;
     handleChanged(name: any, info: any): Promise<void>;
     protected updateDocInDB(info: any): Promise<void>;
     /**
@@ -179,7 +102,6 @@ export declare class BaseFileCache<T extends Asset | Layout | Partial | Document
     handleAdded(name: any, info: any): Promise<void>;
     protected insertDocToDB(info: any): Promise<void>;
     handleUnlinked(name: any, info: any): Promise<void>;
-    handleReady(name: any): Promise<void>;
     /**
      * Find the directory mount corresponding to the file.
      *
@@ -217,14 +139,14 @@ export declare class BaseFileCache<T extends Asset | Layout | Partial | Document
      * @param rootPath
      * @returns
      */
-    paths(rootPath?: string): Promise<Array<PathsReturnType>>;
+    paths(rootPath?: string): Promise<void>;
     /**
      * Find the file within the cache.
      *
      * @param _fpath The vpath or renderPath to look for
      * @returns boolean true if found, false otherwise
      */
-    find(_fpath: any): Promise<T>;
+    find(_fpath: any): Promise<void>;
     /**
      * Fulfills the "find" operation not by
      * looking in the database, but by scanning
@@ -235,16 +157,16 @@ export declare class BaseFileCache<T extends Asset | Layout | Partial | Document
      */
     findSync(_fpath: any): VPathData | undefined;
 }
-export declare class AssetsFileCache<T extends Asset, Tdao extends BaseDAO<T>> extends BaseFileCache<T, Tdao> {
+export declare class AssetsFileCache<T, // extends Asset,
+Tdao> extends BaseFileCache<T, Tdao> {
     constructor(config: Configuration, name: string, dirs: dirToMount[], dao: Tdao);
-    protected cvtRowToObj(obj: any): Asset;
 }
-export declare class TemplatesFileCache<T extends Layout | Partial, Tdao extends BaseDAO<T>> extends BaseFileCache<T, Tdao> {
+export declare class TemplatesFileCache<T, // extends Layout | Partial,
+Tdao extends BaseFileCache<T, Tdao>> {
     #private;
     constructor(config: Configuration, name: string, dirs: dirToMount[], dao: Tdao, type: "layout" | "partial");
     get isLayout(): boolean;
     get isPartial(): boolean;
-    protected cvtRowToObj(obj: any): Layout | Partial;
     /**
      * Gather the additional data suitable
      * for Partial and Layout templates.  The
@@ -257,8 +179,7 @@ export declare class TemplatesFileCache<T extends Layout | Partial, Tdao extends
     protected updateDocInDB(info: any): Promise<void>;
     protected insertDocToDB(info: any): Promise<void>;
 }
-export declare class DocumentsFileCache extends BaseFileCache<Document, TdocumentssDAO> {
-    constructor(config: Configuration, name: string, dirs: dirToMount[]);
+export declare class DocumentsFileCache {
     protected cvtRowToObj(obj: any): Document;
     gatherInfoData(info: any): void;
     protected deleteDocTagGlue(vpath: any): Promise<void>;
@@ -278,7 +199,7 @@ export declare class DocumentsFileCache extends BaseFileCache<Document, Tdocumen
      * @param _fpath
      * @returns
      */
-    siblings(_fpath: any): Promise<Document[]>;
+    siblings(_fpath: any): Promise<void>;
     /**
      * Returns a tree of items starting from the document
      * named in _rootItem.  The parameter should be an
@@ -324,12 +245,7 @@ export declare class DocumentsFileCache extends BaseFileCache<Document, Tdocumen
      * @param _rootItem
      * @returns
      */
-    childItemTree(_rootItem: string): Promise<{
-        rootItem: Document;
-        dirname: string;
-        items: any[];
-        childFolders: any[];
-    }>;
+    childItemTree(_rootItem: string): Promise<void>;
     /**
      * Find the index files (renders to index.html)
      * within the named subtree.
@@ -337,7 +253,7 @@ export declare class DocumentsFileCache extends BaseFileCache<Document, Tdocumen
      * @param rootPath
      * @returns
      */
-    indexFiles(rootPath?: string): Promise<any[]>;
+    indexFiles(rootPath?: string): Promise<void>;
     /**
      * For every file in the documents cache,
      * set the access and modifications.
@@ -378,13 +294,7 @@ export declare class DocumentsFileCache extends BaseFileCache<Document, Tdocumen
      * @param vpath
      * @returns
      */
-    docLinkData(vpath: string): Promise<{
-        vpath: string;
-        renderPath: string;
-        title: string;
-        teaser?: string;
-        thumbnail?: string;
-    }>;
+    docLinkData(vpath: string): Promise<void>;
     private searchCache;
     /**
      * Perform descriptive search operations using direct SQL queries
@@ -399,11 +309,6 @@ export declare class DocumentsFileCache extends BaseFileCache<Document, Tdocumen
      */
     private buildSearchQuery;
 }
-export declare var assetsCache: AssetsFileCache<Asset, typeof assetsDAO>;
-export declare var partialsCache: TemplatesFileCache<Partial, typeof partialsDAO>;
-export declare var layoutsCache: TemplatesFileCache<Layout, typeof layoutsDAO>;
-export declare var documentsCache: DocumentsFileCache;
 export declare function setup(config: Configuration): Promise<void>;
 export declare function closeFileCaches(): Promise<void>;
-export {};
 //# sourceMappingURL=file-cache-sqlite.d.ts.map

@@ -57,7 +57,8 @@ const __dirname = import.meta.dirname;
 // For use in Configure.prepare
 import { BuiltInPlugin } from './built-in.js';
 
-import * as filecache from './cache/file-cache-sqlite.js';
+import * as filecache from './cache/cache-sqlite.js';
+import { sqdb } from './sqdb.js';
 
 export { newSQ3DataStore } from './sqdb.js';
 
@@ -128,7 +129,7 @@ export async function setup(config) {
 
 export async function cacheSetup(config) {
     try {
-        await filecache.setup(config);
+        await filecache.setup(config, await sqdb);
     } catch (err) {
         console.error(`INITIALIZATION FAILURE COULD NOT INITIALIZE CACHE `, err);
         process.exit(1);
@@ -247,7 +248,7 @@ export async function partial(config, fname, metadata) {
         // console.log(`partial about to render ${util.inspect(found.vpath)}`);
         let partialText;
         if (found.docBody) partialText = found.docBody;
-        else if (found.docContent) partialText = found.docContent;
+        else if (found.docBody) partialText = found.docBody;
         else partialText = await fsp.readFile(found.fspath, 'utf8');
 
         // Some renderers (Nunjuks) require that metadata.config
@@ -1111,6 +1112,16 @@ export class Configuration {
         // await assets.isReady();
         // Fetch the list of all assets files
         const paths = await assets.paths();
+
+        // console.log(`copyAssets paths`,
+        //     paths.map(item => {
+        //         return {
+        //             vpath: item.vpath,
+        //             renderPath: item.renderPath,
+        //             mime: item.mime
+        //         }
+        //     })
+        // )
 
         // The work task is to copy each file
         const queue = fastq.promise(async function(item) {

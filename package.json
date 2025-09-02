@@ -44,6 +44,7 @@
     "akasharender": "dist/cli.js"
   },
   "dependencies": {
+    "24": "^0.0.0",
     "@akashacms/renderers": "akashacms/rendering-engines",
     "@akashacms/stacked-dirs": "akashacms/stacked-directories",
     "commander": "^14.x",
@@ -52,9 +53,11 @@
     "gray-matter": "^4.x",
     "highlight.js": "^11.11.x",
     "html-entities": "^2.6.x",
+    "joi": "^18.0.1",
     "js-base64": "^3.7.8",
     "mahabhuta": "^0.9.x",
     "micromatch": "^4.0.8",
+    "promised-sqlite3": "^2.1.0",
     "relative": "^3.0.x",
     "rss": "^1.2.x",
     "sharp": "^0.34.x",
