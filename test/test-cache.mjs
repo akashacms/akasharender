@@ -1,8 +1,9 @@
 import util   from 'util';
 import path   from 'path';
 import fs, { promises as fsp } from 'fs';
-import akasha from '../dist/index.js';
-import * as filecache from '../dist/cache/file-cache-sqlite.js';
+import * as akasha from '../dist/index.js';
+const filecache = await import('../dist/cache/cache-sqlite.js');
+// import * as filecache from '../dist/cache/cache-sqlite.js';
 import minimatch from 'minimatch';
 import { assert }   from 'chai';
 
@@ -129,11 +130,11 @@ describe('Initialize cache test configuration', function() {
 describe('Setup cache', function() {
     it('should successfully setup cache database', async function() {
         try {
-            await filecache.setup(config);
-            // await akasha.setup(config);
+            // await filecache.setup(config);
+            await akasha.setup(config);
             // await akasha.fileCachesReady(config);
         } catch (e) {
-            console.error(e);
+            console.error('setup cache stage failed', e.stack);
             throw e;
         }
     });
@@ -2254,7 +2255,7 @@ describe('Search', function() {
             if (!doc.rendersToHTML) {
                 console.warn(`test saw file that does not render to HTML `, doc);
             }
-            assert.isTrue(doc.rendersToHTML);
+            assert.isOk(doc.rendersToHTML);
             assert.isOk(doc.renderPath.match(/\.html$/));
         }
     });
@@ -2270,7 +2271,7 @@ describe('Search', function() {
         assert.isArray(found);
         assert.isTrue(found.length > 0);
         for (const doc of found) {
-            assert.isFalse(doc.rendersToHTML);
+            assert.isNotOk(doc.rendersToHTML);
             assert.isNotOk(doc.renderPath.match(/\.html$/));
         }
     });

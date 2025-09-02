@@ -28,7 +28,7 @@ export * from './mahafuncs.js';
 export * as relative from 'relative';
 export { Plugin } from './Plugin.js';
 export { render, renderDocument, renderContent } from './render.js';
-import * as filecache from './cache/file-cache-sqlite.js';
+import * as filecache from './cache/cache-sqlite.js';
 export { newSQ3DataStore } from './sqdb.js';
 /**
  * Performs setup of things so that AkashaRender can function.
@@ -204,10 +204,10 @@ export declare class Configuration {
     set cacheDir(dirnm: string);
     get cacheDir(): string;
     get akasha(): any;
-    documentsCache(): Promise<filecache.DocumentsFileCache>;
-    assetsCache(): Promise<filecache.AssetsFileCache<filecache.Asset, import("sqlite3orm").BaseDAO<filecache.Asset>>>;
-    layoutsCache(): Promise<filecache.TemplatesFileCache<filecache.Layout, import("sqlite3orm").BaseDAO<filecache.Layout>>>;
-    partialsCache(): Promise<filecache.TemplatesFileCache<filecache.Partial, import("sqlite3orm").BaseDAO<filecache.Partial>>>;
+    documentsCache(): Promise<filecache.DocumentsCache>;
+    assetsCache(): Promise<filecache.AssetsCache>;
+    layoutsCache(): Promise<filecache.LayoutsCache>;
+    partialsCache(): Promise<filecache.PartialsCache>;
     /**
      * Add a directory to the documentDirs configuration array
      * @param {string} dir The pathname to use

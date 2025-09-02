@@ -27,5 +27,5 @@ export declare function report(basedir: any, fpath: any, renderTo: any, stage: a
 export declare function remove(basedir: any, fpath: any): Promise<void>;
 export declare function removeAll(): Promise<void>;
 export declare function print(): Promise<void>;
-export declare function data4file(basedir: any, fpath: any): Promise<string>;
+export declare function data4file(basedir: any, fpath: any): Promise<void>;
 //# sourceMappingURL=data.d.ts.map

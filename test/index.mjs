@@ -7,7 +7,7 @@ const mahabhuta = akasha.mahabhuta;
 import { assert } from 'chai';
 import { default as _image_size } from 'image-size';
 const sizeOf = promisify(_image_size);
-const filecache = await import('../dist/cache/file-cache-sqlite.js');
+const filecache = await import('../dist/cache/cache-sqlite.js');
 
 const __filename = import.meta.filename;
 const __dirname = import.meta.dirname;
