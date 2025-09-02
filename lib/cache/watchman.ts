@@ -23,7 +23,7 @@ import fastq from 'fastq';
 import * as data from '../data.js';
 import {
     documentsCache, assetsCache, layoutsCache, partialsCache
-} from './file-cache-sqlite.js';
+} from './cache-sqlite.js';
 
 async function renderVPath(config, info) {
     await data.remove(info.mountPoint, info.vpath);

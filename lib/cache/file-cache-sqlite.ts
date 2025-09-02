@@ -48,504 +48,518 @@ import { TagGlue, TagDescriptions } from './tag-glue.js';
 
 ///////////// Assets table
 
-@table({
-    name: 'ASSETS',
-    withoutRowId: true,
-} as TableOpts)
-export class Asset {
+// @table({
+//     name: 'ASSETS',
+//     withoutRowId: true,
+// } as TableOpts)
+// export class Asset {
 
-    // Primary key
-    @id({
-        name: 'vpath', dbtype: 'TEXT'
-    })
-    @index('asset_vpath')
-    vpath: string;
+//     // Primary key
+//     @id({
+//         name: 'vpath', dbtype: 'TEXT'
+//     })
+//     @index('asset_vpath')
+//     vpath: string;
 
-    @field({
-        name: 'mime', dbtype: 'TEXT'
-    })
-    mime: string;
+//     @field({
+//         name: 'mime', dbtype: 'TEXT'
+//     })
+//     mime: string;
 
-    @field({
-        name: 'mounted', dbtype: 'TEXT'
-    })
-    @index('asset_mounted')
-    mounted: string;
+//     @field({
+//         name: 'mounted', dbtype: 'TEXT'
+//     })
+//     @index('asset_mounted')
+//     mounted: string;
 
-    @field({
-        name: 'mountPoint', dbtype: 'TEXT'
-    })
-    @index('asset_mountPoint')
-    mountPoint: string;
+//     @field({
+//         name: 'mountPoint', dbtype: 'TEXT'
+//     })
+//     @index('asset_mountPoint')
+//     mountPoint: string;
 
-    @field({
-        name: 'pathInMounted', dbtype: 'TEXT'
-    })
-    @index('asset_pathInMounted')
-    pathInMounted: string;
+//     @field({
+//         name: 'pathInMounted', dbtype: 'TEXT'
+//     })
+//     @index('asset_pathInMounted')
+//     pathInMounted: string;
 
-    @field({
-        name: 'fspath', dbtype: 'TEXT'
-    })
-    @index('asset_fspath')
-    fspath: string;
+//     @field({
+//         name: 'fspath', dbtype: 'TEXT'
+//     })
+//     @index('asset_fspath')
+//     fspath: string;
 
-    @field({
-        name: 'renderPath', dbtype: 'TEXT'
-    })
-    @index('asset_renderPath')
-    renderPath: string;
+//     @field({
+//         name: 'renderPath', dbtype: 'TEXT'
+//     })
+//     @index('asset_renderPath')
+//     renderPath: string;
 
-    @field({
-        name: 'dirname', dbtype: 'TEXT'
-    })
-    @index('asset_dirname')
-    dirname: string;
+//     @field({
+//         name: 'dirname', dbtype: 'TEXT'
+//     })
+//     @index('asset_dirname')
+//     dirname: string;
 
-    @field({
-        name: 'rendersToHTML', dbtype: 'INTEGER'
-    })
-    @index('assets_rendersToHTML')
-    rendersToHTML: boolean;
+//     @field({
+//         name: 'rendersToHTML', dbtype: 'INTEGER'
+//     })
+//     @index('assets_rendersToHTML')
+//     rendersToHTML: boolean;
 
-    @field({
-        name: 'mtimeMs',
-        dbtype: "TEXT DEFAULT(datetime('now') || 'Z')"
-    })
-    @index('asset_mtimeMs')
-    mtimeMs: string;
+//     @field({
+//         name: 'mtimeMs',
+//         dbtype: "TEXT DEFAULT(datetime('now') || 'Z')"
+//     })
+//     @index('asset_mtimeMs')
+//     mtimeMs: string;
 
-    @field({
-        name: 'docMetadata', dbtype: 'TEXT',
-        isJson: true
-    })
-    @index('asset_docMetadata')
-    docMetadata: any;
+//     @field({
+//         name: 'docMetadata', dbtype: 'TEXT',
+//         isJson: true
+//     })
+//     @index('asset_docMetadata')
+//     docMetadata: any;
 
-    @field({
-        name: 'metadata', dbtype: 'TEXT',
-        isJson: true
-    })
-    @index('asset_metadata')
-    metadata: any;
+//     @field({
+//         name: 'metadata', dbtype: 'TEXT',
+//         isJson: true
+//     })
+//     @index('asset_metadata')
+//     metadata: any;
 
-    @field({
-        name: 'info', dbtype: 'TEXT',
-        isJson: true
-    })
-    info: any;
+//     @field({
+//         name: 'info', dbtype: 'TEXT',
+//         isJson: true
+//     })
+//     info: any;
 
-}
+// }
 
-await schema().createTable(sqdb, 'ASSETS');
-type TassetsDAO = BaseDAO<Asset>;
-export const assetsDAO: TassetsDAO
-    = new BaseDAO<Asset>(Asset, sqdb);
+// await schema().createTable(sqdb, 'ASSETSZZZZZZZZ');
+// type TassetsDAO = BaseDAO<Asset>;
+// export const assetsDAO: TassetsDAO
+    // = new BaseDAO<Asset>(Asset, sqdb);
 
-await assetsDAO.createIndex('asset_vpath');
-await assetsDAO.createIndex('asset_mounted');
-await assetsDAO.createIndex('asset_mountPoint');
-await assetsDAO.createIndex('asset_pathInMounted');
-await assetsDAO.createIndex('asset_fspath');
-await assetsDAO.createIndex('asset_renderPath');
-await assetsDAO.createIndex('assets_rendersToHTML');
-await assetsDAO.createIndex('asset_dirname');
-await assetsDAO.createIndex('asset_mtimeMs');
-await assetsDAO.createIndex('asset_docMetadata');
-await assetsDAO.createIndex('asset_metadata');
+// await assetsDAO.createIndex('asset_vpath');
+// await assetsDAO.createIndex('asset_mounted');
+// await assetsDAO.createIndex('asset_mountPoint');
+// await assetsDAO.createIndex('asset_pathInMounted');
+// await assetsDAO.createIndex('asset_fspath');
+// await assetsDAO.createIndex('asset_renderPath');
+// await assetsDAO.createIndex('assets_rendersToHTML');
+// await assetsDAO.createIndex('asset_dirname');
+// await assetsDAO.createIndex('asset_mtimeMs');
+// await assetsDAO.createIndex('asset_docMetadata');
+// await assetsDAO.createIndex('asset_metadata');
 
 //////////// Partials Table
 
-@table({
-    name: 'PARTIALS',
-    withoutRowId: true,
-})
-export class Partial {
+// @table({
+//     name: 'PARTIALS',
+//     withoutRowId: true,
+// })
+// export class Partial {
 
-    // Primary key
-    @id({
-        name: 'vpath', dbtype: 'TEXT'
-    })
-    @index('partial_vpath')
-    vpath: string;
+//     // Primary key
+//     @id({
+//         name: 'vpath', dbtype: 'TEXT'
+//     })
+//     @index('partial_vpath')
+//     vpath: string;
 
-    @field({
-        name: 'mime', dbtype: 'TEXT'
-    })
-    mime: string;
+//     @field({
+//         name: 'mime', dbtype: 'TEXT'
+//     })
+//     mime: string;
 
-    @field({
-        name: 'mounted', dbtype: 'TEXT'
-    })
-    @index('partial_mounted')
-    mounted: string;
+//     @field({
+//         name: 'mounted', dbtype: 'TEXT'
+//     })
+//     @index('partial_mounted')
+//     mounted: string;
 
-    @field({
-        name: 'mountPoint', dbtype: 'TEXT'
-    })
-    @index('partial_mountPoint')
-    mountPoint: string;
+//     @field({
+//         name: 'mountPoint', dbtype: 'TEXT'
+//     })
+//     @index('partial_mountPoint')
+//     mountPoint: string;
 
-    @field({
-        name: 'pathInMounted', dbtype: 'TEXT'
-    })
-    @index('partial_pathInMounted')
-    pathInMounted: string;
+//     @field({
+//         name: 'pathInMounted', dbtype: 'TEXT'
+//     })
+//     @index('partial_pathInMounted')
+//     pathInMounted: string;
 
-    @field({
-        name: 'fspath', dbtype: 'TEXT'
-    })
-    @index('partial_fspath')
-    fspath: string;
+//     @field({
+//         name: 'fspath', dbtype: 'TEXT'
+//     })
+//     @index('partial_fspath')
+//     fspath: string;
 
-    @field({
-        name: 'renderPath', dbtype: 'TEXT'
-    })
-    @index('partial_renderPath')
-    renderPath: string;
+//     @field({
+//         name: 'renderPath', dbtype: 'TEXT'
+//     })
+//     @index('partial_renderPath')
+//     renderPath: string;
 
-    @field({
-        name: 'dirname', dbtype: 'TEXT'
-    })
-    @index('partial_dirname')
-    dirname: string;
+//     @field({
+//         name: 'dirname', dbtype: 'TEXT'
+//     })
+//     @index('partial_dirname')
+//     dirname: string;
 
-    @field({
-        name: 'rendersToHTML', dbtype: 'INTEGER'
-    })
-    @index('partial_rendersToHTML')
-    rendersToHTML: boolean;
+//     @field({
+//         name: 'rendersToHTML', dbtype: 'INTEGER'
+//     })
+//     @index('partial_rendersToHTML')
+//     rendersToHTML: boolean;
 
-    @field({
-        name: 'mtimeMs',
-        dbtype: "TEXT DEFAULT(datetime('now') || 'Z')"
-    })
-    @index('partial_mtimeMs')
-    mtimeMs: string;
+//     @field({
+//         name: 'mtimeMs',
+//         dbtype: "TEXT DEFAULT(datetime('now') || 'Z')"
+//     })
+//     @index('partial_mtimeMs')
+//     mtimeMs: string;
 
-    @field({
-        name: 'docMetadata', dbtype: 'TEXT', isJson: true
-    })
-    docMetadata: any;
+//     @field({
+//         name: 'docMetadata', dbtype: 'TEXT', isJson: true
+//     })
+//     docMetadata: any;
 
-    @field({
-        name: 'docContent', dbtype: 'TEXT'
-    })
-    docContent: any;
+//     @field({
+//         name: 'docContent', dbtype: 'TEXT'
+//     })
+//     docContent: any;
 
-    @field({
-        name: 'docBody', dbtype: 'TEXT'
-    })
-    docBody: any;
+//     @field({
+//         name: 'docBody', dbtype: 'TEXT'
+//     })
+//     docBody: any;
 
-    @field({
-        name: 'metadata', dbtype: 'TEXT',
-        isJson: true
-    })
-    metadata: any;
+//     @field({
+//         name: 'metadata', dbtype: 'TEXT',
+//         isJson: true
+//     })
+//     metadata: any;
 
-    @field({
-        name: 'info', dbtype: 'TEXT', isJson: true
-    })
-    info: any;
-}
+//     @field({
+//         name: 'info', dbtype: 'TEXT', isJson: true
+//     })
+//     info: any;
+// }
 
-await schema().createTable(sqdb, 'PARTIALS');
-type TpartialsDAO = BaseDAO<Partial>;
-export const partialsDAO
-    = new BaseDAO<Partial>(Partial, sqdb);
+// await schema().createTable(sqdb, 'PARTIALSZZZZZZZ');
+// type TpartialsDAO = BaseDAO<Partial>;
+// export const partialsDAO
+    // = new BaseDAO<Partial>(Partial, sqdb);
 
-await partialsDAO.createIndex('partial_vpath');
-await partialsDAO.createIndex('partial_mounted');
-await partialsDAO.createIndex('partial_mountPoint');
-await partialsDAO.createIndex('partial_pathInMounted');
-await partialsDAO.createIndex('partial_fspath');
-await partialsDAO.createIndex('partial_renderPath');
-await partialsDAO.createIndex('partial_dirname');
-await partialsDAO.createIndex('partial_rendersToHTML');
-await partialsDAO.createIndex('partial_mtimeMs');
+// await partialsDAO.createIndex('partial_vpath');
+// await partialsDAO.createIndex('partial_mounted');
+// await partialsDAO.createIndex('partial_mountPoint');
+// await partialsDAO.createIndex('partial_pathInMounted');
+// await partialsDAO.createIndex('partial_fspath');
+// await partialsDAO.createIndex('partial_renderPath');
+// await partialsDAO.createIndex('partial_dirname');
+// await partialsDAO.createIndex('partial_rendersToHTML');
+// await partialsDAO.createIndex('partial_mtimeMs');
 
 ///////////////// Layouts Table
 
-@table({
-    name: 'LAYOUTS',
-    withoutRowId: true,
-})
-export class Layout {
+// @table({
+//     name: 'LAYOUTS',
+//     withoutRowId: true,
+// })
+// export class Layout {
 
-    // Primary key
-    @id({
-        name: 'vpath', dbtype: 'TEXT'
-    })
-    @index('layout_vpath')
-    vpath: string;
+//     // Primary key
+//     @id({
+//         name: 'vpath', dbtype: 'TEXT'
+//     })
+//     @index('layout_vpath')
+//     vpath: string;
 
-    @field({
-        name: 'mime', dbtype: 'TEXT'
-    })
-    mime: string;
+//     @field({
+//         name: 'mime', dbtype: 'TEXT'
+//     })
+//     mime: string;
 
-    @field({
-        name: 'mounted', dbtype: 'TEXT'
-    })
-    @index('layout_mounted')
-    mounted: string;
+//     @field({
+//         name: 'mounted', dbtype: 'TEXT'
+//     })
+//     @index('layout_mounted')
+//     mounted: string;
 
-    @field({
-        name: 'mountPoint', dbtype: 'TEXT'
-    })
-    @index('layout_mountPoint')
-    mountPoint: string;
+//     @field({
+//         name: 'mountPoint', dbtype: 'TEXT'
+//     })
+//     @index('layout_mountPoint')
+//     mountPoint: string;
 
-    @field({
-        name: 'pathInMounted', dbtype: 'TEXT'
-    })
-    @index('layout_pathInMounted')
-    pathInMounted: string;
+//     @field({
+//         name: 'pathInMounted', dbtype: 'TEXT'
+//     })
+//     @index('layout_pathInMounted')
+//     pathInMounted: string;
 
-    @field({
-        name: 'fspath', dbtype: 'TEXT'
-    })
-    @index('layout_fspath')
-    fspath: string;
+//     @field({
+//         name: 'fspath', dbtype: 'TEXT'
+//     })
+//     @index('layout_fspath')
+//     fspath: string;
 
-    @field({
-        name: 'renderPath', dbtype: 'TEXT'
-    })
-    @index('layout_renderPath')
-    renderPath: string;
+//     @field({
+//         name: 'renderPath', dbtype: 'TEXT'
+//     })
+//     @index('layout_renderPath')
+//     renderPath: string;
 
-    @field({
-        name: 'dirname', dbtype: 'TEXT'
-    })
-    @index('layout_dirname')
-    dirname: string;
+//     @field({
+//         name: 'dirname', dbtype: 'TEXT'
+//     })
+//     @index('layout_dirname')
+//     dirname: string;
 
-    @field({
-        name: 'rendersToHTML', dbtype: 'INTEGER'
-    })
-    @index('layout_rendersToHTML')
-    rendersToHTML: boolean;
+//     @field({
+//         name: 'rendersToHTML', dbtype: 'INTEGER'
+//     })
+//     @index('layout_rendersToHTML')
+//     rendersToHTML: boolean;
 
-    @field({
-        name: 'mtimeMs',
-        dbtype: "TEXT DEFAULT(datetime('now') || 'Z')"
-    })
-    @index('layout_mtimeMs')
-    mtimeMs: string;
+//     @field({
+//         name: 'mtimeMs',
+//         dbtype: "TEXT DEFAULT(datetime('now') || 'Z')"
+//     })
+//     @index('layout_mtimeMs')
+//     mtimeMs: string;
 
-    @field({
-        name: 'docMetadata', dbtype: 'TEXT', isJson: true
-    })
-    docMetadata: any;
+//     @field({
+//         name: 'docMetadata', dbtype: 'TEXT', isJson: true
+//     })
+//     docMetadata: any;
 
-    @field({
-        name: 'docContent', dbtype: 'TEXT'
-    })
-    docContent: any;
+//     @field({
+//         name: 'docContent', dbtype: 'TEXT'
+//     })
+//     docContent: any;
 
-    @field({
-        name: 'docBody', dbtype: 'TEXT'
-    })
-    docBody: any;
+//     @field({
+//         name: 'docBody', dbtype: 'TEXT'
+//     })
+//     docBody: any;
 
-    @field({
-        name: 'metadata', dbtype: 'TEXT', isJson: true
-    })
-    metadata: any;
+//     @field({
+//         name: 'metadata', dbtype: 'TEXT', isJson: true
+//     })
+//     metadata: any;
 
-    @field({
-        name: 'info', dbtype: 'TEXT', isJson: true
-    })
-    info: any;
+//     @field({
+//         name: 'info', dbtype: 'TEXT', isJson: true
+//     })
+//     info: any;
 
-}
+// }
 
-await schema().createTable(sqdb, 'LAYOUTS');
-type TlayoutsDAO = BaseDAO<Layout>;
-export const layoutsDAO
-    = new BaseDAO<Layout>(Layout, sqdb);
+// await schema().createTable(sqdb, 'LAYOUTSZZZZZZZZZZ');
+// type TlayoutsDAO = BaseDAO<Layout>;
+// export const layoutsDAO
+//     = new BaseDAO<Layout>(Layout, sqdb);
 
-await layoutsDAO.createIndex('layout_vpath');
-await layoutsDAO.createIndex('layout_mounted');
-await layoutsDAO.createIndex('layout_mountPoint');
-await layoutsDAO.createIndex('layout_pathInMounted');
-await layoutsDAO.createIndex('layout_fspath');
-await layoutsDAO.createIndex('layout_renderPath');
-await layoutsDAO.createIndex('layout_rendersToHTML');
-await layoutsDAO.createIndex('layout_dirname');
-await layoutsDAO.createIndex('layout_mtimeMs');
+// await layoutsDAO.createIndex('layout_vpath');
+// await layoutsDAO.createIndex('layout_mounted');
+// await layoutsDAO.createIndex('layout_mountPoint');
+// await layoutsDAO.createIndex('layout_pathInMounted');
+// await layoutsDAO.createIndex('layout_fspath');
+// await layoutsDAO.createIndex('layout_renderPath');
+// await layoutsDAO.createIndex('layout_rendersToHTML');
+// await layoutsDAO.createIndex('layout_dirname');
+// await layoutsDAO.createIndex('layout_mtimeMs');
 
 /////////////// Documents Table
 
-@table({
-    name: 'DOCUMENTS',
-    withoutRowId: true,
-})
-export class Document {
+// @table({
+//     name: 'DOCUMENTS',
+//     withoutRowId: true,
+// })
+// export class Document {
 
-    // Primary key
-    @id({
-        name: 'vpath', dbtype: 'TEXT'
-    })
-    @index('docs_vpath')
-    vpath: string;
+//     // Primary key
+//     @id({
+//         name: 'vpath', dbtype: 'TEXT'
+//     })
+//     @index('docs_vpath')
+//     vpath: string;
 
-    @field({
-        name: 'mime', dbtype: 'TEXT'
-    })
-    mime?: string;
+//     @field({
+//         name: 'mime', dbtype: 'TEXT'
+//     })
+//     mime?: string;
 
-    @field({
-        name: 'mounted', dbtype: 'TEXT'
-    })
-    @index('docs_mounted')
-    mounted: string;
+//     @field({
+//         name: 'mounted', dbtype: 'TEXT'
+//     })
+//     @index('docs_mounted')
+//     mounted: string;
 
-    @field({
-        name: 'mountPoint', dbtype: 'TEXT'
-    })
-    @index('docs_mountPoint')
-    mountPoint: string;
+//     @field({
+//         name: 'mountPoint', dbtype: 'TEXT'
+//     })
+//     @index('docs_mountPoint')
+//     mountPoint: string;
 
-    @field({
-        name: 'pathInMounted', dbtype: 'TEXT'
-    })
-    @index('docs_pathInMounted')
-    pathInMounted: string;
+//     @field({
+//         name: 'pathInMounted', dbtype: 'TEXT'
+//     })
+//     @index('docs_pathInMounted')
+//     pathInMounted: string;
 
-    @field({
-        name: 'fspath', dbtype: 'TEXT'
-    })
-    @index('docs_fspath')
-    fspath: string;
+//     @field({
+//         name: 'fspath', dbtype: 'TEXT'
+//     })
+//     @index('docs_fspath')
+//     fspath: string;
 
-    @field({
-        name: 'renderPath', dbtype: 'TEXT'
-    })
-    @index('docs_renderPath')
-    renderPath: string;
+//     @field({
+//         name: 'renderPath', dbtype: 'TEXT'
+//     })
+//     @index('docs_renderPath')
+//     renderPath: string;
 
-    @field({
-        name: 'rendersToHTML', dbtype: 'INTEGER'
-    })
-    @index('docs_rendersToHTML')
-    rendersToHTML: boolean;
+//     @field({
+//         name: 'rendersToHTML', dbtype: 'INTEGER'
+//     })
+//     @index('docs_rendersToHTML')
+//     rendersToHTML: boolean;
 
-    @field({
-        name: 'dirname', dbtype: 'TEXT'
-    })
-    @index('docs_dirname')
-    dirname: string;
+//     @field({
+//         name: 'dirname', dbtype: 'TEXT'
+//     })
+//     @index('docs_dirname')
+//     dirname: string;
 
-    @field({
-        name: 'parentDir', dbtype: 'TEXT'
-    })
-    @index('docs_parentDir')
-    parentDir: string;
+//     @field({
+//         name: 'parentDir', dbtype: 'TEXT'
+//     })
+//     @index('docs_parentDir')
+//     parentDir: string;
 
-    @field({
-        name: 'mtimeMs',
-        dbtype: "TEXT DEFAULT(datetime('now') || 'Z')"
-    })
-    @index('docs_mtimeMs')
-    mtimeMs: string;
+//     @field({
+//         name: 'mtimeMs',
+//         dbtype: "TEXT DEFAULT(datetime('now') || 'Z')"
+//     })
+//     @index('docs_mtimeMs')
+//     mtimeMs: string;
 
-    //  GENERATED ALWAYS AS (json_extract(info, '$.baseMetadata')) STORED
-    @field({
-        name: 'baseMetadata',
-        dbtype: `TEXT`,
-        isJson: true
-    })
-    baseMetadata?: any;
+//     @field({
+//         name: 'publicationTime',
+//         dbtype: `INTEGER GENERATED ALWAYS AS (json_extract(info, '$.publicationTime')) STORED`
+//     })
+//     @index('docs_publicationTime')
+//     publicationTime: number;
 
-    @field({
-        name: 'docMetadata', dbtype: 'TEXT',
-        isJson: true
-    })
-    docMetadata?: any;
+//     @field({
+//         name: 'baseMetadata',
+//         dbtype: `TEXT GENERATED ALWAYS AS (json_extract(info, '$.baseMetadata')) STORED`,
+//         isJson: true
+//     })
+//     baseMetadata?: any;
 
-    @field({
-        name: 'docContent', dbtype: 'TEXT'
-    })
-    docContent?: string;
+//     @field({
+//         name: 'docMetadata', dbtype: 'TEXT',
+//         isJson: true
+//     })
+//     docMetadata?: any;
 
-    @field({
-        name: 'docBody', dbtype: 'TEXT'
-    })
-    docBody?: string;
+//     @field({
+//         name: 'docContent', dbtype: 'TEXT'
+//     })
+//     docContent?: string;
 
-    //  GENERATED ALWAYS AS (json_extract(info, '$.metadata')) STORED
-    @field({
-        name: 'metadata',
-        dbtype: `TEXT`,
-        isJson: true
-    })
-    metadata?: any;
+//     @field({
+//         name: 'docBody', dbtype: 'TEXT'
+//     })
+//     docBody?: string;
 
-    @field({
-        name: 'tags',
-        dbtype: `TEXT GENERATED ALWAYS AS (json_extract(info, '$.metadata.tags')) STORED`,
-        isJson: true
-    })
-    @index('docs_tags')
-    tags?: any;
+//     //  GENERATED ALWAYS AS (json_extract(info, '$.metadata')) STORED
+//     // @field({
+//     //     name: 'metadata',
+//     //     dbtype: `TEXT`,
+//     //     isJson: true
+//     // })
+//     // metadata?: any;
 
-    @field({
-        name: 'layout',
-        dbtype: `TEXT GENERATED ALWAYS AS (json_extract(metadata, '$.layout')) STORED`
-    })
-    @index('docs_layout')
-    layout?: string;
+//     @field({
+//         name: 'metadata',
+//         dbtype: `TEXT GENERATED ALWAYS AS (json_extract(info, '$.metadata')) STORED`,
+//         isJson: true
+//     })
+//     metadata?: any;
 
-    @field({
-        name: 'blogtag',
-        dbtype: `TEXT GENERATED ALWAYS AS (json_extract(metadata, '$.blogtag')) STORED`
-    })
-    @index('docs_blogtag')
-    blogtag?: string;
+//     @field({
+//         name: 'tags',
+//         dbtype: `TEXT GENERATED ALWAYS AS (json_extract(info, '$.metadata.tags')) STORED`,
+//         isJson: true
+//     })
+//     @index('docs_tags')
+//     tags?: any;
 
-    @field({
-        name: 'info', dbtype: 'TEXT', isJson: true
-    })
-    info: any;
+//     @field({
+//         name: 'layout',
+//         dbtype: `TEXT GENERATED ALWAYS AS (json_extract(metadata, '$.layout')) STORED`
+//     })
+//     @index('docs_layout')
+//     layout?: string;
 
-}
+//     @field({
+//         name: 'blogtag',
+//         dbtype: `TEXT GENERATED ALWAYS AS (json_extract(metadata, '$.blogtag')) STORED`
+//     })
+//     @index('docs_blogtag')
+//     blogtag?: string;
 
-await schema().createTable(sqdb, 'DOCUMENTS');
-type TdocumentssDAO = BaseDAO<Document>;
-export const documentsDAO
-    = new BaseDAO<Document>(Document, sqdb);
+//     @field({
+//         name: 'info', dbtype: 'TEXT', isJson: true
+//     })
+//     info: any;
 
-await documentsDAO.createIndex('docs_vpath');
-await documentsDAO.createIndex('docs_mounted');
-await documentsDAO.createIndex('docs_mountPoint');
-await documentsDAO.createIndex('docs_pathInMounted');
-await documentsDAO.createIndex('docs_fspath');
-await documentsDAO.createIndex('docs_renderPath');
-await documentsDAO.createIndex('docs_rendersToHTML');
-await documentsDAO.createIndex('docs_dirname');
-await documentsDAO.createIndex('docs_parentDir');
-await documentsDAO.createIndex('docs_mtimeMs');
-await documentsDAO.createIndex('docs_tags');
-await documentsDAO.createIndex('docs_layout');
-await documentsDAO.createIndex('docs_blogtag');
+// }
 
-await documentsDAO.sqldb.run(`
-    CREATE INDEX IF NOT EXISTS 
-    idx_docs_metadata_json ON 
-    DOCUMENTS(json_extract(metadata, '$.publicationDate'));
-`);
-await documentsDAO.sqldb.run(`
-    CREATE INDEX IF NOT EXISTS 
-    idx_docs_render_path_pattern ON DOCUMENTS(renderPath);
-`);
+// await schema().createTable(sqdb, 'DOCUMENTSZZZZZZZZZ');
+// type TdocumentssDAO = BaseDAO<Document>;
+// export const documentsDAO
+//     = new BaseDAO<Document>(Document, sqdb);
+
+// await documentsDAO.createIndex('docs_vpath');
+// await documentsDAO.createIndex('docs_mounted');
+// await documentsDAO.createIndex('docs_mountPoint');
+// await documentsDAO.createIndex('docs_pathInMounted');
+// await documentsDAO.createIndex('docs_fspath');
+// await documentsDAO.createIndex('docs_renderPath');
+// await documentsDAO.createIndex('docs_rendersToHTML');
+// await documentsDAO.createIndex('docs_dirname');
+// await documentsDAO.createIndex('docs_parentDir');
+// await documentsDAO.createIndex('docs_mtimeMs');
+// await documentsDAO.createIndex('docs_publicationTime');
+// await documentsDAO.createIndex('docs_tags');
+// await documentsDAO.createIndex('docs_layout');
+// await documentsDAO.createIndex('docs_blogtag');
+
+// await documentsDAO.sqldb.run(`
+//     CREATE INDEX IF NOT EXISTS 
+//     idx_docs_metadata_json ON 
+//     DOCUMENTS(json_extract(metadata, '$.publicationDate'));
+// `);
+// await documentsDAO.sqldb.run(`
+//     CREATE INDEX IF NOT EXISTS 
+//     idx_docs_render_path_pattern ON DOCUMENTS(renderPath);
+// `);
 
 const tglue = new TagGlue();
-tglue.init(sqdb._db);
+// tglue.init(sqdb._db);
 
 const tdesc = new TagDescriptions();
-tdesc.init(sqdb._db);
+// tdesc.init(sqdb._db);
 
 // Convert AkashaCMS mount points into the mountpoint
 // used by DirsWatcher
@@ -593,8 +607,8 @@ export type PathsReturnType = {
 };
 
 export class BaseFileCache<
-        T extends Asset | Layout | Partial | Document,
-        Tdao extends BaseDAO<T>
+        T, // extends Asset | Layout | Partial | Document,
+        Tdao // extends BaseDAO<T>
 > extends EventEmitter {
 
     #config?: Configuration;
@@ -717,7 +731,7 @@ export class BaseFileCache<
             /* } else if (event.code === 'error') {
                 await fcache.handleError(event.name) */
             } else if (event.code === 'ready') {
-                await fcache.handleReady(event.name);
+                // await fcache.handleReady(event.name);
                 fcache.emit('ready', event.name);
             }
         }, 10);
@@ -793,7 +807,7 @@ export class BaseFileCache<
         // Placeholder which some subclasses
         // are expected to override
 
-        info.renderPath = info.vpath;
+        // info.renderPath = info.vpath;
     }
 
     protected cvtRowToObj(obj: any) {
@@ -947,19 +961,19 @@ export class BaseFileCache<
      */
     protected async findPathMounted(vpath: string, mounted: string) {
         
-        const found = await this.dao.sqldb.all(`
-            SELECT vpath, mounted
-            FROM ${this.dao.table.quotedName}
-            WHERE 
-            vpath = $vpath AND mounted = $mounted
-        `, {
-            $vpath: vpath,
-            $mounted: mounted
-        });
-        const mapped = <any[]>found.map(item => {
-            return { vpath: item.vpath, mounted: item.mounted }
-        });
-        return mapped;
+        // const found = await this.dao.sqldb.all(`
+        //     SELECT vpath, mounted
+        //     FROM ${this.dao.table.quotedName}
+        //     WHERE 
+        //     vpath = $vpath AND mounted = $mounted
+        // `, {
+        //     $vpath: vpath,
+        //     $mounted: mounted
+        // });
+        // const mapped = <any[]>found.map(item => {
+        //     return { vpath: item.vpath, mounted: item.mounted }
+        // });
+        // return mapped;
     }
 
     /**
@@ -972,22 +986,22 @@ export class BaseFileCache<
 
         // console.log(`findByPath ${this.dao.table.quotedName} ${vpath}`);
 
-        const found = await this.dao.sqldb.all(`
-            SELECT *
-            FROM ${this.dao.table.quotedName}
-            WHERE 
-            vpath = $vpath OR renderPath = $vpath
-        `, {
-            $vpath: vpath
-        });
+        // const found = await this.dao.sqldb.all(`
+        //     SELECT *
+        //     FROM ${this.dao.table.quotedName}
+        //     WHERE 
+        //     vpath = $vpath OR renderPath = $vpath
+        // `, {
+        //     $vpath: vpath
+        // });
 
-        const mapped = <any[]>found.map(item => {
-            return this.cvtRowToObj(item);
-        });
+        // const mapped = <any[]>found.map(item => {
+        //     return this.cvtRowToObj(item);
+        // });
         // for (const item of mapped) {
         //     this.gatherInfoData(item);
         // }
-        return mapped;
+        // return mapped;
     }
 
     async handleChanged(name, info) {
@@ -1026,23 +1040,23 @@ export class BaseFileCache<
     }
 
     protected async updateDocInDB(info) {
-        await this.#dao.update({
-            vpath: info.vpath,
-            mime: info.mime,
-            mounted: info.mounted,
-            mountPoint: info.mountPoint,
-            pathInMounted: info.pathInMounted,
-            fspath: path.join(info.mounted, info.pathInMounted),
-            renderPath: info.renderPath,
-            dirname: path.dirname(info.renderPath),
-            rendersToHTML: false,
-            mtimeMs: new Date(info.statsMtime).toISOString(),
-            docMetadata: info.docMetadata,
-            // docContent: info.docContent,
-            // docBody: info.docBody,
-            metadata: info.metadata,
-            info,
-        } as T);
+        // await this.#dao.update({
+        //     vpath: info.vpath,
+        //     mime: info.mime,
+        //     mounted: info.mounted,
+        //     mountPoint: info.mountPoint,
+        //     pathInMounted: info.pathInMounted,
+        //     fspath: path.join(info.mounted, info.pathInMounted),
+        //     renderPath: info.renderPath,
+        //     dirname: path.dirname(info.renderPath),
+        //     rendersToHTML: false,
+        //     mtimeMs: new Date(info.statsMtime).toISOString(),
+        //     docMetadata: info.docMetadata,
+        //     // docContent: info.docContent,
+        //     // docBody: info.docBody,
+        //     metadata: info.metadata,
+        //     info,
+        // } as T);
     }
 
     /**
@@ -1082,23 +1096,23 @@ export class BaseFileCache<
     }
 
     protected async insertDocToDB(info) {
-        await this.#dao.insert({
-            vpath: info.vpath,
-            mime: info.mime,
-            mounted: info.mounted,
-            mountPoint: info.mountPoint,
-            pathInMounted: info.pathInMounted,
-            fspath: path.join(info.mounted, info.pathInMounted),
-            renderPath: info.renderPath,
-            dirname: path.dirname(info.renderPath),
-            rendersToHTML: false,
-            mtimeMs: new Date(info.statsMtime).toISOString(),
-            docMetadata: info.docMetadata,
-            // docContent: info.docContent,
-            // docBody: info.docBody,
-            metadata: info.metadata,
-            info,
-        } as T);
+        // await this.#dao.insert({
+        //     vpath: info.vpath,
+        //     mime: info.mime,
+        //     mounted: info.mounted,
+        //     mountPoint: info.mountPoint,
+        //     pathInMounted: info.pathInMounted,
+        //     fspath: path.join(info.mounted, info.pathInMounted),
+        //     renderPath: info.renderPath,
+        //     dirname: path.dirname(info.renderPath),
+        //     rendersToHTML: false,
+        //     mtimeMs: new Date(info.statsMtime).toISOString(),
+        //     docMetadata: info.docMetadata,
+        //     // docContent: info.docContent,
+        //     // docBody: info.docBody,
+        //     metadata: info.metadata,
+        //     info,
+        // } as T);
     }
 
     async handleUnlinked(name, info) {
@@ -1109,28 +1123,28 @@ export class BaseFileCache<
 
         await this.config.hookFileUnlinked(name, info);
 
-        await this.#dao.sqldb.run(`
-            DELETE FROM ${this.dao.table.quotedName}
-            WHERE
-            vpath = $vpath AND mounted = $mounted
-        `, {
-            $vpath: info.vpath,
-            $mounted: info.mounted
-        });
-        // await this.#dao.deleteAll({
-        //     vpath: { eq: info.vpath },
-        //     mounted: { eq: info.mounted }
-        // } as Where<T>);
+    //     await this.#dao.sqldb.run(`
+    //         DELETE FROM ${this.dao.table.quotedName}
+    //         WHERE
+    //         vpath = $vpath AND mounted = $mounted
+    //     `, {
+    //         $vpath: info.vpath,
+    //         $mounted: info.mounted
+    //     });
+    //     // await this.#dao.deleteAll({
+    //     //     vpath: { eq: info.vpath },
+    //     //     mounted: { eq: info.mounted }
+    //     // } as Where<T>);
     }
 
-    async handleReady(name) {
-        // console.log(`PROCESS ${name} handleReady`);
-        if (name !== this.name) {
-            throw new Error(`handleReady event for wrong name; got ${name}, expected ${this.name}`);
-        }
-        this.#is_ready = true;
-        this.emit('ready', name);
-    }
+    // async handleReady(name) {
+    //     // console.log(`PROCESS ${name} handleReady`);
+    //     if (name !== this.name) {
+    //         throw new Error(`handleReady event for wrong name; got ${name}, expected ${this.name}`);
+    //     }
+    //     this.#is_ready = true;
+    //     this.emit('ready', name);
+    // }
 
     /**
      * Find the directory mount corresponding to the file.
@@ -1224,7 +1238,7 @@ export class BaseFileCache<
      * @returns 
      */
     async paths(rootPath?: string)
-        : Promise<Array<PathsReturnType>>
+        // : Promise<Array<PathsReturnType>>
     {
         const fcache = this;
 
@@ -1239,29 +1253,29 @@ export class BaseFileCache<
         const vpathsSeen = new Set();
 
         // Select the fields in PathsReturnType
-        const results = await this.dao.sqldb.all(
-        (typeof rootP === 'string') ?
-        `
-            SELECT
-                vpath, mime, mounted, mountPoint,
-                pathInMounted, mtimeMs,
-                info, fspath, renderPath
-            FROM ${this.dao.table.quotedName}
-            WHERE
-            renderPath LIKE $rootP
-            ORDER BY mtimeMs ASC
-        `
-        : `
-            SELECT
-                vpath, mime, mounted, mountPoint,
-                pathInMounted, mtimeMs,
-                info, fspath, renderPath
-            FROM ${this.dao.table.quotedName}
-            ORDER BY mtimeMs ASC
-        `,
-        (typeof rootP === 'string')
-        ? { $rootP: `${rootP}%` }
-        : {})
+        // const results = await this.dao.sqldb.all(
+        // (typeof rootP === 'string') ?
+        // `
+        //     SELECT
+        //         vpath, mime, mounted, mountPoint,
+        //         pathInMounted, mtimeMs,
+        //         info, fspath, renderPath
+        //     FROM ${this.dao.table.quotedName}
+        //     WHERE
+        //     renderPath LIKE $rootP
+        //     ORDER BY mtimeMs ASC
+        // `
+        // : `
+        //     SELECT
+        //         vpath, mime, mounted, mountPoint,
+        //         pathInMounted, mtimeMs,
+        //         info, fspath, renderPath
+        //     FROM ${this.dao.table.quotedName}
+        //     ORDER BY mtimeMs ASC
+        // `,
+        // (typeof rootP === 'string')
+        // ? { $rootP: `${rootP}%` }
+        // : {})
 
         // const selector = {
         //     order: { mtimeMs: true }
@@ -1275,20 +1289,20 @@ export class BaseFileCache<
         // }
         // // console.log(`paths ${util.inspect(selector)}`);
         // const result = await this.dao.selectAll(selector);
-        const result2 = results.filter(item => {
-            // console.log(`paths ?ignore? ${item.vpath}`);
-            if (fcache.ignoreFile(item)) {
-                return false;
-            }
-            if (vpathsSeen.has((item as Asset).vpath)) {
-                return false;
-            } else {
-                vpathsSeen.add((item as Asset).vpath);
-                return true;
-            }
-        });
+        // const result2 = results.filter(item => {
+        //     // console.log(`paths ?ignore? ${item.vpath}`);
+        //     if (fcache.ignoreFile(item)) {
+        //         return false;
+        //     }
+        //     if (vpathsSeen.has((item as Asset).vpath)) {
+        //         return false;
+        //     } else {
+        //         vpathsSeen.add((item as Asset).vpath);
+        //         return true;
+        //     }
+        // });
 
-        return result2;
+        // return result2;
 
         // This stage converts the items 
         // received by this function into
@@ -1318,7 +1332,7 @@ export class BaseFileCache<
      * @param _fpath The vpath or renderPath to look for
      * @returns boolean true if found, false otherwise
      */
-    async find(_fpath): Promise<T> {
+    async find(_fpath) /*: Promise<T> */ {
 
         if (typeof _fpath !== 'string') {
             throw new Error(`find parameter not string ${typeof _fpath}`);
@@ -1341,25 +1355,25 @@ export class BaseFileCache<
 
         // console.log(`find ${_fpath} ${fpath} ==> result1 ${util.inspect(result1)} `);
 
-        const result2 = <any[]>result1.filter(item => {
-            return !(fcache.ignoreFile(item));
-        });
+        // const result2 = <any[]>result1.filter(item => {
+        //     return !(fcache.ignoreFile(item));
+        // });
 
-        // for (const result of result2) {
-        //     this.gatherInfoData(result);
+        // // for (const result of result2) {
+        // //     this.gatherInfoData(result);
+        // // }
+
+        // // console.log(`find ${_fpath} ${fpath} ==> result2 ${util.inspect(result2)} `);
+
+        // let ret;
+        // if (Array.isArray(result2) && result2.length > 0) {
+        //     ret = result2[0];
+        // } else if (Array.isArray(result2) && result2.length <= 0) {
+        //     ret = undefined;
+        // } else {
+        //     ret = result2;
         // }
-
-        // console.log(`find ${_fpath} ${fpath} ==> result2 ${util.inspect(result2)} `);
-
-        let ret;
-        if (Array.isArray(result2) && result2.length > 0) {
-            ret = result2[0];
-        } else if (Array.isArray(result2) && result2.length <= 0) {
-            ret = undefined;
-        } else {
-            ret = result2;
-        }
-        return ret;
+        // return ret;
     }
 
     #fExistsInDir(fpath, dir) {
@@ -1480,8 +1494,8 @@ export class BaseFileCache<
 }
 
 export class AssetsFileCache<
-    T extends Asset,
-    Tdao extends BaseDAO<T>
+    T, // extends Asset,
+    Tdao // extends BaseDAO<T>
 > extends BaseFileCache<T, Tdao> {
     constructor(
         config: Configuration,
@@ -1492,18 +1506,18 @@ export class AssetsFileCache<
         super(config, name, dirs, dao);
     }
 
-    protected cvtRowToObj(obj: any): Asset {
-        const ret: Asset = new Asset();
-        this.cvtRowToObjBASE(obj, ret);
-        return ret;
-    }
+    // protected cvtRowToObj(obj: any): Asset {
+    //     const ret: Asset = new Asset();
+    //     this.cvtRowToObjBASE(obj, ret);
+    //     return ret;
+    // }
 
 }
 
 export class TemplatesFileCache<
-    T extends Layout | Partial,
-    Tdao extends BaseDAO<T>>
-    extends BaseFileCache<T, Tdao> {
+    T, // extends Layout | Partial,
+    Tdao // extends BaseDAO<T>>
+    extends BaseFileCache<T, Tdao>> {
 
     constructor(
         config: Configuration,
@@ -1512,7 +1526,7 @@ export class TemplatesFileCache<
         dao: Tdao,
         type: "layout" | "partial"
     ) {
-        super(config, name, dirs, dao);
+        // super(config, name, dirs, dao);
         this.#type = type;
     }
 
@@ -1526,53 +1540,53 @@ export class TemplatesFileCache<
     get isLayout() { return this.#type === "layout"; }
     get isPartial() { return this.#type === "partial"; }
 
-    protected cvtRowToObj(obj: any): Layout | Partial {
-        const ret: Layout | Partial = 
-                this.isLayout ? new Layout() : new Partial();
-        this.cvtRowToObjBASE(obj, ret);
+    // protected cvtRowToObj(obj: any): Layout | Partial {
+    //     const ret: Layout | Partial = 
+    //             this.isLayout ? new Layout() : new Partial();
+    //     this.cvtRowToObjBASE(obj, ret);
 
-        // if (typeof obj.docMetadata !== 'undefined'
-        //  && obj.docMetadata !== null
-        // ) {
-        //     if (typeof obj.docMetadata !== 'string') {
-        //         throw new Error(`TemplatesFileCache.cvtRowToObj must have a docMetadata, got ${util.inspect(obj)}`);
-        //     } else {
-        //         ret.docMetadata = obj.docMetadata;
-        //     }
-        // }
-        if (typeof obj.docContent !== 'undefined'
-         && obj.docContent !== null
-        ) {
-            if (obj.docContent === null) {
-                ret.docContent = undefined;
-            } else if (typeof obj.docContent !== 'string') {
-                throw new Error(`TemplatesFileCache.cvtRowToObj must have a docContent, got ${util.inspect(obj)}`);
-            } else {
-                ret.docContent = obj.docContent;
-            }
-        }
-        if (typeof obj.docBody !== 'undefined'
-         && obj.docBody !== null
-        ) {
-            if (obj.docBody === null) {
-                ret.docBody = undefined;
-            } else if (typeof obj.docBody !== 'string') {
-                throw new Error(`TemplatesFileCache.cvtRowToObj must have a docBody, got ${util.inspect(obj)}`);
-            } else {
-                ret.docBody = obj.docBody;
-            }
-        }
-        // if (typeof obj.metadata !== 'undefined'
-        //  && obj.metadata !== null
-        // ) {
-        //     if (typeof obj.metadata !== 'string') {
-        //         throw new Error(`TemplatesFileCache.cvtRowToObj must have a metadata, got ${util.inspect(obj)}`);
-        //     } else {
-        //         ret.metadata = obj.metadata;
-        //     }
-        // }
-        return ret;
-    }
+    //     // if (typeof obj.docMetadata !== 'undefined'
+    //     //  && obj.docMetadata !== null
+    //     // ) {
+    //     //     if (typeof obj.docMetadata !== 'string') {
+    //     //         throw new Error(`TemplatesFileCache.cvtRowToObj must have a docMetadata, got ${util.inspect(obj)}`);
+    //     //     } else {
+    //     //         ret.docMetadata = obj.docMetadata;
+    //     //     }
+    //     // }
+    //     if (typeof obj.docContent !== 'undefined'
+    //      && obj.docContent !== null
+    //     ) {
+    //         if (obj.docContent === null) {
+    //             ret.docContent = undefined;
+    //         } else if (typeof obj.docContent !== 'string') {
+    //             throw new Error(`TemplatesFileCache.cvtRowToObj must have a docContent, got ${util.inspect(obj)}`);
+    //         } else {
+    //             ret.docContent = obj.docContent;
+    //         }
+    //     }
+    //     if (typeof obj.docBody !== 'undefined'
+    //      && obj.docBody !== null
+    //     ) {
+    //         if (obj.docBody === null) {
+    //             ret.docBody = undefined;
+    //         } else if (typeof obj.docBody !== 'string') {
+    //             throw new Error(`TemplatesFileCache.cvtRowToObj must have a docBody, got ${util.inspect(obj)}`);
+    //         } else {
+    //             ret.docBody = obj.docBody;
+    //         }
+    //     }
+    //     // if (typeof obj.metadata !== 'undefined'
+    //     //  && obj.metadata !== null
+    //     // ) {
+    //     //     if (typeof obj.metadata !== 'string') {
+    //     //         throw new Error(`TemplatesFileCache.cvtRowToObj must have a metadata, got ${util.inspect(obj)}`);
+    //     //     } else {
+    //     //         ret.metadata = obj.metadata;
+    //     //     }
+    //     // }
+    //     return ret;
+    // }
 
     /**
      * Gather the additional data suitable
@@ -1588,7 +1602,7 @@ export class TemplatesFileCache<
         info.dirname = path.dirname(info.vpath);
         if (info.dirname === '.') info.dirname = '/';
 
-        let renderer = this.config.findRendererPath(info.vpath);
+        let renderer = undefined; // this.config.findRendererPath(info.vpath);
         info.renderer = renderer;
 
 
@@ -1632,60 +1646,60 @@ export class TemplatesFileCache<
     }
 
     protected async updateDocInDB(info) {
-        await this.dao.update(({
-            vpath: info.vpath,
-            mime: info.mime,
-            mounted: info.mounted,
-            mountPoint: info.mountPoint,
-            pathInMounted: info.pathInMounted,
-            fspath: path.join(info.mounted, info.pathInMounted),
-            renderPath: info.renderPath,
-            dirname: path.dirname(info.renderPath),
-            rendersToHTML: info.rendersToHTML,
-            mtimeMs: new Date(info.statsMtime).toISOString(),
-            docMetadata: info.docMetadata,
-            docContent: info.docContent,
-            docBody: info.docBody,
-            metadata: info.metadata,
-            info,
-        } as unknown) as T);
+        // await this.dao.update(({
+        //     vpath: info.vpath,
+        //     mime: info.mime,
+        //     mounted: info.mounted,
+        //     mountPoint: info.mountPoint,
+        //     pathInMounted: info.pathInMounted,
+        //     fspath: path.join(info.mounted, info.pathInMounted),
+        //     renderPath: info.renderPath,
+        //     dirname: path.dirname(info.renderPath),
+        //     rendersToHTML: info.rendersToHTML,
+        //     mtimeMs: new Date(info.statsMtime).toISOString(),
+        //     docMetadata: info.docMetadata,
+        //     docContent: info.docContent,
+        //     docBody: info.docBody,
+        //     metadata: info.metadata,
+        //     info,
+        // } as unknown) as T);
     }
 
     protected async insertDocToDB(info: any) {
-        await this.dao.insert(({
-            vpath: info.vpath,
-            mime: info.mime,
-            mounted: info.mounted,
-            mountPoint: info.mountPoint,
-            pathInMounted: info.pathInMounted,
-            fspath: path.join(info.mounted, info.pathInMounted),
-            renderPath: info.renderPath,
-            dirname: path.dirname(info.renderPath),
-            rendersToHTML: info.rendersToHTML,
-            mtimeMs: new Date(info.statsMtime).toISOString(),
-            docMetadata: info.docMetadata,
-            docContent: info.docContent,
-            docBody: info.docBody,
-            metadata: info.metadata,
-            info,
-        } as unknown) as T);
+        // await this.dao.insert(({
+        //     vpath: info.vpath,
+        //     mime: info.mime,
+        //     mounted: info.mounted,
+        //     mountPoint: info.mountPoint,
+        //     pathInMounted: info.pathInMounted,
+        //     fspath: path.join(info.mounted, info.pathInMounted),
+        //     renderPath: info.renderPath,
+        //     dirname: path.dirname(info.renderPath),
+        //     rendersToHTML: info.rendersToHTML,
+        //     mtimeMs: new Date(info.statsMtime).toISOString(),
+        //     docMetadata: info.docMetadata,
+        //     docContent: info.docContent,
+        //     docBody: info.docBody,
+        //     metadata: info.metadata,
+        //     info,
+        // } as unknown) as T);
     }
 }
 
 export class DocumentsFileCache
-    extends BaseFileCache<Document, TdocumentssDAO> {
+    /* extends BaseFileCache<Document , TdocumentssDAO > */ {
 
-    constructor(
-        config: Configuration,
-        name: string,
-        dirs: dirToMount[]
-    ) {
-        super(config, name, dirs, documentsDAO);
-    }
+    // constructor(
+    //     config: Configuration,
+    //     name: string,
+    //     dirs: dirToMount[]
+    // ) {
+    //     super(config, name, dirs, documentsDAO);
+    // }
 
     protected cvtRowToObj(obj: any): Document {
         const ret: Document = new Document();
-        this.cvtRowToObjBASE(obj, ret);
+        // this.cvtRowToObjBASE(obj, ret);
 
         // if (typeof obj.docMetadata !== 'undefined'
         //  && obj.docMetadata !== null
@@ -1696,13 +1710,22 @@ export class DocumentsFileCache
         //         ret.docMetadata = obj.docMetadata;
         //     }
         // }
+        if (typeof obj.publicationTime !== 'undefined'
+         && obj.publicationTime !== null
+        ) {
+            if (typeof obj.publicationTime !== 'number') {
+                throw new Error(`DocumentsFileCache.cvtRowToObj must have a publicationTime, got ${util.inspect(obj)}`);
+            } else {
+                // ret.publicationTime = obj.publicationTime;
+            }
+        }
         if (typeof obj.docContent !== 'undefined'
          && obj.docContent !== null
         ) {
             if (typeof obj.docContent !== 'string') {
                 throw new Error(`DocumentsFileCache.cvtRowToObj must have a docContent, got ${util.inspect(obj)}`);
             } else {
-                ret.docContent = obj.docContent;
+                // ret.docContent = obj.docContent;
             }
         }
         if (typeof obj.docBody !== 'undefined'
@@ -1711,7 +1734,16 @@ export class DocumentsFileCache
             if (typeof obj.docBody !== 'string') {
                 throw new Error(`DocumentsFileCache.cvtRowToObj must have a docBody, got ${util.inspect(obj)}`);
             } else {
-                ret.docBody = obj.docBody;
+                // ret.docBody = obj.docBody;
+            }
+        }
+        if (typeof obj.layout !== 'undefined'
+         && obj.layout !== null
+        ) {
+            if (typeof obj.layout !== 'string') {
+                throw new Error(`DocumentsFileCache.cvtRowToObj must have a layout, got ${util.inspect(obj)}`);
+            } else {
+                // ret.layout = obj.layout;
             }
         }
         if (typeof obj.blogtag !== 'undefined'
@@ -1720,7 +1752,7 @@ export class DocumentsFileCache
             if (typeof obj.blogtag !== 'string') {
                 throw new Error(`DocumentsFileCache.cvtRowToObj must have a blogtag, got ${util.inspect(obj)}`);
             } else {
-                ret.blogtag = obj.blogtag;
+                // ret.blogtag = obj.blogtag;
             }
         }
         // if (typeof obj.metadata !== 'undefined'
@@ -1744,25 +1776,25 @@ export class DocumentsFileCache
 
         // find the mounted directory,
         // get the baseMetadata
-        for (let dir of remapdirs(this.dirs)) {
-            if (dir.mounted === info.mounted) {
-                if (dir.baseMetadata) {
-                    info.baseMetadata = dir.baseMetadata;
-                }
-                break;
-            }
-        }
+        // for (let dir of remapdirs(this.dirs)) {
+        //     if (dir.mounted === info.mounted) {
+        //         if (dir.baseMetadata) {
+        //             info.baseMetadata = dir.baseMetadata;
+        //         }
+        //         break;
+        //     }
+        // }
 
         // set publicationDate somehow
 
 
-        let renderer = this.config.findRendererPath(info.vpath);
-        info.renderer = renderer;
+        // let renderer = this.config.findRendererPath(info.vpath);
+        // info.renderer = renderer;
 
-        if (renderer) {
+        if (/*renderer*/ false) {
 
-            info.renderPath
-                = renderer.filePath(info.vpath);
+            // info.renderPath
+            //     = renderer.filePath(info.vpath);
 
             // This was in the LokiJS code, but
             // was not in use.
@@ -1779,147 +1811,147 @@ export class DocumentsFileCache
                     '*.html')
             ? true : false;
 
-            if (renderer.parseMetadata) {
+            // if (renderer.parseMetadata) {
 
-                // Using <any> here covers over
-                // that parseMetadata requires
-                // a RenderingContext which
-                // in turn requires a 
-                // metadata object.
-                const rc = renderer.parseMetadata(<any>{
-                    fspath: info.fspath,
-                    content: FS.readFileSync(info.fspath, 'utf-8')
-                });
+            //     // Using <any> here covers over
+            //     // that parseMetadata requires
+            //     // a RenderingContext which
+            //     // in turn requires a 
+            //     // metadata object.
+            //     const rc = renderer.parseMetadata(<any>{
+            //         fspath: info.fspath,
+            //         content: FS.readFileSync(info.fspath, 'utf-8')
+            //     });
 
-                // docMetadata is the unmodified metadata/frontmatter
-                // in the document
-                info.docMetadata = rc.metadata;
-                // docContent is the unparsed original content
-                // including any frontmatter
-                info.docContent = rc.content;
-                // docBody is the parsed body -- e.g. following the frontmatter
-                info.docBody = rc.body;
+            //     // docMetadata is the unmodified metadata/frontmatter
+            //     // in the document
+            //     info.docMetadata = rc.metadata;
+            //     // docContent is the unparsed original content
+            //     // including any frontmatter
+            //     info.docContent = rc.content;
+            //     // docBody is the parsed body -- e.g. following the frontmatter
+            //     info.docBody = rc.body;
 
-                // This is the computed metadata that includes data from 
-                // several sources
-                info.metadata = { };
-                if (!info.docMetadata) info.docMetadata = {};
+            //     // This is the computed metadata that includes data from 
+            //     // several sources
+            //     info.metadata = { };
+            //     if (!info.docMetadata) info.docMetadata = {};
 
-                // The rest of this is adapted from the old function
-                // HTMLRenderer.newInitMetadata
+            //     // The rest of this is adapted from the old function
+            //     // HTMLRenderer.newInitMetadata
 
-                // For starters the metadata is collected from several sources.
-                // 1) the metadata specified in the directory mount where
-                //    this document was found
-                // 2) metadata in the project configuration
-                // 3) the metadata in the document, as captured in docMetadata
+            //     // For starters the metadata is collected from several sources.
+            //     // 1) the metadata specified in the directory mount where
+            //     //    this document was found
+            //     // 2) metadata in the project configuration
+            //     // 3) the metadata in the document, as captured in docMetadata
 
-                for (let yprop in info.baseMetadata) {
-                    // console.log(`initMetadata ${basedir} ${fpath} baseMetadata ${baseMetadata[yprop]}`);
-                    info.metadata[yprop] = info.baseMetadata[yprop];
-                }
-                for (let yprop in this.config.metadata) {
-                    info.metadata[yprop] = this.config.metadata[yprop];
-                }
-                let fmmcount = 0;
-                for (let yprop in info.docMetadata) {
-                    info.metadata[yprop] = info.docMetadata[yprop];
-                    fmmcount++;
-                }
+            //     for (let yprop in info.baseMetadata) {
+            //         // console.log(`initMetadata ${basedir} ${fpath} baseMetadata ${baseMetadata[yprop]}`);
+            //         info.metadata[yprop] = info.baseMetadata[yprop];
+            //     }
+            //     for (let yprop in this.config.metadata) {
+            //         info.metadata[yprop] = this.config.metadata[yprop];
+            //     }
+            //     let fmmcount = 0;
+            //     for (let yprop in info.docMetadata) {
+            //         info.metadata[yprop] = info.docMetadata[yprop];
+            //         fmmcount++;
+            //     }
 
-                // The rendered version of the content lands here
-                info.metadata.content = "";
-                // The document object has been useful for 
-                // communicating the file path and other data.
-                info.metadata.document = {};
-                info.metadata.document.basedir = info.mountPoint;
-                info.metadata.document.relpath = info.pathInMounted;
-                info.metadata.document.relrender = renderer.filePath(info.pathInMounted);
-                info.metadata.document.path = info.vpath;
-                info.metadata.document.renderTo = info.renderPath;
+            //     // The rendered version of the content lands here
+            //     info.metadata.content = "";
+            //     // The document object has been useful for 
+            //     // communicating the file path and other data.
+            //     info.metadata.document = {};
+            //     info.metadata.document.basedir = info.mountPoint;
+            //     info.metadata.document.relpath = info.pathInMounted;
+            //     info.metadata.document.relrender = renderer.filePath(info.pathInMounted);
+            //     info.metadata.document.path = info.vpath;
+            //     info.metadata.document.renderTo = info.renderPath;
 
-                // Ensure the <em>tags</em> field is an array
-                if (!(info.metadata.tags)) {
-                    info.metadata.tags = [];
-                } else if (typeof (info.metadata.tags) === 'string') {
-                    let taglist = [];
-                    const re = /\s*,\s*/;
-                    info.metadata.tags.split(re).forEach(tag => {
-                        taglist.push(tag.trim());
-                    });
-                    info.metadata.tags = taglist;
-                } else if (!Array.isArray(info.metadata.tags)) {
-                    throw new Error(
-                        `FORMAT ERROR - ${info.vpath} has badly formatted tags `,
-                        info.metadata.tags);
-                }
-                info.docMetadata.tags = info.metadata.tags;
+            //     // Ensure the <em>tags</em> field is an array
+            //     if (!(info.metadata.tags)) {
+            //         info.metadata.tags = [];
+            //     } else if (typeof (info.metadata.tags) === 'string') {
+            //         let taglist = [];
+            //         const re = /\s*,\s*/;
+            //         info.metadata.tags.split(re).forEach(tag => {
+            //             taglist.push(tag.trim());
+            //         });
+            //         info.metadata.tags = taglist;
+            //     } else if (!Array.isArray(info.metadata.tags)) {
+            //         throw new Error(
+            //             `FORMAT ERROR - ${info.vpath} has badly formatted tags `,
+            //             info.metadata.tags);
+            //     }
+            //     info.docMetadata.tags = info.metadata.tags;
 
-                // if (info.metadata.blogtag) {
-                //     info.blogtag = info.metadata.blogtag;
-                // }
+            //     // if (info.metadata.blogtag) {
+            //     //     info.blogtag = info.metadata.blogtag;
+            //     // }
                 
-                // The root URL for the project
-                info.metadata.root_url = this.config.root_url;
+            //     // The root URL for the project
+            //     info.metadata.root_url = this.config.root_url;
 
-                // Compute the URL this document will render to
-                if (this.config.root_url) {
-                    let uRootUrl = new URL(this.config.root_url, 'http://example.com');
-                    uRootUrl.pathname = path.normalize(
-                            path.join(uRootUrl.pathname, info.metadata.document.renderTo)
-                    );
-                    info.metadata.rendered_url = uRootUrl.toString();
-                } else {
-                    info.metadata.rendered_url = info.metadata.document.renderTo;
-                }
+            //     // Compute the URL this document will render to
+            //     if (this.config.root_url) {
+            //         let uRootUrl = new URL(this.config.root_url, 'http://example.com');
+            //         uRootUrl.pathname = path.normalize(
+            //                 path.join(uRootUrl.pathname, info.metadata.document.renderTo)
+            //         );
+            //         info.metadata.rendered_url = uRootUrl.toString();
+            //     } else {
+            //         info.metadata.rendered_url = info.metadata.document.renderTo;
+            //     }
 
-                // info.metadata.rendered_date = info.stats.mtime;
+            //     // info.metadata.rendered_date = info.stats.mtime;
 
-                const parsePublDate = (date) => {
-                    const parsed = Date.parse(date);
-                    if (! isNaN(parsed)) {
-                        info.metadata.publicationDate = new Date(parsed);
-                        info.publicationDate = info.metadata.publicationDate;
-                        info.publicationTime = info.publicationDate.getTime();
-                    }
-                };
+            //     const parsePublDate = (date) => {
+            //         const parsed = Date.parse(date);
+            //         if (! isNaN(parsed)) {
+            //             info.metadata.publicationDate = new Date(parsed);
+            //             info.publicationDate = info.metadata.publicationDate;
+            //             info.publicationTime = info.publicationDate.getTime();
+            //         }
+            //     };
 
-                if (info.docMetadata
-                 && typeof info.docMetadata.publDate === 'string') {
-                    parsePublDate(info.docMetadata.publDate);
-                }
-                if (info.docMetadata
-                 && typeof info.docMetadata.publicationDate === 'string') {
-                    parsePublDate(info.docMetadata.publicationDate);
-                }
+            //     if (info.docMetadata
+            //      && typeof info.docMetadata.publDate === 'string') {
+            //         parsePublDate(info.docMetadata.publDate);
+            //     }
+            //     if (info.docMetadata
+            //      && typeof info.docMetadata.publicationDate === 'string') {
+            //         parsePublDate(info.docMetadata.publicationDate);
+            //     }
 
-                if (!info.metadata.publicationDate) {
-                    var dateSet = false;
-                    if (info.docMetadata
-                     && info.docMetadata.publDate) {
-                        parsePublDate(info.docMetadata.publDate);
-                        dateSet = true;
-                    }
-                    if (info.docMetadata
-                     && typeof info.docMetadata.publicationDate === 'string') {
-                        parsePublDate(info.docMetadata.publicationDate);
-                        dateSet = true;
-                    }
-                    if (! dateSet && info.mtimeMs) {
-                        info.metadata.publicationDate = new Date(info.mtimeMs);
-                        info.publicationDate = info.metadata.publicationDate;
-                        info.publicationTime = info.publicationDate.getTime();
-                        // console.log(`${info.vpath} metadata.publicationDate ${info.metadata.publicationDate} set from stats.mtime`);
-                    }
-                    if (!info.metadata.publicationDate) {
-                        info.metadata.publicationDate = new Date();
-                        info.publicationDate = info.metadata.publicationDate;
-                        info.publicationTime = info.publicationDate.getTime();
-                        // console.log(`${info.vpath} metadata.publicationDate ${info.metadata.publicationDate} set from current time`);
-                    }
-                }
+            //     if (!info.metadata.publicationDate) {
+            //         var dateSet = false;
+            //         if (info.docMetadata
+            //          && info.docMetadata.publDate) {
+            //             parsePublDate(info.docMetadata.publDate);
+            //             dateSet = true;
+            //         }
+            //         if (info.docMetadata
+            //          && typeof info.docMetadata.publicationDate === 'string') {
+            //             parsePublDate(info.docMetadata.publicationDate);
+            //             dateSet = true;
+            //         }
+            //         if (! dateSet && info.mtimeMs) {
+            //             info.metadata.publicationDate = new Date(info.mtimeMs);
+            //             info.publicationDate = info.metadata.publicationDate;
+            //             info.publicationTime = info.publicationDate.getTime();
+            //             // console.log(`${info.vpath} metadata.publicationDate ${info.metadata.publicationDate} set from stats.mtime`);
+            //         }
+            //         if (!info.metadata.publicationDate) {
+            //             info.metadata.publicationDate = new Date();
+            //             info.publicationDate = info.metadata.publicationDate;
+            //             info.publicationTime = info.publicationDate.getTime();
+            //             // console.log(`${info.vpath} metadata.publicationDate ${info.metadata.publicationDate} set from current time`);
+            //         }
+            //     }
 
-            }
+            // }
         }
     }
 
@@ -1969,38 +2001,38 @@ export class DocumentsFileCache
     }
 
     protected async updateDocInDB(info) {
-        const docInfo = <Document>{
-            vpath: info.vpath,
-            mime: info.mime,
-            mounted: info.mounted,
-            mountPoint: info.mountPoint,
-            pathInMounted: info.pathInMounted,
-            fspath: path.join(info.mounted, info.pathInMounted),
-            renderPath: info.renderPath,
-            rendersToHTML:
-                typeof info.rendersToHTML === 'undefined'
-                ? false
-                : info.rendersToHTML,
-            dirname: path.dirname(info.renderPath),
-            parentDir: info.parentDir,
-            mtimeMs: new Date(info.statsMtime).toISOString(),
-            baseMetadata: info.baseMetadata,
-            docMetadata: info.docMetadata,
-            docContent: info.docContent,
-            docBody: info.docBody,
-            metadata: info.metadata,
-            tags: Array.isArray(info.metadata?.tags)
-                    ? info.metadata.tags
-                    : [],
-            // layout: info.layout, // info.metadata?.layout,
-            // blogtag: info.blogtag,
-            info,
-        };
+        // const docInfo = <Document>{
+        //     vpath: info.vpath,
+        //     mime: info.mime,
+        //     mounted: info.mounted,
+        //     mountPoint: info.mountPoint,
+        //     pathInMounted: info.pathInMounted,
+        //     fspath: path.join(info.mounted, info.pathInMounted),
+        //     renderPath: info.renderPath,
+        //     rendersToHTML:
+        //         typeof info.rendersToHTML === 'undefined'
+        //         ? false
+        //         : info.rendersToHTML,
+        //     dirname: path.dirname(info.renderPath),
+        //     parentDir: info.parentDir,
+        //     mtimeMs: new Date(info.statsMtime).toISOString(),
+        //     baseMetadata: info.baseMetadata,
+        //     docMetadata: info.docMetadata,
+        //     docContent: info.docContent,
+        //     docBody: info.docBody,
+        //     metadata: info.metadata,
+        //     tags: Array.isArray(info.metadata?.tags)
+        //             ? info.metadata.tags
+        //             : [],
+        //     // layout: info.layout, // info.metadata?.layout,
+        //     // blogtag: info.blogtag,
+        //     info,
+        // };
 
-        await this.dao.update(docInfo);
+        // await this.dao.update(docInfo);
 
-        await tglue.deleteTagGlue(docInfo.vpath);
-        await tglue.addTagGlue(docInfo.vpath, docInfo.tags);
+        // await tglue.deleteTagGlue(docInfo.vpath);
+        // await tglue.addTagGlue(docInfo.vpath, docInfo.tags);
     }
 
     protected async insertDocToDB(info: any) {
@@ -2017,69 +2049,65 @@ export class DocumentsFileCache
         if (!Array.isArray(info.metadata?.tags)) info.metadata.tags = [];
         if (!info.metadata.layout) info.metadata.layout = '';
         if (!info.metadata.blogtag) info.metadata.blogtag = '';
-        const siblings = await this.dao.sqldb.run(
-            `INSERT INTO DOCUMENTS
-                (
-                 vpath, mime,
-                 mounted, mountPoint, pathInMounted,
-                 fspath, renderPath,
-                 rendersToHTML,
-                 dirname, parentDir,
-                 mtimeMs,
-                 baseMetadata,
-                 docMetadata,
-                 docContent,
-                 docBody,
-                 metadata,
-                 info
-                )
-                VALUES (
-                 $vpath, $mime,
-                 $mounted, $mountPoint, $pathInMounted,
-                 $fspath, $renderPath,
-                 $rendersToHTML,
-                 $dirname, $parentDir,
-                 $mtimeMs,
-                 $baseMetadata,
-                 $docMetadata,
-                 $docContent,
-                 $docBody,
-                 $metadata,
-                 $info
-                )
-            `, {
-                $vpath: info.vpath,
-                $mime: info.mime,
-                $mounted: info.mounted,
-                $mountPoint: info.mountPoint,
-                $pathInMounted: info.pathInMounted,
-                $fspath: path.join(
-                    info.mounted, info.pathInMounted
-                ),
-                $renderPath: info.renderPath,
-                $rendersToHTML: info.rendersToHTML,
-                $dirname: path.dirname(info.renderPath),
-                $parentDir: path.dirname(
-                    path.dirname(
-                        info.renderPath
-                )),
-                $mtimeMs: new Date(info.statsMtime).toISOString(),
-                $baseMetadata: JSON.stringify(info.baseMetadata),
-                $docMetadata: JSON.stringify(info.docMetadata),
-                $docContent: info.docContent,
-                $docBody: info.docBody,
-                $metadata: JSON.stringify(info.metadata),
-                $info: JSON.stringify(info)
-            }
-        )
-        // await this.dao.insert(docInfo);
+        // const siblings = await this.dao.sqldb.run(
+        //     `INSERT INTO DOCUMENTS
+        //         (
+        //          vpath, mime,
+        //          mounted, mountPoint, pathInMounted,
+        //          fspath, renderPath,
+        //          rendersToHTML,
+        //          dirname, parentDir,
+        //          mtimeMs,
+        //          docMetadata,
+        //          docContent,
+        //          docBody,
+        //          info
+        //         )
+        //         VALUES (
+        //          $vpath, $mime,
+        //          $mounted, $mountPoint, $pathInMounted,
+        //          $fspath, $renderPath,
+        //          $rendersToHTML,
+        //          $dirname, $parentDir,
+        //          $mtimeMs,
+        //          $docMetadata,
+        //          $docContent,
+        //          $docBody,
+        //          $info
+        //         )
+        //     `, {
+        //         $vpath: info.vpath,
+        //         $mime: info.mime,
+        //         $mounted: info.mounted,
+        //         $mountPoint: info.mountPoint,
+        //         $pathInMounted: info.pathInMounted,
+        //         $fspath: path.join(
+        //             info.mounted, info.pathInMounted
+        //         ),
+        //         $renderPath: info.renderPath,
+        //         $rendersToHTML: info.rendersToHTML,
+        //         $dirname: path.dirname(info.renderPath),
+        //         $parentDir: path.dirname(
+        //             path.dirname(
+        //                 info.renderPath
+        //         )),
+        //         $mtimeMs: new Date(info.statsMtime).toISOString(),
+        //         // $baseMetadata: JSON.stringify(info.baseMetadata),
+        //         $docMetadata: JSON.stringify(info.docMetadata),
+        //         $docContent: info.docContent,
+        //         $docBody: info.docBody,
+        //         // $metadata: JSON.stringify(info.metadata),
+        //         $info: JSON.stringify(info)
+        //     }
+        // )
+        // // await this.dao.insert(docInfo);
         await this.addDocTagGlue(
             info.vpath, info.metadata.tags
         );
     }
 
     async handleUnlinked(name: any, info: any): Promise<void> {
-        await super.handleUnlinked(name, info);
+        // await super.handleUnlinked(name, info);
         tglue.deleteTagGlue(info.vpath);
     }
 
@@ -2093,7 +2121,7 @@ export class DocumentsFileCache
         // console.log(`indexChain ${_fpath} ${fpath}`, parsed);
 
         const filez: Document[] = [];
-        const self = await this.findByPath(fpath);
+        // const self = await this.findByPath(fpath);
         let fileName = fpath;
         if (Array.isArray(self) && self.length >= 1) {
             filez.push(self[0]);
@@ -2111,7 +2139,7 @@ export class DocumentsFileCache
             }
             let lookFor = path.join(parentDir, "index.html");
 
-            const index = await this.findByPath(lookFor);
+            // const index = await this.findByPath(lookFor);
 
             if (Array.isArray(index) && index.length >= 1) {
                 filez.push(index[0]);
@@ -2147,26 +2175,26 @@ export class DocumentsFileCache
                   : _fpath;
         let dirname = path.dirname(vpath);
 
-        const siblings = await this.dao.sqldb.all(`
-            SELECT * FROM ${this.dao.table.quotedName}
-            WHERE
-            dirname = $dirname AND
-            vpath <> $vpath AND
-            renderPath <> $vpath AND
-            rendersToHtml = true
-        `, {
-            $dirname: dirname,
-            $vpath: vpath
-        });
+        // const siblings = await this.dao.sqldb.all(`
+        //     SELECT * FROM ${this.dao.table.quotedName}
+        //     WHERE
+        //     dirname = $dirname AND
+        //     vpath <> $vpath AND
+        //     renderPath <> $vpath AND
+        //     rendersToHtml = true
+        // `, {
+        //     $dirname: dirname,
+        //     $vpath: vpath
+        // });
 
-        const ignored = siblings.filter(item => {
-            return !this.ignoreFile(item);
-        });
+        // const ignored = siblings.filter(item => {
+        //     return !this.ignoreFile(item);
+        // });
 
-        const mapped = ignored.map(item => {
-            return this.cvtRowToObj(item);
-        });
-        return mapped;
+        // const mapped = ignored.map(item => {
+        //     return this.cvtRowToObj(item);
+        // });
+        // return mapped;
 
     }
 
@@ -2219,54 +2247,54 @@ export class DocumentsFileCache
 
         // console.log(`childItemTree ${_rootItem}`);
 
-        let rootItem = await this.find(
-                _rootItem.startsWith('/')
-                    ? _rootItem.substring(1)
-                    : _rootItem);
-        if (!rootItem) {
-            // console.warn(`childItemTree no rootItem found for path ${_rootItem}`);
-            return undefined;
-        }
-        if (!(typeof rootItem === 'object')
-         || !('vpath' in rootItem)
-        ) {
-            // console.warn(`childItemTree found invalid object for ${_rootItem} - ${util.inspect(rootItem)}`);
-            return undefined;
-        }
-        let dirname = path.dirname(rootItem.vpath);
-        // Picks up everything from the current level.
-        // Differs from siblings by getting everything.
-        const items = await this.dao.selectAll({
-            dirname: { eq: dirname },
-            rendersToHTML: true
-        }) as unknown[] as any[];
+        // let rootItem = await this.find(
+        //         _rootItem.startsWith('/')
+        //             ? _rootItem.substring(1)
+        //             : _rootItem);
+        // if (!rootItem) {
+        //     // console.warn(`childItemTree no rootItem found for path ${_rootItem}`);
+        //     return undefined;
+        // }
+        // if (!(typeof rootItem === 'object')
+        //  || !('vpath' in rootItem)
+        // ) {
+        //     // console.warn(`childItemTree found invalid object for ${_rootItem} - ${util.inspect(rootItem)}`);
+        //     return undefined;
+        // }
+        // let dirname = path.dirname(rootItem.vpath);
+        // // Picks up everything from the current level.
+        // // Differs from siblings by getting everything.
+        // const items = await this.dao.selectAll({
+        //     dirname: { eq: dirname },
+        //     rendersToHTML: true
+        // }) as unknown[] as any[];
 
-        const childFolders = await this.dao.sqldb.all(
-            `SELECT distinct dirname FROM DOCUMENTS
-            WHERE parentDir = '${dirname}'`
-        ) as unknown[] as Document[];
+        // const childFolders = await this.dao.sqldb.all(
+        //     `SELECT distinct dirname FROM DOCUMENTS
+        //     WHERE parentDir = '${dirname}'`
+        // ) as unknown[] as Document[];
 
-        const cfs = [];
-        for (const cf of childFolders) {
-            cfs.push(await this.childItemTree(
-                path.join(cf.dirname, 'index.html')
-            ));
-        }
+        // const cfs = [];
+        // for (const cf of childFolders) {
+        //     cfs.push(await this.childItemTree(
+        //         path.join(cf.dirname, 'index.html')
+        //     ));
+        // }
 
-        return {
-            rootItem,
-            dirname,
-            items: items,
-            // Uncomment this to generate simplified output
-            // for debugging.
-            // .map(item => {
-            //     return {
-            //         vpath: item.vpath,
-            //         renderPath: item.renderPath
-            //     }
-            // }),
-            childFolders: cfs
-        }
+        // return {
+        //     rootItem,
+        //     dirname,
+        //     items: items,
+        //     // Uncomment this to generate simplified output
+        //     // for debugging.
+        //     // .map(item => {
+        //     //     return {
+        //     //         vpath: item.vpath,
+        //     //         renderPath: item.renderPath
+        //     //     }
+        //     // }),
+        //     childFolders: cfs
+        // }
     }
 
     /**
@@ -2290,17 +2318,17 @@ export class DocumentsFileCache
             ? `AND ( renderPath LIKE '${rootP}%' )`
             : '';
 
-        return this.dao.sqldb.all(`
-        SELECT *
-        FROM DOCUMENTS
-        WHERE
-            ( rendersToHTML = true )
-        AND (
-            ( renderPath LIKE '%/index.html' )
-         OR ( renderPath = 'index.html' )
-        )
-        ${rootQ}
-        `);
+        // return this.dao.sqldb.all(`
+        // SELECT *
+        // FROM DOCUMENTS
+        // WHERE
+        //     ( rendersToHTML = true )
+        // AND (
+        //     ( renderPath LIKE '%/index.html' )
+        //  OR ( renderPath = 'index.html' )
+        // )
+        // ${rootQ}
+        // `);
         
 
         // It's proved difficult to get the regexp
@@ -2323,31 +2351,31 @@ export class DocumentsFileCache
      * for the files in the documents directories. ????
      */
     async setTimes() {
-        await this.dao.selectEach(
-            (err, model) => {
+        // await this.dao.selectEach(
+        //     (err, model) => {
 
-                const setter = async (date) => {
-                    const parsed = Date.parse(date);;
-                    if (! isNaN(parsed)) {
-                        const dp = new Date(parsed);
-                        FS.utimesSync(
-                            model.fspath,
-                            dp,
-                            dp
-                        );
-                    } 
-                }
-                if (model.info.docMetadata
-                 && model.info.docMetadata.publDate) {
-                    setter(model.info.docMetadata.publDate);
-                }
-                if (model.info.docMetadata
-                 && model.info.docMetadata.publicationDate) {
-                    setter(model.info.docMetadata.publicationDate);
-                }
-            },
-            {} as Where<Document>
-        );
+        //         const setter = async (date) => {
+        //             const parsed = Date.parse(date);;
+        //             if (! isNaN(parsed)) {
+        //                 const dp = new Date(parsed);
+        //                 FS.utimesSync(
+        //                     model.fspath,
+        //                     dp,
+        //                     dp
+        //                 );
+        //             } 
+        //         }
+        //         if (model.info.docMetadata
+        //          && model.info.docMetadata.publDate) {
+        //             setter(model.info.docMetadata.publDate);
+        //         }
+        //         if (model.info.docMetadata
+        //          && model.info.docMetadata.publicationDate) {
+        //             setter(model.info.docMetadata.publicationDate);
+        //         }
+        //     },
+        //     {} as Where<Document>
+        // );
     }
 
     /**
@@ -2490,7 +2518,7 @@ export class DocumentsFileCache
      * @param vpath 
      * @returns 
      */
-    async docLinkData(vpath: string): Promise<{
+    async docLinkData(vpath: string) /*: Promise<{
 
         // The vpath reference
         vpath: string;
@@ -2502,34 +2530,34 @@ export class DocumentsFileCache
         teaser?: string;
         // The hero image (thumbnail)
         thumbnail?: string;
-    }> {
+    }> */ {
 
-        const found = await this.dao.sqldb.all(`
-            SELECT *
-            FROM ${this.dao.table.quotedName}
-            WHERE 
-            vpath = $vpath OR renderPath = $vpath
-        `, {
-            $vpath: vpath
-        });
+        // const found = await this.dao.sqldb.all(`
+        //     SELECT *
+        //     FROM ${this.dao.table.quotedName}
+        //     WHERE 
+        //     vpath = $vpath OR renderPath = $vpath
+        // `, {
+        //     $vpath: vpath
+        // });
 
-        if (Array.isArray(found)) {
+        // if (Array.isArray(found)) {
 
-            // const docInfo = await this.find(vpath);
-            return {
-                vpath,
-                renderPath: found[0].renderPath,
-                title: found[0].metadata.title,
-                teaser: found[0].metadata.teaser,
-                // thumbnail
-            };
-        } else {
-            return {
-                vpath,
-                renderPath: undefined,
-                title: undefined
-            };
-        }
+        //     // const docInfo = await this.find(vpath);
+        //     return {
+        //         vpath,
+        //         renderPath: found[0].renderPath,
+        //         title: found[0].metadata.title,
+        //         teaser: found[0].metadata.teaser,
+        //         // thumbnail
+        //     };
+        // } else {
+        //     return {
+        //         vpath,
+        //         renderPath: undefined,
+        //         title: undefined
+        //     };
+        // }
     }
 
     // This is a simple cache to hold results
@@ -2595,12 +2623,12 @@ export class DocumentsFileCache
         try {
             const { sql, params } = this.buildSearchQuery(options);
             // console.log(`search ${sql}`);
-            const results = await this.dao.sqldb.all(sql, params);
+            // const results = await this.dao.sqldb.all(sql, params);
 
             // Convert raw SQL results to Document objects
-            const documents = results.map(row => {
-                return this.cvtRowToObj(row);
-            });
+            // const documents = results.map(row => {
+            //     return this.cvtRowToObj(row);
+            // });
 
             // Gather additional info data for each result FIRST
             // This is crucial because filters and sort functions may depend on this data
@@ -2609,34 +2637,34 @@ export class DocumentsFileCache
             // }
 
             // Apply post-SQL filters that can't be done in SQL
-            let filteredResults = documents;
+            let filteredResults = []; // documents;
 
             // Filter by renderers (requires config lookup)
             if (options.renderers
              && Array.isArray(options.renderers)
             ) {
                 filteredResults = filteredResults.filter(item => {
-                    let renderer = fcache.config.findRendererPath(item.vpath);
-                    if (!renderer) return false;
+                    // let renderer = fcache.config.findRendererPath(item.vpath);
+                    // if (!renderer) return false;
                     
                     let found = false;
-                    for (const r of options.renderers) {
-                        if (typeof r === 'string' && r === renderer.name) {
-                            found = true;
-                        } else if (typeof r === 'object' || typeof r === 'function') {
-                            console.error('WARNING: Matching renderer by object class is no longer supported', r);
-                        }
-                    }
+                    // for (const r of options.renderers) {
+                    //     if (typeof r === 'string' && r === renderer.name) {
+                    //         found = true;
+                    //     } else if (typeof r === 'object' || typeof r === 'function') {
+                    //         console.error('WARNING: Matching renderer by object class is no longer supported', r);
+                    //     }
+                    // }
                     return found;
                 });
             }
 
             // Apply custom filter function
-            if (options.filterfunc) {
-                filteredResults = filteredResults.filter(item => {
-                    return options.filterfunc(fcache.config, options, item);
-                });
-            }
+            // if (options.filterfunc) {
+            //     filteredResults = filteredResults.filter(item => {
+            //         return options.filterfunc(fcache.config, options, item);
+            //     });
+            // }
 
             // Apply custom sort function (if SQL sorting wasn't used)
             if (typeof options.sortFunc === 'function') {
@@ -2678,7 +2706,7 @@ export class DocumentsFileCache
         };
 
         // Base query
-        let sql = `SELECT DISTINCT d.* FROM ${this.dao.table.quotedName} d`;
+        let sql = `SELECT DISTINCT d.* FROM $ {this.dao.table.quotedName} d`;
 
         // MIME type filtering
         if (options.mime) {
@@ -2880,88 +2908,88 @@ export class DocumentsFileCache
     // https://www.npmjs.com/package/sqlite-regex
 }
 
-export var assetsCache: AssetsFileCache< Asset, typeof assetsDAO>;
-export var partialsCache: TemplatesFileCache<Partial, typeof partialsDAO>;
-export var layoutsCache: TemplatesFileCache<Layout, typeof layoutsDAO>;
-export var documentsCache: DocumentsFileCache;
+// export var assetsCache: AssetsFileCache< Asset, typeof assetsDAO>;
+// export var partialsCache: TemplatesFileCache<Partial, typeof partialsDAO>;
+// export var layoutsCache: TemplatesFileCache<Layout, typeof layoutsDAO>;
+// export var documentsCache: DocumentsFileCache;
 
 export async function setup(
     config: Configuration
 ): Promise<void> {
 
-    assetsCache = new AssetsFileCache<Asset, TassetsDAO>(
-        config,
-        'assets',
-        config.assetDirs,
-        assetsDAO
-    );
-    await assetsCache.setup();
+    // assetsCache = new AssetsFileCache<Asset, TassetsDAO>(
+    //     config,
+    //     'assets',
+    //     config.assetDirs,
+    //     assetsDAO
+    // );
+    // await assetsCache.setup();
 
-    assetsCache.on('error', (...args) => {
-        console.error(`assetsCache ERROR ${util.inspect(args)}`)
-    });
+    // assetsCache.on('error', (...args) => {
+    //     console.error(`assetsCache ERROR ${util.inspect(args)}`)
+    // });
 
-    partialsCache = new TemplatesFileCache<
-            Partial, TpartialsDAO
-    >(
-        config,
-        'partials',
-        config.partialsDirs,
-        partialsDAO,
-        "partial"
-    );
-    await partialsCache.setup();
+    // partialsCache = new TemplatesFileCache<
+    //         Partial, TpartialsDAO
+    // >(
+    //     config,
+    //     'partials',
+    //     config.partialsDirs,
+    //     partialsDAO,
+    //     "partial"
+    // );
+    // await partialsCache.setup();
 
-    partialsCache.on('error', (...args) => {
-        console.error(`partialsCache ERROR ${util.inspect(args)}`)
-    });
+    // partialsCache.on('error', (...args) => {
+    //     console.error(`partialsCache ERROR ${util.inspect(args)}`)
+    // });
 
-    layoutsCache = new TemplatesFileCache<
-            Layout, TlayoutsDAO
-    >(
-        config,
-        'layouts',
-        config.layoutDirs,
-        layoutsDAO,
-        "layout"
-    );
-    await layoutsCache.setup();
+    // layoutsCache = new TemplatesFileCache<
+    //         Layout, TlayoutsDAO
+    // >(
+    //     config,
+    //     'layouts',
+    //     config.layoutDirs,
+    //     layoutsDAO,
+    //     "layout"
+    // );
+    // await layoutsCache.setup();
 
-    layoutsCache.on('error', (...args) => {
-        console.error(`layoutsCache ERROR ${util.inspect(args)}`)
-    });
+    // layoutsCache.on('error', (...args) => {
+    //     console.error(`layoutsCache ERROR ${util.inspect(args)}`)
+    // });
 
-    // console.log(`DocumentsFileCache 'documents' ${util.inspect(config.documentDirs)}`);
+    // // console.log(`DocumentsFileCache 'documents' ${util.inspect(config.documentDirs)}`);
 
-    documentsCache = new DocumentsFileCache(
-        config,
-        'documents',
-        config.documentDirs
-    );
-    await documentsCache.setup();
+    // documentsCache = new DocumentsFileCache(
+    //     config,
+    //     'documents',
+    //     config.documentDirs
+    // );
+    // await documentsCache.setup();
 
-    documentsCache.on('error', (err) => {
-        console.error(`documentsCache ERROR ${util.inspect(err)}`);
-    });
+    // documentsCache.on('error', (err) => {
+    //     console.error(`documentsCache ERROR ${util.inspect(err)}`);
+    // });
 
-    await config.hookPluginCacheSetup();
+    // await config.hookPluginCacheSetup();
 }
 
 export async function closeFileCaches() {
-    if (documentsCache) {
-        await documentsCache.close();
-        documentsCache = undefined;
-    }
-    if (assetsCache) {
-        await assetsCache.close();
-        assetsCache = undefined;
-    }
-    if (layoutsCache) {
-        await layoutsCache.close();
-        layoutsCache = undefined;
-    }
-    if (partialsCache) {
-        await partialsCache.close();
-        partialsCache = undefined;
-    }
+    // if (documentsCache) {
+    //     await documentsCache.close();
+    //     documentsCache = undefined;
+    // }
+    // if (assetsCache) {
+    //     await assetsCache.close();
+    //     assetsCache = undefined;
+    // }
+    // if (layoutsCache) {
+    //     await layoutsCache.close();
+    //     layoutsCache = undefined;
+    // }
+    // if (partialsCache) {
+    //     await partialsCache.close();
+    //     partialsCache = undefined;
+    // }
 }

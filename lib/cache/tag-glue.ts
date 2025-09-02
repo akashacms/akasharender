@@ -56,7 +56,6 @@ export class TagGlue {
         }
     }
 
-    // TODO return value
     async tags(): Promise<string[]> {
         const rows = [];
         await new Promise((resolve, reject) => {
