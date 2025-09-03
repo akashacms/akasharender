@@ -19,7 +19,7 @@ export declare class BaseCache<T extends BaseCacheEntry> extends EventEmitter {
     get dirs(): dirToMount[];
     get db(): AsyncDatabase;
     get dbname(): string;
-    get quotedDBName(): string;
+    get quotedDBName(): any;
     close(): Promise<void>;
     /**
      * Set up receiving events from DirsWatcher, and dispatching to

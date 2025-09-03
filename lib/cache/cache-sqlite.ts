@@ -24,7 +24,7 @@ import {
 
 import { Database } from 'sqlite3';
 import { AsyncDatabase } from 'promised-sqlite3';
-import { quoteIdentifier } from './identifiers.js';
+import SqlString from 'sqlstring-sqlite';
 import {
     BaseCacheEntry,
     Asset,
@@ -108,7 +108,7 @@ export class BaseCache<
     get db()         { return this.#db; }
     get dbname()     { return this.#dbname; }
     get quotedDBName() {
-        return quoteIdentifier(this.#dbname);
+        return SqlString.escape(this.#dbname);
     }
 
     #watcher: DirsWatcher;
@@ -308,7 +308,9 @@ export class BaseCache<
      * @param row 
      */
     protected cvtRowToObj(row: any): T {
-        row.info = JSON.parse(row.info);
+        if (typeof row.info === 'string') {
+            row.info = JSON.parse(row.info);
+        }
         return <T>row;
     }
 
