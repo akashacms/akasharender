@@ -16,7 +16,8 @@
  *  See the License for the specific language governing permissions and
  *  limitations under the License.
  */
-export declare function report(basedir: any, fpath: any, renderTo: any, stage: any, start: any): Promise<void>;
+export declare function init(): Promise<void>;
+export declare function report(basedir: any, fpath: any, renderTo: any, stage: any, start: Date): Promise<void>;
 /**
  * Support removing items from the saved data.  This is useful
  * when we're rendering the same file multiple times.

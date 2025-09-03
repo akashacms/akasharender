@@ -1,10 +1,9 @@
 
 import util from 'node:util';
-// import { Database } from 'sqlite3';
 
 import { AsyncDatabase } from 'promised-sqlite3';
 
-// Use this.dao.sqldb to get Database instance
+import SqlString from 'sqlstring-sqlite';
 
 // function to initialize a TAGGLUE database table
 
@@ -106,13 +105,16 @@ export class TagGlue {
                 });
         } else {
 
-            let tagstring = ` ( ${tagName.map(t => {
-                return `'${t.indexOf("'") >= 0
-                    ? t.replaceAll("'", "''")
-                    : t}'`;
-            }).join(',')} ) `;
+            let tagstring = ` (
+                ${SqlString.escape(tagName)}
+            )`;
 
             // console.log(tagstring);
+            // console.log(`
+            //     SELECT DISTINCT docvpath AS vpath
+            //     FROM TAGGLUE
+            //     WHERE tagName IN ${tagstring}
+            //     `)
 
             rows = <{
                 vpath: string

@@ -20,7 +20,7 @@
 import path from 'node:path';
 import { promises as fsp } from 'node:fs';
 import util from 'node:util';
-import * as data from './data.js';
+import * as data from './data-new.js';
 import mahabhuta from 'mahabhuta';
 
 import fastq from 'fastq';
@@ -253,7 +253,7 @@ export async function renderDocument(
         metadata: docInfo.metadata
     };
 
-    // console.log(`renderDocument context= ${rc.fspath}`)
+    // console.log(`renderDocument context= ${rc.fspath}`, rc);
 
     let docFormat;      // Knowing the format 
     let docRendered;
@@ -265,7 +265,7 @@ export async function renderDocument(
         console.error(`Error rendering ${docInfo.vpath} ${(err.stack ? err.stack : err)}`);
         throw new Error(`Error rendering ${docInfo.vpath} ${(err.stack ? err.stack : err)}`);
     }
-    // console.log(`renderDocument ${docInfo.vpath} rendered=`, docRendered);
+    // console.log(`renderDocument ${docFormat} ${docInfo.vpath} rendered=`, docRendered);
     await data.report(docInfo.mountPoint, 
                       docInfo.vpath,
                       config.renderTo, 
