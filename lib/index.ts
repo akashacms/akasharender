@@ -550,6 +550,7 @@ export class Configuration {
         javaScriptBottom?: javaScriptItem[]
     };
     #concurrency: number;
+    #searchCacheTimeout: number;
     #metadata: any;
     #root_url: string;
     #plugins;
@@ -570,6 +571,8 @@ export class Configuration {
         };
 
         this.#concurrency = 3;
+        // 60 seconds, or 1 minute
+        this.#searchCacheTimeout = 60000;
 
         this.#documentDirs = [];
         this.#layoutDirs = [];
@@ -1051,6 +1054,25 @@ export class Configuration {
     }
 
     get concurrency() { return this.#concurrency; }
+
+    /**
+     * Set the time, in miliseconds, to honor
+     * the SearchCache in the search function.
+     * 
+     * Default is 60000 (1 minute).
+     * 
+     * Set to 0 to disable caching.
+     * @param timeout 
+     */
+    setSearchCacheTimeout(timeout: number) {
+        this.#searchCacheTimeout = timeout;
+        // console.log(`setSearchCacheTimeout ${this.#searchCacheTimeout}`);
+    }
+
+    get searchCacheTimeout() {
+        // console.log(`searchCacheTimeout ${this.#searchCacheTimeout}`);
+        return this.#searchCacheTimeout;
+    }
 
     /**
      * Declare JavaScript to add within the head tag of rendered pages.
