@@ -20,6 +20,7 @@
 import path from 'node:path';
 
 import { sqdb } from './sqdb.js';
+import { AsyncDatabase } from 'promised-sqlite3';
 
 class Trace {
     basedir: string;
@@ -31,22 +32,30 @@ class Trace {
     now: string;
 }
 
-await (await sqdb).run(`
-CREATE TABLE IF NOT EXISTS "TRACES" (
-    basedir  TEXT,
-    fpath    TEXT,
-    fullpath TEXt,
-    renderTo TEXT,
-    stage    TEXT DEFAULT(datetime('now') || 'Z'),
-    start    TEXT DEFAULT(datetime('now') || 'Z'),
-    now      TEXT DEFAULT(datetime('now') || 'Z')
-) WITHOUT ROWID;
-CREATE INDEX "traces_basedir" ON "TRACES" ("basedir");
-CREATE INDEX "traces_fpath"   ON "TRACES" ("fpath");
-`)
+export async function init() {
+    await (await sqdb).run(`
+    CREATE TABLE IF NOT EXISTS "TRACES" (
+        \`basedir\`  TEXT,
+        \`fpath\`    TEXT,
+        \`fullpath\` TEXT,
+        \`renderTo\` TEXT,
+        \`stage\`    TEXT,
+        \`start\`    TEXT
+                DEFAULT(datetime('now') || 'Z'),
+        \`now\`      TEXT
+                DEFAULT(datetime('now') || 'Z')
+    );
+    CREATE INDEX "traces_basedir"
+            ON "TRACES" ("basedir");
+    CREATE INDEX "traces_fpath"
+            ON "TRACES" ("fpath");
+    CREATE INDEX "traces_fullpath"
+            ON "TRACES" ("fullpath");
+    `);
+}
 
 export async function report(
-    basedir, fpath, renderTo, stage, start
+    basedir, fpath, renderTo, stage, start: Date
 ) {
     const trace    = new Trace();
     trace.basedir  = basedir;
@@ -54,11 +63,11 @@ export async function report(
     trace.fullpath = path.join(basedir, fpath);
     trace.renderTo = renderTo;
     trace.stage    = stage;
-    trace.start    = start;
+    trace.start    = start.toISOString();
     trace.now      = new Date().toISOString();
+    // console.log(`data report`, trace);
     await (await sqdb).run(`
-    INSERT INTO "TRACES"
-        (
+    INSERT INTO "TRACES" (
             basedir,
             fpath,
             fullpath,
@@ -67,8 +76,7 @@ export async function report(
             start,
             now
         )
-        VALUES
-        (
+        VALUES (
             $basedir,
             $fpath,
             $fullpath,
@@ -76,15 +84,15 @@ export async function report(
             $stage,
             $start,
             $now
-        )
+        );
     `, {
         $basedir:  trace.basedir,
         $fpath:    trace.fpath,
-        $fullpath: path.join(basedir, fpath),
+        $fullpath: trace.fullpath,
         $renderTo: trace.renderTo,
         $stage:    trace.stage,
         $start:    trace.start,
-        now:       new Date().toISOString()
+        $now:       trace.now
     });
 };
 
@@ -128,6 +136,7 @@ export async function print() {
 };
 
 export async function data4file(basedir, fpath) {
+    // console.log(`data4file ${basedir} ${fpath}`);
     let ret = "";
 
     const traces = await (await sqdb).all<Trace>(`

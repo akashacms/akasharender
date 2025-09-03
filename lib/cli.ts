@@ -101,7 +101,7 @@ program
             console.log(result);
             await akasha.closeCaches();
         } catch (e) {
-            console.error(`render-document command ERRORED ${e.stack}`);
+            console.error(`render-document command ERRORED`, e);
         }
     });
 

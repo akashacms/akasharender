@@ -34,6 +34,7 @@ import { SqlDatabase } from 'sqlite3orm';
 import { SQ3DataStore } from 'sq3-kv-data-store';
 
 import { AsyncDatabase } from 'promised-sqlite3';
+import { init } from './data-new.js';
 
 /**
  * Subclass the SqlDatabase so we can expose
@@ -59,6 +60,8 @@ export const sqdb = await AsyncDatabase.open(dburl);
 // await sqdb.open('test.db');
 // sqdb.loadExtension(sqleanLibs.reLibPath);
 sqdb.inner.loadExtension(sqlite_regex.getLoadablePath());
+
+await init();
 
 // This traces SQL statements
 //
