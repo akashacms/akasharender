@@ -2425,10 +2425,12 @@ export class DocumentsCache
         let orderBy = '';
         if (typeof options.sortBy === 'string') {
             // Handle special cases that need JSON extraction or complex logic
-            if (options.sortBy === 'publicationDate' || options.sortBy === 'publicationTime') {
+            if (options.sortBy === 'publicationDate'
+             || options.sortBy === 'publicationTime'
+            ) {
                 // Use COALESCE to handle null publication dates
                 orderBy = `ORDER BY COALESCE(
-                    json_extract(d.metadata, '$.publicationDate'), 
+                    d.publicationTime,
                     d.mtimeMs
                 )`;
             } else {
