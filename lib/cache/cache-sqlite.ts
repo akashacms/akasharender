@@ -2172,14 +2172,20 @@ export class DocumentsCache
                 }
             }
         );
-        const cached = this.searchCache.get(cacheKey);
+
+        // A timeout of 0 means to disable caching
+        const cached =
+            this.config.searchCacheTimeout > 0
+            ? this.searchCache.get(cacheKey)
+            : undefined;
 
         // console.log(`search ${util.inspect(options)} ==> ${cacheKey} ${cached ? 'hasCached' : 'noCached'}`);
 
         // If the cache has an entry, skip computing
         // anything.
         if (cached
-         && Date.now() - cached.timestamp < 60000
+         && (Date.now() - cached.timestamp)
+            < this.config.searchCacheTimeout
         ) { // 1 minute cache
             return cached.results;
         }
@@ -2235,7 +2241,7 @@ export class DocumentsCache
             }
 
             // Add the results to the cache
-            if (true) {
+            if (this.config.searchCacheTimeout > 0) {
                 this.searchCache.set(cacheKey, {
                     results: filteredResults, timestamp: Date.now()
                 });

@@ -311,6 +311,17 @@ export declare class Configuration {
     setConcurrency(concurrency: number): this;
     get concurrency(): number;
     /**
+     * Set the time, in miliseconds, to honor
+     * the SearchCache in the search function.
+     *
+     * Default is 60000 (1 minute).
+     *
+     * Set to 0 to disable caching.
+     * @param timeout
+     */
+    setSearchCacheTimeout(timeout: number): void;
+    get searchCacheTimeout(): number;
+    /**
      * Declare JavaScript to add within the head tag of rendered pages.
      * @param script
      * @returns {Configuration}
