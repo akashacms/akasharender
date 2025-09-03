@@ -65,6 +65,7 @@
     "sqlite-regex": "^0.2.4-alpha.1",
     "sqlite3": "^5.1.7",
     "sqlite3orm": "^2.7.x",
+    "sqlstring-sqlite": "^0.1.1",
     "uuid": "^11.1.x",
     "zx": "^8.5.x"
   },
