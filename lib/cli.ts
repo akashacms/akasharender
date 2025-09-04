@@ -158,7 +158,7 @@ program
                 output.close();
             }
             if (cmdObj.perfresults) {
-                const output = fs.createWriteStream(cmdObj.perfresults);
+                const reports = [];
                 for (let result of results) {
                     if (result.error) {
                         // Ignore
@@ -170,18 +170,39 @@ program
                         let matches = perf.match(/.* ==> (.*) \(([0-9\.]+) seconds\)$/);
                         if (!matches) continue;
                         if (matches.length < 3) continue;
-                        let fn = matches[1];
-                        let time = matches[2];
-                        let report = `${time} ${fn}`;
+                        const report: {
+                            renderedPath?: string;
+                            time?: string;
+                            fm?: string;
+                            first?: string;
+                            second?: string;
+                            mahabhuta?: string;
+                            rendered?: string;
+                        } = {
+                            renderedPath: matches[1],
+                            time: matches[2]
+                        };
                         for (let i = 1; i < results.length; i++) {
                             let stages = results[i].match(/(FRONTMATTER|FIRST RENDER|SECOND RENDER|MAHABHUTA|RENDERED) ([0-9\.]+) seconds$/);
                             if (!stages || stages.length < 3) continue;
-                            report += ` ${stages[1]} ${stages[2]}`;
+                            if (stages[1] === 'FRONTMATTER') {
+                                report.fm = stages[2];
+                            } else if (stages[1] === 'FIRST RENDER') {
+                                report.first = stages[2];
+                            } else if (stages[1] === 'SECOND RENDER') {
+                                report.second = stages[2];
+                            } else if (stages[1] === 'MAHABHUTA') {
+                                report.mahabhuta = stages[2];
+                            } else if (stages[1] === 'RENDERED') {
+                                report.rendered = stages[2];
+                            }
                         }
-                        output.write(`${report}\n`);
+                        reports.push(report);
                     }
                 }
-                output.close();
+                fsp.writeFile(cmdObj.perfresults,
+                        JSON.stringify(reports, undefined, 4),
+                        'utf-8');
             }
             await akasha.closeCaches();
         } catch (e) {
