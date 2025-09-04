@@ -82,6 +82,12 @@ export declare function partial(config: any, fname: any, metadata: any): Promise
  * @returns String containing the rendered stuff
  */
 export declare function partialSync(config: any, fname: any, metadata: any): any;
+export type indexChainItem = {
+    title: string;
+    foundPath: string;
+    foundDir: string;
+    filename: string;
+};
 /**
  * Starting from a virtual path in the documents, searches upwards to
  * the root of the documents file-space, finding files that
@@ -92,7 +98,7 @@ export declare function partialSync(config: any, fname: any, metadata: any): any
  * @param {*} fname
  * @returns
  */
-export declare function indexChain(config: any, fname: any): Promise<any[]>;
+export declare function indexChain(config: any, fname: any): Promise<indexChainItem[]>;
 /**
  * Manipulate the rel= attributes on a link returned from Mahabhuta.
  *

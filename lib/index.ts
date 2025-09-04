@@ -339,6 +339,13 @@ export function partialSync(config, fname, metadata) {
     }
 }
 
+export type indexChainItem = {
+    title: string;
+    foundPath: string;
+    foundDir: string;
+    filename: string;
+};
+
 /**
  * Starting from a virtual path in the documents, searches upwards to
  * the root of the documents file-space, finding files that 
@@ -349,7 +356,9 @@ export function partialSync(config, fname, metadata) {
  * @param {*} fname 
  * @returns 
  */
-export async function indexChain(config, fname) {
+export async function indexChain(
+    config, fname
+): Promise<indexChainItem[]> {
 
     // This used to be a full function here, but has moved
     // into the FileCache class.  Requiring a `config` option

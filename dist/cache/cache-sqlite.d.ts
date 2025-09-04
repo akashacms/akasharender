@@ -1,5 +1,5 @@
 import { dirToWatch, VPathData } from '@akashacms/stacked-dirs';
-import { Configuration, dirToMount } from '../index.js';
+import { Configuration, dirToMount, indexChainItem } from '../index.js';
 import EventEmitter from 'events';
 import { PathsReturnType } from './schema.js';
 import { AsyncDatabase } from 'promised-sqlite3';
@@ -76,13 +76,17 @@ export declare class BaseCache<T extends BaseCacheEntry> extends EventEmitter {
         vpath: string;
         mounted: string;
     }>>;
+    protected findByPathCache: Map<string, {
+        result: any;
+        timestamp: number;
+    }>;
     /**
      * Find an info object by the vpath.
      *
      * @param vpath
      * @returns
      */
-    protected findByPath(vpath: string): Promise<T[]>;
+    protected findByPath(vpath: string): Promise<any>;
     gatherInfoData(info: T): void;
     protected handleChanged(name: any, info: any): Promise<void>;
     /**
@@ -202,7 +206,7 @@ export declare class DocumentsCache extends BaseCache<Document> {
     addTagDescription(tag: string, description: string): Promise<void>;
     getTagDescription(tag: string): Promise<string | undefined>;
     protected handleUnlinked(name: any, info: any): Promise<void>;
-    indexChain(_fpath: any): Promise<any[]>;
+    indexChain(_fpath: any): Promise<indexChainItem[]>;
     /**
      * Finds all the documents in the same directory
      * as the named file.
