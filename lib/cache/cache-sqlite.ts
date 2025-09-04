@@ -4,7 +4,7 @@ import {
     DirsWatcher, dirToWatch, VPathData
 } from '@akashacms/stacked-dirs';
 import {
-    Configuration, dirToMount
+    Configuration, dirToMount, indexChainItem
 } from '../index.js';
 import path from 'node:path';
 import util from 'node:util';
@@ -355,6 +355,14 @@ export class BaseCache<
         return mapped;
     }
 
+    protected findByPathCache = new Map<
+        string,
+        {
+            result: any,
+            timestamp: number
+        }
+    >();
+
     /**
      * Find an info object by the vpath.
      *
@@ -362,6 +370,19 @@ export class BaseCache<
      * @returns 
      */
     protected async findByPath(vpath: string) {
+
+        const cacheKey = JSON.stringify({
+            dbname: this.quotedDBName,
+            vpath,
+        });
+
+        const cached
+            = this.findByPathCache.get(cacheKey);
+        if (cached
+         && (Date.now() - cached.timestamp) < 60000
+        ) {
+            return cached.result;
+        }
 
         // console.log(`findByPath ${this.dao.table.quotedName} ${vpath}`);
 
@@ -381,9 +402,18 @@ export class BaseCache<
         // for (const item of mapped) {
         //     this.gatherInfoData(item);
         // }
-        return mapped.map(item => {
+        const ret = mapped.map(item => {
             return this.cvtRowToObj(item)
         });
+
+        this.findByPathCache.set(
+            cacheKey, {
+                result: ret,
+                timestamp: Date.now()
+            }
+        );
+
+        return ret;
     }
 
     gatherInfoData(info: T) {
@@ -1654,7 +1684,7 @@ export class DocumentsCache
         tglue.deleteTagGlue(info.vpath);
     }
 
-    async indexChain(_fpath) {
+    async indexChain(_fpath): Promise<indexChainItem[]> {
 
         const fpath = _fpath.startsWith('/')
                     ? _fpath.substring(1) 
@@ -1694,10 +1724,16 @@ export class DocumentsCache
 
         return filez
                 .map(function(obj: any) {
-                    obj.foundDir = obj.mountPoint;
-                    obj.foundPath = obj.renderPath;
-                    obj.filename = '/' + obj.renderPath;
-                    return obj;
+                    return <indexChainItem>{
+                        title: obj.docMetadata.title,
+                        foundDir: obj.mountPoint,
+                        foundPath: obj.renderPath,
+                        filename: '/' + obj.renderPath
+                    };
+                    // obj.foundDir = obj.mountPoint;
+                    // obj.foundPath = obj.renderPath;
+                    // obj.filename = '/' + obj.renderPath;
+                    // return obj;
                 })
                 .reverse();
     }

@@ -481,15 +481,7 @@ program
             let akasha = config.akasha;
             await akasha.setup(config);
             const docinfo = await akasha.filecache.documentsCache.indexChain(startPath);
-            console.log(`index chain ${startPath} `, docinfo.map(index => {
-                return {
-                    vpath: index.vpath,
-                    renderPath: index.renderPath,
-                    mountPoint: index.mountPoint,
-                    pathInMounted: index.pathInMounted,
-                    dirname: index.dirname
-                }
-            }));
+            console.log(`index chain ${startPath} `, docinfo);
             await akasha.closeCaches();
         } catch (e) {
             console.error(`index-chain command ERRORED ${e.stack}`);
