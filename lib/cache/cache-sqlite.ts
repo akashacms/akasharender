@@ -395,13 +395,8 @@ export class BaseCache<
             $vpath: vpath
         });
 
-        // TODO add a row validator to generic interface
-
         const mapped = this.validateRows(found);
 
-        // for (const item of mapped) {
-        //     this.gatherInfoData(item);
-        // }
         const ret = mapped.map(item => {
             return this.cvtRowToObj(item)
         });
