@@ -341,6 +341,7 @@ export function partialSync(config, fname, metadata) {
 
 export type indexChainItem = {
     title: string;
+    vpath: string;
     foundPath: string;
     foundDir: string;
     filename: string;
@@ -559,7 +560,7 @@ export class Configuration {
         javaScriptBottom?: javaScriptItem[]
     };
     #concurrency: number;
-    #searchCacheTimeout: number;
+    #cachingTimeout: number;
     #metadata: any;
     #root_url: string;
     #plugins;
@@ -581,7 +582,7 @@ export class Configuration {
 
         this.#concurrency = 3;
         // 60 seconds, or 1 minute
-        this.#searchCacheTimeout = 60000;
+        this.#cachingTimeout = 60000;
 
         this.#documentDirs = [];
         this.#layoutDirs = [];
@@ -1073,14 +1074,14 @@ export class Configuration {
      * Set to 0 to disable caching.
      * @param timeout 
      */
-    setSearchCacheTimeout(timeout: number) {
-        this.#searchCacheTimeout = timeout;
+    setCachingTimeout(timeout: number) {
+        this.#cachingTimeout = timeout;
         // console.log(`setSearchCacheTimeout ${this.#searchCacheTimeout}`);
     }
 
-    get searchCacheTimeout() {
+    get cachingTimeout() {
         // console.log(`searchCacheTimeout ${this.#searchCacheTimeout}`);
-        return this.#searchCacheTimeout;
+        return this.#cachingTimeout;
     }
 
     /**

@@ -84,6 +84,7 @@ export declare function partial(config: any, fname: any, metadata: any): Promise
 export declare function partialSync(config: any, fname: any, metadata: any): any;
 export type indexChainItem = {
     title: string;
+    vpath: string;
     foundPath: string;
     foundDir: string;
     filename: string;
@@ -325,8 +326,8 @@ export declare class Configuration {
      * Set to 0 to disable caching.
      * @param timeout
      */
-    setSearchCacheTimeout(timeout: number): void;
-    get searchCacheTimeout(): number;
+    setCachingTimeout(timeout: number): void;
+    get cachingTimeout(): number;
     /**
      * Declare JavaScript to add within the head tag of rendered pages.
      * @param script
