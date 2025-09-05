@@ -1992,6 +1992,10 @@ export class DocumentsCache
     /**
      * Find the index files (renders to index.html)
      * within the named subtree.
+     * 
+     * It appears this was written for booknav.
+     * But, it appears that booknav does not
+     * use this function.
      *
      * @param rootPath 
      * @returns 
@@ -2109,6 +2113,7 @@ export class DocumentsCache
         });
     }
 
+    // This was written for tagged-content
     async documentsWithTag(tagnm: string | string[])
         : Promise<Array<string>>
     {
@@ -2259,13 +2264,7 @@ export class DocumentsCache
         }
     }
 
-    // This is a simple cache to hold results
-    // of search operations.  The key side of this
-    // Map is meant to be the stringified selector.
     private searchCache;
-    //  = new Map<
-    //         string, { results: Document[], timestamp: number }
-    // >();
 
     /**
      * Perform descriptive search operations using direct SQL queries
