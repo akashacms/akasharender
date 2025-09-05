@@ -157,6 +157,8 @@ CREATE INDEX "asset_dirname"
         ON "ASSETS" ("dirname");
 CREATE INDEX "asset_mtimeMs"
         ON "ASSETS" ("mtimeMs");
+CREATE INDEX "asset_vpath_renderpath"
+        ON "ASSETS" ("vpath", "renderPath");
 `;
 
 //////////////////// Partial
@@ -233,6 +235,8 @@ CREATE INDEX "partial_dirname"
         ON "PARTIALS" ("dirname");
 CREATE INDEX "partial_mtimeMs"
         ON "PARTIALS" ("mtimeMs");
+CREATE INDEX "partial_vpath_renderpath"
+        ON "PARTIALS" ("vpath", "renderPath");
 `;
 
 //////////////////// Layout
@@ -324,6 +328,8 @@ CREATE INDEX "layout_dirname"
         ON "LAYOUTS" ("dirname");
 CREATE INDEX "layout_mtimeMs"
         ON "LAYOUTS" ("mtimeMs");
+CREATE INDEX "layout_vpath_renderpath"
+        ON "LAYOUTS" ("vpath", "renderPath");
 `;
 
 //////////////////// Document
@@ -553,4 +559,6 @@ CREATE INDEX "document_layout"
         ON "DOCUMENTS" ("layout");
 CREATE INDEX "document_blogtag"
         ON "DOCUMENTS" ("blogtag");
+CREATE INDEX "document_vpath_renderpath"
+        ON "DOCUMENTS" ("vpath", "renderPath");
 `;
