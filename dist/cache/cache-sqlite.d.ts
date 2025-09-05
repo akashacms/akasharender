@@ -76,10 +76,7 @@ export declare class BaseCache<T extends BaseCacheEntry> extends EventEmitter {
         vpath: string;
         mounted: string;
     }>>;
-    protected findByPathCache: Map<string, {
-        result: any;
-        timestamp: number;
-    }>;
+    protected findByPathCache: any;
     /**
      * Find an info object by the vpath.
      *
@@ -134,6 +131,7 @@ export declare class BaseCache<T extends BaseCacheEntry> extends EventEmitter {
      * @returns
      */
     ignoreFile(info: any): boolean;
+    protected pathsCache: any;
     /**
      * Return simple information about each
      * path in the collection.  The return
@@ -206,7 +204,9 @@ export declare class DocumentsCache extends BaseCache<Document> {
     addTagDescription(tag: string, description: string): Promise<void>;
     getTagDescription(tag: string): Promise<string | undefined>;
     protected handleUnlinked(name: any, info: any): Promise<void>;
+    protected indexChainCache: any;
     indexChain(_fpath: any): Promise<indexChainItem[]>;
+    protected siblingsCache: any;
     /**
      * Finds all the documents in the same directory
      * as the named file.
@@ -216,7 +216,7 @@ export declare class DocumentsCache extends BaseCache<Document> {
      * @param _fpath
      * @returns
      */
-    siblings(_fpath: any): Promise<Document[]>;
+    siblings(_fpath: any): Promise<any>;
     /**
      * Returns a tree of items starting from the document
      * named in _rootItem.  The parameter should be an

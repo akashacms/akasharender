@@ -112,7 +112,7 @@ program
     .option('--copy-assets', 'First, copy the assets')
     .option('--results-to <resultFile>', 'Store the results into the named file')
     .option('--perfresults <perfResultsFile>', 'Store the time to render each document')
-    .option('--search-cache-timeout <timeout>', 'The time, in miliseconds, to honor entries in the search cache')
+    .option('--caching-timeout <timeout>', 'The time, in miliseconds, to honor entries in the search cache')
     .action(async (configFN, cmdObj) => {
         // console.log(`render: akasha: ${util.inspect(akasha)}`);
         try {
@@ -125,9 +125,9 @@ program
             if (cmdObj.copyAssets) {
                 await config.copyAssets();
             }
-            if (typeof cmdObj.searchCacheTimeout === 'string') {
-                config.setSearchCacheTimeout(
-                    Number.parseInt(cmdObj.searchCacheTimeout)
+            if (typeof cmdObj.cachingTimeout === 'string') {
+                config.setCachingTimeout(
+                    Number.parseInt(cmdObj.cachingTimeout)
                 );
             }
             let results = await akasha.render(config);

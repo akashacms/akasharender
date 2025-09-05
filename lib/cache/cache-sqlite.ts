@@ -32,7 +32,7 @@ import {
     Layout,
     Document
 } from './schema.js';
-import { func } from 'joi';
+import Cache from 'cache';
 
 const tglue = new TagGlue();
 // tglue.init(sqdb._db);
@@ -355,13 +355,7 @@ export class BaseCache<
         return mapped;
     }
 
-    protected findByPathCache = new Map<
-        string,
-        {
-            result: any,
-            timestamp: number
-        }
-    >();
+    protected findByPathCache;
 
     /**
      * Find an info object by the vpath.
@@ -371,17 +365,26 @@ export class BaseCache<
      */
     protected async findByPath(vpath: string) {
 
-        const cacheKey = JSON.stringify({
-            dbname: this.quotedDBName,
-            vpath,
-        });
+        const doCaching
+            = this.config.cachingTimeout > 0;
+        let cacheKey;
 
-        const cached
-            = this.findByPathCache.get(cacheKey);
-        if (cached
-         && (Date.now() - cached.timestamp) < 60000
-        ) {
-            return cached.result;
+        if (doCaching) {
+            if (!this.findByPathCache) {
+                this.findByPathCache
+                    = new Cache(this.config.cachingTimeout);
+            }
+
+            cacheKey = JSON.stringify({
+                dbname: this.quotedDBName,
+                vpath,
+            });
+
+            const cached
+                = this.findByPathCache.get(cacheKey);
+            if (cached) {
+                return cached;
+            }
         }
 
         // console.log(`findByPath ${this.dao.table.quotedName} ${vpath}`);
@@ -401,12 +404,11 @@ export class BaseCache<
             return this.cvtRowToObj(item)
         });
 
-        this.findByPathCache.set(
-            cacheKey, {
-                result: ret,
-                timestamp: Date.now()
-            }
-        );
+        if (doCaching && cacheKey) {
+            this.findByPathCache.put(
+                cacheKey, ret
+            );
+        }
 
         return ret;
     }
@@ -599,6 +601,8 @@ export class BaseCache<
         }
     }
 
+    protected pathsCache;
+
     /**
      * Return simple information about each
      * path in the collection.  The return
@@ -623,6 +627,28 @@ export class BaseCache<
         let rootP = rootPath?.startsWith('/')
                   ? rootPath?.substring(1)
                   : rootPath;
+
+        const doCaching
+            = this.config.cachingTimeout > 0;
+        let cacheKey;
+
+        if (doCaching) {
+            if (!this.pathsCache) {
+                this.pathsCache
+                    = new Cache(this.config.cachingTimeout);
+            }
+
+            cacheKey = JSON.stringify({
+                dbname: this.quotedDBName,
+                rootP,
+            });
+
+            const cached
+                = this.pathsCache.get(cacheKey);
+            if (cached) {
+                return cached;
+            }
+        }
 
         // This is copied from the older version
         // (LokiJS version) of this function.  It
@@ -676,7 +702,13 @@ export class BaseCache<
             }
             result2.push(value);
         }
-        
+
+        if (doCaching && cacheKey) {
+            this.pathsCache.put(
+                cacheKey, result2
+            );
+        }
+
         return result2;
     }
 
@@ -1679,12 +1711,39 @@ export class DocumentsCache
         tglue.deleteTagGlue(info.vpath);
     }
 
-    async indexChain(_fpath): Promise<indexChainItem[]> {
+    protected indexChainCache;
+
+    async indexChain(_fpath)
+        : Promise<indexChainItem[]>
+    {
 
         const fpath = _fpath.startsWith('/')
                     ? _fpath.substring(1) 
                     : _fpath;
         const parsed = path.parse(fpath);
+
+        const doCaching
+            = this.config.cachingTimeout > 0;
+        let cacheKey;
+
+        if (doCaching) {
+            if (!this.indexChainCache) {
+                this.indexChainCache
+                    = new Cache(this.config.cachingTimeout);
+            }
+
+            cacheKey = JSON.stringify({
+                dbname: this.quotedDBName,
+                fpath,
+                parsed
+            });
+
+            const cached
+                = this.indexChainCache.get(cacheKey);
+            if (cached) {
+                return cached;
+            }
+        }
 
         // console.log(`indexChain ${_fpath} ${fpath}`, parsed);
 
@@ -1717,10 +1776,11 @@ export class DocumentsCache
             dirName = path.dirname(lookFor);
         }
 
-        return filez
+        const ret = filez
                 .map(function(obj: any) {
                     return <indexChainItem>{
                         title: obj.docMetadata.title,
+                        vpath: obj.vpath,
                         foundDir: obj.mountPoint,
                         foundPath: obj.renderPath,
                         filename: '/' + obj.renderPath
@@ -1731,7 +1791,17 @@ export class DocumentsCache
                     // return obj;
                 })
                 .reverse();
+
+        if (doCaching && cacheKey) {
+            this.indexChainCache.put(
+                cacheKey, ret
+            );
+        }
+
+        return ret;
     }
+
+    protected siblingsCache;
 
     /**
      * Finds all the documents in the same directory
@@ -1743,11 +1813,33 @@ export class DocumentsCache
      * @returns 
      */
     async siblings(_fpath) {
-        let ret;
         let vpath = _fpath.startsWith('/')
                   ? _fpath.substring(1)
                   : _fpath;
         let dirname = path.dirname(vpath);
+
+        const doCaching
+            = this.config.cachingTimeout > 0;
+        let cacheKey;
+
+        if (doCaching) {
+            if (!this.siblingsCache) {
+                this.siblingsCache
+                    = new Cache(this.config.cachingTimeout);
+            }
+
+            cacheKey = JSON.stringify({
+                dbname: this.quotedDBName,
+                vpath,
+                dirname
+            });
+
+            const cached
+                = this.siblingsCache.get(cacheKey);
+            if (cached) {
+                return cached;
+            }
+        }
 
         const siblings = await this.db.all(`
             SELECT * FROM ${this.quotedDBName}
@@ -1766,10 +1858,17 @@ export class DocumentsCache
         });
 
         const mapped = this.validateRows(ignored);
-        return mapped.map(item => {
+        const ret = mapped.map(item => {
             return this.cvtRowToObj(item)
         });
 
+        if (doCaching && cacheKey) {
+            this.siblingsCache.put(
+                cacheKey, ret
+            );
+        }
+
+        return ret;
     }
 
     /**
@@ -2163,9 +2262,10 @@ export class DocumentsCache
     // This is a simple cache to hold results
     // of search operations.  The key side of this
     // Map is meant to be the stringified selector.
-    private searchCache = new Map<
-            string, { results: Document[], timestamp: number }
-    >();
+    private searchCache;
+    //  = new Map<
+    //         string, { results: Document[], timestamp: number }
+    // >();
 
     /**
      * Perform descriptive search operations using direct SQL queries
@@ -2176,6 +2276,12 @@ export class DocumentsCache
      */
     async search(options): Promise<Array<Document>> {
         const fcache = this;
+
+        if (!this.searchCache) {
+            this.searchCache = new Cache(
+                this.config.cachingTimeout
+            );
+        }
 
         // First, see if the search results are already
         // computed and in the cache.
@@ -2208,7 +2314,7 @@ export class DocumentsCache
 
         // A timeout of 0 means to disable caching
         const cached =
-            this.config.searchCacheTimeout > 0
+            this.config.cachingTimeout > 0
             ? this.searchCache.get(cacheKey)
             : undefined;
 
@@ -2216,11 +2322,8 @@ export class DocumentsCache
 
         // If the cache has an entry, skip computing
         // anything.
-        if (cached
-         && (Date.now() - cached.timestamp)
-            < this.config.searchCacheTimeout
-        ) { // 1 minute cache
-            return cached.results;
+        if (cached) { // 1 minute cache
+            return cached;
         }
 
         // NOTE: Entries are added to the cache at the bottom
@@ -2274,10 +2377,10 @@ export class DocumentsCache
             }
 
             // Add the results to the cache
-            if (this.config.searchCacheTimeout > 0) {
-                this.searchCache.set(cacheKey, {
-                    results: filteredResults, timestamp: Date.now()
-                });
+            if (this.config.cachingTimeout > 0) {
+                this.searchCache.put(
+                    cacheKey, filteredResults
+                );
             }
             return filteredResults;
 
