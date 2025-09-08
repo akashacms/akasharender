@@ -62,6 +62,8 @@ import { sqdb } from './sqdb.js';
 
 export { newSQ3DataStore } from './sqdb.js';
 
+import { default as SQ3QueryLog } from 'sqlite3-query-log';
+
 // There doesn't seem to be an official MIME type registered
 // for AsciiDoctor
 // per: https://asciidoctor.org/docs/faq/
@@ -125,6 +127,7 @@ export async function setup(config) {
 
     await cacheSetup(config);
     await fileCachesReady(config);
+
 }
 
 export async function cacheSetup(config) {

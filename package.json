@@ -1,6 +1,6 @@
 {
   "name": "akasharender",
-  "version": "0.9.4",
+  "version": "0.9.5",
   "description": "Rendering support for generating static HTML websites or EPUB eBooks",
   "keywords": [
     "content management system",
@@ -55,7 +55,6 @@
     "highlight.js": "^11.11.x",
     "html-entities": "^2.6.x",
     "joi": "^18.0.1",
-    "js-base64": "^3.7.8",
     "mahabhuta": "^0.9.x",
     "micromatch": "^4.0.8",
     "promised-sqlite3": "^2.1.0",
@@ -65,7 +64,7 @@
     "sq3-kv-data-store": "^1.0.x",
     "sqlite-regex": "^0.2.4-alpha.1",
     "sqlite3": "^5.1.7",
-    "sqlite3orm": "^2.7.x",
+    "sqlite3-query-log": "github:robogeek/sqlite3-query-log",
     "sqlstring-sqlite": "^0.1.1",
     "uuid": "^11.1.x",
     "zx": "^8.5.x"

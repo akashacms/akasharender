@@ -17,7 +17,7 @@
     "test-copy-render": "npm-run-all clean-out build:copy-render assets-exist",
     "test-copy-render-js": "npm-run-all clean-out build:copy-render-js assets-exist",
     "clean-out": "rm -rf out",
-    "build:copy-render": "node ../dist/cli.js render --copy-assets config-normal.mjs",
+    "build:copy-render": "rm -f sql.txt && AK_PROFILE=sql.txt node ../dist/cli.js render --copy-assets config-normal.mjs",
     "build:copy-render-js": "node ../dist/cli.js render --copy-assets config-normal.js",
     "assets-exist": "cmp assets/file-virgin.txt out/file-virgin.txt",
     "setup": "npm install && cd .. && npm install",
