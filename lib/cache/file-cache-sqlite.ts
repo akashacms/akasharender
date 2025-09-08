@@ -26,25 +26,25 @@ import FS from 'fs';
 import EventEmitter from 'events';
 import micromatch from 'micromatch';
 
-import {
-    field,
-    FieldOpts,
-    fk,
-    id,
-    index,
-    table,
-    TableOpts,
-    SqlDatabase,
-    schema,
-    BaseDAO,
-    Filter,
-    Where
-} from 'sqlite3orm';
+// import {
+//     field,
+//     FieldOpts,
+//     fk,
+//     id,
+//     index,
+//     table,
+//     TableOpts,
+//     SqlDatabase,
+//     schema,
+//     BaseDAO,
+//     Filter,
+//     Where
+// } from 'sqlite3orm';
 
-import { sqdb } from '../sqdb.js';
-import { Configuration, dirToMount } from '../index.js';
-import fastq from 'fastq';
-import { TagGlue, TagDescriptions } from './tag-glue.js';
+// import { sqdb } from '../sqdb.js';
+// import { Configuration, dirToMount } from '../index.js';
+// import fastq from 'fastq';
+// import { TagGlue, TagDescriptions } from './tag-glue.js';
 
 ///////////// Assets table
 
@@ -555,36 +555,36 @@ import { TagGlue, TagDescriptions } from './tag-glue.js';
 //     idx_docs_render_path_pattern ON DOCUMENTS(renderPath);
 // `);
 
-const tglue = new TagGlue();
+// const tglue = new TagGlue();
 // tglue.init(sqdb._db);
 
-const tdesc = new TagDescriptions();
+// const tdesc = new TagDescriptions();
 // tdesc.init(sqdb._db);
 
 // Convert AkashaCMS mount points into the mountpoint
 // used by DirsWatcher
-const remapdirs = (dirz: dirToMount[]): dirToWatch[] => {
-    return dirz.map(dir => {
-        // console.log('document dir ', dir);
-        if (typeof dir === 'string') {
-            return {
-                mounted: dir,
-                mountPoint: '/',
-                baseMetadata: {}
-            };
-        } else {
-            if (!dir.dest) {
-                throw new Error(`remapdirs invalid mount specification ${util.inspect(dir)}`);
-            }
-            return {
-                mounted: dir.src,
-                mountPoint: dir.dest,
-                baseMetadata: dir.baseMetadata,
-                ignore: dir.ignore
-            };
-        }
-    });
-};
+// const remapdirs = (dirz: dirToMount[]): dirToWatch[] => {
+//     return dirz.map(dir => {
+//         // console.log('document dir ', dir);
+//         if (typeof dir === 'string') {
+//             return {
+//                 mounted: dir,
+//                 mountPoint: '/',
+//                 baseMetadata: {}
+//             };
+//         } else {
+//             if (!dir.dest) {
+//                 throw new Error(`remapdirs invalid mount specification ${util.inspect(dir)}`);
+//             }
+//             return {
+//                 mounted: dir.src,
+//                 mountPoint: dir.dest,
+//                 baseMetadata: dir.baseMetadata,
+//                 ignore: dir.ignore
+//             };
+//         }
+//     });
+// };
 
 /**
  * Type for return from paths method.  The fields here
@@ -611,9 +611,9 @@ export class BaseFileCache<
         Tdao // extends BaseDAO<T>
 > extends EventEmitter {
 
-    #config?: Configuration;
+    // #config?: Configuration;
     #name?: string;
-    #dirs?: dirToMount[];
+    // #dirs?: dirToMount[];
     #is_ready: boolean = false;
     #cache_content: boolean;
     #map_renderpath: boolean;
@@ -627,25 +627,25 @@ export class BaseFileCache<
      * @param dao The SQLITE3ORM DAO instance to use
      */
     constructor(
-        config: Configuration,
+        // config: Configuration,
         name: string,
-        dirs: dirToMount[],
+        // dirs: dirToMount[],
         dao: Tdao // BaseDAO<T>
     ) {
         super();
         // console.log(`BaseFileCache ${name} constructor dirs=${util.inspect(dirs)}`);
-        this.#config = config;
+        // this.#config = config;
         this.#name = name;
-        this.#dirs = dirs;
+        // this.#dirs = dirs;
         this.#is_ready = false;
         this.#cache_content = false;
         this.#map_renderpath = false;
         this.#dao = dao;
     }
 
-    get config()     { return this.#config; }
+    // get config()     { return this.#config; }
     get name()       { return this.#name; }
-    get dirs()       { return this.#dirs; }
+    // get dirs()       { return this.#dirs; }
     set cacheContent(doit) { this.#cache_content = doit; }
     get gacheContent() { return this.#cache_content; }
     set mapRenderPath(doit) { this.#map_renderpath = doit; }
@@ -673,7 +673,7 @@ export class BaseFileCache<
         this.removeAllListeners('unlinked');
         this.removeAllListeners('ready');
 
-        await sqdb.close();
+        // await sqdb.close();
     }
 
     /**
@@ -687,54 +687,54 @@ export class BaseFileCache<
             await this.#watcher.close();
         }
 
-        this.#queue = fastq.promise(async function (event) {
-            if (event.code === 'changed') {
-                try {
-                    // console.log(`change ${event.name} ${event.info.vpath}`);
-                    await fcache.handleChanged(event.name, event.info);
-                    fcache.emit('change', event.name, event.info);
-                } catch (e) {
-                    fcache.emit('error', {
-                        code: event.code,
-                        name: event.name,
-                        vpath: event.info.vpath,
-                        error: e
-                    });
-                }
-            } else if (event.code === 'added') {
-                try {
-                    // console.log(`add ${event.name} ${event.info.vpath}`);
-                    await fcache.handleAdded(event.name, event.info);
-                    fcache.emit('add', event.name, event.info);
-                } catch (e) {
-                    fcache.emit('error', {
-                        code: event.code,
-                        name: event.name,
-                        vpath: event.info.vpath,
-                        info: event.info,
-                        error: e
-                    });
-                }
-            } else if (event.code === 'unlinked') {
-                try {
-                    // console.log(`unlink ${event.name} ${event.info.vpath}`, event.info);
-                    await fcache.handleUnlinked(event.name, event.info);
-                    fcache.emit('unlink', event.name, event.info);
-                } catch (e) {
-                    fcache.emit('error', {
-                        code: event.code,
-                        name: event.name,
-                        vpath: event.info.vpath,
-                        error: e
-                    });
-                }
-            /* } else if (event.code === 'error') {
-                await fcache.handleError(event.name) */
-            } else if (event.code === 'ready') {
-                // await fcache.handleReady(event.name);
-                fcache.emit('ready', event.name);
-            }
-        }, 10);
+        // this.#queue = fastq.promise(async function (event) {
+        //     if (event.code === 'changed') {
+        //         try {
+        //             // console.log(`change ${event.name} ${event.info.vpath}`);
+        //             await fcache.handleChanged(event.name, event.info);
+        //             fcache.emit('change', event.name, event.info);
+        //         } catch (e) {
+        //             fcache.emit('error', {
+        //                 code: event.code,
+        //                 name: event.name,
+        //                 vpath: event.info.vpath,
+        //                 error: e
+        //             });
+        //         }
+        //     } else if (event.code === 'added') {
+        //         try {
+        //             // console.log(`add ${event.name} ${event.info.vpath}`);
+        //             await fcache.handleAdded(event.name, event.info);
+        //             fcache.emit('add', event.name, event.info);
+        //         } catch (e) {
+        //             fcache.emit('error', {
+        //                 code: event.code,
+        //                 name: event.name,
+        //                 vpath: event.info.vpath,
+        //                 info: event.info,
+        //                 error: e
+        //             });
+        //         }
+        //     } else if (event.code === 'unlinked') {
+        //         try {
+        //             // console.log(`unlink ${event.name} ${event.info.vpath}`, event.info);
+        //             await fcache.handleUnlinked(event.name, event.info);
+        //             fcache.emit('unlink', event.name, event.info);
+        //         } catch (e) {
+        //             fcache.emit('error', {
+        //                 code: event.code,
+        //                 name: event.name,
+        //                 vpath: event.info.vpath,
+        //                 error: e
+        //             });
+        //         }
+        //     /* } else if (event.code === 'error') {
+        //         await fcache.handleError(event.name) */
+        //     } else if (event.code === 'ready') {
+        //         // await fcache.handleReady(event.name);
+        //         fcache.emit('ready', event.name);
+        //     }
+        // }, 10);
 
         this.#watcher = new DirsWatcher(this.name);
 
@@ -795,9 +795,9 @@ export class BaseFileCache<
             });
         });
 
-        const mapped = remapdirs(this.dirs);
+        // const mapped = remapdirs(this.dirs);
         // console.log(`setup ${this.#name} watch ${util.inspect(this.#dirs)} ==> ${util.inspect(mapped)}`);
-        await this.#watcher.watch(mapped);
+        // await this.#watcher.watch(mapped);
 
         // console.log(`DAO ${this.dao.table.name} ${util.inspect(this.dao.table.fields)}`);
 
@@ -1036,7 +1036,7 @@ export class BaseFileCache<
 
         info.stack = undefined;
         await this.updateDocInDB(info);
-        await this.config.hookFileChanged(name, info);
+        // await this.config.hookFileChanged(name, info);
     }
 
     protected async updateDocInDB(info) {
@@ -1092,7 +1092,7 @@ export class BaseFileCache<
         this.gatherInfoData(info);
         info.stack = undefined;
         await this.insertDocToDB(info);
-        await this.config.hookFileAdded(name, info);
+        // await this.config.hookFileAdded(name, info);
     }
 
     protected async insertDocToDB(info) {
@@ -1121,7 +1121,7 @@ export class BaseFileCache<
             throw new Error(`handleUnlinked event for wrong name; got ${name}, expected ${this.name}`);
         }
 
-        await this.config.hookFileUnlinked(name, info);
+        // await this.config.hookFileUnlinked(name, info);
 
     //     await this.#dao.sqldb.run(`
     //         DELETE FROM ${this.dao.table.quotedName}
@@ -1153,13 +1153,13 @@ export class BaseFileCache<
      * @returns
      */
     fileDirMount(info) {
-        const mapped = remapdirs(this.dirs);
-        for (const dir of mapped) {
-            // console.log(`dirMount for ${info.vpath} -- ${util.inspect(info)} === ${util.inspect(dir)}`);
-            if (info.mountPoint === dir.mountPoint) {
-                return dir;
-            }
-        }
+        // const mapped = remapdirs(this.dirs);
+        // for (const dir of mapped) {
+        //     // console.log(`dirMount for ${info.vpath} -- ${util.inspect(info)} === ${util.inspect(dir)}`);
+        //     if (info.mountPoint === dir.mountPoint) {
+        //         return dir;
+        //     }
+        // }
         return undefined;
     }
 
@@ -1207,17 +1207,17 @@ export class BaseFileCache<
     async isReady() {
         // If there's no directories, there won't be any files 
         // to load, and no need to wait
-        while (this.#dirs.length > 0 && !this.#is_ready) {
-            // This does a 100ms pause
-            // That lets us check is_ready every 100ms
-            // at very little cost
-            // console.log(`!isReady ${this.name} ${this[_symb_dirs].length} ${this[_symb_is_ready]}`);
-            await new Promise((resolve, reject) => {
-                setTimeout(() => {
-                    resolve(undefined);
-                }, 100);
-            });
-        }
+        // while (this.#dirs.length > 0 && !this.#is_ready) {
+        //     // This does a 100ms pause
+        //     // That lets us check is_ready every 100ms
+        //     // at very little cost
+        //     // console.log(`!isReady ${this.name} ${this[_symb_dirs].length} ${this[_symb_is_ready]}`);
+        //     await new Promise((resolve, reject) => {
+        //         setTimeout(() => {
+        //             resolve(undefined);
+        //         }, 100);
+        //     });
+        // }
         return true;
     }
 
@@ -1454,19 +1454,19 @@ export class BaseFileCache<
 
         const fcache = this;
 
-        const mapped = remapdirs(this.dirs);
+        // const mapped = remapdirs(this.dirs);
         // console.log(`findSync looking for ${fpath} in ${util.inspect(mapped)}`);
 
-        for (const dir of mapped) {
-            if (!(dir?.mountPoint)) {
-                console.warn(`findSync bad dirs in ${util.inspect(this.dirs)}`);
-            }
-            const found = this.#fExistsInDir(fpath, dir);
-            if (found) {
-                // console.log(`findSync ${fpath} found`, found);
-                return found;
-            }
-        }
+        // for (const dir of mapped) {
+        //     if (!(dir?.mountPoint)) {
+        //         console.warn(`findSync bad dirs in ${util.inspect(this.dirs)}`);
+        //     }
+        //     const found = this.#fExistsInDir(fpath, dir);
+        //     if (found) {
+        //         // console.log(`findSync ${fpath} found`, found);
+        //         return found;
+        //     }
+        // }
         return undefined;
     }
 
@@ -1498,12 +1498,12 @@ export class AssetsFileCache<
     Tdao // extends BaseDAO<T>
 > extends BaseFileCache<T, Tdao> {
     constructor(
-        config: Configuration,
+        // config: Configuration,
         name: string,
-        dirs: dirToMount[],
+        // dirs: dirToMount[],
         dao: Tdao
     ) {
-        super(config, name, dirs, dao);
+        super(name, dao);
     }
 
     // protected cvtRowToObj(obj: any): Asset {
@@ -1520,9 +1520,9 @@ export class TemplatesFileCache<
     extends BaseFileCache<T, Tdao>> {
 
     constructor(
-        config: Configuration,
+        // config: Configuration,
         name: string,
-        dirs: dirToMount[],
+        // dirs: dirToMount[],
         dao: Tdao,
         type: "layout" | "partial"
     ) {
@@ -1957,7 +1957,7 @@ export class DocumentsFileCache
 
     protected async deleteDocTagGlue(vpath) {
         try {
-            await tglue.deleteTagGlue(vpath);
+            // await tglue.deleteTagGlue(vpath);
         } catch (err) {
             // ignore
             // This can throw an error like:
@@ -1984,20 +1984,20 @@ export class DocumentsFileCache
         ) {
             throw new Error(`addDocTagGlue must be given a tags array, was given: ${util.inspect(tags)}`);
         }
-        await tglue.addTagGlue(vpath, 
-            Array.isArray(tags)
-            ? tags
-            : [ tags ]);
+        // await tglue.addTagGlue(vpath, 
+        //     Array.isArray(tags)
+        //     ? tags
+        //     : [ tags ]);
     }
 
     async addTagDescription(tag: string, description: string) {
-        return tdesc.addDesc(tag, description);
+        // return tdesc.addDesc(tag, description);
     }
 
     async getTagDescription(tag: string)
-        : Promise<string | undefined>
+        // : Promise<string | undefined>
     {
-        return tdesc.getDesc(tag);
+        // return tdesc.getDesc(tag);
     }
 
     protected async updateDocInDB(info) {
@@ -2108,7 +2108,7 @@ export class DocumentsFileCache
 
     async handleUnlinked(name: any, info: any): Promise<void> {
         // await super.handleUnlinked(name, info);
-        tglue.deleteTagGlue(info.vpath);
+        // tglue.deleteTagGlue(info.vpath);
     }
 
     async indexChain(_fpath) {
@@ -2141,9 +2141,9 @@ export class DocumentsFileCache
 
             // const index = await this.findByPath(lookFor);
 
-            if (Array.isArray(index) && index.length >= 1) {
-                filez.push(index[0]);
-            }
+            // if (Array.isArray(index) && index.length >= 1) {
+            //     filez.push(index[0]);
+            // }
 
             fileName = lookFor;
             dirName = path.dirname(lookFor);
@@ -2413,7 +2413,7 @@ export class DocumentsFileCache
     // }
 
     async documentsWithTag(tagnm: string | string[])
-        : Promise<Array<string>>
+        // : Promise<Array<string>>
     {
         let tags: string[];
         if (typeof tagnm === 'string') {
@@ -2475,15 +2475,15 @@ export class DocumentsFileCache
 
         // console.log(`documentsWithTag ${util.inspect(tags)} ${tagstring}`);
 
-        const vpaths = await tglue.pathsForTag(tags);
+        // const vpaths = await tglue.pathsForTag(tags);
         
         // console.log(vpaths);
 
-        if (!Array.isArray(vpaths)) {
-            throw new Error(`documentsWithTag non-Array result ${util.inspect(vpaths)}`);
-        }
+        // if (!Array.isArray(vpaths)) {
+        //     throw new Error(`documentsWithTag non-Array result ${util.inspect(vpaths)}`);
+        // }
 
-        return vpaths;
+        // return vpaths;
     }
 
     /**
@@ -2494,16 +2494,16 @@ export class DocumentsFileCache
      * @returns 
      */
     async tags() {
-        const tags = await tglue.tags();
+        // const tags = await tglue.tags();
         
-        const ret = Array.from(tags);
-        return ret.sort((a: string, b: string) => {
-            var tagA = a.toLowerCase();
-            var tagB = b.toLowerCase();
-            if (tagA < tagB) return -1;
-            if (tagA > tagB) return 1;
-            return 0;
-        });
+        // const ret = Array.from(tags);
+        // return ret.sort((a: string, b: string) => {
+        //     var tagA = a.toLowerCase();
+        //     var tagB = b.toLowerCase();
+        //     if (tagA < tagB) return -1;
+        //     if (tagA > tagB) return 1;
+        //     return 0;
+        // });
     }
 
     /**
@@ -2914,7 +2914,7 @@ export class DocumentsFileCache
 // export var documentsCache: DocumentsFileCache;
 
 export async function setup(
-    config: Configuration
+    // config: Configuration
 ): Promise<void> {
 
     // assetsCache = new AssetsFileCache<Asset, TassetsDAO>(

@@ -25,41 +25,30 @@
  */
 
 import fs from 'node:fs';
-import { Base64 } from 'js-base64';
 import { Database } from 'sqlite3';
 // import sqleanLibs from 'sqlite3-sqlean';
 import * as sqlite_regex from "sqlite-regex";
 
-import { SqlDatabase } from 'sqlite3orm';
 import { SQ3DataStore } from 'sq3-kv-data-store';
 
 import { AsyncDatabase } from 'promised-sqlite3';
 import { init } from './data-new.js';
 
-/**
- * Subclass the SqlDatabase so we can expose
- * the underlying SQLITE3 Database object and
- * some useful methods on that class.
- */
-// export class SqlDatabaseChild extends SqlDatabase {
-//     get _db(): Database { return this.db; }
-
-//     loadExtension(filename: string, callback?: (err?: Error | null) => void): Database {
-//         return this.db.loadExtension(filename, callback);
-//     }
-// }
+import { default as SQ3QueryLog } from 'sqlite3-query-log';
 
 const dburl = typeof process.env.AK_DB_URL === 'string'
         ? process.env.AK_DB_URL
         : ':memory:';
 
-// Turns on full stack traces
-// SqlDatabase.verbose();
 export const sqdb = await AsyncDatabase.open(dburl);
 // await sqdb.open(dburl);
 // await sqdb.open('test.db');
 // sqdb.loadExtension(sqleanLibs.reLibPath);
 sqdb.inner.loadExtension(sqlite_regex.getLoadablePath());
+
+// if (typeof process.env.AK_PROFILE === 'string') {
+//     SQ3QueryLog(sqdb.inner, process.env.AK_PROFILE);
+// }
 
 await init();
 
@@ -84,18 +73,8 @@ sqdb.inner.on('error', err => {
 //      and to keep the format simple
 //   2. Approximate number of milliseconds to execute
 //
-// In practice the number of milliseconds is either
-// zero or one, indicating there isn't enough precision
-// in the code invoking this callback.
-//
-// In other words this doesn't seem terribly useful.
 if (typeof process.env.AK_PROFILE === 'string') {
-    sqdb.inner.on('profile', (sql, time) => {
-        fs.writeFileSync(process.env.AK_PROFILE,
-            `${Base64.encode(sql)}\t${time}\n`,
-            { flag: "a+" }
-        );
-    });
+    SQ3QueryLog(sqdb.inner, process.env.AK_PROFILE);
 }
 
 ////////////////////////

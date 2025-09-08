@@ -16,9 +16,8 @@
  *  See the License for the specific language governing permissions and
  *  limitations under the License.
  */
-import { dirToWatch, VPathData } from '@akashacms/stacked-dirs';
+import { VPathData } from '@akashacms/stacked-dirs';
 import EventEmitter from 'events';
-import { Configuration, dirToMount } from '../index.js';
 /**
  * Type for return from paths method.  The fields here
  * are whats in the Asset/Layout/Partial classes above
@@ -45,10 +44,8 @@ Tdao> extends EventEmitter {
      * @param name string giving the name for this watcher name
      * @param dao The SQLITE3ORM DAO instance to use
      */
-    constructor(config: Configuration, name: string, dirs: dirToMount[], dao: Tdao);
-    get config(): Configuration;
+    constructor(name: string, dao: Tdao);
     get name(): string;
-    get dirs(): dirToMount[];
     set cacheContent(doit: any);
     get gacheContent(): boolean;
     set mapRenderPath(doit: boolean);
@@ -108,7 +105,7 @@ Tdao> extends EventEmitter {
      * @param {*} info
      * @returns
      */
-    fileDirMount(info: any): dirToWatch;
+    fileDirMount(info: any): any;
     /**
      * Should this file be ignored, based on the `ignore` field
      * in the matching `dir` mount entry.
@@ -159,12 +156,12 @@ Tdao> extends EventEmitter {
 }
 export declare class AssetsFileCache<T, // extends Asset,
 Tdao> extends BaseFileCache<T, Tdao> {
-    constructor(config: Configuration, name: string, dirs: dirToMount[], dao: Tdao);
+    constructor(name: string, dao: Tdao);
 }
 export declare class TemplatesFileCache<T, // extends Layout | Partial,
 Tdao extends BaseFileCache<T, Tdao>> {
     #private;
-    constructor(config: Configuration, name: string, dirs: dirToMount[], dao: Tdao, type: "layout" | "partial");
+    constructor(name: string, dao: Tdao, type: "layout" | "partial");
     get isLayout(): boolean;
     get isPartial(): boolean;
     /**
@@ -185,7 +182,7 @@ export declare class DocumentsFileCache {
     protected deleteDocTagGlue(vpath: any): Promise<void>;
     protected addDocTagGlue(vpath: string, tags: string | string[]): Promise<void>;
     addTagDescription(tag: string, description: string): Promise<void>;
-    getTagDescription(tag: string): Promise<string | undefined>;
+    getTagDescription(tag: string): Promise<void>;
     protected updateDocInDB(info: any): Promise<void>;
     protected insertDocToDB(info: any): Promise<void>;
     handleUnlinked(name: any, info: any): Promise<void>;
@@ -273,7 +270,7 @@ export declare class DocumentsFileCache {
      *
      * @returns
      */
-    documentsWithTag(tagnm: string | string[]): Promise<Array<string>>;
+    documentsWithTag(tagnm: string | string[]): Promise<void>;
     /**
      * Get an array of tags used by all documents.
      * This uses the JSON extension to extract
@@ -281,7 +278,7 @@ export declare class DocumentsFileCache {
      *
      * @returns
      */
-    tags(): Promise<string[]>;
+    tags(): Promise<void>;
     /**
      * Retrieve the data for an internal link
      * within the site documents.  Forming an
@@ -309,6 +306,6 @@ export declare class DocumentsFileCache {
      */
     private buildSearchQuery;
 }
-export declare function setup(config: Configuration): Promise<void>;
+export declare function setup(): Promise<void>;
 export declare function closeFileCaches(): Promise<void>;
 //# sourceMappingURL=file-cache-sqlite.d.ts.map

@@ -33,7 +33,7 @@ import YAML from 'js-yaml';
 const _watchman = import('./cache/watchman.js');
 
 process.title = 'akasharender';
-program.version('0.7.5');
+program.version('0.9.5');
 
 program
     .command('copy-assets <configFN>')

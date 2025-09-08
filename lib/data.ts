@@ -19,10 +19,10 @@
 
 import path from 'node:path';
 
-import {
-    BaseDAO, field, schema, table
-} from 'sqlite3orm';
-import { sqdb } from './sqdb.js';
+// import {
+//     BaseDAO, field, schema, table
+// } from 'sqlite3orm';
+// import { sqdb } from './sqdb.js';
 
 // @table({ name: 'TRACES' })
 // class Trace {

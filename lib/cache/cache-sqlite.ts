@@ -34,6 +34,8 @@ import {
 } from './schema.js';
 import Cache from 'cache';
 
+import { default as SQ3QueryLog } from 'sqlite3-query-log';
+
 const tglue = new TagGlue();
 // tglue.init(sqdb._db);
 
@@ -2680,6 +2682,7 @@ export async function setup(
     });
 
     await config.hookPluginCacheSetup();
+
 }
 
 export async function closeFileCaches() {
