@@ -46,6 +46,8 @@ export const sqdb = await AsyncDatabase.open(dburl);
 // sqdb.loadExtension(sqleanLibs.reLibPath);
 sqdb.inner.loadExtension(sqlite_regex.getLoadablePath());
 
+await sqdb.run('PRAGMA journal_mode=WAL;');
+
 // if (typeof process.env.AK_PROFILE === 'string') {
 //     SQ3QueryLog(sqdb.inner, process.env.AK_PROFILE);
 // }
