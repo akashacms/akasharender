@@ -1,5 +1,7 @@
 {
-    "include": ["lib/**/*"],
+    "include": [
+        "lib/**/*"
+    ],
     "exclude": ["node_modules"],
     "compilerOptions": {
         "lib": [ "es6", "es2021", "esnext" ],

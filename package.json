@@ -29,8 +29,8 @@
     "url": "git://github.com/akashacms/akasharender.git"
   },
   "scripts": {
-    "watch": "tsc -w",
-    "build": "tsc",
+    "watch": "tsc -w & tscp -w",
+    "build": "tsc && tscp",
     "dotest": "cd test && npm test",
     "dopublish": "npm publish --access public"
   },
@@ -71,7 +71,8 @@
   },
   "devDependencies": {
     "@types/node": "^24.0.1",
-    "typescript": "^5.8.3"
+    "typescript": "^5.8.3",
+    "typescript-cp": "^0.1.9"
   },
   "peerDependencies": {
     "cheerio": "^1.1.x",

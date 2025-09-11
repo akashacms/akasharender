@@ -1,5 +1,5 @@
 
-import FS from 'node:fs';
+import FS, { promises as fsp } from 'node:fs';
 import {
     DirsWatcher, dirToWatch, VPathData
 } from '@akashacms/stacked-dirs';
@@ -19,6 +19,10 @@ import {
     createDocumentsTable,
     createLayoutsTable,
     createPartialsTable,
+    doCreateAssetsTable,
+    doCreateDocumentsTable,
+    doCreateLayoutsTable,
+    doCreatePartialsTable,
     PathsReturnType, validateAsset, validateDocument, validateLayout, validatePartial, validatePathsReturnType
 } from './schema.js';
 
@@ -33,8 +37,6 @@ import {
     Document
 } from './schema.js';
 import Cache from 'cache';
-
-import { default as SQ3QueryLog } from 'sqlite3-query-log';
 
 const tglue = new TagGlue();
 // tglue.init(sqdb._db);
@@ -316,6 +318,16 @@ export class BaseCache<
         return <T>row;
     }
 
+    protected async sqlFormat(fname, params) {
+        const sql = SqlString.format(
+                await fsp.readFile(fname), params
+        );
+        return sql;
+    }
+
+    protected findPathMountedSQL
+            = new Map<string, string>();
+
     /**
      * Find an info object based on vpath and mounted.
      *
@@ -330,12 +342,16 @@ export class BaseCache<
         mounted: string
     }>>  {
         
-        const found = <any[]>await this.db.all(`
-            SELECT vpath, mounted
-            FROM ${this.quotedDBName}
-            WHERE 
-            vpath = $vpath AND mounted = $mounted
-        `, {
+        let sql = this.findPathMountedSQL.get(this.dbname);
+        if (!sql) {
+            sql = await this.sqlFormat(
+                path.join(import.meta.dirname,
+                    'sql', 'find-path-mounted.sql'),
+                [ this.dbname ]
+            );
+            this.findPathMountedSQL.set(this.dbname, sql);
+        }
+        const found = <any[]>await this.db.all(sql, {
             $vpath: vpath,
             $mounted: mounted
         });
@@ -358,6 +374,9 @@ export class BaseCache<
     }
 
     protected findByPathCache;
+    protected findByPathSQL = new Map<
+        string, string
+    >();
 
     /**
      * Find an info object by the vpath.
@@ -371,11 +390,12 @@ export class BaseCache<
             = this.config.cachingTimeout > 0;
         let cacheKey;
 
+        if (!this.findByPathCache) {
+            this.findByPathCache
+                = new Cache(this.config.cachingTimeout);
+        }
+
         if (doCaching) {
-            if (!this.findByPathCache) {
-                this.findByPathCache
-                    = new Cache(this.config.cachingTimeout);
-            }
 
             cacheKey = JSON.stringify({
                 dbname: this.quotedDBName,
@@ -391,14 +411,25 @@ export class BaseCache<
 
         // console.log(`findByPath ${this.dao.table.quotedName} ${vpath}`);
 
-        const found = <any[]>await this.db.all(`
-            SELECT *
-            FROM ${this.quotedDBName}
-            WHERE 
-            vpath = $vpath OR renderPath = $vpath
-        `, {
-            $vpath: vpath
-        });
+        let sql = this.findByPathSQL.get(this.dbname);
+        if (!sql) {
+            sql = await this.sqlFormat(
+                path.join(import.meta.dirname,
+                    'sql', 'find-by-cache.sql'),
+                [ this.dbname ]
+            );
+            this.findByPathSQL.set(this.dbname, sql);
+        }
+
+        let found;
+        try {
+            found = <any[]>await this.db.all(sql, {
+                $vpath: vpath
+            });
+        } catch (err) {
+            console.log(`db.all ${sql}`, err.stack);
+            throw err;
+        }
 
         const mapped = this.validateRows(found);
 
@@ -497,6 +528,9 @@ export class BaseCache<
         throw new Error(`updateDocInDB must be overridden`);
     }
 
+    protected handleUnlinkedSQL
+            = new Map<string,string>();
+
     protected async handleUnlinked(name, info) {
         // console.log(`PROCESS ${name} handleUnlinked`, info.vpath);
         if (name !== this.name) {
@@ -505,11 +539,16 @@ export class BaseCache<
 
         await this.config.hookFileUnlinked(name, info);
 
-        await this.db.run(`
-            DELETE FROM ${this.quotedDBName}
-            WHERE
-            vpath = $vpath AND mounted = $mounted
-        `, {
+        let sql = this.handleUnlinkedSQL.get(this.dbname);
+        if (!sql) {
+            sql = SqlString.format(
+                await fsp.readFile(
+                    path.join(import.meta.dirname, 'sql', 'handle-unlinked.sql')
+                ), [ this.dbname ]);
+            this.handleUnlinkedSQL.set(this.dbname, sql);
+        }
+
+        await this.db.run(sql, {
             $vpath: info.vpath,
             $mounted: info.mounted
         });
@@ -604,6 +643,7 @@ export class BaseCache<
     }
 
     protected pathsCache;
+    protected pathsSQL = new Map<string, string>();
 
     /**
      * Return simple information about each
@@ -652,6 +692,29 @@ export class BaseCache<
             }
         }
 
+        let sqlRootP = this.pathsSQL.get(JSON.stringify({
+            dbname: this.dbname, rootP: true
+        }));
+        if (!sqlRootP) {
+            sqlRootP = await this.sqlFormat(
+                path.join(import.meta.dirname,
+                    'sql', 'paths-rootp.sql'),
+                [ this.dbname ]
+            );
+            this.pathsSQL.set(this.dbname, sqlRootP);
+        }
+        let sqlNoRoot = this.pathsSQL.get(JSON.stringify({
+            dbname: this.dbname, rootP: false
+        }));
+        if (!sqlNoRoot) {
+            sqlNoRoot = await this.sqlFormat(
+                path.join(import.meta.dirname,
+                    'sql', 'paths-no-root.sql'),
+                [ this.dbname ]
+            );
+            this.pathsSQL.set(this.dbname, sqlNoRoot);
+        }
+
         // This is copied from the older version
         // (LokiJS version) of this function.  It
         // seems meant to eliminate duplicates.
@@ -659,28 +722,10 @@ export class BaseCache<
 
         // Select the fields in PathsReturnType
         const results = (typeof rootP === 'string') 
-        ? <any[]>await this.db.all(
-        `
-            SELECT
-                vpath, mime, mounted, mountPoint,
-                pathInMounted, mtimeMs,
-                info, fspath, renderPath
-            FROM ${this.quotedDBName}
-            WHERE
-            renderPath LIKE $rootP
-            ORDER BY mtimeMs ASC
-        `, {
+        ? <any[]>await this.db.all(sqlRootP, {
             $rootP: `${rootP}%`
         })
-        : <any[]>await this.db.all(
-        `
-            SELECT
-                vpath, mime, mounted, mountPoint,
-                pathInMounted, mtimeMs,
-                info, fspath, renderPath
-            FROM ${this.quotedDBName}
-            ORDER BY mtimeMs ASC
-        `);
+        : <any[]>await this.db.all(sqlNoRoot);
 
         const result2: PathsReturnType[]
                 = new Array<PathsReturnType>();
@@ -917,35 +962,21 @@ export class AssetsCache
         }
     }
 
+    #insertDocAssets;
+
     protected async insertDocToDB(
         info: Asset
     ) {
-        await this.db.run(`
-            INSERT INTO ${this.quotedDBName}
-            (
-                vpath,
-                mime,
-                mounted,
-                mountPoint,
-                pathInMounted,
-                fspath,
-                dirname,
-                mtimeMs,
-                info
-            )
-            VALUES
-            (
-                $vpath,
-                $mime,
-                $mounted,
-                $mountPoint,
-                $pathInMounted,
-                $fspath,
-                $dirname,
-                $mtimeMs,
-                $info
-            )
-        `, {
+        if (!this.#insertDocAssets) {
+            this.#insertDocAssets =
+                await fsp.readFile(
+                    path.join(
+                        import.meta.dirname,
+                        'sql', 'insert-doc-assets.sql'
+                    ), 'utf-8'
+                );
+        }
+        await this.db.run(this.#insertDocAssets, {
             $vpath: info.vpath,
             $mime: info.mime,
             $mounted: info.mounted,
@@ -958,21 +989,19 @@ export class AssetsCache
         });
     }
 
+    #updateDocAssets;
+
     protected async updateDocInDB(info: Asset) {
-        await this.db.run(`
-            UPDATE ${this.quotedDBName}
-            SET 
-                mime = $mime,
-                mounted = $mounted,
-                mountPoint = $mountPoint,
-                pathInMounted = $pathInMounted,
-                fspath = $fspath,
-                dirname = $dirname,
-                mtimeMs = $mtimeMs,
-                info = $info
-            WHERE
-                vpath = $vpath
-        `, {
+        if (!this.#updateDocAssets) {
+            this.#updateDocAssets =
+                await fsp.readFile(
+                    path.join(
+                        import.meta.dirname,
+                        'sql', 'update-doc-assets.sql'
+                    ), 'utf-8'
+                );
+        }
+        await this.db.run(this.#updateDocAssets, {
             $vpath: info.vpath,
             $mime: info.mime,
             $mounted: info.mounted,
@@ -1040,41 +1069,21 @@ export class PartialsCache
         }
     }
 
+    #insertDocPartials;
+
     protected async insertDocToDB(
         info: Partial
     ) {
-        await this.db.run(`
-            INSERT INTO ${this.quotedDBName}
-            (
-                vpath,
-                mime,
-                mounted,
-                mountPoint,
-                pathInMounted,
-                fspath,
-                dirname,
-                mtimeMs,
-                info,
-
-                docBody,
-                rendererName
-            )
-            VALUES
-            (
-                $vpath,
-                $mime,
-                $mounted,
-                $mountPoint,
-                $pathInMounted,
-                $fspath,
-                $dirname,
-                $mtimeMs,
-                $info,
-
-                $docBody,
-                $rendererName
-            )
-        `, {
+        if (!this.#insertDocPartials) {
+            this.#insertDocPartials =
+                await fsp.readFile(
+                    path.join(
+                        import.meta.dirname,
+                        'sql', 'insert-doc-partials.sql'
+                    ), 'utf-8'
+                );
+        }
+        await this.db.run(this.#insertDocPartials, {
             $vpath: info.vpath,
             $mime: info.mime,
             $mounted: info.mounted,
@@ -1090,26 +1099,21 @@ export class PartialsCache
         });
     }
 
+    #updateDocPartials;
+
     protected async updateDocInDB(
         info: Partial
     ) {
-        await this.db.run(`
-            UPDATE ${this.quotedDBName}
-            SET 
-                mime = $mime,
-                mounted = $mounted,
-                mountPoint = $mountPoint,
-                pathInMounted = $pathInMounted,
-                fspath = $fspath,
-                dirname = $dirname,
-                mtimeMs = $mtimeMs,
-                info = $info,
-
-                docBody = $docBody,
-                rendererName = $rendererName
-            WHERE
-                vpath = $vpath
-        `, {
+        if (!this.#updateDocPartials) {
+            this.#updateDocPartials =
+                await fsp.readFile(
+                    path.join(
+                        import.meta.dirname,
+                        'sql', 'update-doc-partials.sql'
+                    ), 'utf-8'
+                );
+        }
+        await this.db.run(this.#updateDocPartials, {
             $vpath: info.vpath,
             $mime: info.mime,
             $mounted: info.mounted,
@@ -1193,43 +1197,21 @@ export class LayoutsCache
         }
     }
 
+    #insertDocLayouts;
+
     protected async insertDocToDB(
         info: Layout
     ) {
-        await this.db.run(`
-            INSERT INTO ${this.quotedDBName}
-            (
-                vpath,
-                mime,
-                mounted,
-                mountPoint,
-                pathInMounted,
-                fspath,
-                dirname,
-                mtimeMs,
-                info,
-
-                rendersToHTML,
-                docBody,
-                rendererName
-            )
-            VALUES
-            (
-                $vpath,
-                $mime,
-                $mounted,
-                $mountPoint,
-                $pathInMounted,
-                $fspath,
-                $dirname,
-                $mtimeMs,
-                $info,
-
-                $rendersToHTML,
-                $docBody,
-                $rendererName
-            )
-        `, {
+        if (!this.#insertDocLayouts) {
+            this.#insertDocLayouts =
+                await fsp.readFile(
+                    path.join(
+                        import.meta.dirname,
+                        'sql', 'insert-doc-layouts.sql'
+                    ), 'utf-8'
+                );
+        }
+        await this.db.run(this.#insertDocLayouts, {
             $vpath: info.vpath,
             $mime: info.mime,
             $mounted: info.mounted,
@@ -1246,27 +1228,21 @@ export class LayoutsCache
         });
     }
 
+    #updateDocLayouts;
+
     protected async updateDocInDB(
         info: Layout
     ) {
-        await this.db.run(`
-            UPDATE ${this.quotedDBName}
-            SET 
-                mime = $mime,
-                mounted = $mounted,
-                mountPoint = $mountPoint,
-                pathInMounted = $pathInMounted,
-                fspath = $fspath,
-                dirname = $dirname,
-                mtimeMs = $mtimeMs,
-                info = $info,
-
-                rendersToHTML = $rendersToHTML,
-                docBody = $docBody,
-                rendererName = $rendererName
-            WHERE
-                vpath = $vpath
-        `, {
+        if (!this.#updateDocLayouts) {
+            this.#updateDocLayouts =
+                await fsp.readFile(
+                    path.join(
+                        import.meta.dirname,
+                        'sql', 'update-doc-layouts.sql'
+                    ), 'utf-8'
+                );
+        }
+        await this.db.run(this.#updateDocLayouts, {
             $vpath: info.vpath,
             $mime: info.mime,
             $mounted: info.mounted,
@@ -1534,9 +1510,21 @@ export class DocumentsCache
     // the insert/update functions because
     // SQLITE3 takes care of it.
 
+    #insertDocDocuments;
+
     protected async insertDocToDB(
         info: Document
     ) {
+        if (!this.#insertDocDocuments) {
+            this.#insertDocDocuments =
+                await fsp.readFile(
+                    path.join(
+                        import.meta.dirname,
+                        'sql', 'insert-doc-documents.sql'
+                    ), 'utf-8'
+                );
+        }
+
         // let mtime;
         // if (typeof info.mtimeMs === 'number'
         //  || typeof info.mtimeMs === 'string'
@@ -1562,50 +1550,8 @@ export class DocumentsCache
             $rendererName: info.rendererName
         };
         // console.log(toInsert);
-        await this.db.run(`
-            INSERT INTO ${this.quotedDBName}
-            (
-                vpath,
-                mime,
-                mounted,
-                mountPoint,
-                pathInMounted,
-                fspath,
-                dirname,
-                mtimeMs,
-                info,
-
-
-                renderPath,
-                rendersToHTML,
-                parentDir,
-                docMetadata,
-                docContent,
-                docBody,
-                rendererName
-            )
-            VALUES
-            (
-                $vpath,
-                $mime,
-                $mounted,
-                $mountPoint,
-                $pathInMounted,
-                $fspath,
-                $dirname,
-                $mtimeMs,
-                $info,
-
-
-                $renderPath,
-                $rendersToHTML,
-                $parentDir,
-                $docMetadata,
-                $docContent,
-                $docBody,
-                $rendererName
-            )
-        `, toInsert);
+        await this.db.run(this.#insertDocDocuments,
+                    toInsert);
         // await this.dao.insert(docInfo);
         if (info.metadata) {
             await this.addDocTagGlue(
@@ -1614,31 +1560,21 @@ export class DocumentsCache
         }
     }
 
+    #updateDocDocuments;
+
     protected async updateDocInDB(
         info: Document
     ) {
-        await this.db.run(`
-            UPDATE ${this.quotedDBName}
-            SET 
-                mime = $mime,
-                mounted = $mounted,
-                mountPoint = $mountPoint,
-                pathInMounted = $pathInMounted,
-                fspath = $fspath,
-                dirname = $dirname,
-                mtimeMs = $mtimeMs,
-                info = $info,
-
-                renderPath = $renderPath,
-                rendersToHTML = $rendersToHTML,
-                parentDir = $parentDir,
-                docMetadata = $docMetadata,
-                docContent = $docContent,
-                docBody = $docBody,
-                rendererName = $rendererName
-            WHERE
-                vpath = $vpath
-        `, {
+        if (!this.#updateDocDocuments) {
+            this.#updateDocDocuments =
+                await fsp.readFile(
+                    path.join(
+                        import.meta.dirname,
+                        'sql', 'update-doc-documents.sql'
+                    ), 'utf-8'
+                );
+        }
+        await this.db.run(this.#updateDocDocuments, {
             $vpath: info.vpath,
             $mime: info.mime,
             $mounted: info.mounted,
@@ -1804,6 +1740,7 @@ export class DocumentsCache
     }
 
     protected siblingsCache;
+    #siblingsSQL;
 
     /**
      * Finds all the documents in the same directory
@@ -1843,14 +1780,18 @@ export class DocumentsCache
             }
         }
 
-        const siblings = await this.db.all(`
-            SELECT * FROM ${this.quotedDBName}
-            WHERE
-            dirname = $dirname AND
-            vpath <> $vpath AND
-            renderPath <> $vpath AND
-            rendersToHtml = true
-        `, {
+        if (!this.#siblingsSQL) {
+            this.#siblingsSQL =
+                await fsp.readFile(
+                    path.join(
+                        import.meta.dirname,
+                        'sql', 'siblings.sql'
+                    ), 'utf-8'
+                );
+        }
+
+        const siblings
+            = await this.db.all(this.#siblingsSQL, {
             $dirname: dirname,
             $vpath: vpath
         });
@@ -1872,6 +1813,9 @@ export class DocumentsCache
 
         return ret;
     }
+
+    #docsForDirname;
+    #dirsForParentdir;
 
     /**
      * Returns a tree of items starting from the document
@@ -1937,13 +1881,20 @@ export class DocumentsCache
             return undefined;
         }
         let dirname = path.dirname(rootItem.vpath);
+
+        if (!this.#docsForDirname) {
+            this.#docsForDirname =
+                await fsp.readFile(
+                    path.join(
+                        import.meta.dirname,
+                        'sql', 'docs-for-dirname.sql'
+                    ), 'utf-8'
+                );
+        }
+
         // Picks up everything from the current level.
         // Differs from siblings by getting everything.
-        const _items = <any[]>await this.db.all(`
-            SELECT *
-            FROM ${this.quotedDBName}
-            WHERE dirname = $dirname AND rendersToHTML = true
-        `, {
+        const _items = <any[]>await this.db.all(this.#docsForDirname, {
             $dirname: dirname
         });
         const items: Document[]
@@ -1952,10 +1903,17 @@ export class DocumentsCache
                 return this.cvtRowToObj(item)
             });
 
-        const _childFolders = <any[]>await this.db.all(`
-            SELECT distinct dirname FROM DOCUMENTS
-            WHERE parentDir = $dirname
-        `, {
+        if (!this.#dirsForParentdir) {
+            this.#dirsForParentdir =
+                await fsp.readFile(
+                    path.join(
+                        import.meta.dirname,
+                        'sql', 'dirs-for-dirname.sql'
+                    ), 'utf-8'
+                );
+        }
+
+        const _childFolders = <any[]>await this.db.all(this.#dirsForParentdir, {
             $dirname: dirname
         });
         const childFolders = new Array<{ dirname: string }>();
@@ -1991,6 +1949,8 @@ export class DocumentsCache
         }
     }
 
+    #indexFilesSQL;
+
     /**
      * Find the index files (renders to index.html)
      * within the named subtree.
@@ -2013,20 +1973,22 @@ export class DocumentsCache
                 typeof rootP === 'string'
              && rootP.length >= 1
             )
-            ? `AND ( renderPath LIKE '${rootP}%' )`
+            ? ` AND ( renderPath LIKE '${rootP}%' )`
             : '';
 
-        const indexes = <any[]> await this.db.all(`
-        SELECT *
-        FROM DOCUMENTS
-        WHERE
-            ( rendersToHTML = true )
-        AND (
-            ( renderPath LIKE '%/index.html' )
-         OR ( renderPath = 'index.html' )
-        )
-        ${rootQ}
-        `);
+        if (!this.#indexFilesSQL) {
+            this.#indexFilesSQL =
+                await fsp.readFile(
+                    path.join(
+                        import.meta.dirname,
+                        'sql', 'index-doc-files.sql'
+                    ), 'utf-8'
+                );
+        }
+
+        const indexes = <any[]> await this.db.all(
+            this.#indexFilesSQL + rootQ + ';'
+        );
         
         const mapped = this.validateRows(indexes);
         return mapped.map(item => {
@@ -2042,7 +2004,9 @@ export class DocumentsCache
         //     rootPath: rootPath
         // });
     }
-    
+
+    #filesForSetTimes;
+
     /**
      * For every file in the documents cache,
      * set the access and modifications.
@@ -2090,14 +2054,17 @@ export class DocumentsCache
             } 
         }
 
-        await this.db.each(`
-            SELECT
-                vpath, fspath,
-                mtimeMs, publicationTime,
-                json_extract(info, '$.docMetadata.publDate') as publDate,
-                json_extract(info, '$.docMetadata.publicationDate') as publicationDate,
-            FROM ${this.quotedDBName}
-        `, { },
+        if (!this.#filesForSetTimes) {
+            this.#filesForSetTimes =
+                await fsp.readFile(
+                    path.join(
+                        import.meta.dirname,
+                        'sql', 'files-for-settimes.sql'
+                    ), 'utf-8'
+                );
+        }
+
+        await this.db.each(this.#filesForSetTimes, { },
         (row: {
             vpath: string,
             fspath: string,
@@ -2210,6 +2177,8 @@ export class DocumentsCache
         });
     }
 
+    #docLinkData;
+
     /**
      * Retrieve the data for an internal link
      * within the site documents.  Forming an
@@ -2236,18 +2205,23 @@ export class DocumentsCache
         thumbnail?: string;
     }> {
 
-        const found = <any[]> await this.db.all(`
-            SELECT *
-            FROM ${this.quotedDBName}
-            WHERE 
-            vpath = $vpath OR renderPath = $vpath
-        `, {
+        if (!this.#docLinkData) {
+            this.#docLinkData =
+                await fsp.readFile(
+                    path.join(
+                        import.meta.dirname,
+                        'sql', 'doc-link-data.sql'
+                    ), 'utf-8'
+                );
+        }
+
+        const found = <any[]> await this.db.all(this.#docLinkData, {
             $vpath: vpath
         });
 
         if (Array.isArray(found)) {
 
-            const doc = this.validateRow(found[0]);
+            const doc = found[0];
 
             // const docInfo = await this.find(vpath);
             return {
@@ -2612,8 +2586,9 @@ export async function setup(
     db: AsyncDatabase
 ): Promise<void> {
 
-    // console.log(createAssetsTable);
-    await db.run(createAssetsTable);
+    //// ASSETS
+
+    await doCreateAssetsTable(db);
 
     assetsCache = new AssetsCache(
         config,
@@ -2628,8 +2603,9 @@ export async function setup(
         console.error(`assetsCache ERROR ${util.inspect(args)}`)
     });
 
-    // console.log(createPartialsTable);
-    await db.run(createPartialsTable);
+    //// PARTIALS
+
+    await doCreatePartialsTable(db);
 
     partialsCache = new PartialsCache(
         config,
@@ -2644,8 +2620,9 @@ export async function setup(
         console.error(`partialsCache ERROR ${util.inspect(args)}`)
     });
 
-    // console.log(createLayoutsTable);
-    await db.run(createLayoutsTable);
+    //// LAYOUTS
+
+    await doCreateLayoutsTable(db);
 
     layoutsCache = new LayoutsCache(
         config,
@@ -2660,10 +2637,9 @@ export async function setup(
         console.error(`layoutsCache ERROR ${util.inspect(args)}`)
     });
 
-    // console.log(`DocumentsFileCache 'documents' ${util.inspect(config.documentDirs)}`);
+    //// DOCUMENTS
 
-    // console.log(createDocumentsTable);
-    await db.run(createDocumentsTable);
+    await doCreateDocumentsTable(db);
 
     documentsCache = new DocumentsCache(
         config,
