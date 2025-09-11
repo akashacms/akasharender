@@ -1,4 +1,5 @@
 import Joi from "joi";
+import { AsyncDatabase } from 'promised-sqlite3';
 /**
  * Every cache entry has these fields.  For
  * most cache types, there will be additional
@@ -80,7 +81,8 @@ export declare function validateAsset(obj: any): {
     error: any;
     value: Asset;
 };
-export declare const createAssetsTable = "\nCREATE TABLE IF NOT EXISTS \"ASSETS\" (\n  `vpath` TEXT PRIMARY KEY,\n  `renderPath` TEXT  GENERATED ALWAYS\n        AS (vpath) STORED,\n  `mime` TEXT,\n  `mounted` TEXT,\n  `mountPoint` TEXT,\n  `pathInMounted` TEXT,\n  `fspath` TEXT,\n  `dirname` TEXT,\n  `mtimeMs` REAL,\n  `info` TEXT\n) WITHOUT ROWID;\nCREATE INDEX \"asset_vpath\"\n        ON \"ASSETS\" (\"vpath\");\nCREATE INDEX \"asset_mounted\"\n        ON \"ASSETS\" (\"mounted\");\nCREATE INDEX \"asset_mountPoint\"\n        ON \"ASSETS\" (\"mountPoint\");\nCREATE INDEX \"asset_pathInMounted\"\n        ON \"ASSETS\" (\"pathInMounted\");\nCREATE INDEX \"asset_fspath\"\n        ON \"ASSETS\" (\"fspath\");\nCREATE INDEX \"asset_dirname\"\n        ON \"ASSETS\" (\"dirname\");\nCREATE INDEX \"asset_mtimeMs\"\n        ON \"ASSETS\" (\"mtimeMs\");\nCREATE INDEX \"asset_vpath_renderpath\"\n        ON \"ASSETS\" (\"vpath\", \"renderPath\");\n";
+export declare const createAssetsTable: string;
+export declare function doCreateAssetsTable(db: AsyncDatabase): Promise<void>;
 export interface PartialFields {
     /**
      * The content for the template.
@@ -99,7 +101,8 @@ export declare function validatePartial(obj: any): {
     error: any;
     value: Partial;
 };
-export declare const createPartialsTable = "\nCREATE TABLE IF NOT EXISTS \"PARTIALS\" (\n  `vpath` TEXT PRIMARY KEY,\n  `renderPath` TEXT  GENERATED ALWAYS\n        AS (vpath) STORED,\n  `mime` TEXT,\n  `mounted` TEXT,\n  `mountPoint` TEXT,\n  `pathInMounted` TEXT,\n  `fspath` TEXT,\n  `dirname` TEXT,\n  `mtimeMs` REAL,\n  `docBody` TEXT,\n  `rendererName` TEXT,\n  `info` TEXT\n) WITHOUT ROWID;\nCREATE INDEX \"partial_vpath\"\n        ON \"PARTIALS\" (\"vpath\");\nCREATE INDEX \"partial_mounted\"\n        ON \"PARTIALS\" (\"mounted\");\nCREATE INDEX \"partial_mountPoint\"\n        ON \"PARTIALS\" (\"mountPoint\");\nCREATE INDEX \"partial_pathInMounted\"\n        ON \"PARTIALS\" (\"pathInMounted\");\nCREATE INDEX \"partial_fspath\"\n        ON \"PARTIALS\" (\"fspath\");\nCREATE INDEX \"partial_dirname\"\n        ON \"PARTIALS\" (\"dirname\");\nCREATE INDEX \"partial_mtimeMs\"\n        ON \"PARTIALS\" (\"mtimeMs\");\nCREATE INDEX \"partial_vpath_renderpath\"\n        ON \"PARTIALS\" (\"vpath\", \"renderPath\");\n";
+export declare const createPartialsTable: string;
+export declare function doCreatePartialsTable(db: AsyncDatabase): Promise<void>;
 export interface LayoutFields {
     /**
      * Whether this template produces
@@ -125,7 +128,8 @@ export declare function validateLayout(obj: any): {
     error: any;
     value: Layout;
 };
-export declare const createLayoutsTable = "\nCREATE TABLE IF NOT EXISTS \"LAYOUTS\" (\n  `vpath` TEXT PRIMARY KEY,\n  `renderPath` TEXT  GENERATED ALWAYS\n        AS (vpath) STORED,\n  `mime` TEXT,\n  `mounted` TEXT,\n  `mountPoint` TEXT,\n  `pathInMounted` TEXT,\n  `fspath` TEXT,\n  `dirname` TEXT,\n  `mtimeMs` REAL,\n  `rendersToHTML` INTEGER,\n  `docBody` TEXT,\n  `rendererName` TEXT,\n  `info` TEXT\n) WITHOUT ROWID;\nCREATE INDEX \"layout_vpath\"\n        ON \"LAYOUTS\" (\"vpath\");\nCREATE INDEX \"layout_mounted\"\n        ON \"LAYOUTS\" (\"mounted\");\nCREATE INDEX \"layout_mountPoint\"\n        ON \"LAYOUTS\" (\"mountPoint\");\nCREATE INDEX \"layout_pathInMounted\"\n        ON \"LAYOUTS\" (\"pathInMounted\");\nCREATE INDEX \"layout_fspath\"\n        ON \"LAYOUTS\" (\"fspath\");\nCREATE INDEX \"layout_dirname\"\n        ON \"LAYOUTS\" (\"dirname\");\nCREATE INDEX \"layout_mtimeMs\"\n        ON \"LAYOUTS\" (\"mtimeMs\");\nCREATE INDEX \"layout_vpath_renderpath\"\n        ON \"LAYOUTS\" (\"vpath\", \"renderPath\");\n";
+export declare const createLayoutsTable: string;
+export declare function doCreateLayoutsTable(db: AsyncDatabase): Promise<void>;
 export interface DocumentFields {
     /**
      * The virtual pathname to which this
@@ -231,5 +235,6 @@ export declare function validateDocument(obj: any): {
     error: any;
     value: Document;
 };
-export declare const createDocumentsTable = "\nCREATE TABLE IF NOT EXISTS \"DOCUMENTS\" (\n  `vpath` TEXT PRIMARY KEY,\n  `mime` TEXT,\n  `mounted` TEXT,\n  `mountPoint` TEXT,\n  `pathInMounted` TEXT,\n  `fspath` TEXT,\n  `dirname` TEXT,\n  `mtimeMs` REAL,\n  `renderPath` TEXT,\n  `rendersToHTML` INTEGER,\n  `parentDir` TEXT,\n  `publicationTime` INTEGER GENERATED ALWAYS\n        AS (json_extract(info, '$.publicationTime')) STORED,\n  `baseMetadata` TEXT GENERATED ALWAYS\n        AS (json_extract(info, '$.baseMetadata')) STORED,\n  `docMetadata` TEXT,\n  `docContent` TEXT,\n  `docBody` TEXT,\n  `metadata` TEXT GENERATED ALWAYS\n        AS (json_extract(info, '$.metadata')) STORED,\n  `tags` TEXT GENERATED ALWAYS\n        AS (json_extract(info, '$.metadata.tags')) STORED,\n  `layout` TEXT GENERATED ALWAYS\n        AS (json_extract(metadata, '$.layout')) STORED,\n  `blogtag` TEXT GENERATED ALWAYS\n        AS (json_extract(metadata, '$.blogtag')) STORED,\n  `rendererName` TEXT,\n  `info` TEXT\n) WITHOUT ROWID;\nCREATE INDEX \"document_vpath\"\n        ON \"DOCUMENTS\" (\"vpath\");\nCREATE INDEX \"document_mounted\"\n        ON \"DOCUMENTS\" (\"mounted\");\nCREATE INDEX \"document_mountPoint\"\n        ON \"DOCUMENTS\" (\"mountPoint\");\nCREATE INDEX \"document_pathInMounted\"\n        ON \"DOCUMENTS\" (\"pathInMounted\");\nCREATE INDEX \"document_fspath\"\n        ON \"DOCUMENTS\" (\"fspath\");\nCREATE INDEX \"document_dirname\"\n        ON \"DOCUMENTS\" (\"dirname\");\nCREATE INDEX \"document_renderPath\"\n        ON \"DOCUMENTS\" (\"renderPath\");\nCREATE INDEX \"document_rendersToHTML\"\n        ON \"DOCUMENTS\" (\"rendersToHTML\");\nCREATE INDEX \"document_parentDir\"\n        ON \"DOCUMENTS\" (\"parentDir\");\nCREATE INDEX \"document_mtimeMs\"\n        ON \"DOCUMENTS\" (\"mtimeMs\");\nCREATE INDEX \"document_publicationTime\"\n        ON \"DOCUMENTS\" (\"publicationTime\");\nCREATE INDEX \"document_tags\"\n        ON \"DOCUMENTS\" (\"tags\");\nCREATE INDEX \"document_layout\"\n        ON \"DOCUMENTS\" (\"layout\");\nCREATE INDEX \"document_blogtag\"\n        ON \"DOCUMENTS\" (\"blogtag\");\nCREATE INDEX \"document_vpath_renderpath\"\n        ON \"DOCUMENTS\" (\"vpath\", \"renderPath\");\n";
+export declare const createDocumentsTable: string;
+export declare function doCreateDocumentsTable(db: AsyncDatabase): Promise<void>;
 //# sourceMappingURL=schema.d.ts.map

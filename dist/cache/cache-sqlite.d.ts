@@ -65,6 +65,8 @@ export declare class BaseCache<T extends BaseCacheEntry> extends EventEmitter {
      * @param row
      */
     protected cvtRowToObj(row: any): T;
+    protected sqlFormat(fname: any, params: any): Promise<any>;
+    protected findPathMountedSQL: Map<string, string>;
     /**
      * Find an info object based on vpath and mounted.
      *
@@ -77,6 +79,7 @@ export declare class BaseCache<T extends BaseCacheEntry> extends EventEmitter {
         mounted: string;
     }>>;
     protected findByPathCache: any;
+    protected findByPathSQL: Map<string, string>;
     /**
      * Find an info object by the vpath.
      *
@@ -108,6 +111,7 @@ export declare class BaseCache<T extends BaseCacheEntry> extends EventEmitter {
     protected handleAdded(name: any, info: any): Promise<void>;
     protected insertDocToDB(info: T): Promise<void>;
     protected updateDocInDB(info: T): Promise<void>;
+    protected handleUnlinkedSQL: Map<string, string>;
     protected handleUnlinked(name: any, info: any): Promise<void>;
     protected handleReady(name: any): Promise<void>;
     /**
@@ -132,6 +136,7 @@ export declare class BaseCache<T extends BaseCacheEntry> extends EventEmitter {
      */
     ignoreFile(info: any): boolean;
     protected pathsCache: any;
+    protected pathsSQL: Map<string, string>;
     /**
      * Return simple information about each
      * path in the collection.  The return
@@ -169,6 +174,7 @@ export declare class BaseCache<T extends BaseCacheEntry> extends EventEmitter {
     findSync(_fpath: any): VPathData | undefined;
 }
 export declare class AssetsCache extends BaseCache<Asset> {
+    #private;
     protected validateRow(row: any): Asset;
     protected validateRows(rows: any[]): Asset[];
     protected cvtRowToObj(row: any): Asset;
@@ -177,6 +183,7 @@ export declare class AssetsCache extends BaseCache<Asset> {
     protected updateDocInDB(info: Asset): Promise<void>;
 }
 export declare class PartialsCache extends BaseCache<Partial> {
+    #private;
     protected validateRow(row: any): Partial;
     protected validateRows(rows: any[]): Partial[];
     protected cvtRowToObj(row: any): Partial;
@@ -185,6 +192,7 @@ export declare class PartialsCache extends BaseCache<Partial> {
     protected updateDocInDB(info: Partial): Promise<void>;
 }
 export declare class LayoutsCache extends BaseCache<Layout> {
+    #private;
     protected validateRow(row: any): Layout;
     protected validateRows(rows: any[]): Layout[];
     protected cvtRowToObj(row: any): Layout;
@@ -193,6 +201,7 @@ export declare class LayoutsCache extends BaseCache<Layout> {
     protected updateDocInDB(info: Layout): Promise<void>;
 }
 export declare class DocumentsCache extends BaseCache<Document> {
+    #private;
     protected validateRow(row: any): Document;
     protected validateRows(rows: any[]): Document[];
     protected cvtRowToObj(row: any): Document;
