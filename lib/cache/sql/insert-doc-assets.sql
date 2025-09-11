@@ -1,0 +1,24 @@
+INSERT INTO ASSETS
+(
+    vpath,
+    mime,
+    mounted,
+    mountPoint,
+    pathInMounted,
+    fspath,
+    dirname,
+    mtimeMs,
+    info
+)
+VALUES
+(
+    $vpath,
+    $mime,
+    $mounted,
+    $mountPoint,
+    $pathInMounted,
+    $fspath,
+    $dirname,
+    $mtimeMs,
+    $info
+);
