@@ -1,4 +1,8 @@
+
+import path from 'node:path';
+import { promises as fsp } from 'node:fs';
 import Joi from "joi";
+import { AsyncDatabase } from 'promised-sqlite3';
 
 /**
  * Every cache entry has these fields.  For
@@ -129,37 +133,22 @@ export function validateAsset(obj: any): {
     return joiAsset.validate(obj);
 }
 
-export const createAssetsTable = `
-CREATE TABLE IF NOT EXISTS "ASSETS" (
-  \`vpath\` TEXT PRIMARY KEY,
-  \`renderPath\` TEXT  GENERATED ALWAYS
-        AS (vpath) STORED,
-  \`mime\` TEXT,
-  \`mounted\` TEXT,
-  \`mountPoint\` TEXT,
-  \`pathInMounted\` TEXT,
-  \`fspath\` TEXT,
-  \`dirname\` TEXT,
-  \`mtimeMs\` REAL,
-  \`info\` TEXT
-) WITHOUT ROWID;
-CREATE INDEX "asset_vpath"
-        ON "ASSETS" ("vpath");
-CREATE INDEX "asset_mounted"
-        ON "ASSETS" ("mounted");
-CREATE INDEX "asset_mountPoint"
-        ON "ASSETS" ("mountPoint");
-CREATE INDEX "asset_pathInMounted"
-        ON "ASSETS" ("pathInMounted");
-CREATE INDEX "asset_fspath"
-        ON "ASSETS" ("fspath");
-CREATE INDEX "asset_dirname"
-        ON "ASSETS" ("dirname");
-CREATE INDEX "asset_mtimeMs"
-        ON "ASSETS" ("mtimeMs");
-CREATE INDEX "asset_vpath_renderpath"
-        ON "ASSETS" ("vpath", "renderPath");
-`;
+export const createAssetsTable = await fsp.readFile(
+        path.join(import.meta.dirname,
+            'sql', 'create-table-assets.sql'),
+        'utf-8'
+);
+
+// This function and its siblings exist to avoid
+// potential for conflict in initializing the
+// variable holding the SQL and invoking
+// the SQL to create the table.  By placing both
+// in the same source file we ensure no conflict.
+export async function doCreateAssetsTable(
+    db: AsyncDatabase
+) {
+    await db.run(await createAssetsTable);
+}
 
 //////////////////// Partial
 
@@ -205,39 +194,18 @@ export function validatePartial(obj: any): {
     return joiPartial.validate(obj);
 }
 
-export const createPartialsTable = `
-CREATE TABLE IF NOT EXISTS "PARTIALS" (
-  \`vpath\` TEXT PRIMARY KEY,
-  \`renderPath\` TEXT  GENERATED ALWAYS
-        AS (vpath) STORED,
-  \`mime\` TEXT,
-  \`mounted\` TEXT,
-  \`mountPoint\` TEXT,
-  \`pathInMounted\` TEXT,
-  \`fspath\` TEXT,
-  \`dirname\` TEXT,
-  \`mtimeMs\` REAL,
-  \`docBody\` TEXT,
-  \`rendererName\` TEXT,
-  \`info\` TEXT
-) WITHOUT ROWID;
-CREATE INDEX "partial_vpath"
-        ON "PARTIALS" ("vpath");
-CREATE INDEX "partial_mounted"
-        ON "PARTIALS" ("mounted");
-CREATE INDEX "partial_mountPoint"
-        ON "PARTIALS" ("mountPoint");
-CREATE INDEX "partial_pathInMounted"
-        ON "PARTIALS" ("pathInMounted");
-CREATE INDEX "partial_fspath"
-        ON "PARTIALS" ("fspath");
-CREATE INDEX "partial_dirname"
-        ON "PARTIALS" ("dirname");
-CREATE INDEX "partial_mtimeMs"
-        ON "PARTIALS" ("mtimeMs");
-CREATE INDEX "partial_vpath_renderpath"
-        ON "PARTIALS" ("vpath", "renderPath");
-`;
+export const createPartialsTable = await fsp.readFile(
+        path.join(import.meta.dirname,
+            'sql', 'create-table-partials.sql'),
+        'utf-8'
+);
+
+
+export async function doCreatePartialsTable(
+    db: AsyncDatabase
+) {
+    await db.run(await createPartialsTable);
+}
 
 //////////////////// Layout
 
@@ -297,40 +265,17 @@ export function validateLayout(obj: any): {
     return joiLayout.validate(obj);
 }
 
-export const createLayoutsTable = `
-CREATE TABLE IF NOT EXISTS "LAYOUTS" (
-  \`vpath\` TEXT PRIMARY KEY,
-  \`renderPath\` TEXT  GENERATED ALWAYS
-        AS (vpath) STORED,
-  \`mime\` TEXT,
-  \`mounted\` TEXT,
-  \`mountPoint\` TEXT,
-  \`pathInMounted\` TEXT,
-  \`fspath\` TEXT,
-  \`dirname\` TEXT,
-  \`mtimeMs\` REAL,
-  \`rendersToHTML\` INTEGER,
-  \`docBody\` TEXT,
-  \`rendererName\` TEXT,
-  \`info\` TEXT
-) WITHOUT ROWID;
-CREATE INDEX "layout_vpath"
-        ON "LAYOUTS" ("vpath");
-CREATE INDEX "layout_mounted"
-        ON "LAYOUTS" ("mounted");
-CREATE INDEX "layout_mountPoint"
-        ON "LAYOUTS" ("mountPoint");
-CREATE INDEX "layout_pathInMounted"
-        ON "LAYOUTS" ("pathInMounted");
-CREATE INDEX "layout_fspath"
-        ON "LAYOUTS" ("fspath");
-CREATE INDEX "layout_dirname"
-        ON "LAYOUTS" ("dirname");
-CREATE INDEX "layout_mtimeMs"
-        ON "LAYOUTS" ("mtimeMs");
-CREATE INDEX "layout_vpath_renderpath"
-        ON "LAYOUTS" ("vpath", "renderPath");
-`;
+export const createLayoutsTable = await fsp.readFile(
+        path.join(import.meta.dirname,
+            'sql', 'create-table-layouts.sql'),
+        'utf-8'
+);
+
+export async function doCreateLayoutsTable(
+    db: AsyncDatabase
+) {
+    await db.run(await createLayoutsTable);
+}
 
 //////////////////// Document
 
@@ -500,65 +445,14 @@ export function validateDocument(obj: any): {
     return joiDocument.validate(obj);
 }
 
-export const createDocumentsTable = `
-CREATE TABLE IF NOT EXISTS "DOCUMENTS" (
-  \`vpath\` TEXT PRIMARY KEY,
-  \`mime\` TEXT,
-  \`mounted\` TEXT,
-  \`mountPoint\` TEXT,
-  \`pathInMounted\` TEXT,
-  \`fspath\` TEXT,
-  \`dirname\` TEXT,
-  \`mtimeMs\` REAL,
-  \`renderPath\` TEXT,
-  \`rendersToHTML\` INTEGER,
-  \`parentDir\` TEXT,
-  \`publicationTime\` INTEGER GENERATED ALWAYS
-        AS (json_extract(info, '$.publicationTime')) STORED,
-  \`baseMetadata\` TEXT GENERATED ALWAYS
-        AS (json_extract(info, '$.baseMetadata')) STORED,
-  \`docMetadata\` TEXT,
-  \`docContent\` TEXT,
-  \`docBody\` TEXT,
-  \`metadata\` TEXT GENERATED ALWAYS
-        AS (json_extract(info, '$.metadata')) STORED,
-  \`tags\` TEXT GENERATED ALWAYS
-        AS (json_extract(info, '$.metadata.tags')) STORED,
-  \`layout\` TEXT GENERATED ALWAYS
-        AS (json_extract(metadata, '$.layout')) STORED,
-  \`blogtag\` TEXT GENERATED ALWAYS
-        AS (json_extract(metadata, '$.blogtag')) STORED,
-  \`rendererName\` TEXT,
-  \`info\` TEXT
-) WITHOUT ROWID;
-CREATE INDEX "document_vpath"
-        ON "DOCUMENTS" ("vpath");
-CREATE INDEX "document_mounted"
-        ON "DOCUMENTS" ("mounted");
-CREATE INDEX "document_mountPoint"
-        ON "DOCUMENTS" ("mountPoint");
-CREATE INDEX "document_pathInMounted"
-        ON "DOCUMENTS" ("pathInMounted");
-CREATE INDEX "document_fspath"
-        ON "DOCUMENTS" ("fspath");
-CREATE INDEX "document_dirname"
-        ON "DOCUMENTS" ("dirname");
-CREATE INDEX "document_renderPath"
-        ON "DOCUMENTS" ("renderPath");
-CREATE INDEX "document_rendersToHTML"
-        ON "DOCUMENTS" ("rendersToHTML");
-CREATE INDEX "document_parentDir"
-        ON "DOCUMENTS" ("parentDir");
-CREATE INDEX "document_mtimeMs"
-        ON "DOCUMENTS" ("mtimeMs");
-CREATE INDEX "document_publicationTime"
-        ON "DOCUMENTS" ("publicationTime");
-CREATE INDEX "document_tags"
-        ON "DOCUMENTS" ("tags");
-CREATE INDEX "document_layout"
-        ON "DOCUMENTS" ("layout");
-CREATE INDEX "document_blogtag"
-        ON "DOCUMENTS" ("blogtag");
-CREATE INDEX "document_vpath_renderpath"
-        ON "DOCUMENTS" ("vpath", "renderPath");
-`;
+export const createDocumentsTable = await fsp.readFile(
+        path.join(import.meta.dirname,
+            'sql', 'create-table-documents.sql'),
+        'utf-8'
+);
+
+export async function doCreateDocumentsTable(
+    db: AsyncDatabase
+) {
+    await db.run(await createDocumentsTable);
+}

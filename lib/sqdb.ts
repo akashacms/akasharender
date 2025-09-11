@@ -32,7 +32,6 @@ import * as sqlite_regex from "sqlite-regex";
 import { SQ3DataStore } from 'sq3-kv-data-store';
 
 import { AsyncDatabase } from 'promised-sqlite3';
-import { init } from './data-new.js';
 
 import { default as SQ3QueryLog } from 'sqlite3-query-log';
 
@@ -51,8 +50,6 @@ await sqdb.run('PRAGMA journal_mode=WAL;');
 // if (typeof process.env.AK_PROFILE === 'string') {
 //     SQ3QueryLog(sqdb.inner, process.env.AK_PROFILE);
 // }
-
-await init();
 
 // This traces SQL statements
 //
@@ -78,6 +75,7 @@ sqdb.inner.on('error', err => {
 if (typeof process.env.AK_PROFILE === 'string') {
     SQ3QueryLog(sqdb.inner, process.env.AK_PROFILE);
 }
+
 
 ////////////////////////
 

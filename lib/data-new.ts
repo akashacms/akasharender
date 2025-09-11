@@ -18,9 +18,52 @@
  */
 
 import path from 'node:path';
+import { promises as fsp } from 'node:fs';
 
 import { sqdb } from './sqdb.js';
 import { AsyncDatabase } from 'promised-sqlite3';
+
+const sql_create_table = await fsp.readFile(
+    path.join(
+        import.meta.dirname, 'sql', 'data-create-table.sql'
+    ),
+    'utf-8'
+);
+
+const sql_add_report = await fsp.readFile(
+    path.join(
+        import.meta.dirname, 'sql', 'data-add-report.sql'
+    ),
+    'utf-8'
+);
+
+const sql_delete_traces = await fsp.readFile(
+    path.join(
+        import.meta.dirname, 'sql', 'data-delete-traces.sql'
+    ),
+    'utf-8'
+);
+
+const sql_delete_all_traces = await fsp.readFile(
+    path.join(
+        import.meta.dirname, 'sql', 'data-delete-all-traces.sql'
+    ),
+    'utf-8'
+);
+
+const sql_get_all_traces = await fsp.readFile(
+    path.join(
+        import.meta.dirname, 'sql', 'data-get-all-traces.sql'
+    ),
+    'utf-8'
+);
+
+const sql_get_for_file = await fsp.readFile(
+    path.join(
+        import.meta.dirname, 'sql', 'data-for-file.sql'
+    ),
+    'utf-8'
+);
 
 class Trace {
     basedir: string;
@@ -33,25 +76,7 @@ class Trace {
 }
 
 export async function init() {
-    await (await sqdb).run(`
-    CREATE TABLE IF NOT EXISTS "TRACES" (
-        \`basedir\`  TEXT,
-        \`fpath\`    TEXT,
-        \`fullpath\` TEXT,
-        \`renderTo\` TEXT,
-        \`stage\`    TEXT,
-        \`start\`    TEXT
-                DEFAULT(datetime('now') || 'Z'),
-        \`now\`      TEXT
-                DEFAULT(datetime('now') || 'Z')
-    );
-    CREATE INDEX "traces_basedir"
-            ON "TRACES" ("basedir");
-    CREATE INDEX "traces_fpath"
-            ON "TRACES" ("fpath");
-    CREATE INDEX "traces_fullpath"
-            ON "TRACES" ("fullpath");
-    `);
+    await (await sqdb).run(sql_create_table);
 }
 
 export async function report(
@@ -66,26 +91,7 @@ export async function report(
     trace.start    = start.toISOString();
     trace.now      = new Date().toISOString();
     // console.log(`data report`, trace);
-    await (await sqdb).run(`
-    INSERT INTO "TRACES" (
-            basedir,
-            fpath,
-            fullpath,
-            renderTo,
-            stage,
-            start,
-            now
-        )
-        VALUES (
-            $basedir,
-            $fpath,
-            $fullpath,
-            $renderTo,
-            $stage,
-            $start,
-            $now
-        );
-    `, {
+    await (await sqdb).run(await sql_add_report, {
         $basedir:  trace.basedir,
         $fpath:    trace.fpath,
         $fullpath: trace.fullpath,
@@ -105,11 +111,7 @@ export async function report(
  */
 export async function remove(basedir, fpath) {
     try {
-        await (await sqdb).run(`
-            DELETE FROM "TRACES"
-            WHERE
-            basedir = $basedir AND fpath = $fpath
-        `, {
+        await (await sqdb).run(await sql_delete_traces, {
             $basedir: basedir,
             $fpath:   fpath
         });
@@ -118,17 +120,13 @@ export async function remove(basedir, fpath) {
 
 export async function removeAll() {
     try {
-        await (await sqdb).run(`
-            DELETE FROM "TRACES"
-        `);
+        await (await sqdb).run(await sql_delete_all_traces);
     } catch (err) {}
 };
 
 export async function print() {
-    const traces = await (await sqdb).all<Trace>(`
-        SELECT * FROM "TRACES"
-        ORDER BY fullpath
-    `);
+    const traces
+        = await (await sqdb).all<Trace>(await sql_get_all_traces);
 
     for (let trace of traces) {
         console.log(`${trace.fullpath} ${trace.renderTo} ${trace.stage} ${(new Date(trace.now).valueOf() - new Date(trace.start).valueOf()) / 1000} seconds`)
@@ -139,12 +137,8 @@ export async function data4file(basedir, fpath) {
     // console.log(`data4file ${basedir} ${fpath}`);
     let ret = "";
 
-    const traces = await (await sqdb).all<Trace>(`
-        SELECT * FROM "TRACES"
-        WHERE 
-            basedir = $basedir AND fpath = $fpath
-        ORDER BY fullpath
-    `, {
+    const traces
+        = await (await sqdb).all<Trace>(await sql_get_for_file, {
         $basedir: basedir,
         $fpath:   fpath
     });
