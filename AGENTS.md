@@ -22,6 +22,7 @@ The scope for AkashaCMS is rendering static HTML websites, rendering EPUB books 
 - **Comments**: Apache 2.0 license headers, JSDoc for public APIs, minimal inline comments
 - **Naming**: camelCase for variables/functions, PascalCase for classes/types
 - **File Structure**: Source in `lib/`, compiled output in `dist/`, tests in `test/`
+- **SQL**: SQL commands are mostly kept in `sql/` subdirectories, with a file name having a `.sql` extension. These files are dynamically read from disk into an in-memory variable.  In some cases the table name is dynamically selected, and inserted using `SqlString.format`.
 
 ## Architecture
 - Main entry: `lib/index.ts` exports Configuration class and utilities
@@ -30,6 +31,8 @@ The scope for AkashaCMS is rendering static HTML websites, rendering EPUB books 
 - Server-side DOM Manipulation: After rendering to HTML, Mahabhuta (`mahabhuta`) is used to drive DOM manipulation using functions defined in the plugins.
 - Stacked Directories: Four kinds of directories are defined: assets, partials, layouts, and documents.  For each type, multiple directories can be stacked on top of one another in a virtual filesystem.  A key principle is the ability to override a file, such as a partial template, by mounting a directory on the corresponding directory stack, and adding a file of the same name to that directory.  The @akashacms/stacked-dirs package is key to this.
 - Caching: SQLite-based file caching in `lib/cache/`.  The file information is gathered by the Stacked Directories feature, and also supports dynamically updating files that change in the filesystem.
+- In-Memory SQLITE3 database: A lot of data is kept in this database, allowing for ease of accessing the data in any desired fashion.
+- Database request caching: Some database queries are repeated multiple times, and a cache is used to hold such data to prevent excess queries for the same data.
 - Testing: Mocha with Chai assertions, ES modules (.mjs files)
 
 ## Configuring an AkashaCMS project
