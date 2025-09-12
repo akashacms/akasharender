@@ -31,7 +31,7 @@ import micromatch from 'micromatch';
 import fastq from 'fastq';
 import {
     TagGlue, TagDescriptions
-} from './tag-glue-new.js';
+} from './tag-glue.js';
 import {
     createAssetsTable,
     createDocumentsTable,
