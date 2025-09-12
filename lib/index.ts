@@ -62,7 +62,7 @@ import { sqdb } from './sqdb.js';
 
 export { newSQ3DataStore } from './sqdb.js';
 
-import { init } from './data-new.js';
+import { init } from './data.js';
 
 // There doesn't seem to be an official MIME type registered
 // for AsciiDoctor
