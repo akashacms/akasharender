@@ -20,7 +20,7 @@
 import path from 'node:path';
 import { promises as fsp } from 'node:fs';
 import util from 'node:util';
-import * as data from './data-new.js';
+import * as data from './data.js';
 import mahabhuta from 'mahabhuta';
 
 import fastq from 'fastq';
