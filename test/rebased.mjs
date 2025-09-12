@@ -4,7 +4,7 @@ import { default as akasha } from '../dist/index.js';
 import { assert } from 'chai';
 import { default as _image_size } from 'image-size';
 const sizeOf = promisify(_image_size);
-const filecache = await import('../dist/cache/file-cache-sqlite.js');
+const filecache = await import('../dist/cache/cache-sqlite.js');
 
 // Note this is an ES6 module and to use it we must 
 // use an async function along with the await keyword
