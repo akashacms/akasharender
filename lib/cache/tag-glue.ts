@@ -1,44 +1,102 @@
+/**
+ *
+ * Copyright 2014-2025 David Herron
+ *
+ * This file is part of AkashaCMS (http://akashacms.com/).
+ *
+ *  Licensed under the Apache License, Version 2.0 (the "License");
+ *  you may not use this file except in compliance with the License.
+ *  You may obtain a copy of the License at
+ *
+ *      http://www.apache.org/licenses/LICENSE-2.0
+ *
+ *  Unless required by applicable law or agreed to in writing, software
+ *  distributed under the License is distributed on an "AS IS" BASIS,
+ *  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ *  See the License for the specific language governing permissions and
+ *  limitations under the License.
+ */
 
 import util from 'node:util';
-import { Database } from 'sqlite3';
+import path from 'node:path';
+import { promises as fsp } from 'node:fs';
 
-// Use this.dao.sqldb to get Database instance
+import { AsyncDatabase } from 'promised-sqlite3';
+
+import SqlString from 'sqlstring-sqlite';
 
 // function to initialize a TAGGLUE database table
 
+const createTableTagglue = await fsp.readFile(
+    path.join(import.meta.dirname, 'sql',
+        'create-table-tagglue.sql'
+    ),
+    'utf-8'
+);
+
+const insertTagglue = await fsp.readFile(
+    path.join(import.meta.dirname, 'sql',
+        'insert-tagglue.sql'
+    ),
+    'utf-8'
+);
+
+const deleteTagglue = await fsp.readFile(
+    path.join(import.meta.dirname, 'sql',
+        'delete-tagglue.sql'
+    ),
+    'utf-8'
+);
+
+const selectAllTags = await fsp.readFile(
+    path.join(import.meta.dirname, 'sql',
+        'select-all-tags.sql'
+    ),
+    'utf-8'
+);
+
+const selectVpathForTag = await fsp.readFile(
+    path.join(import.meta.dirname, 'sql',
+        'select-vpath-for-tag.sql'
+    ),
+    'utf-8'
+);
+
 export class TagGlue {
-    #db: Database;
+    #db: AsyncDatabase;
 
-    get db(): Database { return this.#db; }
+    get db(): AsyncDatabase { return this.#db; }
 
-    async init(db: Database) {
+    async init(db: AsyncDatabase) {
         this.#db = db;
 
-        await this.db.run(`
-        CREATE TABLE IF NOT EXISTS
-        TAGGLUE (
-            docvpath STRING,
-            tagName STRING
-        );
-        CREATE INDEX IF NOT EXISTS 
-            tagglue_vpath on TAGGLUE (docvpath);
-        CREATE INDEX IF NOT EXISTS
-            tagglue_name  on TAGGLUE (tagName);
-        CREATE UNIQUE INDEX IF NOT EXISTS
-            tagglue_tuple ON TAGGLUE (docvpath, tagName)
-        `);
+        // console.log(`
+        // CREATE TABLE IF NOT EXISTS
+        // TAGGLUE (
+        //     docvpath STRING,
+        //     tagName STRING
+        // );
+        // CREATE INDEX IF NOT EXISTS 
+        //     tagglue_vpath on TAGGLUE (docvpath);
+        // CREATE INDEX IF NOT EXISTS
+        //     tagglue_name  on TAGGLUE (tagName);
+        // CREATE UNIQUE INDEX IF NOT EXISTS
+        //     tagglue_tuple ON TAGGLUE (docvpath, tagName);
+        //     `)
+        await this.db.run(await createTableTagglue);
     }
 
     async addTagGlue(vpath: string, tags: string[]) {
         for (const tag of tags) {
-            await this.db.run(`
-            INSERT INTO TAGGLUE (
-                docvpath, tagName
-            )
-            VALUES (
-                $vpath, $tag
-            )
-            `, {
+            // console.log(`
+            // INSERT INTO TAGGLUE (
+            //     docvpath, tagName
+            // )
+            // VALUES (
+            //     ${vpath}, ${tag}
+            // )
+            // `)
+            await this.db.run(await insertTagglue, {
                 $vpath: vpath,
                 $tag: tag
             });
@@ -48,7 +106,7 @@ export class TagGlue {
     async deleteTagGlue(vpath: string) {
         try {
             await this.db.run(
-                `DELETE FROM TAGGLUE WHERE docvpath = $vpath`, {
+                await deleteTagglue, {
                     $vpath: vpath,
                 }
             );
@@ -57,19 +115,9 @@ export class TagGlue {
     }
 
     async tags(): Promise<string[]> {
-        const rows = [];
-        await new Promise((resolve, reject) => {
-            this.db.each(`SELECT DISTINCT tagName AS tag FROM TAGGLUE`,
-                (err, row) => {
-                    if (err) reject(err);
-                    rows.push(row);
-                },
-                (err, count) => {
-                    if (err) reject(err);
-                    resolve(count);
-                }
-            );
-        });
+        const rows = <{
+            tag: string
+        }[]> await this.db.all(await selectAllTags);
         return rows.map((item) => {
             return item.tag;
         });
@@ -78,67 +126,36 @@ export class TagGlue {
     async pathsForTag(tagName: string | string[])
         : Promise<string[]>
     {
-        const rows = [];
+        let rows;
+        if (typeof tagName === 'string') {
+            rows = <{
+                vpath: string
+            }[]> await this.db.all(
+                await selectVpathForTag, {
+                    $tag: tagName
+                });
+        } else {
+
+            let tagstring = ` (
+                ${SqlString.escape(tagName)}
+            )`;
+
+            // console.log(tagstring);
+            // console.log(`
+            //     SELECT DISTINCT docvpath AS vpath
+            //     FROM TAGGLUE
+            //     WHERE tagName IN ${tagstring}
+            //     `)
+
+            rows = <{
+                vpath: string
+            }[]> await this.db.all(`
+                SELECT DISTINCT docvpath AS vpath
+                FROM TAGGLUE
+                WHERE tagName IN ${tagstring}
+                `);
+        }
         // console.log(`pathsForTag ${util.inspect(tagName)}`);
-        await new Promise((resolve, reject) => {
-            if (typeof tagName === 'string') {
-                this.db.each(`
-                    SELECT DISTINCT docvpath AS vpath
-                    FROM TAGGLUE
-                    WHERE tagName = $tag
-                    `, {
-                        $tag: tagName
-                    },
-                    (err, row) => {
-                        if (err) reject(err);
-                        rows.push(row);
-                    },
-                    (err, count) => {
-                        if (err) reject(err);
-                        resolve(count);
-                    }
-                );
-            } else if (Array.isArray(tagName)) {
-
-                // Convert the array into the SQL
-                // representation of the array
-                // suitable for the WHERE clause below.
-                
-                let tagstring = ` ( ${tagName.map(t => {
-                    return `'${t.indexOf("'") >= 0
-                        ? t.replaceAll("'", "''")
-                        : t}'`;
-                }).join(',')} ) `;
-
-                // console.log(tagstring);
-
-                this.db.each(`
-                    SELECT DISTINCT docvpath AS vpath
-                    FROM TAGGLUE
-                    WHERE tagName IN ${tagstring}
-                    `
-                    // Inserting the tagstring in the
-                    // normal way did not work, and
-                    // instead gave a syntax error.
-                    // Using JavaScript template strings
-                    // worked, instead.
-                    //
-                    // , {
-                    //     $tags: tagstring
-                    // }
-                    ,
-                    (err, row) => {
-                        if (err) reject(err);
-                        rows.push(row);
-                    },
-                    (err, count) => {
-                        if (err) reject(err);
-                        resolve(count);
-                    }
-                );
-
-            }
-        });
         return rows.map(item => {
             return item.vpath;
         });
@@ -146,45 +163,70 @@ export class TagGlue {
 
 }
 
+const createTableTagDescription = await fsp.readFile(
+    path.join(import.meta.dirname, 'sql',
+        'create-table-tag-description.sql'
+    ),
+    'utf-8'
+);
+
+const insertTagDescription = await fsp.readFile(
+    path.join(import.meta.dirname, 'sql',
+        'insert-tag-description.sql'
+    ),
+    'utf-8'
+);
+
+const deleteTagDescription = await fsp.readFile(
+    path.join(import.meta.dirname, 'sql',
+        'delete-tag-description.sql'
+    ),
+    'utf-8'
+);
+
+const selectTagDescription = await fsp.readFile(
+    path.join(import.meta.dirname, 'sql',
+        'select-tag-description.sql'
+    ),
+    'utf-8'
+);
+
 export class TagDescriptions {
 
-    #db: Database;
+    #db: AsyncDatabase;
 
-    get db(): Database { return this.#db; }
+    get db(): AsyncDatabase { return this.#db; }
 
-    async init(db: Database) {
+    async init(db: AsyncDatabase) {
+        // console.log(`TagDescriptions 
+        // CREATE TABLE IF NOT EXISTS
+        // TAGDESCRIPTION (
+        //     tagName STRING UNIQUE,
+        //     description STRING
+        // );
+        // CREATE UNIQUE INDEX IF NOT EXISTS
+        //     tagdesc_name  on TAGDESCRIPTION (tagName);`)
         this.#db = db;
 
-        await this.db.run(`
-        CREATE TABLE IF NOT EXISTS
-        TAGDESCRIPTION (
-            tagName STRING UNIQUE,
-            description STRING
+        await this.db.run(
+            await createTableTagDescription
         );
-        CREATE UNIQUE INDEX IF NOT EXISTS
-            tagdesc_name  on TAGDESCRIPTION (tagName);
-        `);
     }
 
     async addDesc(tag: string, description: string) {
-        await this.db.run(`
-        INSERT INTO TAGDESCRIPTION (
-            tagName, description
-        )
-        VALUES (
-            $tag, $desc
-        )
-        `, {
+        // console.log(`TagDescriptions addDesc ${tag} ${description}`);
+        await this.db.run(
+            await insertTagDescription, {
             $tag: tag,
             $desc: description
         });
     }
 
     async deleteDesc(tag: string) {
+        // console.log(`TagDescriptions deleteDesc ${tag}`);
         try {
             await this.db.run(
-                `DELETE FROM TAGDESCRIPTION
-                WHERE tagName = $tag`, {
+                await deleteTagDescription, {
                     $tag: tag
                 }
             );
@@ -192,24 +234,17 @@ export class TagDescriptions {
         }
     }
 
-    async getDesc(tag: string): Promise<string | undefined> {
+    async getDesc(
+        tag: string
+    ): Promise<string | undefined> {
 
-        const rows = [];
-        const count = await new Promise((resolve, reject) => {
-            this.db.each(`SELECT description FROM TAGDESCRIPTION
-                WHERE tagName = $tag`, {
-                    $tag: tag
-                },
-                (err, row) => {
-                    if (err) reject(err);
-                    rows.push(row);
-                },
-                (err, count) => {
-                    if (err) reject(err);
-                    resolve(count);
-                }
-            );
-        });
+        // console.log(`TagDescriptions getDesc ${tag}`);
+        const rows = <{
+            description: string
+        }[]> await this.db.all(
+            await selectTagDescription, {
+                $tag: tag
+            });
         if (rows.length <= 0) {
             // throw new Error(`No tag information found for ${util.inspect(tag)}`);
             return undefined;
