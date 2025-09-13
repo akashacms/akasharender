@@ -18,6 +18,20 @@
  */
 import { Configuration } from './index.js';
 import { RenderingContext } from '@akashacms/renderers';
+type RenderingResults = {
+    vpath?: string;
+    renderPath?: string;
+    renderFormat: string;
+    renderStart?: number;
+    renderEnd?: number;
+    renderFirstStart?: number;
+    renderFirstEnd?: number;
+    renderLayoutStart?: number;
+    renderLayoutEnd?: number;
+    renderMahaStart?: number;
+    renderMahaEnd?: number;
+    errors?: Array<Error>;
+};
 /**
  * The core part of rendering content using a renderer.
  * This function looks for the renderer, and if none is
@@ -33,6 +47,7 @@ export declare function renderContent(config: Configuration, rc: RenderingContex
     format?: string;
     rendered: string;
 }>;
+export declare function renderDocument2(config: Configuration, docInfo: any): Promise<RenderingResults>;
 /**
  * Render a document, accounting for the main content,
  * a layout template (if any), and Mahabhuta (if the content
@@ -53,4 +68,5 @@ export declare function renderDocument(config: Configuration, docInfo: any): Pro
  * @returns
  */
 export declare function render(config: any): Promise<any[]>;
+export {};
 //# sourceMappingURL=render.d.ts.map
