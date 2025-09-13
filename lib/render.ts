@@ -48,6 +48,7 @@ type RenderingResults = {
     renderFormat: string;
 
     renderStart?: number;
+    renderEnd?: number;
 
     renderFirstStart?: number;
     renderFirstEnd?: number;
@@ -57,12 +58,13 @@ type RenderingResults = {
 
     renderMahaStart?: number;
     renderMahaEnd?: number;
+
+    errors?: Array<Error>;
 };
 
 // Collect all required data in an instance of this object.
 type RenderingData = {
     config?: Configuration;
-    context?: RenderingContext;
     renderer?: Renderer;
 
     docInfo?: any;
@@ -72,10 +74,15 @@ type RenderingData = {
     mountPoint?: string;
     renderTo?: string;
 
+    renderFirstContext?: RenderingContext;
     renderedFirst?: string;
 
     layoutFormat?: string;
+    renderLayoutContext?: RenderingContext;
     renderedLayout?: string;
+
+    renderMahaContext?: RenderingContext;
+    renderedMaha?: string;
 
     results?: RenderingResults;
 };
@@ -83,11 +90,11 @@ type RenderingData = {
 function createRenderingData(
     config: Configuration,
     docInfo
-) {
+): RenderingData {
     const ret = <RenderingData>{
         config,
 
-        context: <RenderingContext>{
+        renderFirstContext: <RenderingContext>{
             fspath: docInfo.vpath,
             content: docInfo.docContent,
             body: docInfo.docBody,
@@ -108,10 +115,11 @@ function createRenderingData(
             vpath: docInfo.vpath,
             renderPath: docInfo.renderPath,
             renderStart: performance.now(),
+            errors: new Array<Error>()
         }
     };
     if (ret.renderer) {
-        ret.results.renderFormat = ret.renderer.renderFormat(ret.context);
+        ret.results.renderFormat = ret.renderer.renderFormat(ret.renderFirstContext);
     }
     return ret;
 }
@@ -220,6 +228,165 @@ async function copyAssetToOutput(
     return `COPY ${docInfo.vpath} ==> ${renderToFpath} (${(renderEndCopied.valueOf() - renderStart.valueOf()) / 1000} seconds)`;
 }
 
+function copyProperties(dest: any, src: any, exceptLayout: boolean) {
+    for (var yprop in src) {
+        if (exceptLayout && yprop === 'layout') continue;
+        dest[yprop] = src[yprop];
+    }
+    return dest;
+}
+
+export async function renderDocument2(
+    config: Configuration,
+    docInfo
+): Promise<RenderingResults> {
+    const ret: RenderingData = createRenderingData(config, docInfo);
+
+    if (ret?.renderer?.renderFormat.toString() === 'CSS') {
+        // render for CSS
+    } else if (!ret.renderer
+     || (ret.renderer.renderFormat.toString() !== 'HTML')
+    ) {
+        // Copy asset
+    }
+
+    // Otherwise it is HTML
+
+    const doPartial = (fname, metadata) => {
+        return config.akasha.partial(config, fname, metadata);
+    };
+    const doPartialSync = (fname, metadata) => {
+        return config.akasha.partialSync(config, fname, metadata);
+    };
+
+    // First Render
+
+    ret.results.renderFirstStart = performance.now();
+
+    // Add necessary items to the metadata
+    ret.renderFirstContext.metadata.config = config;
+    ret.renderFirstContext.metadata.partial = doPartial;
+    ret.renderFirstContext.metadata.partialSync = doPartialSync;
+    ret.renderFirstContext.metadata.akasha = config.akasha;
+    ret.renderFirstContext.metadata.plugin = config.plugin;
+
+    // Render the primary content
+    ret.renderedFirst = await ret.renderer.render(ret.renderFirstContext);
+
+    ret.results.renderFirstEnd = performance.now();
+    // END First Render
+
+    // Layout Render
+    ret.results.renderLayoutStart = performance.now();
+
+    if (ret?.docInfo?.metadata?.layout) {
+
+        const layouts = config.akasha.filecache.layoutsCache;
+        // await layouts.isReady();
+
+        let found = await layouts.find(ret.docInfo.metadata.layout);
+        if (!found) {
+            throw new Error(`No layout found in ${util.inspect(ret.config.layoutDirs)} for ${ret?.docInfo?.metadata?.layout} in file ${ret.docInfo.vpath}`);
+        }
+
+        const renderer = config.findRendererPath(
+            ret.docInfo.metadata.layout
+        );
+
+        ret.renderLayoutContext = <RenderingContext>{
+            fspath: ret.docInfo.metadata.layout,
+            content: found.docContent,
+            body: found.docBody,
+            metadata: {}
+        };
+
+        ret.renderLayoutContext.metadata
+            = copyProperties(
+                ret.renderLayoutContext.metadata,
+                found.metadata,
+                false
+            );
+        ret.renderLayoutContext.metadata
+            = copyProperties(
+                ret.renderLayoutContext.metadata,
+                ret.docInfo.metadata,
+                true
+            );
+
+        ret.renderLayoutContext.metadata.content = ret.renderedFirst;
+
+        ret.renderLayoutContext.metadata.config = config;
+        ret.renderLayoutContext.metadata.partial = doPartial;
+        ret.renderLayoutContext.metadata.partialSync = doPartialSync;
+        ret.renderLayoutContext.metadata.akasha = config.akasha;
+        ret.renderLayoutContext.metadata.plugin = config.plugin;
+
+        try {
+
+            // Render the primary content
+            ret.renderedLayout
+                    = await renderer.render(ret.renderLayoutContext);
+
+        } catch (e) {
+            let ee = new Error(`Error rendering ${docInfo.vpath} with ${docInfo?.metadata?.layout} ${e.stack ? e.stack : e}`);
+            console.error(ee);
+            throw ee;
+        }
+    }
+
+    ret.results.renderLayoutEnd = performance.now();
+    // END Layout Render
+
+    // Mahabhuta
+    ret.results.renderMahaStart = performance.now();
+
+    ret.renderMahaContext = <RenderingContext>{
+        fspath: ret.docInfo.metadata.layout,
+        content: ret.renderedLayout
+            ? ret.renderedLayout : ret.renderedFirst,
+        body: ret.renderedLayout
+            ? ret.renderedLayout : ret.renderedFirst,
+        metadata: {}
+    };
+
+    ret.renderMahaContext.metadata
+        = copyProperties(
+            ret.renderMahaContext.metadata,
+            ret.docInfo.metadata,
+            false
+        );
+
+    if (ret.docInfo?.metadata?.config?.mahabhutaConfig) {
+        mahabhuta.config(ret.docInfo?.metadata?.config?.mahabhutaConfig);
+    }
+    
+    try {
+        ret.renderedMaha =  await mahabhuta.processAsync(
+            ret.renderMahaContext.content, ret.renderMahaContext.metadata,
+            ret.config.mahafuncs
+        );
+    } catch (e2) {
+        let eee = new Error(`Error with Mahabhuta ${ret.docInfo.vpath} with ${ret.docInfo?.metadata?.layout} ${e2.stack ? e2.stack : e2}`);
+        console.error(eee);
+        throw eee;
+    }
+
+    ret.results.renderMahaEnd = performance.now();
+    // END Mahabhuta
+
+    const renderDest = path.join(
+                ret.config.renderTo, ret.docInfo.renderPath);
+    await fsp.mkdir(path.dirname(renderDest), {
+        recursive: true
+    });
+    await fsp.writeFile(renderDest,
+                        ret.renderedMaha, 'utf-8');
+
+    ret.results.renderEnd = performance.now();
+
+    return ret.results;
+}
+
 /**
  * Render a document, accounting for the main content,
  * a layout template (if any), and Mahabhuta (if the content
@@ -314,14 +481,19 @@ export async function renderDocument(
             body: found.docBody,
             metadata: {}
         };
-        for (var yprop in found.metadata) {
-            rcLayout.metadata[yprop] = found.metadata[yprop];
-        }
-        for (var yprop in docInfo.metadata) {
-            if (yprop !== 'layout') {
-                rcLayout.metadata[yprop] = docInfo.metadata[yprop];
-            }
-        }
+
+        rcLayout.metadata
+            = copyProperties(
+                rcLayout.metadata,
+                found.metadata,
+                false
+            );
+        rcLayout.metadata
+            = copyProperties(
+                rcLayout.metadata,
+                docInfo.metadata,
+                true
+            );
         rcLayout.metadata.content = docRendered;
 
         try {
@@ -354,10 +526,12 @@ export async function renderDocument(
 
     try {
 
-        const mahametadata: any = {};
-        for (var yprop in docInfo.metadata) {
-            mahametadata[yprop] = docInfo.metadata[yprop];
-        }
+        const mahametadata
+            = copyProperties(
+                { },
+                docInfo.metadata,
+                false
+            );
         mahametadata.content = docRendered;
 
         if (docInfo?.metadata?.config?.mahabhutaConfig) {

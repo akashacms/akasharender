@@ -29,6 +29,7 @@
   "author": "",
   "license": "ISC",
   "dependencies": {
+    "@compodoc/live-server": "^1.2.3",
     "chai": "^5.1.x",
     "image-size": "^1.1.x",
     "mocha": "^10.x.0",
