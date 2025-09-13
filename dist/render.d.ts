@@ -24,7 +24,7 @@ import { RenderingContext } from '@akashacms/renderers';
  * function is meant for documents created from in-memory
  * data.  For instance, the tagged-content plugin generates
  * tag pages listing links to documents based on their tag.
- * These pages are instantiate out of data rather than
+ * These pages are instantiated out of data rather than
  * existing on-disk.
  *
  * Required data:
