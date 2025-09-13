@@ -19,27 +19,6 @@
 import { Configuration } from './index.js';
 import { RenderingContext } from '@akashacms/renderers';
 /**
- * Where renderDocument is meant for a document on disk
- * and indexed by a DocumentsFileCache instance, this
- * function is meant for documents created from in-memory
- * data.  For instance, the tagged-content plugin generates
- * tag pages listing links to documents based on their tag.
- * These pages are instantiated out of data rather than
- * existing on-disk.
- *
- * Required data:
- *     * Blank page - with frontmatter including a "layout" template reference
- *     * File-name to use for virtual page, which also determines the rendered output file
- *     * Metadata derived from the frontmatter and filled with other stuff including the data to render into the page,
- *
- * @param config
- * @param docInfo
- */
-export declare function renderVirtualDocument(config: Configuration, docInfo: {
-    vpath: string;
-    document: string;
-}): Promise<void>;
-/**
  * The core part of rendering content using a renderer.
  * This function looks for the renderer, and if none is
  * found it simply returns.  It then does a little setup
