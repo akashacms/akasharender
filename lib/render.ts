@@ -26,144 +26,94 @@ import mahabhuta from 'mahabhuta';
 import fastq from 'fastq';
 import type { queueAsPromised } from "fastq";
 import { Configuration } from './index.js';
-import { RenderingContext } from '@akashacms/renderers';
+import { Renderer, RenderingContext } from '@akashacms/renderers';
 import {
     DocumentsCache
 } from './cache/cache-sqlite.js';
 import {
     Document
 } from './cache/schema.js';
+import { performance } from 'node:perf_hooks';
 
-//////////////////////////////////////////////////////////
+// For https://github.com/akashacms/akasharender/issues/103
+// The idea is normalizing the data returned.  This should
+// eliminate the need for the data module.  This should
+// improve the analyzeability of data about the rendering process.
 
-/**
- * Where renderDocument is meant for a document on disk
- * and indexed by a DocumentsFileCache instance, this
- * function is meant for documents created from in-memory
- * data.  For instance, the tagged-content plugin generates
- * tag pages listing links to documents based on their tag.
- * These pages are instantiated out of data rather than
- * existing on-disk.
- *
- * Required data:
- *     * Blank page - with frontmatter including a "layout" template reference
- *     * File-name to use for virtual page, which also determines the rendered output file
- *     * Metadata derived from the frontmatter and filled with other stuff including the data to render into the page,  
- *
- * @param config 
- * @param docInfo 
- */
-export async function renderVirtualDocument(
+type RenderingResults = {
+
+    vpath?: string;
+    renderPath?: string;
+
+    renderFormat: string;
+
+    renderStart?: number;
+
+    renderFirstStart?: number;
+    renderFirstEnd?: number;
+
+    renderLayoutStart?: number;
+    renderLayoutEnd?: number;
+
+    renderMahaStart?: number;
+    renderMahaEnd?: number;
+};
+
+// Collect all required data in an instance of this object.
+type RenderingData = {
+    config?: Configuration;
+    context?: RenderingContext;
+    renderer?: Renderer;
+
+    docInfo?: any;
+
+    vpath?: string;
+    renderPath?: string;
+    mountPoint?: string;
+    renderTo?: string;
+
+    renderedFirst?: string;
+
+    layoutFormat?: string;
+    renderedLayout?: string;
+
+    results?: RenderingResults;
+};
+
+function createRenderingData(
     config: Configuration,
-    // Instead of the full docInfo document
-    // use a simplified object with this
-    // subset of fields.
-    docInfo: {
-        // The virtual pathname
-        vpath: string;
-        // The document to render as if it's
-        // at that path
-        document: string;
-    }
+    docInfo
 ) {
+    const ret = <RenderingData>{
+        config,
 
+        context: <RenderingContext>{
+            fspath: docInfo.vpath,
+            content: docInfo.docContent,
+            body: docInfo.docBody,
+            metadata: docInfo.metadata
+        },
 
-    const renderer = config.findRendererPath(
-            docInfo.vpath
-    );
+        renderer: config.findRendererPath(
+                        docInfo.vpath
+        ),
 
-    const rc = renderer.parseMetadata({
-        fspath: docInfo.vpath,
-        content: docInfo.document,
-        metadata: {}
-    });
+        docInfo,
+        vpath: docInfo.vpath,
+        renderPath: docInfo.renderPath,
+        mountPoint: docInfo.mountPoint,
+        renderTo: config.renderTo,
 
-    // Add necessary items to the metadata
-    rc.metadata.config = config;
-    rc.metadata.partial = (fname, metadata) => {
-        return config.akasha.partial(config, fname, metadata);
+        results: <RenderingResults>{
+            vpath: docInfo.vpath,
+            renderPath: docInfo.renderPath,
+            renderStart: performance.now(),
+        }
     };
-    rc.metadata.partialSync = (fname, metadata) => {
-        return config.akasha.partialSync(config, fname, metadata);
-    };
-    rc.metadata.akasha = config.akasha;
-    rc.metadata.plugin = config.plugin;
-
-    // Render the primary content
-    let docrendered = await renderer.render(rc);
-
-    // If there is a layout template, render that
-    // template passing the rendered primary content
-    let layoutrendered;
-    if (rc.metadata.layout) {
-        const layouts = config.akasha
-                .filecache.layoutsCache;
-        const layoutInfo = await layouts.find(rc.metadata.layout);
-        if (!layoutInfo) {
-            throw new Error(`No layout found in ${util.inspect(config.layoutDirs)} for ${rc.metadata.layout} in file ${docInfo.vpath}`);
-        }
-
-        // Build the metadata for the layout rendering
-        let layoutmetadata: any = {};
-        for (var yprop in layoutInfo.metadata) {
-            layoutmetadata[yprop] = layoutInfo.metadata[yprop];
-        }
-        for (var yprop in rc.metadata) {
-            if (yprop !== 'layout') {
-                layoutmetadata[yprop] = rc.metadata[yprop];
-            }
-        }
-
-        // Make the first rendering available
-        // in the metadata as "content" variable
-        layoutmetadata.content = docrendered;
-
-        const renderer = config.findRendererPath(
-            rc.metadata.layout
-        );
-
-        if (!renderer) {
-            throw new Error(`No renderer for ${layoutmetadata.layout} in file ${docInfo.vpath}`);;
-        }
-
-        const layoutContext = {
-            fspath: layoutInfo.fspath,
-            content: layoutInfo.docContent,
-            body: layoutInfo.docBody,
-            metadata: layoutmetadata
-        };
-
-        layoutrendered
-        = await renderer.render(layoutContext);
-
+    if (ret.renderer) {
+        ret.results.renderFormat = ret.renderer.renderFormat(ret.context);
     }
-
-    // For HTML rendering, fun Mahabhuta functions
-    const format = renderer.renderFormat(rc);
-    const doMahabhuta = (format === 'HTML');
-
-    if (doMahabhuta) {
-        
-        const mahametadata: any = {};
-        for (var yprop in rc.metadata) {
-            mahametadata[yprop] = rc.metadata[yprop];
-        }
-        mahametadata.content = docrendered;
-
-        if (rc.metadata.config.mahabhutaConfig) {
-            mahabhuta.config(rc.metadata.config.mahabhutaConfig);
-        }
-
-        layoutrendered = await mahabhuta.processAsync(
-            typeof layoutrendered === 'string'
-                    ? layoutrendered
-                    : docrendered,
-            mahametadata,
-            config.mahafuncs
-        );
-    }
-
-    // layoutrendered gets the final rendering
+    return ret;
 }
 
 //////////////////////////////////////////////////////////
