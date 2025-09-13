@@ -446,46 +446,7 @@ export async function renderDocument(
         config.renderTo,
         "RENDERED", renderStart);
     return `${layoutFormat} ${docInfo.vpath} ==> ${docInfo.renderPath} (${(renderEndRendered.valueOf() - renderStart.valueOf()) / 1000} seconds)\n${await data.data4file(docInfo.mountPoint, docInfo.vpath)}`;
-        
-    /* else if (layoutFormat === 'CSS') {
 
-        try {
-            const renderToFpath = path.join(
-                        config.renderTo, docInfo.renderPath);
-            const renderToDir = path.dirname(renderToFpath);
-            await fsp.mkdir(renderToDir, {
-                        recursive: true
-                    });
-            await fsp.writeFile(renderToFpath, layoutRendered, 'utf8');
-            const renderEndRendered = new Date();
-            await data.report(
-                docInfo.mountPoint, docInfo.vpath,
-                config.renderTo,
-                "RENDERED", renderStart);
-            return `${layoutFormat} ${docInfo.vpath} ==> ${docInfo.renderPath} (${(renderEndRendered.valueOf() - renderStart.valueOf()) / 1000} seconds)\n${await data.data4file(docInfo.mountPoint, docInfo.vpath)}`;
-        } catch(err) {
-            console.error(`in RENDER CSS branch for ${docInfo.vpath} to ${docInfo.renderPath} error=${err.stack ? err.stack : err}`);
-            throw new Error(`in RENDER CSS branch for ${docInfo.vpath} to ${docInfo.renderPath} error=${err.stack ? err.stack : err}`);
-        }
-    } */ /* else {
-
-        try {
-            const renderToFpath = path.join(
-                        config.renderTo, docInfo.renderPath);
-            const renderToDir = path.dirname(renderToFpath);
-            await fsp.mkdir(renderToDir, {
-                        recursive: true
-                    });
-            await fsp.copyFile(docInfo.fspath,
-                               renderToFpath);
-            // console.log(`COPIED ${docInfo.path} ==> ${renderToFpath}`);
-            const renderEndCopied = new Date();
-            return `COPY ${docInfo.vpath} ==> ${renderToFpath} (${(renderEndCopied.valueOf() - renderStart.valueOf()) / 1000} seconds)`;
-        } catch(err) {
-            console.error(`in copy branch for ${docInfo.vpath} to ${docInfo.renderPath} error=${err.stack ? err.stack : err}`);
-            throw new Error(`in copy branch for ${docInfo.vpath} to ${docInfo.renderPath} error=${err.stack ? err.stack : err}`);
-        }
-    } */
 }
 
 /**
