@@ -121,6 +121,13 @@ export class BaseCache<
         this.#dirs = dirs;
         this.#is_ready = false;
         this.#db = db;
+        if (dbname !== 'ASSETS'
+         && dbname !== 'LAYOUTS'
+         && dbname !== 'PARTIALS'
+         && dbname !== 'DOCUMENTS'
+        ) {
+            throw new Error(`Illegal database name, must be ASSETS, LAYOUTS, PARTIALS, or DOCUMENTS`)
+        }
         this.#dbname = dbname;
     }
 
@@ -1968,6 +1975,7 @@ export class DocumentsCache
     }
 
     #indexFilesSQL;
+    #indexFilesSQLrenderPath;
 
     /**
      * Find the index files (renders to index.html)
@@ -1985,15 +1993,6 @@ export class DocumentsCache
                   ? rootPath?.substring(1)
                   : rootPath;
 
-        // Optionally appendable sub-query
-        // to handle when rootPath is specified
-        let rootQ = (
-                typeof rootP === 'string'
-             && rootP.length >= 1
-            )
-            ? ` AND ( renderPath LIKE '${rootP}%' )`
-            : '';
-
         if (!this.#indexFilesSQL) {
             this.#indexFilesSQL =
                 await fsp.readFile(
@@ -2004,9 +2003,27 @@ export class DocumentsCache
                 );
         }
 
-        const indexes = <any[]> await this.db.all(
-            this.#indexFilesSQL + rootQ + ';'
-        );
+        if (!this.#indexFilesSQLrenderPath) {
+            this.#indexFilesSQLrenderPath =
+                await fsp.readFile(
+                    path.join(
+                        import.meta.dirname,
+                        'sql', 'index-doc-files-renderPath.sql'
+                    ), 'utf-8'
+                );
+        }
+
+        const indexes = 
+            (
+                typeof rootP === 'string'
+             && rootP.length >= 1
+            )
+            ? <any[]> await this.db.all(
+                    this.#indexFilesSQLrenderPath, { $rootP: `${rootP}%` }
+                )
+            : <any[]> await this.db.all(
+                this.#indexFilesSQL
+            );
         
         const mapped = this.validateRows(indexes);
         return mapped.map(item => {
