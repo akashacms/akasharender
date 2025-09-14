@@ -27,7 +27,7 @@ import * as cheerio from 'cheerio';
 export * from './mahafuncs.js';
 export * as relative from 'relative';
 export { Plugin } from './Plugin.js';
-export { render, renderDocument, renderContent } from './render.js';
+export { render, render2, renderDocument, renderDocument2, renderContent } from './render.js';
 import * as filecache from './cache/cache-sqlite.js';
 export { newSQ3DataStore } from './sqdb.js';
 /**
@@ -47,6 +47,7 @@ export declare function cacheSetup(config: any): Promise<void>;
 export declare function closeCaches(): Promise<void>;
 export declare function fileCachesReady(config: any): Promise<void>;
 export declare function renderPath(config: any, path2r: any): Promise<string>;
+export declare function renderPath2(config: any, path2r: any): Promise<import("./render.js").RenderingResults>;
 /**
  * Reads a file from the rendering directory.  It is primarily to be
  * used in test cases, where we'll run a build then read the individual

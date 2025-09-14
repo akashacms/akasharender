@@ -18,7 +18,7 @@
  */
 import { Configuration } from './index.js';
 import { RenderingContext } from '@akashacms/renderers';
-type RenderingResults = {
+export type RenderingResults = {
     vpath?: string;
     renderPath?: string;
     renderFormat: string;
@@ -30,6 +30,10 @@ type RenderingResults = {
     renderLayoutEnd?: number;
     renderMahaStart?: number;
     renderMahaEnd?: number;
+    renderFirstElapsed?: number;
+    renderLayoutElapsed?: number;
+    renderMahaElapsed?: number;
+    renderTotalElapsed?: number;
     errors?: Array<Error>;
 };
 /**
@@ -47,6 +51,34 @@ export declare function renderContent(config: Configuration, rc: RenderingContex
     format?: string;
     rendered: string;
 }>;
+/**
+ * Attempt to rewrite renderDocument with cleaner code, and a
+ * different method for collecting performance/timing data.
+ *
+ * The existing renderDocument is messy and hard to understand.
+ * Goal: make it more straight-forward, easy to understand.
+ * Goal: store all data in a well designed object
+ *
+ * The existing performance measurements are imprecise by using
+ * the Date object, and by not computing the elapsed time of
+ * each segment.  Instead, it computs the time from the start
+ * for each segment, which isn't useful.  We want to see the
+ * elapsed time.
+ *
+ * For precise time measures this uses the Node.js performance
+ * hooks to get accurate timestamps.
+ *
+ * This code has not been executed as yet.
+ *
+ * Tasks:
+ * * TODO Implement CSS renderFormat
+ * * TODO Implement the != HTML renderFormat
+ * * TODO Test and fix bugs
+ *
+ * @param config
+ * @param docInfo
+ * @returns
+ */
 export declare function renderDocument2(config: Configuration, docInfo: any): Promise<RenderingResults>;
 /**
  * Render a document, accounting for the main content,
@@ -68,5 +100,15 @@ export declare function renderDocument(config: Configuration, docInfo: any): Pro
  * @returns
  */
 export declare function render(config: any): Promise<any[]>;
-export {};
+/**
+ * Render all the documents in a site using renderDocument2,
+ * limiting the number of simultaneous rendering tasks
+ * to the number in config.concurrency.
+ *
+ * Returns structured RenderingResults data instead of text strings.
+ *
+ * @param config
+ * @returns Array of RenderingResults with performance and error data
+ */
+export declare function render2(config: any): Promise<Array<RenderingResults>>;
 //# sourceMappingURL=render.d.ts.map
