@@ -40,7 +40,7 @@ import { performance } from 'node:perf_hooks';
 // eliminate the need for the data module.  This should
 // improve the analyzeability of data about the rendering process.
 
-type RenderingResults = {
+export type RenderingResults = {
 
     vpath?: string;
     renderPath?: string;
@@ -58,6 +58,12 @@ type RenderingResults = {
 
     renderMahaStart?: number;
     renderMahaEnd?: number;
+
+    // Elapsed time calculations
+    renderFirstElapsed?: number;
+    renderLayoutElapsed?: number;
+    renderMahaElapsed?: number;
+    renderTotalElapsed?: number;
 
     errors?: Array<Error>;
 };
@@ -236,22 +242,131 @@ function copyProperties(dest: any, src: any, exceptLayout: boolean) {
     return dest;
 }
 
+async function renderCSSFile(ret: RenderingData): Promise<RenderingData> {
+    try {
+        ret.results.renderFormat = 'CSS';
+        ret.results.renderFirstStart = performance.now();
+
+        // Render the CSS content
+        ret.renderedFirst = await ret.renderer.render(ret.renderFirstContext);
+        ret.results.renderFirstEnd = performance.now();
+
+        // Write the rendered CSS to output
+        const renderDest = path.join(ret.config.renderTo, ret.docInfo.renderPath);
+        await fsp.mkdir(path.dirname(renderDest), { recursive: true });
+        await fsp.writeFile(renderDest, ret.renderedFirst, 'utf-8');
+
+        ret.results.renderFirstEnd = performance.now();
+        ret.results.renderEnd = performance.now();
+    } catch (error) {
+        ret.results.errors = ret.results.errors || [];
+        ret.results.errors.push(error instanceof Error ? error : new Error(String(error)));
+    }
+    // Calculate elapsed times
+    if (ret.results.renderFirstStart && ret.results.renderFirstEnd) {
+        ret.results.renderFirstElapsed = ret.results.renderFirstEnd - ret.results.renderFirstStart;
+    }
+    ret.results.renderLayoutElapsed = 0;
+    ret.results.renderMahaElapsed = 0;
+    if (ret.results.renderStart && ret.results.renderEnd) {
+        ret.results.renderTotalElapsed = ret.results.renderEnd - ret.results.renderStart;
+    }
+
+    // console.log(`renderCSSFile ${ret.vpath}`, ret);
+
+    return ret;
+}
+
+async function copyAssetFile(ret: RenderingData): Promise<RenderingData> {
+    try {
+        ret.results.renderFormat = 'COPY';
+        ret.results.renderFirstStart = performance.now();
+
+        // Copy the asset file to output directory
+        const renderDest = path.join(ret.config.renderTo, ret.docInfo.renderPath);
+        await fsp.mkdir(path.dirname(renderDest), { recursive: true });
+        await fsp.copyFile(ret.docInfo.fspath, renderDest);
+
+        ret.results.renderFirstEnd = performance.now();
+        ret.results.renderEnd = performance.now();
+    } catch (error) {
+        ret.results.errors = ret.results.errors || [];
+        ret.results.errors.push(error instanceof Error ? error : new Error(String(error)));
+    }
+
+    // Calculate elapsed times
+    if (ret.results.renderFirstStart && ret.results.renderFirstEnd) {
+        ret.results.renderFirstElapsed = ret.results.renderFirstEnd - ret.results.renderFirstStart;
+    }
+    ret.results.renderLayoutElapsed = 0;
+    ret.results.renderMahaElapsed = 0;
+    if (ret.results.renderStart && ret.results.renderEnd) {
+        ret.results.renderTotalElapsed = ret.results.renderEnd - ret.results.renderStart;
+    }
+
+    // Use this to verify error handling
+    // ret.results.errors.push(new Error(`Random error`));
+
+    // console.log(`copyAssetFile ${ret.vpath}`, ret);
+    return ret;
+}
+
+
+
+/**
+ * Attempt to rewrite renderDocument with cleaner code, and a
+ * different method for collecting performance/timing data.
+ * 
+ * The existing renderDocument is messy and hard to understand.
+ * Goal: make it more straight-forward, easy to understand.
+ * Goal: store all data in a well designed object
+ * 
+ * The existing performance measurements are imprecise by using
+ * the Date object, and by not computing the elapsed time of
+ * each segment.  Instead, it computs the time from the start
+ * for each segment, which isn't useful.  We want to see the
+ * elapsed time.
+ * 
+ * For precise time measures this uses the Node.js performance
+ * hooks to get accurate timestamps.
+ * 
+ * This code has not been executed as yet.
+ * 
+ * Tasks:
+ * * TODO Implement CSS renderFormat
+ * * TODO Implement the != HTML renderFormat
+ * * TODO Test and fix bugs
+ * 
+ * @param config 
+ * @param docInfo 
+ * @returns 
+ */
 export async function renderDocument2(
     config: Configuration,
     docInfo
 ): Promise<RenderingResults> {
+
+    // Create the master object to hold all data
     const ret: RenderingData = createRenderingData(config, docInfo);
 
-    if (ret?.renderer?.renderFormat.toString() === 'CSS') {
-        // render for CSS
+    // Peel off to mode-specific functions
+    if (ret?.renderer?.renderFormat(ret.renderFirstContext) === 'CSS') {
+        const cssResult = await renderCSSFile(ret);
+        return cssResult.results;
     } else if (!ret.renderer
-     || (ret.renderer.renderFormat.toString() !== 'HTML')
+     || (ret.renderer.renderFormat(ret.renderFirstContext) !== 'HTML')
     ) {
-        // Copy asset
+        const assetResult = await copyAssetFile(ret);
+        return assetResult.results;
     }
 
     // Otherwise it is HTML
+    // This is where we render the content, then render that
+    // into the layout (if one exists), then run Mahabhuta.
 
+    // These functions are duplicates between the first
+    // two stages.  Save a couple microseconds by instantiating
+    // the functions once.
     const doPartial = (fname, metadata) => {
         return config.akasha.partial(config, fname, metadata);
     };
@@ -260,18 +375,24 @@ export async function renderDocument2(
     };
 
     // First Render
-
     ret.results.renderFirstStart = performance.now();
 
-    // Add necessary items to the metadata
-    ret.renderFirstContext.metadata.config = config;
-    ret.renderFirstContext.metadata.partial = doPartial;
-    ret.renderFirstContext.metadata.partialSync = doPartialSync;
-    ret.renderFirstContext.metadata.akasha = config.akasha;
-    ret.renderFirstContext.metadata.plugin = config.plugin;
+    try {
+        // Add necessary items to the metadata
+        ret.renderFirstContext.metadata.config = config;
+        ret.renderFirstContext.metadata.partial = doPartial;
+        ret.renderFirstContext.metadata.partialSync = doPartialSync;
+        ret.renderFirstContext.metadata.akasha = config.akasha;
+        ret.renderFirstContext.metadata.plugin = config.plugin;
 
-    // Render the primary content
-    ret.renderedFirst = await ret.renderer.render(ret.renderFirstContext);
+        // Render the primary content
+        ret.renderedFirst = await ret.renderer.render(ret.renderFirstContext);
+    } catch (error) {
+        ret.results.errors = ret.results.errors || [];
+        ret.results.errors.push(error instanceof Error ? error : new Error(String(error)));
+        // Use empty string as fallback if rendering fails
+        ret.renderedFirst = '';
+    }
 
     ret.results.renderFirstEnd = performance.now();
     // END First Render
@@ -280,57 +401,59 @@ export async function renderDocument2(
     ret.results.renderLayoutStart = performance.now();
 
     if (ret?.docInfo?.metadata?.layout) {
-
-        const layouts = config.akasha.filecache.layoutsCache;
-        // await layouts.isReady();
-
-        let found = await layouts.find(ret.docInfo.metadata.layout);
-        if (!found) {
-            throw new Error(`No layout found in ${util.inspect(ret.config.layoutDirs)} for ${ret?.docInfo?.metadata?.layout} in file ${ret.docInfo.vpath}`);
-        }
-
-        const renderer = config.findRendererPath(
-            ret.docInfo.metadata.layout
-        );
-
-        ret.renderLayoutContext = <RenderingContext>{
-            fspath: ret.docInfo.metadata.layout,
-            content: found.docContent,
-            body: found.docBody,
-            metadata: {}
-        };
-
-        ret.renderLayoutContext.metadata
-            = copyProperties(
-                ret.renderLayoutContext.metadata,
-                found.metadata,
-                false
-            );
-        ret.renderLayoutContext.metadata
-            = copyProperties(
-                ret.renderLayoutContext.metadata,
-                ret.docInfo.metadata,
-                true
-            );
-
-        ret.renderLayoutContext.metadata.content = ret.renderedFirst;
-
-        ret.renderLayoutContext.metadata.config = config;
-        ret.renderLayoutContext.metadata.partial = doPartial;
-        ret.renderLayoutContext.metadata.partialSync = doPartialSync;
-        ret.renderLayoutContext.metadata.akasha = config.akasha;
-        ret.renderLayoutContext.metadata.plugin = config.plugin;
-
         try {
+            const layouts = config.akasha.filecache.layoutsCache;
+            // await layouts.isReady();
 
-            // Render the primary content
-            ret.renderedLayout
-                    = await renderer.render(ret.renderLayoutContext);
+            let found = await layouts.find(ret.docInfo.metadata.layout);
+            if (!found) {
+                const error = new Error(`No layout found in ${util.inspect(ret.config.layoutDirs)} for ${ret?.docInfo?.metadata?.layout} in file ${ret.docInfo.vpath}`);
+                ret.results.errors = ret.results.errors || [];
+                ret.results.errors.push(error);
+                // Skip layout rendering, use first render result
+                ret.renderedLayout = ret.renderedFirst;
+            } else {
+                const renderer = config.findRendererPath(
+                    ret.docInfo.metadata.layout
+                );
 
+                ret.renderLayoutContext = <RenderingContext>{
+                    fspath: ret.docInfo.metadata.layout,
+                    content: found.docContent,
+                    body: found.docBody,
+                    metadata: {}
+                };
+
+                ret.renderLayoutContext.metadata
+                    = copyProperties(
+                        ret.renderLayoutContext.metadata,
+                        found.metadata,
+                        false
+                    );
+                ret.renderLayoutContext.metadata
+                    = copyProperties(
+                        ret.renderLayoutContext.metadata,
+                        ret.docInfo.metadata,
+                        true
+                    );
+
+                ret.renderLayoutContext.metadata.content = ret.renderedFirst;
+
+                ret.renderLayoutContext.metadata.config = config;
+                ret.renderLayoutContext.metadata.partial = doPartial;
+                ret.renderLayoutContext.metadata.partialSync = doPartialSync;
+                ret.renderLayoutContext.metadata.akasha = config.akasha;
+                ret.renderLayoutContext.metadata.plugin = config.plugin;
+
+                // Render the layout content
+                ret.renderedLayout = await renderer.render(ret.renderLayoutContext);
+            }
         } catch (e) {
-            let ee = new Error(`Error rendering ${docInfo.vpath} with ${docInfo?.metadata?.layout} ${e.stack ? e.stack : e}`);
-            console.error(ee);
-            throw ee;
+            const error = new Error(`Error rendering ${docInfo.vpath} with ${docInfo?.metadata?.layout} ${e.stack ? e.stack : e}`);
+            ret.results.errors = ret.results.errors || [];
+            ret.results.errors.push(error);
+            // Use first render result as fallback
+            ret.renderedLayout = ret.renderedFirst;
         }
     }
 
@@ -356,34 +479,56 @@ export async function renderDocument2(
             false
         );
 
-    if (ret.docInfo?.metadata?.config?.mahabhutaConfig) {
-        mahabhuta.config(ret.docInfo?.metadata?.config?.mahabhutaConfig);
-    }
-    
     try {
+        if (ret.docInfo?.metadata?.config?.mahabhutaConfig) {
+            mahabhuta.config(ret.docInfo?.metadata?.config?.mahabhutaConfig);
+        }
+        
         ret.renderedMaha =  await mahabhuta.processAsync(
             ret.renderMahaContext.content, ret.renderMahaContext.metadata,
             ret.config.mahafuncs
         );
     } catch (e2) {
-        let eee = new Error(`Error with Mahabhuta ${ret.docInfo.vpath} with ${ret.docInfo?.metadata?.layout} ${e2.stack ? e2.stack : e2}`);
-        console.error(eee);
-        throw eee;
+        const error = new Error(`Error with Mahabhuta ${ret.docInfo.vpath} with ${ret.docInfo?.metadata?.layout} ${e2.stack ? e2.stack : e2}`);
+        ret.results.errors = ret.results.errors || [];
+        ret.results.errors.push(error);
+        // Use layout result or first render as fallback
+        ret.renderedMaha = ret.renderMahaContext.content;
     }
 
     ret.results.renderMahaEnd = performance.now();
     // END Mahabhuta
 
-    const renderDest = path.join(
-                ret.config.renderTo, ret.docInfo.renderPath);
-    await fsp.mkdir(path.dirname(renderDest), {
-        recursive: true
-    });
-    await fsp.writeFile(renderDest,
-                        ret.renderedMaha, 'utf-8');
+    try {
+        const renderDest = path.join(
+                    ret.config.renderTo, ret.docInfo.renderPath);
+        await fsp.mkdir(path.dirname(renderDest), {
+            recursive: true
+        });
+        await fsp.writeFile(renderDest,
+                            ret.renderedMaha, 'utf-8');
+    } catch (error) {
+        ret.results.errors = ret.results.errors || [];
+        ret.results.errors.push(error instanceof Error ? error : new Error(String(error)));
+    }
 
     ret.results.renderEnd = performance.now();
 
+    // Calculate elapsed times
+    if (ret.results.renderFirstStart && ret.results.renderFirstEnd) {
+        ret.results.renderFirstElapsed = ret.results.renderFirstEnd - ret.results.renderFirstStart;
+    }
+    if (ret.results.renderLayoutStart && ret.results.renderLayoutEnd) {
+        ret.results.renderLayoutElapsed = ret.results.renderLayoutEnd - ret.results.renderLayoutStart;
+    }
+    if (ret.results.renderMahaStart && ret.results.renderMahaEnd) {
+        ret.results.renderMahaElapsed = ret.results.renderMahaEnd - ret.results.renderMahaStart;
+    }
+    if (ret.results.renderStart && ret.results.renderEnd) {
+        ret.results.renderTotalElapsed = ret.results.renderEnd - ret.results.renderStart;
+    }
+
+    // console.log(`renderDocument2 ${ret.vpath}`, ret);
     return ret.results;
 }
 
@@ -667,6 +812,119 @@ export async function render(config) {
     // Promises to resolve, while making the results
     // array contain results.
     const results = [];
+    for (let result of waitFor) {
+        results.push(await result);
+    }
+
+    // 4. Invoke hookSiteRendered
+
+    try {
+        // console.log('Invoking hookSiteRendered');
+        await config.hookSiteRendered();
+    } catch (e) {
+        console.error(e.stack);
+        throw new Error(`hookSiteRendered failed because ${e}`);
+    }
+
+    // 5. return results
+    return results;
+};
+
+/**
+ * Render all the documents in a site using renderDocument2,
+ * limiting the number of simultaneous rendering tasks
+ * to the number in config.concurrency.
+ * 
+ * Returns structured RenderingResults data instead of text strings.
+ *
+ * @param config
+ * @returns Array of RenderingResults with performance and error data
+ */
+export async function render2(config): Promise<Array<RenderingResults>> {
+
+    const documents = <DocumentsCache>config.akasha.filecache.documentsCache;
+    // await documents.isReady();
+    // console.log('CALLING config.hookBeforeSiteRendered');
+    await config.hookBeforeSiteRendered();
+    
+    // 1. Gather list of files from RenderFileCache
+    const filez = await documents.paths();
+    // console.log(`render2 filez ${filez.length}`);
+
+    // 2. Exclude any that we want to ignore
+    const filez2 = [] as Array<{
+        config: Configuration,
+        info: Document
+    }>;
+    for (let entry of filez) {
+        let include = true;
+        // console.log(entry);
+        let stats;
+        try {
+            stats = await fsp.stat(entry.fspath);
+        } catch (err) { stats = undefined; }
+        if (!entry) include = false;
+        else if (!stats || stats.isDirectory()) include = false;
+        // This should arise using an ignore clause
+        // else if (path.basename(entry.vpath) === '.DS_Store') include = false;
+        // else if (path.basename(entry.vpath) === '.placeholder') include = false;
+
+        if (include) {
+            // The queue is an array of tuples containing the
+            // config object and the path string
+            filez2.push({
+                config: config,
+                info: await documents.find(entry.vpath)
+            });
+        }
+    }
+    // console.log(`render2 filez2 after ignore ${filez2.length}`);
+
+    // 3. Make a fastq to process using renderDocument2,
+    //    pushing results to the results array
+
+    // This sets up the queue processor
+    // The concurrency setting lets us process documents
+    // in parallel while limiting total impact.
+    const queue: queueAsPromised<{
+        config: Configuration,
+        info: Document
+    }> = fastq.promise(
+
+        // This function is invoked for each entry in the
+        // queue. It handles rendering the queue
+        // The queue has config objects and path strings
+        // which is exactly what's required by
+        // renderDocument2
+        async function renderDocument2InQueue(entry)
+            : Promise<RenderingResults>
+        {
+            // console.log(`renderDocument2InQueue ${entry.info.vpath}`);
+            try {
+                let result = await renderDocument2(
+                    entry.config, entry.info
+                );
+                // console.log(`DONE renderDocument2InQueue ${entry.info.vpath}`);
+                return result;
+            } catch (error) {
+                console.log(`ERROR renderDocument2InQueue ${entry.info.vpath}`, error.stack);
+                return undefined;
+            }
+        },
+        config.concurrency);
+
+    // queue.push returns a Promise that's fulfilled when
+    // the task finishes.
+    // Hence waitFor is an array of Promises.
+    const waitFor = [];
+    for (let entry of filez2) {
+        waitFor.push(queue.push(entry));
+    }
+
+    // This automatically waits for all those
+    // Promises to resolve, while making the results
+    // array contain results.
+    const results: Array<RenderingResults> = [];
     for (let result of waitFor) {
         results.push(await result);
     }

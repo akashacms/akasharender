@@ -48,8 +48,8 @@ export * as relative from 'relative';
 import { Plugin } from './Plugin.js';
 export { Plugin } from './Plugin.js';
 
-import { render, renderDocument, renderContent } from './render.js';
-export { render, renderDocument, renderContent } from './render.js';
+import { render, render2, renderDocument, renderContent, renderDocument2 } from './render.js';
+export { render, render2, renderDocument, renderDocument2, renderContent } from './render.js';
 
 const __filename = import.meta.filename;
 const __dirname = import.meta.dirname;
@@ -202,6 +202,48 @@ export async function renderPath(config, path2r) {
         throw new Error(`Did not find document for ${path2r}`);
     }
     let result = await renderDocument(config, found);
+    return result;
+}
+
+export async function renderPath2(config, path2r) {
+    const documents = filecache.documentsCache;
+    let found;
+    let count = 0;
+    while (count < 20) {
+        /* What's happening is this might be called from cli.js
+         * in render-document, and we might be asked to render the
+         * last document that will be ADD'd to the FileCache.
+         *
+         * In such a case <code>isReady</code> might return <code>true</code>
+         * but not all files will have been ADD'd to the FileCache.
+         * In that case <code>documents.find</code> returns
+         * <code>undefined</code>
+         *
+         * What this does is try up to 20 times to load the document,
+         * sleeping for 100 milliseconds each time.
+         *
+         * The cleaner alternative would be to wait for not only
+         * the <code>ready</code> from the <code>documents</code> FileCache,
+         * but also for all the initial ADD events to be handled.  But
+         * that second condition seems difficult to detect reliably.
+         */
+        found = await documents.find(path2r);
+        if (found) break;
+        else {
+            await new Promise((resolve, reject) => {
+                setTimeout(() => {
+                    resolve(undefined);
+                }, 100);
+            });
+            count++;
+        }
+    }
+
+    // console.log(`renderPath ${path2r}`, found);
+    if (!found) {
+        throw new Error(`Did not find document for ${path2r}`);
+    }
+    let result = await renderDocument2(config, found);
     return result;
 }
 
@@ -1431,8 +1473,10 @@ const module_exports = {
     fileCachesReady,
     Plugin,
     render,
+    render2,
     renderDocument,
     renderPath,
+    renderPath2,
     readRenderedFile,
     partial,
     partialSync,

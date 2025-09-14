@@ -29,6 +29,7 @@ import path from 'node:path';
 import util from 'node:util';
 import * as data from './data.js';
 import YAML from 'js-yaml';
+import { RenderingResults } from './render.js';
 
 const _watchman = import('./cache/watchman.js');
 
@@ -85,6 +86,12 @@ metadata: ${util.inspect(doc.metadata)}
         }
     });
 
+function formatResult(result: RenderingResults) {
+    return `
+${result.renderFormat} ${result.vpath} ==> ${result.renderPath}
+FIRST ${result.renderFirstElapsed} LAYOUT ${result.renderLayoutElapsed} MAHA ${result.renderMahaElapsed} TOTAL ${result.renderTotalElapsed}`;
+}
+
 program
     .command('render-document <configFN> <documentFN>')
     .description('Render a document into output directory')
@@ -97,8 +104,16 @@ program
             await akasha.setup(config);
             await data.removeAll();
             // console.log(`render-document before renderPath ${documentFN}`);
-            let result = await akasha.renderPath(config, documentFN);
-            console.log(result);
+            let result = await akasha.renderPath2(config, documentFN);
+            // console.log(result);
+            console.log(formatResult(result));
+            if (Array.isArray(result.errors)
+                && result.errors.length >= 1
+            ) {
+                for (const error of result.errors) {
+                    console.log(error.stack);
+                }
+            }
             await akasha.closeCaches();
         } catch (e) {
             console.error(`render-document command ERRORED`, e);
@@ -130,75 +145,59 @@ program
                     Number.parseInt(cmdObj.cachingTimeout)
                 );
             }
-            let results = await akasha.render(config);
+            let results = <RenderingResults[]> await akasha.render2(config);
             if (!cmdObj.quiet) {
                 for (let result of results) {
 
                     // TODO --- if AKASHARENDER_TRACE_RENDER then output tracing data
                     // TODO --- also set process.env.GLOBFS_TRACE=1
 
-                    if (result.error) {
-                        console.error(result.error);
-                    } else {
-                        console.log(result.result);
-                        // console.log(util.inspect(result.result));
+                    // console.log(result)
+                    console.log(formatResult(result));
+                    if (Array.isArray(result.errors)
+                     && result.errors.length >= 1
+                    ) {
+                        for (const error of result.errors) {
+                            console.log(error.stack);
+                        }
                     }
                 }
             }
             if (cmdObj.resultsTo) {
                 const output = fs.createWriteStream(cmdObj.resultsTo);
                 for (let result of results) {
-                    if (result.error) {
-                        output.write('****ERROR '+ result.error + '\n');
-                    } else {
-                        output.write(result.result + '\n');
-                        // console.log(util.inspect(result.result));
+                    output.write(formatResult(result));
+                    if (Array.isArray(result.errors)
+                     && result.errors.length >= 1
+                    ) {
+                        for (const error of result.errors) {
+                            output.write(error.stack);
+                        }
                     }
                 }
                 output.close();
             }
             if (cmdObj.perfresults) {
                 const reports = [];
-                for (let result of results) {
-                    if (result.error) {
-                        // Ignore
-                    } else if (result.result.startsWith('COPY')) {
-                        // Ignore
-                    } else {
-                        let results = result.result.split('\n');
-                        let perf = results[0];
-                        let matches = perf.match(/.* ==> (.*) \(([0-9\.]+) seconds\)$/);
-                        if (!matches) continue;
-                        if (matches.length < 3) continue;
-                        const report: {
-                            renderedPath?: string;
-                            time?: string;
-                            fm?: string;
-                            first?: string;
-                            second?: string;
-                            mahabhuta?: string;
-                            rendered?: string;
-                        } = {
-                            renderedPath: matches[1],
-                            time: matches[2]
-                        };
-                        for (let i = 1; i < results.length; i++) {
-                            let stages = results[i].match(/(FRONTMATTER|FIRST RENDER|SECOND RENDER|MAHABHUTA|RENDERED) ([0-9\.]+) seconds$/);
-                            if (!stages || stages.length < 3) continue;
-                            if (stages[1] === 'FRONTMATTER') {
-                                report.fm = stages[2];
-                            } else if (stages[1] === 'FIRST RENDER') {
-                                report.first = stages[2];
-                            } else if (stages[1] === 'SECOND RENDER') {
-                                report.second = stages[2];
-                            } else if (stages[1] === 'MAHABHUTA') {
-                                report.mahabhuta = stages[2];
-                            } else if (stages[1] === 'RENDERED') {
-                                report.rendered = stages[2];
-                            }
-                        }
-                        reports.push(report);
-                    }
+            for (let result of results) {
+                    const report: {
+                        renderedPath?: string;
+                        format: string;
+                        time?: number;
+                        first?: number;
+                        second?: number;
+                        mahabhuta?: number;
+                        rendered?: number;
+                    } = {
+                        renderedPath: result.vpath,
+                        format: result.renderFormat,
+                        time: result.renderStart,
+                        first: result.renderFirstElapsed,
+                        second: result.renderLayoutElapsed,
+                        mahabhuta: result.renderMahaElapsed,
+                        rendered: result.renderTotalElapsed
+                    };
+                    reports.push(report);
                 }
                 fsp.writeFile(cmdObj.perfresults,
                         JSON.stringify(reports, undefined, 4),
