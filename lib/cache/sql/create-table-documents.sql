@@ -19,6 +19,8 @@ CREATE TABLE IF NOT EXISTS "DOCUMENTS" (
   `docBody` TEXT,
   `metadata` TEXT GENERATED ALWAYS
         AS (json_extract(info, '$.metadata')) STORED,
+  `title` TEXT GENERATED ALWAYS
+        AS (json_extract(info, '$.metadata.title')) STORED,
   `tags` TEXT GENERATED ALWAYS
         AS (json_extract(info, '$.metadata.tags')) STORED,
   `layout` TEXT GENERATED ALWAYS
@@ -50,6 +52,8 @@ CREATE INDEX "document_mtimeMs"
         ON "DOCUMENTS" ("mtimeMs");
 CREATE INDEX "document_publicationTime"
         ON "DOCUMENTS" ("publicationTime");
+CREATE INDEX "document_title"
+        ON "DOCUMENTS" ("title");
 CREATE INDEX "document_tags"
         ON "DOCUMENTS" ("tags");
 CREATE INDEX "document_layout"
