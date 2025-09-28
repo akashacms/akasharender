@@ -41,6 +41,7 @@ import {
     doCreateDocumentsTable,
     doCreateLayoutsTable,
     doCreatePartialsTable,
+    doCreateVecDocumentsTable,
     PathsReturnType, validateAsset, validateDocument, validateLayout, validatePartial, validatePathsReturnType
 } from './schema.js';
 
@@ -55,6 +56,7 @@ import {
     Document
 } from './schema.js';
 import Cache from 'cache';
+import { lembedModelName } from '../sqdb.js';
 
 const tglue = new TagGlue();
 // tglue.init(sqdb._db);
@@ -182,6 +184,7 @@ export class BaseCache<
                     // console.log(`change ${event.name} ${event.info.vpath}`);
                     await fcache.handleChanged(event.name, event.info);
                     fcache.emit('change', event.name, event.info);
+                    // console.log(`changed ${event.name} ${event.info.vpath}`);
                 } catch (e) {
                     fcache.emit('error', {
                         code: event.code,
@@ -195,13 +198,18 @@ export class BaseCache<
                     // console.log(`add ${event.name} ${event.info.vpath}`);
                     await fcache.handleAdded(event.name, event.info);
                     fcache.emit('add', event.name, event.info);
+                    // console.log(`added ${event.name} ${event.info.vpath}`);
                 } catch (e) {
                     fcache.emit('error', {
                         code: event.code,
                         name: event.name,
                         vpath: event.info.vpath,
                         info: event.info,
-                        error: e
+                        error: e,
+                        // existing: await fcache.db.get(`
+                        //     SELECT * FROM ${fcache.quotedDBName}
+                        //     WHERE vpath = ${event.info.vpath}
+                        // `)
                     });
                 }
             } else if (event.code === 'unlinked') {
@@ -220,10 +228,12 @@ export class BaseCache<
             /* } else if (event.code === 'error') {
                 await fcache.handleError(event.name) */
             } else if (event.code === 'ready') {
+                // This means Chokidar's initial scan is finished
                 await fcache.handleReady(event.name);
                 fcache.emit('ready', event.name);
+                // console.log(`readied ${event.name}`);
             }
-        }, 10);
+        }, 1 /* 10 */);
 
         this.#watcher = new DirsWatcher(this.name);
 
@@ -1536,6 +1546,7 @@ export class DocumentsCache
     // SQLITE3 takes care of it.
 
     #insertDocDocuments;
+    #insertLembedDocuments;
 
     protected async insertDocToDB(
         info: Document
@@ -1546,6 +1557,15 @@ export class DocumentsCache
                     path.join(
                         import.meta.dirname,
                         'sql', 'insert-doc-documents.sql'
+                    ), 'utf-8'
+                );
+        }
+        if (!this.#insertLembedDocuments) {
+            this.#insertLembedDocuments =
+                await fsp.readFile(
+                    path.join(
+                        import.meta.dirname,
+                        'sql', 'insert-lembed-documents.sql'
                     ), 'utf-8'
                 );
         }
@@ -1574,11 +1594,48 @@ export class DocumentsCache
             $docBody: info.docBody,
             $rendererName: info.rendererName
         };
-        // console.log(toInsert);
-        await this.db.run(this.#insertDocDocuments,
-                    toInsert);
-        // await this.dao.insert(docInfo);
+        // console.log(`insert doc ${info.vpath}`, toInsert);
+        await this.db.run(this.#insertDocDocuments, toInsert);
+
+
+        // if (typeof lembedModelName === 'string') {
+        //     console.log({
+        //         lembedModelName,
+        //         bodyType: typeof info.docBody
+        //     });
+        // } else {
+        //     console.log({
+        //         typeName: typeof lembedModelName,
+        //         bodyType: typeof info.docBody
+        //     })
+        // }
+
+        // This handles computing embeddings
+        // for the title and body
+        if (typeof lembedModelName === 'string'
+         // && typeof info.title === 'string'
+         && typeof info.docBody === 'string'
+        ) {
+            console.log(this.#insertLembedDocuments, {
+                $vpath: info.vpath,
+                $lembedModel: lembedModelName,
+                // $titleEmbed: info.title,
+                $bodyEmbed:  info.docBody
+            });
+            await this.db.run(this.#insertLembedDocuments, {
+                $vpath: info.vpath,
+                $lembedModel: lembedModelName,
+                // $titleEmbed: info.title,
+                $bodyEmbed:  info.docBody
+            });
+            console.log(`vec_documents inserted ${info.vpath}`);
+        }
+
         if (info.metadata) {
+            // console.log({
+            //     vpath: info.vpath,
+            //     tags: info.metadata.tags
+            // });
             await this.addDocTagGlue(
                 info.vpath, info.metadata.tags
             );
@@ -1586,6 +1643,7 @@ export class DocumentsCache
     }
 
     #updateDocDocuments;
+    #updateLembedDocuments;
 
     protected async updateDocInDB(
         info: Document
@@ -1596,6 +1654,15 @@ export class DocumentsCache
                     path.join(
                         import.meta.dirname,
                         'sql', 'update-doc-documents.sql'
+                    ), 'utf-8'
+                );
+        }
+        if (!this.#updateLembedDocuments) {
+            this.#updateLembedDocuments =
+                await fsp.readFile(
+                    path.join(
+                        import.meta.dirname,
+                        'sql', 'update-lembed-documents.sql'
                     ), 'utf-8'
                 );
         }
@@ -1618,6 +1685,21 @@ export class DocumentsCache
             $docBody: info.docBody,
             $rendererName: info.rendererName
         });
+
+        // This handles computing embeddings
+        // for the title and body
+        if (typeof lembedModelName === 'string'
+         // && typeof info.title === 'string'
+         && typeof info.docBody === 'string'
+        ) {
+            await this.db.run(this.#updateLembedDocuments, {
+                $vpath: info.vpath,
+                $lembedModel: lembedModelName,
+                // $titleEmbed: info.title,
+                $bodyEmbed:  info.docBody
+            });
+        }
+
         await tglue.deleteTagGlue(info.vpath);
         if (info.metadata) {
             await tglue.addTagGlue(info.vpath, info.metadata.tags);
@@ -1672,6 +1754,35 @@ export class DocumentsCache
     protected async handleUnlinked(name: any, info: any): Promise<void> {
         await super.handleUnlinked(name, info);
         tglue.deleteTagGlue(info.vpath);
+    }
+
+    #searchSemantic;
+
+    async semanticSearchDocs(searchFor: string)
+        : Promise<Array<{
+            vpath: string,
+            distance: number
+        }>>
+    {
+        if (!this.#searchSemantic) {
+            this.#searchSemantic =
+                await fsp.readFile(
+                    path.join(
+                        import.meta.dirname,
+                        'sql', 'doc-search-semantic.sql'
+                    ), 'utf-8'
+                );
+        }
+
+        const results = <Array<{
+            vpath: string,
+            distance: number
+        }>> await this.db.all(this.#searchSemantic, {
+            $lembedModel: lembedModelName,
+            $searchFor: searchFor
+        });
+
+        return results;
     }
 
     protected indexChainCache;
@@ -2580,7 +2691,7 @@ export class DocumentsCache
             } else {
                 // For all other fields, sort by the column directly
                 // This allows sorting by any valid column in the DOCUMENTS table
-                orderBy = `ORDER BY d.${options.sortBy}`;
+                orderBy = `ORDER BY d.${SqlString.escapeId(options.sortBy)}`;
             }
         } else if (options.reverse || options.sortByDescending) {
             // If reverse/sortByDescending is specified without sortBy, 
@@ -2675,6 +2786,7 @@ export async function setup(
     //// DOCUMENTS
 
     await doCreateDocumentsTable(db);
+    await doCreateVecDocumentsTable(db);
 
     documentsCache = new DocumentsCache(
         config,

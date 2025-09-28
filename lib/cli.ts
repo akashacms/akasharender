@@ -536,6 +536,24 @@ program
     });
 
 program
+    .command('docs-semantic <configFN> <searchFor>')
+    .description('List the document vpaths semantically matching the string')
+    .action(async (configFN, searchFor) => {
+        // console.log(`render: akasha: ${util.inspect(akasha)}`);
+        try {
+            const config = (await import(
+                path.join(process.cwd(), configFN)
+            )).default;
+            let akasha = config.akasha;
+            await akasha.setup(config);
+            console.log(await akasha.filecache.documentsCache.semanticSearchDocs(searchFor));
+            await akasha.closeCaches();
+        } catch (e) {
+            console.error(`docs-semantic command ERRORED ${e.stack}`);
+        }
+    });
+
+program
     .command('tags <configFN>')
     .description('List the tags')
     .action(async (configFN) => {

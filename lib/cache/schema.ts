@@ -21,6 +21,7 @@ import path from 'node:path';
 import { promises as fsp } from 'node:fs';
 import Joi from "joi";
 import { AsyncDatabase } from 'promised-sqlite3';
+import { lembedModelName } from '../sqdb.js';
 
 /**
  * Every cache entry has these fields.  For
@@ -378,6 +379,11 @@ export interface DocumentFields {
     metadata: any;
 
     /**
+     * The article title (if any)
+     */
+    title?: string;
+
+    /**
      * The array of tag strings derived from
      * the tags field of the document metadata.
      * 
@@ -441,6 +447,7 @@ export const joiDocument = Joi.object({
     docContent: Joi.string().min(0).optional().allow(null),
     docBody: Joi.string().min(0).optional().allow(null),
     metadata: Joi.any(),
+    title: Joi.string().optional().allow(null),
     tags: Joi.any(),
     layout: Joi.alternatives()
         .try(
@@ -473,4 +480,18 @@ export async function doCreateDocumentsTable(
     db: AsyncDatabase
 ) {
     await db.run(await createDocumentsTable);
+}
+
+export const createVecDocumentsTable  = await fsp.readFile(
+        path.join(import.meta.dirname,
+            'sql', 'create-table-vec-documents.sql'),
+        'utf-8'
+);
+
+export async function doCreateVecDocumentsTable(
+    db: AsyncDatabase
+) {
+    if (typeof lembedModelName === 'string') {
+        await db.run(await createVecDocumentsTable);
+    }
 }
