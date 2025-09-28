@@ -217,6 +217,10 @@ export interface DocumentFields {
      */
     metadata: any;
     /**
+     * The article title (if any)
+     */
+    title?: string;
+    /**
      * The array of tag strings derived from
      * the tags field of the document metadata.
      *
@@ -255,4 +259,6 @@ export declare function validateDocument(obj: any): {
 };
 export declare const createDocumentsTable: string;
 export declare function doCreateDocumentsTable(db: AsyncDatabase): Promise<void>;
+export declare const createVecDocumentsTable: string;
+export declare function doCreateVecDocumentsTable(db: AsyncDatabase): Promise<void>;
 //# sourceMappingURL=schema.d.ts.map

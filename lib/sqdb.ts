@@ -27,8 +27,9 @@
 import fs from 'node:fs';
 import { Database } from 'sqlite3';
 // import sqleanLibs from 'sqlite3-sqlean';
-import * as sqlite_regex from "sqlite-regex";
-
+import * as sqlite_regex  from "sqlite-regex";
+import * as sqlite_vec    from 'sqlite-vec';
+import * as sqlite_lembed from 'sqlite-lembed';
 import { SQ3DataStore } from 'sq3-kv-data-store';
 
 import { AsyncDatabase } from 'promised-sqlite3';
@@ -44,6 +45,32 @@ export const sqdb = await AsyncDatabase.open(dburl);
 // await sqdb.open('test.db');
 // sqdb.loadExtension(sqleanLibs.reLibPath);
 sqdb.inner.loadExtension(sqlite_regex.getLoadablePath());
+
+const lembedModelFile = typeof process.env.AK_LEMBED_MODEL === 'string'
+        ? process.env.AK_LEMBED_MODEL
+        : undefined;
+export const lembedModelName = typeof process.env.AK_LEMBED_MODEL_NAME === 'string'
+        ? process.env.AK_LEMBED_MODEL_NAME
+        : undefined;
+
+if (typeof lembedModelFile !== 'undefined') {
+    console.log({
+        lembedModelFile,
+        lembedModelName,
+        lembed: sqlite_lembed.getLoadablePath(),
+        vec: sqlite_vec.getLoadablePath()
+    });
+    sqlite_lembed.load(<any>sqdb.inner);
+    sqlite_vec.load(<any>sqdb.inner);
+
+    await sqdb.run(`
+        INSERT INTO temp.lembed_models(name, model)
+        select ?, lembed_model_from_file(?);
+    `, [
+        lembedModelName,
+        lembedModelFile
+    ]);
+}
 
 await sqdb.run('PRAGMA journal_mode=WAL;');
 

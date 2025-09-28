@@ -231,6 +231,10 @@ export declare class DocumentsCache extends BaseCache<Document> {
     addTagDescription(tag: string, description: string): Promise<void>;
     getTagDescription(tag: string): Promise<string | undefined>;
     protected handleUnlinked(name: any, info: any): Promise<void>;
+    semanticSearchDocs(searchFor: string): Promise<Array<{
+        vpath: string;
+        distance: number;
+    }>>;
     protected indexChainCache: any;
     indexChain(_fpath: any): Promise<indexChainItem[]>;
     protected siblingsCache: any;

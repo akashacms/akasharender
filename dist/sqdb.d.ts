@@ -19,5 +19,6 @@
 import { SQ3DataStore } from 'sq3-kv-data-store';
 import { AsyncDatabase } from 'promised-sqlite3';
 export declare const sqdb: AsyncDatabase;
+export declare const lembedModelName: string;
 export declare function newSQ3DataStore(name: string): SQ3DataStore;
 //# sourceMappingURL=sqdb.d.ts.map
