@@ -1,10 +1,9 @@
 INSERT INTO vec_documents(
-    vpath,
-    -- Ignore this for now
-    -- title_embeddings,
-    body_embeddings
-) VALUES (
-    $vpath,
-    -- lembed($lembedModel, $titleEmbed),
-    lembed($lembedModel, $bodyEmbed)
+   vpath,
+   body_embeddings
+)  VALUES (
+   $vpath,
+   lembed($lembedModel, $bodyEmbed)
 );
+
+-- select $vpath, lembed($lembedModel, $bodyEmbed);
