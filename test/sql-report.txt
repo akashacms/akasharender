@@ -1,0 +1,182 @@
+
+
+
+    CREATE TABLE IF NOT EXISTS "TRACES" (
+        `basedir`  TEXT,
+        `fpath`    TEXT,
+        `fullpath` TEXT,
+        `renderTo` TEXT,
+        `stage`    TEXT,
+        `start`    TEXT
+                DEFAULT(datetime('now') || 'Z'),
+        `now`      TEXT
+                DEFAULT(datetime('now') || 'Z')
+    );
+0	1	0
+
+
+CREATE TABLE IF NOT EXISTS "ASSETS" (
+  `vpath` TEXT PRIMARY KEY,
+  `renderPath` TEXT  GENERATED ALWAYS
+        AS (vpath) STORED,
+  `mime` TEXT,
+  `mounted` TEXT,
+  `mountPoint` TEXT,
+  `pathInMounted` TEXT,
+  `fspath` TEXT,
+  `dirname` TEXT,
+  `mtimeMs` REAL,
+  `info` TEXT
+) WITHOUT ROWID;
+0	1	0
+
+
+CREATE TABLE IF NOT EXISTS "PARTIALS" (
+  `vpath` TEXT PRIMARY KEY,
+  `renderPath` TEXT  GENERATED ALWAYS
+        AS (vpath) STORED,
+  `mime` TEXT,
+  `mounted` TEXT,
+  `mountPoint` TEXT,
+  `pathInMounted` TEXT,
+  `fspath` TEXT,
+  `dirname` TEXT,
+  `mtimeMs` REAL,
+  `docBody` TEXT,
+  `rendererName` TEXT,
+  `info` TEXT
+) WITHOUT ROWID;
+1	1	1
+
+
+CREATE TABLE IF NOT EXISTS "LAYOUTS" (
+  `vpath` TEXT PRIMARY KEY,
+  `renderPath` TEXT  GENERATED ALWAYS
+        AS (vpath) STORED,
+  `mime` TEXT,
+  `mounted` TEXT,
+  `mountPoint` TEXT,
+  `pathInMounted` TEXT,
+  `fspath` TEXT,
+  `dirname` TEXT,
+  `mtimeMs` REAL,
+  `rendersToHTML` INTEGER,
+  `docBody` TEXT,
+  `rendererName` TEXT,
+  `info` TEXT
+) WITHOUT ROWID;
+0	1	0
+
+
+            INSERT INTO 'ASSETS'
+            (
+                vpath,
+                mime,
+                mounted,
+                mountPoint,
+                pathInMounted,
+                fspath,
+                dirname,
+                mtimeMs,
+                info
+            )
+            VALUES
+            (
+                $vpath,
+                $mime,
+                $mounted,
+                $mountPoint,
+                $pathInMounted,
+                $fspath,
+                $dirname,
+                $mtimeMs,
+                $info
+            )
+        
+0	3	0
+
+
+CREATE TABLE IF NOT EXISTS "DOCUMENTS" (
+  `vpath` TEXT PRIMARY KEY,
+  `mime` TEXT,
+  `mounted` TEXT,
+  `mountPoint` TEXT,
+  `pathInMounted` TEXT,
+  `fspath` TEXT,
+  `dirname` TEXT,
+  `mtimeMs` REAL,
+  `renderPath` TEXT,
+  `rendersToHTML` INTEGER,
+  `parentDir` TEXT,
+  `publicationTime` INTEGER GENERATED ALWAYS
+        AS (json_extract(info, '$.publicationTime')) STORED,
+  `baseMetadata` TEXT GENERATED ALWAYS
+        AS (json_extract(info, '$.baseMetadata')) STORED,
+  `docMetadata` TEXT,
+  `docContent` TEXT,
+  `docBody` TEXT,
+  `metadata` TEXT GENERATED ALWAYS
+        AS (json_extract(info, '$.metadata')) STORED,
+  `tags` TEXT GENERATED ALWAYS
+        AS (json_extract(info, '$.metadata.tags')) STORED,
+  `layout` TEXT GENERATED ALWAYS
+        AS (json_extract(metadata, '$.layout')) STORED,
+  `blogtag` TEXT GENERATED ALWAYS
+        AS (json_extract(metadata, '$.blogtag')) STORED,
+  `rendererName` TEXT,
+  `info` TEXT
+) WITHOUT ROWID;
+0	1	0
+
+
+            INSERT INTO 'PARTIALS'
+            (
+                vpath,
+                mime,
+                mounted,
+                mountPoint,
+                pathInMounted,
+                fspath,
+                dirname,
+                mtimeMs,
+                info,
+
+                docBody,
+                rendererName
+            )
+            VALUES
+            (
+                $vpath,
+                $mime,
+                $mounted,
+                $mountPoint,
+                $pathInMounted,
+                $fspath,
+                $dirname,
+                $mtimeMs,
+                $info,
+
+                $docBody,
+                $rendererName
+            )
+        
+0	22	0
+
+
+        CREATE TABLE IF NOT EXISTS
+        TAGGLUE (
+            docvpath STRING,
+            tagName STRING
+        );
+0	1	0
+
+
+        CREATE TABLE IF NOT EXISTS
+        TAGDESCRIPTION (
+            tagName STRING UNIQUE,
+            description STRING
+        );
+0	1	0
+
+
+null	1	null

@@ -54,6 +54,47 @@ export type dirToMount = {
 };
 
 /**
+ * Type guard to determine whether {@code dir} is a {@code dirToMount}.
+ * @param dir The object to check
+ * @returns true if it is a dirToMount, false otherwise
+ */
+export const isDirToMount = (dir: any): dir is dirToMount => {
+    if (typeof dir === 'undefined') return false;
+    if (typeof dir !== 'object') return false;
+
+    if ('src' in dir && typeof dir.src !== 'string') return false;
+    if ('dest' in dir && typeof dir.dest !== 'string') return false;
+    
+    if ('ignore' in dir && typeof dir.ignore !== 'undefined') {
+        if (!Array.isArray(dir.ignore)) {
+            return false;
+        }
+        for (const pattern of dir.ignore) {
+            if (typeof pattern !== 'string') {
+                return false;
+            }
+        }
+    }
+
+    if ('baseMetadata' in dir && typeof dir.baseMetadata !== 'undefined') {
+        if (typeof dir.baseMetadata !== 'object') {
+            return false;
+        }
+    }
+
+    if (!(
+        'src' in dir
+     && typeof dir.src === 'string'
+     && 'dest' in dir
+     && typeof dir.dest === 'string'
+    )) {
+        return false;
+    }
+
+    return true;
+};
+
+/**
  * Describes one file in the physical filesystem, and
  * how it appears within the virtual stacked filesystem.
  */
@@ -127,7 +168,8 @@ export class VFStack {
     }
 
     /**
-     * Normalizes a dirToMount or string into dirToMount
+     * Normalizes a dirToMount or string into dirToMount.
+     * Validates that object form is a valid dirToMount.
      * @param dir 
      * @returns 
      */
@@ -137,6 +179,9 @@ export class VFStack {
                 src: dir,
                 dest: '/'
             };
+        }
+        if (!isDirToMount(dir)) {
+            throw new Error(`Invalid dirToMount object: ${JSON.stringify(dir)}`);
         }
         return dir;
     }

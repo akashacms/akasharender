@@ -42,6 +42,12 @@ export type dirToMount = {
     baseMetadata?: any;
 };
 /**
+ * Type guard to determine whether {@code dir} is a {@code dirToMount}.
+ * @param dir The object to check
+ * @returns true if it is a dirToMount, false otherwise
+ */
+export declare const isDirToMount: (dir: any) => dir is dirToMount;
+/**
  * Describes one file in the physical filesystem, and
  * how it appears within the virtual stacked filesystem.
  */
