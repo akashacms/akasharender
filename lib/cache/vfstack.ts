@@ -24,21 +24,82 @@ import micromatch from 'micromatch';
 // @ts-ignore - no type definitions available
 import mime from 'mime';
 
+/**
+ * Describes one entry in a directory stack.
+ */
 export type DirStackItem = {
+    /**
+     * The filesystem path to mount.
+     */
     mounted: string;
+
+    /**
+     * The path within the virtual filesystem where this will appear.
+     */
     mountPoint: string;
+
+    /**
+     * Metadata object to use within the sub-hierarchy.
+     */
     baseMetadata?: any;
+
+    /**
+     * Optional array of strings containing globs for matching
+     * files to ignore.
+     */
     ignore?: string | string[];
 };
 
+/**
+ * Describes one file in the physical filesystem, and
+ * how it appears within the virtual stacked filesystem.
+ */
 export type VPathData = {
+    /**
+     * The full file-system path for the file.
+     * e.g. /home/path/to/article-name.html.md
+     */
     fspath: string;
+
+    /**
+     * The virtual path, rooted at the top
+     * directory of the filesystem, with no
+     * leading slash.
+     */
     vpath: string;
+
+    /**
+     * The mime type of the file. The mime types
+     * are determined from the file extension
+     * using the 'mime' package.
+     */
     mime?: string;
+
+    /**
+     * The file-system path which is mounted
+     * into the virtual file space.
+     */
     mounted: string;
+
+    /**
+     * The virtual directory of the mount
+     * entry in the directory stack.
+     */
     mountPoint: string;
+
+    /**
+     * The relative path underneath the mountPoint.
+     */
     pathInMounted: string;
+
+    /**
+     * The mTime value from Stats
+     */
     statsMtime: number;
+
+    /**
+     * The file-system stack related to the file.
+     */
     stack?: VPathData[];
 };
 
