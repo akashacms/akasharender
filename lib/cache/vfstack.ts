@@ -158,10 +158,6 @@ export class VFStack {
         const files = await this.#walkDirectory(dir.mounted);
 
         for (const fspath of files) {
-            if (this.toIgnore(fspath)) {
-                continue;
-            }
-
             const vpathData = this.vpathForFSPath(fspath);
             if (!vpathData) {
                 continue;
@@ -181,6 +177,10 @@ export class VFStack {
 
             for (const entry of entries) {
                 const fullPath = path.join(dirPath, entry.name);
+
+                if (this.toIgnore(fullPath)) {
+                    continue;
+                }
 
                 if (entry.isDirectory()) {
                     const subFiles = await this.#walkDirectory(fullPath);
