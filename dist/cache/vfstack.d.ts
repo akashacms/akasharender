@@ -17,26 +17,41 @@
  *  limitations under the License.
  */
 /**
- * Describes one entry in a directory stack.
+ * Describes one directory to mount in a directory stack.
+ * Can be a simple string path (mounted at '/') or an object
+ * with detailed configuration.
  */
-export type DirStackItem = {
+export type dirToMount = string | {
     /**
-     * The filesystem path to mount.
+     * The fspath to mount
      */
-    mounted: string;
+    src: string;
     /**
-     * The path within the virtual filesystem where this will appear.
+     * The virtual filespace
+     * location
      */
-    mountPoint: string;
+    dest: string;
     /**
-     * Metadata object to use within the sub-hierarchy.
+     * Array of GLOB patterns
+     * of files to ignore
+     */
+    ignore?: string[];
+    /**
+     * An object containing
+     * metadata that's to
+     * apply to every file
      */
     baseMetadata?: any;
-    /**
-     * Optional array of strings containing globs for matching
-     * files to ignore.
-     */
-    ignore?: string | string[];
+};
+/**
+ * Internal normalized representation of a directory mount.
+ * @internal
+ */
+type NormalizedMount = {
+    src: string;
+    dest: string;
+    ignore?: string[];
+    baseMetadata?: any;
 };
 /**
  * Describes one file in the physical filesystem, and
@@ -94,7 +109,7 @@ export declare class VFStack {
      * @param name
      * @param dirs
      */
-    constructor(name: string, dirs: DirStackItem[]);
+    constructor(name: string, dirs: dirToMount[]);
     /**
      * Returns the name of this instance
      */
@@ -102,9 +117,9 @@ export declare class VFStack {
     /**
      * Returns the directories in this directory stack
      */
-    get dirs(): DirStackItem[];
+    get dirs(): NormalizedMount[];
     /**
-     * Determines whether to ignore a file.  Each DirStackItem
+     * Determines whether to ignore a file.  Each dirToMount
      * may have an array of file globs of files to ignore.
      * This method is used during scanning the directory stack
      * to determine which subdirectories or files to ignore.
@@ -154,4 +169,5 @@ export declare class VFStack {
     keys(): IterableIterator<string>;
     values(): IterableIterator<VPathData>;
 }
+export {};
 //# sourceMappingURL=vfstack.d.ts.map

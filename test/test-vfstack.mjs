@@ -10,12 +10,12 @@ async function testVFStack() {
 
     const stack = new VFStack('test-documents', [
         {
-            mounted: path.join(__dirname, 'documents'),
-            mountPoint: '/',
+            src: path.join(__dirname, 'documents'),
+            dest: '/',
         },
         {
-            mounted: path.join(__dirname, 'mounted'),
-            mountPoint: '/mounted-content',
+            src: path.join(__dirname, 'mounted'),
+            dest: '/mounted-content',
         }
     ]);
 

@@ -10,8 +10,8 @@ async function testIgnorePatterns() {
 
     const stack = new VFStack('test-ignore', [
         {
-            mounted: path.join(__dirname, 'documents'),
-            mountPoint: '/',
+            src: path.join(__dirname, 'documents'),
+            dest: '/',
             ignore: ['**/*.liquid', '**/hier-broke/**']
         }
     ]);

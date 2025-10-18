@@ -25,29 +25,47 @@ import micromatch from 'micromatch';
 import mime from 'mime';
 
 /**
- * Describes one entry in a directory stack.
+ * Describes one directory to mount in a directory stack.
+ * Can be a simple string path (mounted at '/') or an object
+ * with detailed configuration.
  */
-export type DirStackItem = {
-    /**
-     * The filesystem path to mount.
-     */
-    mounted: string;
+export type dirToMount =
+    string
+    | {
+        /**
+         * The fspath to mount
+         */
+        src: string,
 
-    /**
-     * The path within the virtual filesystem where this will appear.
-     */
-    mountPoint: string;
+        /**
+         * The virtual filespace
+         * location
+         */
+        dest: string,
 
-    /**
-     * Metadata object to use within the sub-hierarchy.
-     */
+        /**
+         * Array of GLOB patterns
+         * of files to ignore
+         */
+        ignore?: string[],
+
+        /**
+         * An object containing
+         * metadata that's to
+         * apply to every file
+         */
+        baseMetadata?: any
+    };
+
+/**
+ * Internal normalized representation of a directory mount.
+ * @internal
+ */
+type NormalizedMount = {
+    src: string;
+    dest: string;
+    ignore?: string[];
     baseMetadata?: any;
-
-    /**
-     * Optional array of strings containing globs for matching
-     * files to ignore.
-     */
-    ignore?: string | string[];
 };
 
 /**
@@ -108,7 +126,7 @@ export type VPathData = {
  */
 export class VFStack {
     #name: string;
-    #dirs: DirStackItem[];
+    #dirs: NormalizedMount[];
     #vpathMap: Map<string, VPathData>;
 
     /**
@@ -117,10 +135,30 @@ export class VFStack {
      * @param name 
      * @param dirs 
      */
-    constructor(name: string, dirs: DirStackItem[]) {
+    constructor(name: string, dirs: dirToMount[]) {
         this.#name = name;
-        this.#dirs = dirs;
+        this.#dirs = dirs.map(d => this.#normalizeMount(d));
         this.#vpathMap = new Map();
+    }
+
+    /**
+     * Normalizes a dirToMount into internal representation
+     * @param dir 
+     * @returns 
+     */
+    #normalizeMount(dir: dirToMount): NormalizedMount {
+        if (typeof dir === 'string') {
+            return {
+                src: dir,
+                dest: '/'
+            };
+        }
+        return {
+            src: dir.src,
+            dest: dir.dest,
+            ignore: dir.ignore,
+            baseMetadata: dir.baseMetadata
+        };
     }
 
     /**
@@ -133,12 +171,12 @@ export class VFStack {
     /**
      * Returns the directories in this directory stack
      */
-    get dirs(): DirStackItem[] {
+    get dirs(): NormalizedMount[] {
         return this.#dirs;
     }
 
     /**
-     * Determines whether to ignore a file.  Each DirStackItem
+     * Determines whether to ignore a file.  Each dirToMount
      * may have an array of file globs of files to ignore.
      * This method is used during scanning the directory stack
      * to determine which subdirectories or files to ignore.
@@ -148,9 +186,9 @@ export class VFStack {
      */
     toIgnore(fspath: string): boolean {
         for (const dir of this.#dirs) {
-            const m = dir.mounted.startsWith('/')
-                ? dir.mounted.substring(1)
-                : dir.mounted;
+            const m = dir.src.startsWith('/')
+                ? dir.src.substring(1)
+                : dir.src;
             const m2 = m.endsWith('/') ? m : (m + '/');
             
             if (!fspath.startsWith(m2)) {
@@ -158,11 +196,7 @@ export class VFStack {
             }
 
             if (dir.ignore) {
-                const ignores = typeof dir.ignore === 'string'
-                    ? [dir.ignore]
-                    : dir.ignore;
-                
-                for (const pattern of ignores) {
+                for (const pattern of dir.ignore) {
                     if (micromatch.isMatch(fspath, pattern)) {
                         return true;
                     }
@@ -184,12 +218,8 @@ export class VFStack {
     vpathForFSPath(fspath: string, statsMtime?: number): VPathData | undefined {
         for (const dir of this.#dirs) {
             if (dir.ignore) {
-                const ignores = typeof dir.ignore === 'string'
-                    ? [dir.ignore]
-                    : dir.ignore;
-                
                 let ignore = false;
-                for (const pattern of ignores) {
+                for (const pattern of dir.ignore) {
                     if (micromatch.isMatch(fspath, pattern)) {
                         ignore = true;
                         break;
@@ -198,15 +228,15 @@ export class VFStack {
                 if (ignore) continue;
             }
 
-            const dirmounted = dir.mounted.endsWith('/')
-                ? dir.mounted
-                : (dir.mounted + '/');
+            const dirsrc = dir.src.endsWith('/')
+                ? dir.src
+                : (dir.src + '/');
 
-            if (fspath.indexOf(dirmounted) === 0) {
-                const pathInMounted = fspath.substring(dir.mounted.length).substring(1);
-                const vpath = dir.mountPoint === '/'
+            if (fspath.indexOf(dirsrc) === 0) {
+                const pathInMounted = fspath.substring(dir.src.length).substring(1);
+                const vpath = dir.dest === '/'
                     ? pathInMounted
-                    : path.join(dir.mountPoint, pathInMounted);
+                    : path.join(dir.dest, pathInMounted);
 
                 let mtime = statsMtime;
                 if (mtime === undefined) {
@@ -222,8 +252,8 @@ export class VFStack {
                     fspath,
                     vpath,
                     mime: mime.getType(fspath),
-                    mounted: dir.mounted,
-                    mountPoint: dir.mountPoint,
+                    mounted: dir.src,
+                    mountPoint: dir.dest,
                     pathInMounted,
                     statsMtime: mtime
                 };
@@ -244,7 +274,7 @@ export class VFStack {
                 await this.#scanDirectory(dir);
             } catch (err) {
                 if ((err as NodeJS.ErrnoException).code === 'ENOENT') {
-                    console.warn(`VFStack: Directory does not exist: ${dir.mounted}`);
+                    console.warn(`VFStack: Directory does not exist: ${dir.src}`);
                     continue;
                 }
                 throw err;
@@ -252,8 +282,8 @@ export class VFStack {
         }
     }
 
-    async #scanDirectory(dir: DirStackItem): Promise<void> {
-        const files = await this.#walkDirectory(dir.mounted);
+    async #scanDirectory(dir: NormalizedMount): Promise<void> {
+        const files = await this.#walkDirectory(dir.src);
 
         for (const fspath of files) {
             const vpathData = this.vpathForFSPath(fspath);
@@ -332,6 +362,8 @@ export class VFStack {
     get size(): number {
         return this.#vpathMap.size;
     }
+
+    // Iterator protocol methods
 
     [Symbol.iterator](): Iterator<VPathData> {
         return this.#vpathMap.values();

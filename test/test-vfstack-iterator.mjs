@@ -10,8 +10,8 @@ async function testIterator() {
 
     const stack = new VFStack('test-iterator', [
         {
-            mounted: path.join(__dirname, 'documents'),
-            mountPoint: '/',
+            src: path.join(__dirname, 'documents'),
+            dest: '/',
         }
     ]);
 
