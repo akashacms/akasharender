@@ -29,8 +29,8 @@ The scope for AkashaCMS is rendering static HTML websites, rendering EPUB books 
 - Plugin system: Extend `Plugin` class from `lib/Plugin.ts`
 - Rendering: Uses `@akashacms/renderers` for template processing
 - Server-side DOM Manipulation: After rendering to HTML, Mahabhuta (`mahabhuta`) is used to drive DOM manipulation using functions defined in the plugins.
-- Stacked Directories: Four kinds of directories are defined: assets, partials, layouts, and documents.  For each type, multiple directories can be stacked on top of one another in a virtual filesystem.  A key principle is the ability to override a file, such as a partial template, by mounting a directory on the corresponding directory stack, and adding a file of the same name to that directory.  The @akashacms/stacked-dirs package is key to this.
-- Caching: SQLite-based file caching in `lib/cache/`.  The file information is gathered by the Stacked Directories feature, and also supports dynamically updating files that change in the filesystem.
+- Stacked Directories: Four kinds of directories are defined: assets, partials, layouts, and documents.  For each type, multiple directories can be stacked on top of one another in a virtual filesystem.  A key principle is the ability to override a file, such as a partial template, by mounting a directory on the corresponding directory stack, and adding a file of the same name to that directory.  This is implemented by the VFStack class in `lib/cache/vfstack.ts`.
+- Caching: SQLite-based file caching in `lib/cache/`.  The file information is gathered by the VFStack scanning process during initialization.
 - In-Memory SQLITE3 database: A lot of data is kept in this database, allowing for ease of accessing the data in any desired fashion.
 - Database request caching: Some database queries are repeated multiple times, and a cache is used to hold such data to prevent excess queries for the same data.
 - Testing: Mocha with Chai assertions, ES modules (.mjs files)
@@ -96,12 +96,12 @@ The `render` function renders all files in the documents directories into the ou
 
 ## Core Dependencies
 - **mahabhuta**: DOM manipulation engine for post-processing HTML (../mahabhuta, https://www.npmjs.com/package/mahabhuta, https://github.com/akashacms/mahabhuta).
-- **@akashacms/stacked-dirs**: Virtual file system for layered directory structures, as well as interactive watching for file changes. (../stacked-directories, https://www.npmjs.com/package/@akashacms/stacked-dirs, https://akashacms.github.io/stacked-directories/, https://github.com/akashacms/stacked-directories)
+- **VFStack** (lib/cache/vfstack.ts): Internal virtual file system for layered directory structures. Provides stacked directory functionality for assets, partials, layouts, and documents.
 - **@akashacms/renderers**: Template rendering engines (Markdown, EJS, Nunjucks, etc.) (../renderers, https://www.npmjs.com/package/@akashacms/renderers, https://github.com/akashacms/rendering-engines)
 
 ## AkashaCMS plugins
 
-"AkashaCMS" is the name for an ecosystem including AkashaRender, Mahabhuta, @akashacms/stacked-dirs, @akashacms/renderers, and the plugins.  The plugins are used by AkashaRender to extend its functionality.
+"AkashaCMS" is the name for an ecosystem including AkashaRender, Mahabhuta, @akashacms/renderers, and the plugins.  The plugins are used by AkashaRender to extend its functionality.
 
 * **@akashacms/plugins-base** - Base functionality for building websites (../akashacms-base, https://www.npmjs.com/package/@akashacms/plugins-base, https://github.com/akashacms/akashacms-base)
 * **@akashacms/plugins-blog-podcast** - Supports building a blog on an AkashaCMS website (../akashacms-blog-podcast, https://www.npmjs.com/package/@akashacms/plugins-blog-podcast, https://github.com/akashacms/akashacms-blog-podcast)

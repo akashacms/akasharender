@@ -22,7 +22,15 @@ import { promises as fsp, statSync } from 'node:fs';
 // @ts-ignore - no type definitions available
 import micromatch from 'micromatch';
 // @ts-ignore - no type definitions available
-import mime from 'mime';
+import { Mime } from 'mime/lite';
+// @ts-ignore - no type definitions available
+import standardTypes from 'mime/types/standard.js';
+
+const mime = new Mime(standardTypes);
+
+export function mimedefine(defs: Record<string, string[]>) {
+    mime.define(defs);
+}
 
 /**
  * Describes one directory to mount in a directory stack.

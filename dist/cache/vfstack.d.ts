@@ -16,6 +16,7 @@
  *  See the License for the specific language governing permissions and
  *  limitations under the License.
  */
+export declare function mimedefine(defs: Record<string, string[]>): void;
 /**
  * Describes one directory to mount in a directory stack.
  */

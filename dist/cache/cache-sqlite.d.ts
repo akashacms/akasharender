@@ -16,8 +16,8 @@
  *  See the License for the specific language governing permissions and
  *  limitations under the License.
  */
-import { dirToWatch, VPathData } from '@akashacms/stacked-dirs';
-import { Configuration, dirToMount, indexChainItem } from '../index.js';
+import { VPathData, dirToMount } from './vfstack.js';
+import { Configuration, indexChainItem } from '../index.js';
 import EventEmitter from 'events';
 import { PathsReturnType } from './schema.js';
 import { AsyncDatabase } from 'promised-sqlite3';
@@ -40,8 +40,7 @@ export declare class BaseCache<T extends BaseCacheEntry> extends EventEmitter {
     get quotedDBName(): any;
     close(): Promise<void>;
     /**
-     * Set up receiving events from DirsWatcher, and dispatching to
-     * the handler methods.
+     * Scan the directory stack and populate the database.
      */
     setup(): Promise<void>;
     /**
@@ -106,32 +105,8 @@ export declare class BaseCache<T extends BaseCacheEntry> extends EventEmitter {
      */
     protected findByPath(vpath: string): Promise<any>;
     gatherInfoData(info: T): void;
-    protected handleChanged(name: any, info: any): Promise<void>;
-    /**
-     * We receive this:
-     *
-     * {
-     *    fspath: fspath,
-     *    vpath: vpath,
-     *    mime: mime.getType(fspath),
-     *    mounted: dir.mounted,
-     *    mountPoint: dir.mountPoint,
-     *    pathInMounted: computed relative path
-     *    stack: [ array of these instances ]
-     * }
-     *
-     * Need to add:
-     *    renderPath
-     *    And for HTML render files, add the baseMetadata and docMetadata
-     *
-     * Should remove the stack, since it's likely not useful to us.
-     */
-    protected handleAdded(name: any, info: any): Promise<void>;
     protected insertDocToDB(info: T): Promise<void>;
     protected updateDocInDB(info: T): Promise<void>;
-    protected handleUnlinkedSQL: Map<string, string>;
-    protected handleUnlinked(name: any, info: any): Promise<void>;
-    protected handleReady(name: any): Promise<void>;
     /**
      * Allow a caller to wait until the <em>ready</em> event has
      * been sent from the DirsWatcher instance.  This event means the
@@ -144,7 +119,7 @@ export declare class BaseCache<T extends BaseCacheEntry> extends EventEmitter {
      * @param {*} info
      * @returns
      */
-    fileDirMount(info: any): dirToWatch;
+    fileDirMount(info: any): dirToMount;
     /**
      * Should this file be ignored, based on the `ignore` field
      * in the matching `dir` mount entry.
@@ -230,7 +205,6 @@ export declare class DocumentsCache extends BaseCache<Document> {
     protected addDocTagGlue(vpath: string, tags: string | string[]): Promise<void>;
     addTagDescription(tag: string, description: string): Promise<void>;
     getTagDescription(tag: string): Promise<string | undefined>;
-    protected handleUnlinked(name: any, info: any): Promise<void>;
     semanticSearchDocs(searchFor: string): Promise<Array<{
         vpath: string;
         distance: number;

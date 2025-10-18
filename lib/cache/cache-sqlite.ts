@@ -19,16 +19,15 @@
 
 import FS, { promises as fsp } from 'node:fs';
 import {
-    DirsWatcher, dirToWatch, VPathData
-} from '@akashacms/stacked-dirs';
+    VFStack, VPathData, dirToMount
+} from './vfstack.js';
 import {
-    Configuration, dirToMount, indexChainItem
+    Configuration, indexChainItem
 } from '../index.js';
 import path from 'node:path';
 import util from 'node:util';
 import EventEmitter from 'events';
 import micromatch from 'micromatch';
-import fastq from 'fastq';
 import {
     TagGlue, TagDescriptions
 } from './tag-glue.js';
@@ -63,31 +62,6 @@ const tglue = new TagGlue();
 
 const tdesc = new TagDescriptions();
 // tdesc.init(sqdb._db);
-
-// Convert AkashaCMS mount points into the mountpoint
-// used by DirsWatcher
-const remapdirs = (dirz: dirToMount[]): dirToWatch[] => {
-    return dirz.map(dir => {
-        // console.log('document dir ', dir);
-        if (typeof dir === 'string') {
-            return {
-                mounted: dir,
-                mountPoint: '/',
-                baseMetadata: {}
-            };
-        } else {
-            if (!dir.dest) {
-                throw new Error(`remapdirs invalid mount specification ${util.inspect(dir)}`);
-            }
-            return {
-                mounted: dir.src,
-                mountPoint: dir.dest,
-                baseMetadata: dir.baseMetadata,
-                ignore: dir.ignore
-            };
-        }
-    });
-};
 
 export class BaseCache<
     T extends BaseCacheEntry
@@ -142,19 +116,9 @@ export class BaseCache<
         return SqlString.escape(this.#dbname);
     }
 
-    #watcher: DirsWatcher;
-    #queue;
+    #vfstack: VFStack;
 
     async close() {
-        if (this.#queue) {
-            this.#queue.killAndDrain();
-            this.#queue = undefined;
-        }
-        if (this.#watcher) {
-            // console.log(`CLOSING ${this.name}`);
-            await this.#watcher.close();
-            this.#watcher = undefined;
-        }
         this.removeAllListeners('changed');
         this.removeAllListeners('added');
         this.removeAllListeners('unlinked');
@@ -168,138 +132,27 @@ export class BaseCache<
     }
 
     /**
-     * Set up receiving events from DirsWatcher, and dispatching to
-     * the handler methods.
+     * Scan the directory stack and populate the database.
      */
     async setup() {
-        const fcache = this;
+        this.#is_ready = false;
 
-        if (this.#watcher) {
-            await this.#watcher.close();
+        this.#vfstack = new VFStack(this.name, this.dirs);
+        await this.#vfstack.scan();
+
+        for (const vpathData of this.#vfstack) {
+            if (!this.ignoreFile(vpathData)) {
+                try {
+                    this.gatherInfoData(vpathData as any as T);
+                    await this.insertDocToDB(vpathData as any as T);
+                } catch (err) {
+                    console.error(`Error gathering info for ${vpathData.vpath}: ${err.message}`);
+                }
+            }
         }
 
-        this.#queue = fastq.promise(async function (event) {
-            if (event.code === 'changed') {
-                try {
-                    // console.log(`change ${event.name} ${event.info.vpath}`);
-                    await fcache.handleChanged(event.name, event.info);
-                    fcache.emit('change', event.name, event.info);
-                    // console.log(`changed ${event.name} ${event.info.vpath}`);
-                } catch (e) {
-                    fcache.emit('error', {
-                        code: event.code,
-                        name: event.name,
-                        vpath: event.info.vpath,
-                        error: e
-                    });
-                }
-            } else if (event.code === 'added') {
-                try {
-                    // console.log(`add ${event.name} ${event.info.vpath}`);
-                    await fcache.handleAdded(event.name, event.info);
-                    fcache.emit('add', event.name, event.info);
-                    // console.log(`added ${event.name} ${event.info.vpath}`);
-                } catch (e) {
-                    fcache.emit('error', {
-                        code: event.code,
-                        name: event.name,
-                        vpath: event.info.vpath,
-                        info: event.info,
-                        error: e,
-                        // existing: await fcache.db.get(`
-                        //     SELECT * FROM ${fcache.quotedDBName}
-                        //     WHERE vpath = ${event.info.vpath}
-                        // `)
-                    });
-                }
-            } else if (event.code === 'unlinked') {
-                try {
-                    // console.log(`unlink ${event.name} ${event.info.vpath}`, event.info);
-                    await fcache.handleUnlinked(event.name, event.info);
-                    fcache.emit('unlink', event.name, event.info);
-                } catch (e) {
-                    fcache.emit('error', {
-                        code: event.code,
-                        name: event.name,
-                        vpath: event.info.vpath,
-                        error: e
-                    });
-                }
-            /* } else if (event.code === 'error') {
-                await fcache.handleError(event.name) */
-            } else if (event.code === 'ready') {
-                // This means Chokidar's initial scan is finished
-                await fcache.handleReady(event.name);
-                fcache.emit('ready', event.name);
-                // console.log(`readied ${event.name}`);
-            }
-        }, 1 /* 10 */);
-
-        this.#watcher = new DirsWatcher(this.name);
-
-        this.#watcher.on('change', async (name: string, info: VPathData) => {
-            // console.log(`${name} changed ${info.mountPoint} ${info.vpath}`);
-            try {
-                if (!this.ignoreFile(info)) {
-                    // console.log(`PUSH ${name} changed ${info.mountPoint} ${info.vpath}`);
-
-                    this.#queue.push({
-                        code: 'changed',
-                        name, info
-                    });
-                } else {
-                    console.log(`Ignored 'change' for ${info.vpath}`);
-                }
-            } catch (err) {
-                console.error(`FAIL change ${info.vpath} because ${err.stack}`);
-            }
-        })
-        .on('add', async (name: string, info: VPathData) => {
-            try {
-                // console.log(`${name} add ${info.mountPoint} ${info.vpath}`);
-                if (!this.ignoreFile(info)) {
-                    // console.log(`PUSH ${name} add ${info.mountPoint} ${info.vpath}`);
-
-                    this.#queue.push({
-                        code: 'added',
-                        name, info
-                    });
-                } else {
-                    console.log(`Ignored 'add' for ${info.vpath}`);
-                }
-            } catch (err) {
-                console.error(`FAIL add ${info.vpath} because ${err.stack}`);
-            }
-        })
-        .on('unlink', async (name: string, info: VPathData) => {
-            // console.log(`unlink ${name} ${info.vpath}`);
-            try {
-                if (!this.ignoreFile(info)) {
-                    this.#queue.push({
-                        code: 'unlinked',
-                        name, info
-                    });
-                } else {
-                    console.log(`Ignored 'unlink' for ${info.vpath}`);
-                }
-             } catch (err) {
-                console.error(`FAIL unlink ${info.vpath} because ${err.stack}`);
-            }
-        })
-        .on('ready', async (name: string) => {
-            // console.log(`${name} ready`);
-            this.#queue.push({
-                code: 'ready',
-                name
-            });
-        });
-
-        const mapped = remapdirs(this.dirs);
-        // console.log(`setup ${this.#name} watch ${util.inspect(this.#dirs)} ==> ${util.inspect(mapped)}`);
-        await this.#watcher.watch(mapped);
-
-        // console.log(`DAO ${this.dao.table.name} ${util.inspect(this.dao.table.fields)}`);
-
+        this.#is_ready = true;
+        this.emit('ready', this.name);
     }
 
     /**
@@ -489,117 +342,12 @@ export class BaseCache<
         throw new Error(`gatherInfoData must be overridden`);
     }
 
-    protected async handleChanged(name, info) {
-        // console.log(`PROCESS ${name} handleChanged`, info.vpath);
-        if (this.ignoreFile(info)) {
-            // console.log(`OOOOOOOOGA!!! Received a file that should be ingored `, info);
-            return;
-        }
-        if (name !== this.name) {
-            throw new Error(`handleChanged event for wrong name; got ${name}, expected ${this.name}`);
-        }
-        // console.log(`handleChanged ${info.vpath} ${info.metadata && info.metadata.publicationDate ? info.metadata.publicationDate : '???'}`);
-
-        this.gatherInfoData(info);
-        info.stack = undefined;
-
-        const result = await this.findPathMounted(info.vpath, info.mounted);
-
-        if (
-            !Array.isArray(result)
-         || result.length <= 0
-        ) {
-            // It wasn't found in the database.
-            // Hence we should add it.
-            return this.handleAdded(name, info);
-        }
-
-        info.stack = undefined;
-        await this.updateDocInDB(info);
-        await this.config.hookFileChanged(name, info);
-    }
-
-    /**
-     * We receive this:
-     *
-     * {
-     *    fspath: fspath,
-     *    vpath: vpath,
-     *    mime: mime.getType(fspath),
-     *    mounted: dir.mounted,
-     *    mountPoint: dir.mountPoint,
-     *    pathInMounted: computed relative path
-     *    stack: [ array of these instances ]
-     * }
-     *
-     * Need to add:
-     *    renderPath
-     *    And for HTML render files, add the baseMetadata and docMetadata
-     *
-     * Should remove the stack, since it's likely not useful to us.
-     */
-
-    protected async handleAdded(name, info) {
-        //  console.log(`PROCESS ${name} handleAdded`, info.vpath);
-        if (this.ignoreFile(info)) {
-            // console.log(`OOOOOOOOGA!!! Received a file that should be ingored `, info);
-            return;
-        }
-        if (name !== this.name) {
-            throw new Error(`handleAdded event for wrong name; got ${name}, expected ${this.name}`);
-        }
-
-        this.gatherInfoData(info);
-        info.stack = undefined;
-        await this.insertDocToDB(info);
-        await this.config.hookFileAdded(name, info);
-    }
-
     protected async insertDocToDB(info: T) {
         throw new Error(`insertDocToDB must be overridden`);
     }
 
     protected async updateDocInDB(info: T) {
         throw new Error(`updateDocInDB must be overridden`);
-    }
-
-    protected handleUnlinkedSQL
-            = new Map<string,string>();
-
-    protected async handleUnlinked(name, info) {
-        // console.log(`PROCESS ${name} handleUnlinked`, info.vpath);
-        if (name !== this.name) {
-            throw new Error(`handleUnlinked event for wrong name; got ${name}, expected ${this.name}`);
-        }
-
-        await this.config.hookFileUnlinked(name, info);
-
-        let sql = this.handleUnlinkedSQL.get(this.dbname);
-        if (!sql) {
-            sql = SqlString.format(
-                await fsp.readFile(
-                    path.join(import.meta.dirname, 'sql', 'handle-unlinked.sql')
-                ), [ this.dbname ]);
-            this.handleUnlinkedSQL.set(this.dbname, sql);
-        }
-
-        await this.db.run(sql, {
-            $vpath: info.vpath,
-            $mounted: info.mounted
-        });
-        // await this.#dao.deleteAll({
-        //     vpath: { eq: info.vpath },
-        //     mounted: { eq: info.mounted }
-        // } as Where<T>);
-    }
-
-    protected async handleReady(name) {
-        // console.log(`PROCESS ${name} handleReady`);
-        if (name !== this.name) {
-            throw new Error(`handleReady event for wrong name; got ${name}, expected ${this.name}`);
-        }
-        this.#is_ready = true;
-        this.emit('ready', name);
     }
 
     /**
@@ -631,10 +379,8 @@ export class BaseCache<
      * @returns
      */
     fileDirMount(info) {
-        const mapped = remapdirs(this.dirs);
-        for (const dir of mapped) {
-            // console.log(`dirMount for ${info.vpath} -- ${util.inspect(info)} === ${util.inspect(dir)}`);
-            if (info.mountPoint === dir.mountPoint) {
+        for (const dir of this.#dirs) {
+            if (info.mountPoint === dir.dest) {
                 return dir;
             }
         }
@@ -861,11 +607,11 @@ export class BaseCache<
         // fields.
     }
 
-    #fExistsInDir(fpath, dir) {
+    #fExistsInDir(fpath, dir: dirToMount) {
         // console.log(`#fExistsInDir ${fpath} ${util.inspect(dir)}`);
-        if (dir.mountPoint === '/') {
+        if (dir.dest === '/') {
             const fspath = path.join(
-                dir.mounted, fpath
+                dir.src, fpath
             );
             let fsexists = FS.existsSync(fspath);
 
@@ -876,8 +622,8 @@ export class BaseCache<
                     renderPath: fpath,
                     fspath: fspath,
                     mime: undefined,
-                    mounted: dir.mounted,
-                    mountPoint: dir.mountPoint,
+                    mounted: dir.src,
+                    mountPoint: dir.dest,
                     pathInMounted: fpath,
                     statsMtime: stats.mtimeMs
                 };
@@ -886,19 +632,19 @@ export class BaseCache<
             }
         }
 
-        let mp = dir.mountPoint.startsWith('/')
-            ? dir.mountPoint.substring(1)
-            : dir.mountPoint;
+        let mp = dir.dest.startsWith('/')
+            ? dir.dest.substring(1)
+            : dir.dest;
         mp = mp.endsWith('/')
             ? mp
             : (mp+'/');
 
         if (fpath.startsWith(mp)) {
             let pathInMounted
-                = fpath.replace(dir.mountPoint, '');
+                = fpath.replace(dir.dest, '');
             let fspath = path.join(
-                dir.mounted, pathInMounted);
-            // console.log(`Checking exist for ${dir.mountPoint} ${dir.mounted} ${pathInMounted} ${fspath}`);
+                dir.src, pathInMounted);
+            // console.log(`Checking exist for ${dir.dest} ${dir.src} ${pathInMounted} ${fspath}`);
             let fsexists = FS.existsSync(fspath);
 
             if (fsexists) {
@@ -908,8 +654,8 @@ export class BaseCache<
                     renderPath: fpath,
                     fspath: fspath,
                     mime: undefined,
-                    mounted: dir.mounted,
-                    mountPoint: dir.mountPoint,
+                    mounted: dir.src,
+                    mountPoint: dir.dest,
                     pathInMounted: pathInMounted,
                     statsMtime: stats.mtimeMs
                 };
@@ -939,13 +685,10 @@ export class BaseCache<
                     ? _fpath.substring(1)
                     : _fpath;
 
-        const fcache = this;
+        // console.log(`findSync looking for ${fpath} in ${util.inspect(this.#dirs)}`);
 
-        const mapped = remapdirs(this.dirs);
-        // console.log(`findSync looking for ${fpath} in ${util.inspect(mapped)}`);
-
-        for (const dir of mapped) {
-            if (!(dir?.mountPoint)) {
+        for (const dir of this.#dirs) {
+            if (!(dir?.dest)) {
                 console.warn(`findSync bad dirs in ${util.inspect(this.dirs)}`);
             }
             const found = this.#fExistsInDir(fpath, dir);
@@ -1351,8 +1094,8 @@ export class DocumentsCache
 
         // find the mounted directory,
         // get the baseMetadata
-        for (let dir of remapdirs(this.dirs)) {
-            if (dir.mounted === info.mounted) {
+        for (let dir of this.dirs) {
+            if (dir.src === info.mounted) {
                 if (dir.baseMetadata) {
                     info.baseMetadata = dir.baseMetadata;
                 }
@@ -1751,11 +1494,6 @@ export class DocumentsCache
         return tdesc.getDesc(tag);
     }
 
-    protected async handleUnlinked(name: any, info: any): Promise<void> {
-        await super.handleUnlinked(name, info);
-        tglue.deleteTagGlue(info.vpath);
-    }
-
     #searchSemantic;
 
     async semanticSearchDocs(searchFor: string)
@@ -2044,7 +1782,7 @@ export class DocumentsCache
                 await fsp.readFile(
                     path.join(
                         import.meta.dirname,
-                        'sql', 'dirs-for-dirname.sql'
+                        'sql', 'dirs-for-parentdir.sql'
                     ), 'utf-8'
                 );
         }
@@ -2732,6 +2470,10 @@ export async function setup(
     db: AsyncDatabase
 ): Promise<void> {
 
+    // Initialize tag and tag description support (used by DocumentsCache)
+    await tglue.init(db);
+    await tdesc.init(db);
+
     //// ASSETS
 
     await doCreateAssetsTable(db);
@@ -2796,8 +2538,6 @@ export async function setup(
         'DOCUMENTS'
     );
     await documentsCache.setup();
-    await tglue.init(db);
-    await tdesc.init(db);
 
     documentsCache.on('error', (err) => {
         console.error(`documentsCache ERROR ${util.inspect(err)}`);

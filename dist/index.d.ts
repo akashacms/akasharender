@@ -16,7 +16,9 @@
  *  See the License for the specific language governing permissions and
  *  limitations under the License.
  */
-import { VPathData } from '@akashacms/stacked-dirs';
+import { dirToMount, VPathData } from './cache/vfstack.js';
+export type { dirToMount, VPathData } from './cache/vfstack.js';
+export { isDirToMount } from './cache/vfstack.js';
 import * as Renderers from '@akashacms/renderers';
 export * as Renderers from '@akashacms/renderers';
 import { Renderer } from '@akashacms/renderers';
@@ -154,28 +156,6 @@ export type stylesheetItem = {
  * converted to the dirToWatch structure
  * used by StackedDirs.
  */
-export type dirToMount = string | {
-    /**
-     * The fspath to mount
-     */
-    src: string;
-    /**
-     * The virtual filespace
-     * location
-     */
-    dest: string;
-    /**
-     * Array of GLOB patterns
-     * of files to ignore
-     */
-    ignore?: string[];
-    /**
-     * An object containing
-     * metadata that's to
-     * apply to every file
-     */
-    baseMetadata?: any;
-};
 /**
  * Configuration of an AkashaRender project, including the input directories,
  * output directory, plugins, and various settings.
@@ -218,55 +198,34 @@ export declare class Configuration {
     partialsCache(): Promise<filecache.PartialsCache>;
     /**
      * Add a directory to the documentDirs configuration array
-     * @param {string} dir The pathname to use
+     * @param {string | dirToMount} dir The pathname to use or dirToMount object
      */
-    addDocumentsDir(dir: dirToMount): this;
+    addDocumentsDir(dir: string | dirToMount): this;
     get documentDirs(): dirToMount[];
     /**
      * Look up the document directory information for a given document directory.
      * @param {string} dirname The document directory to search for
      */
-    documentDirInfo(dirname: string): string | {
-        /**
-         * The fspath to mount
-         */
-        src: string;
-        /**
-         * The virtual filespace
-         * location
-         */
-        dest: string;
-        /**
-         * Array of GLOB patterns
-         * of files to ignore
-         */
-        ignore?: string[];
-        /**
-         * An object containing
-         * metadata that's to
-         * apply to every file
-         */
-        baseMetadata?: any;
-    };
+    documentDirInfo(dirname: string): dirToMount;
     /**
      * Add a directory to the layoutDirs configurtion array
-     * @param {string} dir The pathname to use
+     * @param {string | dirToMount} dir The pathname to use or dirToMount object
      */
-    addLayoutsDir(dir: dirToMount): this;
+    addLayoutsDir(dir: string | dirToMount): this;
     get layoutDirs(): dirToMount[];
     /**
      * Add a directory to the partialDirs configurtion array
-     * @param {string} dir The pathname to use
+     * @param {string | dirToMount} dir The pathname to use or dirToMount object
      * @returns {Configuration}
      */
-    addPartialsDir(dir: dirToMount): this;
+    addPartialsDir(dir: string | dirToMount): this;
     get partialsDirs(): dirToMount[];
     /**
      * Add a directory to the assetDirs configurtion array
-     * @param {string} dir The pathname to use
+     * @param {string | dirToMount} dir The pathname to use or dirToMount object
      * @returns {Configuration}
      */
-    addAssetsDir(dir: dirToMount): this;
+    addAssetsDir(dir: string | dirToMount): this;
     get assetDirs(): dirToMount[];
     /**
      * Add an array of Mahabhuta functions

@@ -30,7 +30,9 @@ import path from 'node:path';
 // const oembetter = require('oembetter')();
 import RSS from 'rss';
 import fastq from 'fastq';
-import { DirsWatcher, VPathData, dirToWatch, mimedefine } from '@akashacms/stacked-dirs';
+import { mimedefine, dirToMount, isDirToMount, VPathData } from './cache/vfstack.js';
+export type { dirToMount, VPathData } from './cache/vfstack.js';
+export { isDirToMount } from './cache/vfstack.js';
 import * as Renderers from '@akashacms/renderers';
 export * as Renderers from '@akashacms/renderers';
 import { Renderer } from '@akashacms/renderers';
@@ -552,34 +554,6 @@ export type stylesheetItem = {
  * converted to the dirToWatch structure
  * used by StackedDirs.
  */
-export type dirToMount =
-    string
-    | {
-        /**
-         * The fspath to mount
-         */
-        src: string,
-
-        /**
-         * The virtual filespace
-         * location
-         */
-        dest: string,
-
-        /**
-         * Array of GLOB patterns
-         * of files to ignore
-         */
-        ignore?: string[],
-
-        /**
-         * An object containing
-         * metadata that's to
-         * apply to every file
-         */
-        baseMetadata?: any
-    };
-
 /**
  * Configuration of an AkashaRender project, including the input directories,
  * output directory, plugins, and various settings.
@@ -828,12 +802,11 @@ export class Configuration {
 
     /**
      * Add a directory to the documentDirs configuration array
-     * @param {string} dir The pathname to use
+     * @param {string | dirToMount} dir The pathname to use or dirToMount object
      */
-    addDocumentsDir(dir: dirToMount) {
-        // If we have a configDir, and it's a relative directory, make it
-        // relative to the configDir
+    addDocumentsDir(dir: string | dirToMount) {
         let dirMount: dirToMount;
+        
         if (typeof dir === 'string') {
             if (!path.isAbsolute(dir) && this.configDir != null) {
                 dirMount = {
@@ -846,18 +819,22 @@ export class Configuration {
                     dest: '/'
                 };
             }
-        } else if (typeof dir === 'object') {
+        } else {
             if (!path.isAbsolute(dir.src) && this.configDir != null) {
-                dir.src = path.join(this.configDir, dir.src);
-                dirMount = dir;
+                dirMount = {
+                    ...dir,
+                    src: path.join(this.configDir, dir.src)
+                };
             } else {
                 dirMount = dir;
             }
-        } else {
-            throw new Error(`addDocumentsDir - directory to mount of wrong type ${util.inspect(dir)}`);
         }
+        
+        if (!isDirToMount(dirMount)) {
+            throw new Error(`addDocumentsDir - invalid dirToMount object: ${util.inspect(dirMount)}`);
+        }
+        
         this.#documentDirs.push(dirMount);
-        // console.log(`addDocumentsDir ${util.inspect(dir)} ==> ${util.inspect(this[_config_documentDirs])}`);
         return this;
     }
 
@@ -883,12 +860,11 @@ export class Configuration {
 
     /**
      * Add a directory to the layoutDirs configurtion array
-     * @param {string} dir The pathname to use
+     * @param {string | dirToMount} dir The pathname to use or dirToMount object
      */
-    addLayoutsDir(dir: dirToMount) {
-        // If we have a configDir, and it's a relative directory, make it
-        // relative to the configDir
+    addLayoutsDir(dir: string | dirToMount) {
         let dirMount: dirToMount;
+        
         if (typeof dir === 'string') {
             if (!path.isAbsolute(dir) && this.configDir != null) {
                 dirMount = {
@@ -901,20 +877,23 @@ export class Configuration {
                     dest: '/'
                 };
             }
-        } else if (typeof dir === 'object') {
+        } else {
             if (!path.isAbsolute(dir.src) && this.configDir != null) {
-                dir.src = path.join(this.configDir, dir.src);
-                dirMount = dir;
+                dirMount = {
+                    ...dir,
+                    src: path.join(this.configDir, dir.src)
+                };
             } else {
                 dirMount = dir;
             }
-        } else {
-            throw new Error(`addLayoutsDir - directory to mount of wrong type ${util.inspect(dir)}`);
         }
+        
+        if (!isDirToMount(dirMount)) {
+            throw new Error(`addLayoutsDir - invalid dirToMount object: ${util.inspect(dirMount)}`);
+        }
+        
         this.#layoutDirs.push(dirMount);
-        // console.log(`AkashaRender Configuration addLayoutsDir ${util.inspect(dir)} ${util.inspect(dirMount)} layoutDirs ${util.inspect(this.#layoutDirs)} Renderers layoutDirs ${util.inspect(this.#renderers.layoutDirs)}`);
         this.#renderers.addLayoutDir(dirMount.src);
-        // console.log(`AkashaRender Configuration addLayoutsDir ${util.inspect(dir)} layoutDirs ${util.inspect(this.#layoutDirs)} Renderers layoutDirs ${util.inspect(this.#renderers.layoutDirs)}`);
         return this;
     }
 
@@ -922,13 +901,12 @@ export class Configuration {
 
     /**
      * Add a directory to the partialDirs configurtion array
-     * @param {string} dir The pathname to use
+     * @param {string | dirToMount} dir The pathname to use or dirToMount object
      * @returns {Configuration}
      */
-    addPartialsDir(dir: dirToMount) {
-        // If we have a configDir, and it's a relative directory, make it
-        // relative to the configDir
+    addPartialsDir(dir: string | dirToMount) {
         let dirMount: dirToMount;
+        
         if (typeof dir === 'string') {
             if (!path.isAbsolute(dir) && this.configDir != null) {
                 dirMount = {
@@ -941,17 +919,21 @@ export class Configuration {
                     dest: '/'
                 };
             }
-        } else if (typeof dir === 'object') {
+        } else {
             if (!path.isAbsolute(dir.src) && this.configDir != null) {
-                dir.src = path.join(this.configDir, dir.src);
-                dirMount = dir;
+                dirMount = {
+                    ...dir,
+                    src: path.join(this.configDir, dir.src)
+                };
             } else {
                 dirMount = dir;
             }
-        } else {
-            throw new Error(`addPartialsDir - directory to mount of wrong type ${util.inspect(dir)}`);
         }
-        // console.log(`addPartialsDir `, dir);
+        
+        if (!isDirToMount(dirMount)) {
+            throw new Error(`addPartialsDir - invalid dirToMount object: ${util.inspect(dirMount)}`);
+        }
+        
         this.#partialDirs.push(dirMount);
         this.#renderers.addPartialDir(dirMount.src);
         return this;
@@ -961,13 +943,12 @@ export class Configuration {
     
     /**
      * Add a directory to the assetDirs configurtion array
-     * @param {string} dir The pathname to use
+     * @param {string | dirToMount} dir The pathname to use or dirToMount object
      * @returns {Configuration}
      */
-    addAssetsDir(dir: dirToMount) {
-        // If we have a configDir, and it's a relative directory, make it
-        // relative to the configDir
+    addAssetsDir(dir: string | dirToMount) {
         let dirMount: dirToMount;
+        
         if (typeof dir === 'string') {
             if (!path.isAbsolute(dir) && this.configDir != null) {
                 dirMount = {
@@ -980,16 +961,21 @@ export class Configuration {
                     dest: '/'
                 };
             }
-        } else if (typeof dir === 'object') {
+        } else {
             if (!path.isAbsolute(dir.src) && this.configDir != null) {
-                dir.src = path.join(this.configDir, dir.src);
-                dirMount = dir;
+                dirMount = {
+                    ...dir,
+                    src: path.join(this.configDir, dir.src)
+                };
             } else {
                 dirMount = dir;
             }
-        } else {
-            throw new Error(`addAssetsDir - directory to mount of wrong type ${util.inspect(dir)}`);
         }
+        
+        if (!isDirToMount(dirMount)) {
+            throw new Error(`addAssetsDir - invalid dirToMount object: ${util.inspect(dirMount)}`);
+        }
+        
         this.#assetsDirs.push(dirMount);
         return this;
     }

@@ -46,7 +46,6 @@
   "dependencies": {
     "24": "^0.0.0",
     "@akashacms/renderers": "akashacms/rendering-engines",
-    "@akashacms/stacked-dirs": "akashacms/stacked-directories",
     "cache": "^3.0.0",
     "commander": "^14.x",
     "fastq": "^1.19.x",

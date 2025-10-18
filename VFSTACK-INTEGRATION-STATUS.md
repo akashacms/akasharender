@@ -69,11 +69,47 @@ export class VFStack {
 }
 ```
 
-## 🔄 Phase 3: BaseCache Integration (READY)
+## ✅ Phase 3: BaseCache Integration (COMPLETE)
 
-**Status:** Ready to implement
+**Status:** All tests passing (294 tests)
 
-### Integration Steps
+### What was done:
+
+1. **Updated imports in `lib/cache/cache-sqlite.ts`:**
+   - Removed: `DirsWatcher`, `dirToWatch` from `@akashacms/stacked-dirs`
+   - Removed: `fastq` import (kept in other files where still used)
+   - Added: `VFStack`, `VPathData`, `dirToMount` from `./vfstack.js`
+
+2. **Updated BaseCache class:**
+   - Removed: `#watcher: DirsWatcher` and `#queue: fastq`
+   - Added: `#vfstack: VFStack`
+   - Removed: EventEmitter inheritance (still extends it for compatibility)
+   - Simplified `close()` method
+
+3. **Removed remapdirs() function:**
+   - No longer needed - VFStack accepts `dirToMount[]` directly
+
+4. **Rewrote setup() method:**
+   - Uses VFStack synchronous scanning instead of event-based watching
+   - Iterates over files and calls `gatherInfoData()` and `insertDocToDB()`
+   - Initializes `tglue` and `tdesc` for tag support
+
+5. **Removed normalizedDirs getter:**
+   - Updated all code to use `dirToMount` objects directly
+   - Changed `fileDirMount()`, `findSync()`, `#fExistsInDir()` to use `dir.src`/`dir.dest`
+   - Updated DocumentsCache `gatherInfoData()` to use `dir.src`
+
+6. **Updated Configuration class:**
+   - Consolidated `dirToMount` type - single source of truth in `lib/cache/vfstack.ts`
+   - Updated `addDocumentsDir()`, `addLayoutsDir()`, `addPartialsDir()`, `addAssetsDir()`
+   - All methods now accept `string | dirToMount` and validate with `isDirToMount()`
+
+7. **Added MIME type support:**
+   - Created custom Mime instance in VFStack
+   - Exported `mimedefine()` function
+   - lib/index.ts now imports and re-exports from VFStack
+
+### Integration Steps (for reference)
 
 #### 1. Update Imports in `lib/cache/cache-sqlite.ts`
 
@@ -267,15 +303,35 @@ on(event: string, handler: Function) {
 
 5. **Backwards Compatibility**: If other code relies on EventEmitter interface, may need adapter.
 
-## 📦 Phase 4: Cleanup (FUTURE)
+## ✅ Phase 4: Cleanup (COMPLETE)
 
-**After successful integration:**
+**Status:** Dependencies removed, documentation updated
 
-1. Remove `@akashacms/stacked-dirs` from `package.json`
-2. Remove `fastq` if not used elsewhere
-3. Update all imports across codebase
-4. Update documentation to reference VFStack
-5. Add migration guide for plugin authors
+### What was done:
+
+1. **Removed `@akashacms/stacked-dirs` from `package.json`:**
+   - Dependency completely removed
+   - No longer needed as VFStack provides all functionality
+
+2. **Kept `fastq` dependency:**
+   - Still used in `lib/render.ts`, `lib/index.ts`, and `lib/cache/watchman.ts`
+   - Not safe to remove
+
+3. **Updated all imports:**
+   - `lib/index.ts` now imports `VPathData` from `./cache/vfstack.js`
+   - Re-exports `dirToMount`, `VPathData`, and `isDirToMount` for public API
+   - No remaining imports from `@akashacms/stacked-dirs` in code
+
+4. **Updated documentation:**
+   - `AGENTS.md`: Updated to reference VFStack instead of stacked-dirs
+   - `VFSTACK-INTEGRATION-STATUS.md`: Marked all phases complete
+   - `guide/vfstack.html.md`: Already has migration guide
+
+### Next Steps (Optional):
+
+- Test with real projects like `../akashacms-example`
+- Consider adding file watching wrapper if needed for development
+- Update any external documentation or tutorials
 
 ## Current Branch
 
