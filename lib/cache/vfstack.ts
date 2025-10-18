@@ -26,46 +26,31 @@ import mime from 'mime';
 
 /**
  * Describes one directory to mount in a directory stack.
- * Can be a simple string path (mounted at '/') or an object
- * with detailed configuration.
  */
-export type dirToMount =
-    string
-    | {
-        /**
-         * The fspath to mount
-         */
-        src: string,
+export type dirToMount = {
+    /**
+     * The fspath to mount
+     */
+    src: string,
 
-        /**
-         * The virtual filespace
-         * location
-         */
-        dest: string,
+    /**
+     * The virtual filespace
+     * location
+     */
+    dest: string,
 
-        /**
-         * Array of GLOB patterns
-         * of files to ignore
-         */
-        ignore?: string[],
+    /**
+     * Array of GLOB patterns
+     * of files to ignore
+     */
+    ignore?: string[],
 
-        /**
-         * An object containing
-         * metadata that's to
-         * apply to every file
-         */
-        baseMetadata?: any
-    };
-
-/**
- * Internal normalized representation of a directory mount.
- * @internal
- */
-type NormalizedMount = {
-    src: string;
-    dest: string;
-    ignore?: string[];
-    baseMetadata?: any;
+    /**
+     * An object containing
+     * metadata that's to
+     * apply to every file
+     */
+    baseMetadata?: any
 };
 
 /**
@@ -126,7 +111,7 @@ export type VPathData = {
  */
 export class VFStack {
     #name: string;
-    #dirs: NormalizedMount[];
+    #dirs: dirToMount[];
     #vpathMap: Map<string, VPathData>;
 
     /**
@@ -135,30 +120,25 @@ export class VFStack {
      * @param name 
      * @param dirs 
      */
-    constructor(name: string, dirs: dirToMount[]) {
+    constructor(name: string, dirs: (string | dirToMount)[]) {
         this.#name = name;
         this.#dirs = dirs.map(d => this.#normalizeMount(d));
         this.#vpathMap = new Map();
     }
 
     /**
-     * Normalizes a dirToMount into internal representation
+     * Normalizes a dirToMount or string into dirToMount
      * @param dir 
      * @returns 
      */
-    #normalizeMount(dir: dirToMount): NormalizedMount {
+    #normalizeMount(dir: string | dirToMount): dirToMount {
         if (typeof dir === 'string') {
             return {
                 src: dir,
                 dest: '/'
             };
         }
-        return {
-            src: dir.src,
-            dest: dir.dest,
-            ignore: dir.ignore,
-            baseMetadata: dir.baseMetadata
-        };
+        return dir;
     }
 
     /**
@@ -171,7 +151,7 @@ export class VFStack {
     /**
      * Returns the directories in this directory stack
      */
-    get dirs(): NormalizedMount[] {
+    get dirs(): dirToMount[] {
         return this.#dirs;
     }
 
@@ -282,7 +262,7 @@ export class VFStack {
         }
     }
 
-    async #scanDirectory(dir: NormalizedMount): Promise<void> {
+    async #scanDirectory(dir: dirToMount): Promise<void> {
         const files = await this.#walkDirectory(dir.src);
 
         for (const fspath of files) {

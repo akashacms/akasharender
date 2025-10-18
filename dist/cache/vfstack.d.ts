@@ -18,10 +18,8 @@
  */
 /**
  * Describes one directory to mount in a directory stack.
- * Can be a simple string path (mounted at '/') or an object
- * with detailed configuration.
  */
-export type dirToMount = string | {
+export type dirToMount = {
     /**
      * The fspath to mount
      */
@@ -41,16 +39,6 @@ export type dirToMount = string | {
      * metadata that's to
      * apply to every file
      */
-    baseMetadata?: any;
-};
-/**
- * Internal normalized representation of a directory mount.
- * @internal
- */
-type NormalizedMount = {
-    src: string;
-    dest: string;
-    ignore?: string[];
     baseMetadata?: any;
 };
 /**
@@ -109,7 +97,7 @@ export declare class VFStack {
      * @param name
      * @param dirs
      */
-    constructor(name: string, dirs: dirToMount[]);
+    constructor(name: string, dirs: (string | dirToMount)[]);
     /**
      * Returns the name of this instance
      */
@@ -117,7 +105,7 @@ export declare class VFStack {
     /**
      * Returns the directories in this directory stack
      */
-    get dirs(): NormalizedMount[];
+    get dirs(): dirToMount[];
     /**
      * Determines whether to ignore a file.  Each dirToMount
      * may have an array of file globs of files to ignore.
@@ -169,5 +157,4 @@ export declare class VFStack {
     keys(): IterableIterator<string>;
     values(): IterableIterator<VPathData>;
 }
-export {};
 //# sourceMappingURL=vfstack.d.ts.map
