@@ -103,25 +103,49 @@ export type VPathData = {
     stack?: VPathData[];
 };
 
+/**
+ * Computes the union of files in a directory stack.
+ */
 export class VFStack {
     #name: string;
     #dirs: DirStackItem[];
     #vpathMap: Map<string, VPathData>;
 
+    /**
+     * Constructs an VFStack instance
+     * 
+     * @param name 
+     * @param dirs 
+     */
     constructor(name: string, dirs: DirStackItem[]) {
         this.#name = name;
         this.#dirs = dirs;
         this.#vpathMap = new Map();
     }
 
+    /**
+     * Returns the name of this instance
+     */
     get name(): string {
         return this.#name;
     }
 
+    /**
+     * Returns the directories in this directory stack
+     */
     get dirs(): DirStackItem[] {
         return this.#dirs;
     }
 
+    /**
+     * Determines whether to ignore a file.  Each DirStackItem
+     * may have an array of file globs of files to ignore.
+     * This method is used during scanning the directory stack
+     * to determine which subdirectories or files to ignore.
+     * 
+     * @param fspath 
+     * @returns 
+     */
     toIgnore(fspath: string): boolean {
         for (const dir of this.#dirs) {
             const m = dir.mounted.startsWith('/')
@@ -148,6 +172,15 @@ export class VFStack {
         return false;
     }
 
+    /**
+     * Computes the vpath for a fully specified file path,
+     * so long as the file is within one of the directories
+     * in the stack.
+     * 
+     * @param fspath 
+     * @param statsMtime 
+     * @returns 
+     */
     vpathForFSPath(fspath: string, statsMtime?: number): VPathData | undefined {
         for (const dir of this.#dirs) {
             if (dir.ignore) {
@@ -199,6 +232,10 @@ export class VFStack {
         return undefined;
     }
 
+    /**
+     * Scans the directory stack to compute the files
+     * in this stack.
+     */
     async scan(): Promise<void> {
         this.#vpathMap.clear();
 
@@ -257,6 +294,11 @@ export class VFStack {
         return results;
     }
 
+    /**
+     * Find a fie within the directory stack.
+     * @param vpath 
+     * @returns 
+     */
     find(vpath: string): VPathData | undefined {
         const normalizedVpath = vpath.startsWith('/')
             ? vpath.substring(1)
@@ -264,10 +306,19 @@ export class VFStack {
         return this.#vpathMap.get(normalizedVpath);
     }
 
+    /**
+     * Return all paths in the directory stack
+     * @returns 
+     */
     findAll(): VPathData[] {
         return Array.from(this.#vpathMap.values());
     }
 
+    /**
+     * Tests whether the vpath is within a directory stack.
+     * @param vpath 
+     * @returns 
+     */
     has(vpath: string): boolean {
         const normalizedVpath = vpath.startsWith('/')
             ? vpath.substring(1)
@@ -275,7 +326,26 @@ export class VFStack {
         return this.#vpathMap.has(normalizedVpath);
     }
 
+    /**
+     * Tells us how big the stack is.
+     */
     get size(): number {
         return this.#vpathMap.size;
+    }
+
+    [Symbol.iterator](): Iterator<VPathData> {
+        return this.#vpathMap.values();
+    }
+
+    entries(): IterableIterator<[string, VPathData]> {
+        return this.#vpathMap.entries();
+    }
+
+    keys(): IterableIterator<string> {
+        return this.#vpathMap.keys();
+    }
+
+    values(): IterableIterator<VPathData> {
+        return this.#vpathMap.values();
     }
 }

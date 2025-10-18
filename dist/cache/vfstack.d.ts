@@ -83,17 +83,75 @@ export type VPathData = {
      */
     stack?: VPathData[];
 };
+/**
+ * Computes the union of files in a directory stack.
+ */
 export declare class VFStack {
     #private;
+    /**
+     * Constructs an VFStack instance
+     *
+     * @param name
+     * @param dirs
+     */
     constructor(name: string, dirs: DirStackItem[]);
+    /**
+     * Returns the name of this instance
+     */
     get name(): string;
+    /**
+     * Returns the directories in this directory stack
+     */
     get dirs(): DirStackItem[];
+    /**
+     * Determines whether to ignore a file.  Each DirStackItem
+     * may have an array of file globs of files to ignore.
+     * This method is used during scanning the directory stack
+     * to determine which subdirectories or files to ignore.
+     *
+     * @param fspath
+     * @returns
+     */
     toIgnore(fspath: string): boolean;
+    /**
+     * Computes the vpath for a fully specified file path,
+     * so long as the file is within one of the directories
+     * in the stack.
+     *
+     * @param fspath
+     * @param statsMtime
+     * @returns
+     */
     vpathForFSPath(fspath: string, statsMtime?: number): VPathData | undefined;
+    /**
+     * Scans the directory stack to compute the files
+     * in this stack.
+     */
     scan(): Promise<void>;
+    /**
+     * Find a fie within the directory stack.
+     * @param vpath
+     * @returns
+     */
     find(vpath: string): VPathData | undefined;
+    /**
+     * Return all paths in the directory stack
+     * @returns
+     */
     findAll(): VPathData[];
+    /**
+     * Tests whether the vpath is within a directory stack.
+     * @param vpath
+     * @returns
+     */
     has(vpath: string): boolean;
+    /**
+     * Tells us how big the stack is.
+     */
     get size(): number;
+    [Symbol.iterator](): Iterator<VPathData>;
+    entries(): IterableIterator<[string, VPathData]>;
+    keys(): IterableIterator<string>;
+    values(): IterableIterator<VPathData>;
 }
 //# sourceMappingURL=vfstack.d.ts.map
