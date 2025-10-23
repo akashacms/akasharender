@@ -3,3 +3,4 @@ out
 out-rebased
 out-absolute
 cache
+*.gguf
