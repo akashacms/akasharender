@@ -364,3 +364,45 @@ git branch -D feature/vfstack-replacement
 ## Summary
 
 **VFStack is production-ready and fully tested.** The type system is aligned with BaseCache, eliminating the need for conversion layers. Integration can proceed whenever you're ready, with a clear rollback path available.
+
+## Post-Integration Fixes
+
+### Fix: Restore hookFileAdded Calls
+
+**Issue:** After removing the event-based architecture, the `hookFileAdded` plugin hook was no longer being called. This broke plugins like `@akashacms/plugins-affiliates` that rely on this hook to process file metadata during setup.
+
+**Root Cause:** The old `handleAdded` method called `await this.config.hookFileAdded(name, info)` after inserting each file. When we removed `handleAdded` and replaced it with direct calls in `setup()`, we forgot to include the hook call.
+
+**Solution:** Added `await this.config.hookFileAdded(this.name, vpathData)` to `BaseCache.setup()` after each file is inserted into the database.
+
+**Location:** `lib/cache/cache-sqlite.ts`, line ~149
+
+**Code:**
+```typescript
+async setup() {
+    // ... vfstack scanning ...
+    
+    for (const vpathData of this.#vfstack) {
+        if (!this.ignoreFile(vpathData)) {
+            try {
+                this.gatherInfoData(vpathData as any as T);
+                await this.insertDocToDB(vpathData as any as T);
+                await this.config.hookFileAdded(this.name, vpathData);  // ← Added
+            } catch (err) {
+                console.error(`Error gathering info: ${err.message}`);
+            }
+        }
+    }
+}
+```
+
+**Impact:**
+- ✅ Plugins receive `onFileAdded` notifications for all cache types
+- ✅ Maintains backward compatibility with existing plugins
+- ✅ All 294 tests passing
+
+**Note:** The hooks `hookFileChanged` and `hookFileUnlinked` are defined in Configuration but not called, since VFStack doesn't do file watching. These remain available for future use if file watching is added.
+
+**Documentation Updated:**
+- `CACHE-ARCHITECTURE.md` - Added "Plugin Integration" section with examples
+- Plugin hook behavior now documented with real-world examples

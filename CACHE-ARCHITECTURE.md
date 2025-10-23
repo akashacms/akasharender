@@ -394,25 +394,55 @@ console.log(doc.renderPath);           // blog/post.html
        // Scan directories and build file map
        await this.#vfstack.scan();
        
-       // Process each file
-       for (const vpathData of this.#vfstack) {
-           if (!this.ignoreFile(vpathData)) {
-               try {
-                   // Gather additional metadata (subclass-specific)
-                   this.gatherInfoData(vpathData as any as T);
-                   
-                   // Insert into database
-                   await this.insertDocToDB(vpathData as any as T);
-               } catch (err) {
-                   console.error(`Error gathering info for ${vpathData.vpath}: ${err.message}`);
-               }
-           }
-       }
-       
-       this.#is_ready = true;
-       this.emit('ready', this.name);
-   }
-   ```
+        // Process each file
+        for (const vpathData of this.#vfstack) {
+            if (!this.ignoreFile(vpathData)) {
+                try {
+                    // Gather additional metadata (subclass-specific)
+                    this.gatherInfoData(vpathData as any as T);
+                    
+                    // Insert into database
+                    await this.insertDocToDB(vpathData as any as T);
+                    
+                    // Notify plugins that a file was added
+                    await this.config.hookFileAdded(this.name, vpathData);
+                } catch (err) {
+                    console.error(`Error gathering info for ${vpathData.vpath}: ${err.message}`);
+                }
+            }
+        }
+        
+        this.#is_ready = true;
+        this.emit('ready', this.name);
+    }
+    ```
+
+### Plugin Hooks During Setup
+
+During the setup process, plugins are notified when files are added to each cache via the `hookFileAdded` method. This allows plugins to:
+
+- Process file metadata
+- Load additional data from frontmatter
+- Build indexes or relationships
+- Perform validation
+
+**Example - Plugin Hook:**
+```typescript
+class AffiliatesPlugin extends Plugin {
+    async onFileAdded(config, collection, vpinfo) {
+        // Only process documents
+        if (collection === 'documents') {
+            // Load affiliate product data from frontmatter
+            const doc = await config.documentsCache.find(vpinfo.vpath);
+            if (doc?.docMetadata?.affiliate) {
+                await this.loadAffiliateData(doc.docMetadata.affiliate);
+            }
+        }
+    }
+}
+```
+
+**Note:** The hooks `hookFileChanged` and `hookFileUnlinked` are defined but not called during setup, as VFStack does not perform file watching. These hooks remain available for future use if file watching is added.
 
 ### Setup Performance
 
@@ -481,6 +511,114 @@ If both have `index.html.md`, the project version wins.
 - Easy to modify SQL without recompilation
 
 **Future:** Can migrate to prepared statements for better performance.
+
+## Plugin Integration
+
+### File Addition Hooks
+
+The cache system integrates with the plugin system through the `hookFileAdded` callback. During setup, after each file is added to the database, all registered plugins receive a notification.
+
+#### How It Works
+
+```typescript
+// In BaseCache.setup()
+for (const vpathData of this.#vfstack) {
+    this.gatherInfoData(vpathData);
+    await this.insertDocToDB(vpathData);
+    
+    // Notify all plugins
+    await this.config.hookFileAdded(this.name, vpathData);
+}
+```
+
+#### Plugin Implementation
+
+Plugins can hook into file addition by implementing `onFileAdded`:
+
+```typescript
+export default class MyPlugin extends Plugin {
+    constructor() {
+        super('my-plugin');
+    }
+    
+    /**
+     * Called when any file is added to any cache during setup
+     * 
+     * @param config - Configuration object
+     * @param collection - Cache name: 'assets', 'partials', 'layouts', or 'documents'
+     * @param vpinfo - VPathData for the added file
+     */
+    async onFileAdded(config, collection, vpinfo) {
+        // Filter by cache type
+        if (collection === 'documents') {
+            // Fetch full document data
+            const doc = await config.documentsCache.find(vpinfo.vpath);
+            
+            // Process document metadata
+            if (doc?.docMetadata?.myCustomField) {
+                await this.processCustomData(doc);
+            }
+        }
+    }
+}
+```
+
+#### Real-World Example: Affiliates Plugin
+
+The `@akashacms/plugins-affiliates` plugin uses this hook to load product data:
+
+```typescript
+async onFileAdded(config, collection, vpinfo) {
+    if (collection === 'documents') {
+        const doc = await config.documentsCache.find(vpinfo.vpath);
+        
+        // Check for affiliate product references in frontmatter
+        if (doc?.docMetadata?.affiliateProducts) {
+            for (const productId of doc.docMetadata.affiliateProducts) {
+                await this.loadProductData(productId);
+            }
+        }
+    }
+}
+```
+
+#### Available Hooks
+
+| Hook | Called When | Current Status |
+|------|-------------|----------------|
+| `onFileAdded` | File added to cache during setup | ✅ Active |
+| `onFileChanged` | File changed (file watching) | ⚠️ Defined but not called (no file watching) |
+| `onFileUnlinked` | File removed (file watching) | ⚠️ Defined but not called (no file watching) |
+
+**Note:** `onFileChanged` and `onFileUnlinked` hooks exist in the Configuration class for backward compatibility and future use if file watching is implemented, but they are not currently called since VFStack uses synchronous scanning without file watching.
+
+#### Performance Considerations
+
+- Hooks are called synchronously during setup
+- Each file addition waits for all plugin hooks to complete
+- For large sites, keep hook processing fast
+- Consider batching operations if processing many files
+
+**Example - Efficient Hook:**
+```typescript
+class MyPlugin extends Plugin {
+    #pendingData = [];
+    
+    async onFileAdded(config, collection, vpinfo) {
+        // Collect data during scanning
+        if (collection === 'documents') {
+            const doc = await config.documentsCache.find(vpinfo.vpath);
+            this.#pendingData.push(doc.docMetadata);
+        }
+    }
+    
+    async onSiteRendered(config) {
+        // Process in batch after setup completes
+        await this.processBatch(this.#pendingData);
+        this.#pendingData = [];
+    }
+}
+```
 
 ## Query Patterns
 

@@ -145,6 +145,7 @@ export class BaseCache<
                 try {
                     this.gatherInfoData(vpathData as any as T);
                     await this.insertDocToDB(vpathData as any as T);
+                    await this.config.hookFileAdded(this.name, vpathData);
                 } catch (err) {
                     console.error(`Error gathering info for ${vpathData.vpath}: ${err.message}`);
                 }
@@ -2107,12 +2108,16 @@ export class DocumentsCache
 
             const doc = found[0];
 
+            // if (!doc.metadata) {
+            //     console.warn(`WARNING docLinkData no metadata for ${vpath}`);
+            // }
+
             // const docInfo = await this.find(vpath);
             return {
                 vpath,
                 renderPath: doc.renderPath,
-                title: doc.metadata.title,
-                teaser: doc.metadata.teaser,
+                title: doc.title,
+                teaser: doc.teaser,
                 // thumbnail
             };
         } else {
