@@ -30,7 +30,9 @@ import path from 'node:path';
 // const oembetter = require('oembetter')();
 import RSS from 'rss';
 import fastq from 'fastq';
-import { DirsWatcher, VPathData, dirToWatch, mimedefine } from '@akashacms/stacked-dirs';
+import { mimedefine, dirToMount, isDirToMount, VPathData } from './cache/vfstack.js';
+export type { dirToMount, VPathData } from './cache/vfstack.js';
+export { isDirToMount } from './cache/vfstack.js';
 import * as Renderers from '@akashacms/renderers';
 export * as Renderers from '@akashacms/renderers';
 import { Renderer } from '@akashacms/renderers';
@@ -48,8 +50,8 @@ export * as relative from 'relative';
 import { Plugin } from './Plugin.js';
 export { Plugin } from './Plugin.js';
 
-import { render, renderDocument, renderContent } from './render.js';
-export { render, renderDocument, renderContent } from './render.js';
+import { render, render2, renderDocument, renderContent, renderDocument2 } from './render.js';
+export { render, render2, renderDocument, renderDocument2, renderContent } from './render.js';
 
 const __filename = import.meta.filename;
 const __dirname = import.meta.dirname;
@@ -57,9 +59,12 @@ const __dirname = import.meta.dirname;
 // For use in Configure.prepare
 import { BuiltInPlugin } from './built-in.js';
 
-import * as filecache from './cache/file-cache-sqlite.js';
+import * as filecache from './cache/cache-sqlite.js';
+import { sqdb } from './sqdb.js';
 
 export { newSQ3DataStore } from './sqdb.js';
+
+import { init } from './data.js';
 
 // There doesn't seem to be an official MIME type registered
 // for AsciiDoctor
@@ -124,11 +129,13 @@ export async function setup(config) {
 
     await cacheSetup(config);
     await fileCachesReady(config);
+
+    await init();
 }
 
 export async function cacheSetup(config) {
     try {
-        await filecache.setup(config);
+        await filecache.setup(config, await sqdb);
     } catch (err) {
         console.error(`INITIALIZATION FAILURE COULD NOT INITIALIZE CACHE `, err);
         process.exit(1);
@@ -200,6 +207,48 @@ export async function renderPath(config, path2r) {
     return result;
 }
 
+export async function renderPath2(config, path2r) {
+    const documents = filecache.documentsCache;
+    let found;
+    let count = 0;
+    while (count < 20) {
+        /* What's happening is this might be called from cli.js
+         * in render-document, and we might be asked to render the
+         * last document that will be ADD'd to the FileCache.
+         *
+         * In such a case <code>isReady</code> might return <code>true</code>
+         * but not all files will have been ADD'd to the FileCache.
+         * In that case <code>documents.find</code> returns
+         * <code>undefined</code>
+         *
+         * What this does is try up to 20 times to load the document,
+         * sleeping for 100 milliseconds each time.
+         *
+         * The cleaner alternative would be to wait for not only
+         * the <code>ready</code> from the <code>documents</code> FileCache,
+         * but also for all the initial ADD events to be handled.  But
+         * that second condition seems difficult to detect reliably.
+         */
+        found = await documents.find(path2r);
+        if (found) break;
+        else {
+            await new Promise((resolve, reject) => {
+                setTimeout(() => {
+                    resolve(undefined);
+                }, 100);
+            });
+            count++;
+        }
+    }
+
+    // console.log(`renderPath ${path2r}`, found);
+    if (!found) {
+        throw new Error(`Did not find document for ${path2r}`);
+    }
+    let result = await renderDocument2(config, found);
+    return result;
+}
+
 /**
  * Reads a file from the rendering directory.  It is primarily to be
  * used in test cases, where we'll run a build then read the individual
@@ -247,7 +296,7 @@ export async function partial(config, fname, metadata) {
         // console.log(`partial about to render ${util.inspect(found.vpath)}`);
         let partialText;
         if (found.docBody) partialText = found.docBody;
-        else if (found.docContent) partialText = found.docContent;
+        else if (found.docBody) partialText = found.docBody;
         else partialText = await fsp.readFile(found.fspath, 'utf8');
 
         // Some renderers (Nunjuks) require that metadata.config
@@ -338,6 +387,14 @@ export function partialSync(config, fname, metadata) {
     }
 }
 
+export type indexChainItem = {
+    title: string;
+    vpath: string;
+    foundPath: string;
+    foundDir: string;
+    filename: string;
+};
+
 /**
  * Starting from a virtual path in the documents, searches upwards to
  * the root of the documents file-space, finding files that 
@@ -348,7 +405,9 @@ export function partialSync(config, fname, metadata) {
  * @param {*} fname 
  * @returns 
  */
-export async function indexChain(config, fname) {
+export async function indexChain(
+    config, fname
+): Promise<indexChainItem[]> {
 
     // This used to be a full function here, but has moved
     // into the FileCache class.  Requiring a `config` option
@@ -495,34 +554,6 @@ export type stylesheetItem = {
  * converted to the dirToWatch structure
  * used by StackedDirs.
  */
-export type dirToMount =
-    string
-    | {
-        /**
-         * The fspath to mount
-         */
-        src: string,
-
-        /**
-         * The virtual filespace
-         * location
-         */
-        dest: string,
-
-        /**
-         * Array of GLOB patterns
-         * of files to ignore
-         */
-        ignore?: string[],
-
-        /**
-         * An object containing
-         * metadata that's to
-         * apply to every file
-         */
-        baseMetadata?: any
-    };
-
 /**
  * Configuration of an AkashaRender project, including the input directories,
  * output directory, plugins, and various settings.
@@ -549,6 +580,7 @@ export class Configuration {
         javaScriptBottom?: javaScriptItem[]
     };
     #concurrency: number;
+    #cachingTimeout: number;
     #metadata: any;
     #root_url: string;
     #plugins;
@@ -569,6 +601,8 @@ export class Configuration {
         };
 
         this.#concurrency = 3;
+        // 60 seconds, or 1 minute
+        this.#cachingTimeout = 60000;
 
         this.#documentDirs = [];
         this.#layoutDirs = [];
@@ -768,12 +802,11 @@ export class Configuration {
 
     /**
      * Add a directory to the documentDirs configuration array
-     * @param {string} dir The pathname to use
+     * @param {string | dirToMount} dir The pathname to use or dirToMount object
      */
-    addDocumentsDir(dir: dirToMount) {
-        // If we have a configDir, and it's a relative directory, make it
-        // relative to the configDir
+    addDocumentsDir(dir: string | dirToMount) {
         let dirMount: dirToMount;
+        
         if (typeof dir === 'string') {
             if (!path.isAbsolute(dir) && this.configDir != null) {
                 dirMount = {
@@ -786,18 +819,22 @@ export class Configuration {
                     dest: '/'
                 };
             }
-        } else if (typeof dir === 'object') {
+        } else {
             if (!path.isAbsolute(dir.src) && this.configDir != null) {
-                dir.src = path.join(this.configDir, dir.src);
-                dirMount = dir;
+                dirMount = {
+                    ...dir,
+                    src: path.join(this.configDir, dir.src)
+                };
             } else {
                 dirMount = dir;
             }
-        } else {
-            throw new Error(`addDocumentsDir - directory to mount of wrong type ${util.inspect(dir)}`);
         }
+        
+        if (!isDirToMount(dirMount)) {
+            throw new Error(`addDocumentsDir - invalid dirToMount object: ${util.inspect(dirMount)}`);
+        }
+        
         this.#documentDirs.push(dirMount);
-        // console.log(`addDocumentsDir ${util.inspect(dir)} ==> ${util.inspect(this[_config_documentDirs])}`);
         return this;
     }
 
@@ -823,12 +860,11 @@ export class Configuration {
 
     /**
      * Add a directory to the layoutDirs configurtion array
-     * @param {string} dir The pathname to use
+     * @param {string | dirToMount} dir The pathname to use or dirToMount object
      */
-    addLayoutsDir(dir: dirToMount) {
-        // If we have a configDir, and it's a relative directory, make it
-        // relative to the configDir
+    addLayoutsDir(dir: string | dirToMount) {
         let dirMount: dirToMount;
+        
         if (typeof dir === 'string') {
             if (!path.isAbsolute(dir) && this.configDir != null) {
                 dirMount = {
@@ -841,20 +877,23 @@ export class Configuration {
                     dest: '/'
                 };
             }
-        } else if (typeof dir === 'object') {
+        } else {
             if (!path.isAbsolute(dir.src) && this.configDir != null) {
-                dir.src = path.join(this.configDir, dir.src);
-                dirMount = dir;
+                dirMount = {
+                    ...dir,
+                    src: path.join(this.configDir, dir.src)
+                };
             } else {
                 dirMount = dir;
             }
-        } else {
-            throw new Error(`addLayoutsDir - directory to mount of wrong type ${util.inspect(dir)}`);
         }
+        
+        if (!isDirToMount(dirMount)) {
+            throw new Error(`addLayoutsDir - invalid dirToMount object: ${util.inspect(dirMount)}`);
+        }
+        
         this.#layoutDirs.push(dirMount);
-        // console.log(`AkashaRender Configuration addLayoutsDir ${util.inspect(dir)} ${util.inspect(dirMount)} layoutDirs ${util.inspect(this.#layoutDirs)} Renderers layoutDirs ${util.inspect(this.#renderers.layoutDirs)}`);
         this.#renderers.addLayoutDir(dirMount.src);
-        // console.log(`AkashaRender Configuration addLayoutsDir ${util.inspect(dir)} layoutDirs ${util.inspect(this.#layoutDirs)} Renderers layoutDirs ${util.inspect(this.#renderers.layoutDirs)}`);
         return this;
     }
 
@@ -862,13 +901,12 @@ export class Configuration {
 
     /**
      * Add a directory to the partialDirs configurtion array
-     * @param {string} dir The pathname to use
+     * @param {string | dirToMount} dir The pathname to use or dirToMount object
      * @returns {Configuration}
      */
-    addPartialsDir(dir: dirToMount) {
-        // If we have a configDir, and it's a relative directory, make it
-        // relative to the configDir
+    addPartialsDir(dir: string | dirToMount) {
         let dirMount: dirToMount;
+        
         if (typeof dir === 'string') {
             if (!path.isAbsolute(dir) && this.configDir != null) {
                 dirMount = {
@@ -881,17 +919,21 @@ export class Configuration {
                     dest: '/'
                 };
             }
-        } else if (typeof dir === 'object') {
+        } else {
             if (!path.isAbsolute(dir.src) && this.configDir != null) {
-                dir.src = path.join(this.configDir, dir.src);
-                dirMount = dir;
+                dirMount = {
+                    ...dir,
+                    src: path.join(this.configDir, dir.src)
+                };
             } else {
                 dirMount = dir;
             }
-        } else {
-            throw new Error(`addPartialsDir - directory to mount of wrong type ${util.inspect(dir)}`);
         }
-        // console.log(`addPartialsDir `, dir);
+        
+        if (!isDirToMount(dirMount)) {
+            throw new Error(`addPartialsDir - invalid dirToMount object: ${util.inspect(dirMount)}`);
+        }
+        
         this.#partialDirs.push(dirMount);
         this.#renderers.addPartialDir(dirMount.src);
         return this;
@@ -901,13 +943,12 @@ export class Configuration {
     
     /**
      * Add a directory to the assetDirs configurtion array
-     * @param {string} dir The pathname to use
+     * @param {string | dirToMount} dir The pathname to use or dirToMount object
      * @returns {Configuration}
      */
-    addAssetsDir(dir: dirToMount) {
-        // If we have a configDir, and it's a relative directory, make it
-        // relative to the configDir
+    addAssetsDir(dir: string | dirToMount) {
         let dirMount: dirToMount;
+        
         if (typeof dir === 'string') {
             if (!path.isAbsolute(dir) && this.configDir != null) {
                 dirMount = {
@@ -920,16 +961,21 @@ export class Configuration {
                     dest: '/'
                 };
             }
-        } else if (typeof dir === 'object') {
+        } else {
             if (!path.isAbsolute(dir.src) && this.configDir != null) {
-                dir.src = path.join(this.configDir, dir.src);
-                dirMount = dir;
+                dirMount = {
+                    ...dir,
+                    src: path.join(this.configDir, dir.src)
+                };
             } else {
                 dirMount = dir;
             }
-        } else {
-            throw new Error(`addAssetsDir - directory to mount of wrong type ${util.inspect(dir)}`);
         }
+        
+        if (!isDirToMount(dirMount)) {
+            throw new Error(`addAssetsDir - invalid dirToMount object: ${util.inspect(dirMount)}`);
+        }
+        
         this.#assetsDirs.push(dirMount);
         return this;
     }
@@ -987,6 +1033,46 @@ export class Configuration {
 
     get metadata() { return this.#metadata; }
 
+    #descriptions: Array<{
+        tagName: string,
+        description: string
+    }>;
+
+    /**
+     * Add tag descriptions to the database.  The purpose
+     * is for example a tag index page can give a
+     * description at the top of the page.
+     *
+     * @param tagdescs 
+     */
+    async addTagDescriptions(tagdescs: Array<{
+        tagName: string,
+        description: string
+    }>) {
+        if (!Array.isArray(tagdescs)) {
+            throw new Error(`addTagDescriptions must be given an array of tag descriptions`);
+        }
+        for (const desc of tagdescs) {
+            if (typeof desc.tagName !== 'string'
+             || typeof desc.description !== 'string'
+             ) {
+                throw new Error(`Incorrect tag description ${util.inspect(desc)}`);
+            }
+        }
+        this.#descriptions = tagdescs;
+    }
+
+    async #saveDescriptionsToDB() {
+        const documents = filecache.documentsCache;
+        if (Array.isArray(this.#descriptions)) {
+            for (const desc of this.#descriptions) {
+                await documents.addTagDescription(
+                    desc.tagName, desc.description
+                );
+            }
+        }
+    }
+
     /**
     * Document the URL for a website project.
     * @param {string} root_url
@@ -1010,6 +1096,25 @@ export class Configuration {
     }
 
     get concurrency() { return this.#concurrency; }
+
+    /**
+     * Set the time, in miliseconds, to honor
+     * the SearchCache in the search function.
+     * 
+     * Default is 60000 (1 minute).
+     * 
+     * Set to 0 to disable caching.
+     * @param timeout 
+     */
+    setCachingTimeout(timeout: number) {
+        this.#cachingTimeout = timeout;
+        // console.log(`setSearchCacheTimeout ${this.#searchCacheTimeout}`);
+    }
+
+    get cachingTimeout() {
+        // console.log(`searchCacheTimeout ${this.#searchCacheTimeout}`);
+        return this.#cachingTimeout;
+    }
 
     /**
      * Declare JavaScript to add within the head tag of rendered pages.
@@ -1071,6 +1176,16 @@ export class Configuration {
         // await assets.isReady();
         // Fetch the list of all assets files
         const paths = await assets.paths();
+
+        // console.log(`copyAssets paths`,
+        //     paths.map(item => {
+        //         return {
+        //             vpath: item.vpath,
+        //             renderPath: item.renderPath,
+        //             mime: item.mime
+        //         }
+        //     })
+        // )
 
         // The work task is to copy each file
         const queue = fastq.promise(async function(item) {
@@ -1184,6 +1299,16 @@ export class Configuration {
                 await plugin.onPluginCacheSetup(config);
             }
         }
+
+        // SPECIAL TREATMENT
+        // The tag descriptions need to be installed
+        // in the database.  It is impossible to do
+        // that during Configuration setup in
+        // the addTagDescriptions method.
+        // This function is invoked after the database
+        // is setup.
+
+        await this.#saveDescriptionsToDB();
     }
 
     /**
@@ -1334,8 +1459,10 @@ const module_exports = {
     fileCachesReady,
     Plugin,
     render,
+    render2,
     renderDocument,
     renderPath,
+    renderPath2,
     readRenderedFile,
     partial,
     partialSync,

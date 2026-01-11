@@ -1,0 +1,2 @@
+SELECT DISTINCT tagName AS tag 
+FROM TAGGLUE;

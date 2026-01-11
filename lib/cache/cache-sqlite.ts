@@ -1,0 +1,2573 @@
+/**
+ *
+ * Copyright 2014-2025 David Herron
+ *
+ * This file is part of AkashaCMS (http://akashacms.com/).
+ *
+ *  Licensed under the Apache License, Version 2.0 (the "License");
+ *  you may not use this file except in compliance with the License.
+ *  You may obtain a copy of the License at
+ *
+ *      http://www.apache.org/licenses/LICENSE-2.0
+ *
+ *  Unless required by applicable law or agreed to in writing, software
+ *  distributed under the License is distributed on an "AS IS" BASIS,
+ *  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ *  See the License for the specific language governing permissions and
+ *  limitations under the License.
+ */
+
+import FS, { promises as fsp } from 'node:fs';
+import {
+    VFStack, VPathData, dirToMount
+} from './vfstack.js';
+import {
+    Configuration, indexChainItem
+} from '../index.js';
+import path from 'node:path';
+import util from 'node:util';
+import EventEmitter from 'events';
+import micromatch from 'micromatch';
+import {
+    TagGlue, TagDescriptions
+} from './tag-glue.js';
+import {
+    createAssetsTable,
+    createDocumentsTable,
+    createLayoutsTable,
+    createPartialsTable,
+    doCreateAssetsTable,
+    doCreateDocumentsTable,
+    doCreateLayoutsTable,
+    doCreatePartialsTable,
+    doCreateVecDocumentsTable,
+    PathsReturnType, validateAsset, validateDocument, validateLayout, validatePartial, validatePathsReturnType
+} from './schema.js';
+
+import { Database } from 'sqlite3';
+import { AsyncDatabase } from 'promised-sqlite3';
+import SqlString from 'sqlstring-sqlite';
+import {
+    BaseCacheEntry,
+    Asset,
+    Partial,
+    Layout,
+    Document
+} from './schema.js';
+import Cache from 'cache';
+import { lembedModelName } from '../sqdb.js';
+
+const tglue = new TagGlue();
+// tglue.init(sqdb._db);
+
+const tdesc = new TagDescriptions();
+// tdesc.init(sqdb._db);
+
+export class BaseCache<
+    T extends BaseCacheEntry
+> extends EventEmitter {
+
+    #config?: Configuration;
+    #name?: string;
+    #dirs?: dirToMount[];
+    #is_ready: boolean = false;
+
+    #db: AsyncDatabase;
+    #dbname: string;
+
+
+    /**
+     * @param config AkashaRender Configuration object
+     * @param dirs array of directories and mount points to watch
+     * @param name string giving the name for this watcher name
+     * @param db The PROMISED SQLITE3 AsyncDatabase instance to use
+     * @param dbname The database name to use
+     */
+    constructor(
+        config: Configuration,
+        name: string,
+        dirs: dirToMount[],
+        db: AsyncDatabase,
+        dbname: string
+    ) {
+        super();
+        // console.log(`BaseFileCache ${name} constructor dirs=${util.inspect(dirs)}`);
+        this.#config = config;
+        this.#name = name;
+        this.#dirs = dirs;
+        this.#is_ready = false;
+        this.#db = db;
+        if (dbname !== 'ASSETS'
+         && dbname !== 'LAYOUTS'
+         && dbname !== 'PARTIALS'
+         && dbname !== 'DOCUMENTS'
+        ) {
+            throw new Error(`Illegal database name, must be ASSETS, LAYOUTS, PARTIALS, or DOCUMENTS`)
+        }
+        this.#dbname = dbname;
+    }
+
+    get config()     { return this.#config; }
+    get name()       { return this.#name; }
+    get dirs()       { return this.#dirs; }
+    get db()         { return this.#db; }
+    get dbname()     { return this.#dbname; }
+    get quotedDBName() {
+        return SqlString.escape(this.#dbname);
+    }
+
+    #vfstack: VFStack;
+
+    async close() {
+        this.removeAllListeners('changed');
+        this.removeAllListeners('added');
+        this.removeAllListeners('unlinked');
+        this.removeAllListeners('ready');
+
+        try {
+            await this.#db.close();
+        } catch (err) {
+            // console.warn(`${this.name} error on close ${err.message}`);
+        }
+    }
+
+    /**
+     * Scan the directory stack and populate the database.
+     */
+    async setup() {
+        this.#is_ready = false;
+
+        this.#vfstack = new VFStack(this.name, this.dirs);
+        await this.#vfstack.scan();
+
+        for (const vpathData of this.#vfstack) {
+            if (!this.ignoreFile(vpathData)) {
+                try {
+                    this.gatherInfoData(vpathData as any as T);
+                    await this.insertDocToDB(vpathData as any as T);
+                    await this.config.hookFileAdded(this.name, vpathData);
+                } catch (err) {
+                    console.error(`Error gathering info for ${vpathData.vpath}: ${err.message}`);
+                }
+            }
+        }
+
+        this.#is_ready = true;
+        this.emit('ready', this.name);
+    }
+
+    /**
+     * Validate an item, which is expected to be
+     * a row from database query results, using
+     * one of the validator functions in schema.ts.
+     *
+     * This function must be subclassed to
+     * function correctly.
+     *
+     * @param row 
+     */
+    protected validateRow(row: any): T {
+        throw new Error(`validateRow must be subclassed`);
+    }
+
+    /**
+     * Validate an array, which is expected to be
+     * database query results, using one of the
+     * validator functions in schema.ts.
+     *
+     * This function must be subclassed to
+     * function correctly.
+     *
+     * @param row 
+     */
+    protected validateRows(rows: any[]): T[] {
+        throw new Error(`validateRows must be subclassed`);
+    }
+
+    /**
+     * Convert fields from the database
+     * representation to the form required
+     * for execution.
+     * 
+     * The database cannot stores JSON fields
+     * as an object structure, but as a serialied
+     * JSON string.  Inside AkashaCMS code that
+     * object must be an object rather than
+     * a string.
+     * 
+     * The object passed as "row" should already
+     * have been validated using validateRow.
+     * 
+     * @param row 
+     */
+    protected cvtRowToObj(row: any): T {
+        if (typeof row.info === 'string') {
+            row.info = JSON.parse(row.info);
+        }
+        return <T>row;
+    }
+
+    protected async sqlFormat(fname, params) {
+        const sql = SqlString.format(
+                await fsp.readFile(fname), params
+        );
+        return sql;
+    }
+
+    protected findPathMountedSQL
+            = new Map<string, string>();
+
+    /**
+     * Find an info object based on vpath and mounted.
+     *
+     * @param vpath 
+     * @param mounted 
+     * @returns 
+     */
+    protected async findPathMounted(
+        vpath: string, mounted: string
+    ): Promise<Array<{
+        vpath: string,
+        mounted: string
+    }>>  {
+        
+        let sql = this.findPathMountedSQL.get(this.dbname);
+        if (!sql) {
+            sql = await this.sqlFormat(
+                path.join(import.meta.dirname,
+                    'sql', 'find-path-mounted.sql'),
+                [ this.dbname ]
+            );
+            this.findPathMountedSQL.set(this.dbname, sql);
+        }
+        const found = <any[]>await this.db.all(sql, {
+            $vpath: vpath,
+            $mounted: mounted
+        });
+        const mapped = new Array<{
+            vpath: string,
+            mounted: string
+        }>();
+        for (const item of found) {
+            if (typeof item.vpath === 'string'
+             && typeof item.mounted === 'string'
+            ) {
+                mapped.push({
+                    vpath: item.vpath, mounted: item.mounted
+                });
+            } else {
+                throw new Error(`findPathMounted: Invalid object  found in query (${vpath}, ${mounted}) results ${util.inspect(item)}`);
+            }
+        }
+        return mapped;
+    }
+
+    protected findByPathCache;
+    protected findByPathSQL = new Map<
+        string, string
+    >();
+
+    /**
+     * Find an info object by the vpath.
+     *
+     * @param vpath 
+     * @returns 
+     */
+    protected async findByPath(vpath: string) {
+
+        const doCaching
+            = this.config.cachingTimeout > 0;
+        let cacheKey;
+
+        if (!this.findByPathCache) {
+            this.findByPathCache
+                = new Cache(this.config.cachingTimeout);
+        }
+
+        if (doCaching) {
+
+            cacheKey = JSON.stringify({
+                dbname: this.quotedDBName,
+                vpath,
+            });
+
+            const cached
+                = this.findByPathCache.get(cacheKey);
+            if (cached) {
+                return cached;
+            }
+        }
+
+        // console.log(`findByPath ${this.dao.table.quotedName} ${vpath}`);
+
+        let sql = this.findByPathSQL.get(this.dbname);
+        if (!sql) {
+            sql = await this.sqlFormat(
+                path.join(import.meta.dirname,
+                    'sql', 'find-by-cache.sql'),
+                [ this.dbname ]
+            );
+            this.findByPathSQL.set(this.dbname, sql);
+        }
+
+        let found;
+        try {
+            found = <any[]>await this.db.all(sql, {
+                $vpath: vpath
+            });
+        } catch (err) {
+            console.log(`db.all ${sql}`, err.stack);
+            throw err;
+        }
+
+        const mapped = this.validateRows(found);
+
+        const ret = mapped.map(item => {
+            return this.cvtRowToObj(item)
+        });
+
+        if (doCaching && cacheKey) {
+            this.findByPathCache.put(
+                cacheKey, ret
+            );
+        }
+
+        return ret;
+    }
+
+    gatherInfoData(info: T) {
+        // Placeholder which some subclasses
+        // are expected to override
+
+        // info.renderPath = info.vpath;
+        throw new Error(`gatherInfoData must be overridden`);
+    }
+
+    protected async insertDocToDB(info: T) {
+        throw new Error(`insertDocToDB must be overridden`);
+    }
+
+    protected async updateDocInDB(info: T) {
+        throw new Error(`updateDocInDB must be overridden`);
+    }
+
+    /**
+     * Allow a caller to wait until the <em>ready</em> event has
+     * been sent from the DirsWatcher instance.  This event means the
+     * initial indexing has happened.
+     */
+    async isReady() {
+        // If there's no directories, there won't be any files 
+        // to load, and no need to wait
+        while (this.#dirs.length > 0 && !this.#is_ready) {
+            // This does a 100ms pause
+            // That lets us check is_ready every 100ms
+            // at very little cost
+            // console.log(`!isReady ${this.name} ${this[_symb_dirs].length} ${this[_symb_is_ready]}`);
+            await new Promise((resolve, reject) => {
+                setTimeout(() => {
+                    resolve(undefined);
+                }, 100);
+            });
+        }
+        return true;
+    }
+
+    /**
+     * Find the directory mount corresponding to the file.
+     *
+     * @param {*} info
+     * @returns
+     */
+    fileDirMount(info) {
+        for (const dir of this.#dirs) {
+            if (info.mountPoint === dir.dest) {
+                return dir;
+            }
+        }
+        return undefined;
+    }
+
+    /**
+     * Should this file be ignored, based on the `ignore` field
+     * in the matching `dir` mount entry.
+     *
+     * @param {*} info
+     * @returns
+     */
+    ignoreFile(info) {
+        // console.log(`ignoreFile ${info.vpath}`);
+        const dirMount = this.fileDirMount(info);
+        // console.log(`ignoreFile ${info.vpath} dirMount ${util.inspect(dirMount)}`);
+        let ignore = false;
+        if (dirMount) {
+
+            let ignores;
+            if (typeof dirMount.ignore === 'string') {
+                ignores = [ dirMount.ignore ];
+            } else if (Array.isArray(dirMount.ignore)) {
+                ignores = dirMount.ignore;
+            } else {
+                ignores = [];
+            }
+            for (const i of ignores) {
+                if (micromatch.isMatch(info.vpath, i)) ignore = true;
+                // console.log(`dirMount.ignore ${fspath} ${i} => ${ignore}`);
+            }
+            // if (ignore) console.log(`MUST ignore File ${info.vpath}`);
+            // console.log(`ignoreFile for ${info.vpath} ==> ${ignore}`);
+            return ignore;
+        } else {
+            // no mount?  that means something strange
+            console.error(`No dirMount found for ${info.vpath} / ${info.dirMountedOn}`);
+            return true;
+        }
+    }
+
+    protected pathsCache;
+    protected pathsSQL = new Map<string, string>();
+
+    /**
+     * Return simple information about each
+     * path in the collection.  The return
+     * type is an array of PathsReturnType.
+     * 
+     * I found two uses for this function.
+     * In copyAssets, the vpath and other
+     * simple data is used for copying items
+     * to the output directory.
+     * In render.ts, the simple fields are
+     * used to then call find to retrieve
+     * the full information.
+     *
+     * @param rootPath 
+     * @returns 
+     */
+    async paths(rootPath?: string)
+        : Promise<Array<PathsReturnType>>
+    {
+        const fcache = this;
+
+        let rootP = rootPath?.startsWith('/')
+                  ? rootPath?.substring(1)
+                  : rootPath;
+
+        const doCaching
+            = this.config.cachingTimeout > 0;
+        let cacheKey;
+
+        if (doCaching) {
+            if (!this.pathsCache) {
+                this.pathsCache
+                    = new Cache(this.config.cachingTimeout);
+            }
+
+            cacheKey = JSON.stringify({
+                dbname: this.quotedDBName,
+                rootP,
+            });
+
+            const cached
+                = this.pathsCache.get(cacheKey);
+            if (cached) {
+                return cached;
+            }
+        }
+
+        let sqlRootP = this.pathsSQL.get(JSON.stringify({
+            dbname: this.dbname, rootP: true
+        }));
+        if (!sqlRootP) {
+            sqlRootP = await this.sqlFormat(
+                path.join(import.meta.dirname,
+                    'sql', 'paths-rootp.sql'),
+                [ this.dbname ]
+            );
+            this.pathsSQL.set(this.dbname, sqlRootP);
+        }
+        let sqlNoRoot = this.pathsSQL.get(JSON.stringify({
+            dbname: this.dbname, rootP: false
+        }));
+        if (!sqlNoRoot) {
+            sqlNoRoot = await this.sqlFormat(
+                path.join(import.meta.dirname,
+                    'sql', 'paths-no-root.sql'),
+                [ this.dbname ]
+            );
+            this.pathsSQL.set(this.dbname, sqlNoRoot);
+        }
+
+        // This is copied from the older version
+        // (LokiJS version) of this function.  It
+        // seems meant to eliminate duplicates.
+        const vpathsSeen = new Set();
+
+        // Select the fields in PathsReturnType
+        const results = (typeof rootP === 'string') 
+        ? <any[]>await this.db.all(sqlRootP, {
+            $rootP: `${rootP}%`
+        })
+        : <any[]>await this.db.all(sqlNoRoot);
+
+        const result2: PathsReturnType[]
+                = new Array<PathsReturnType>();
+        for (const item of results) {
+            if (fcache.ignoreFile(item)) {
+                continue;
+            }
+            if (vpathsSeen.has((item as T).vpath)) {
+                continue;
+            } else {
+                vpathsSeen.add((item as T).vpath);
+            }
+            if (item.mime === null) {
+                item.mime = undefined;
+            }
+            const { error, value } =
+                validatePathsReturnType(item);
+            if (error) {
+                console.log(`PATHS VALIDATION ${util.inspect(item)}`, error.stack);
+                throw error;
+            }
+            result2.push(value);
+        }
+
+        if (doCaching && cacheKey) {
+            this.pathsCache.put(
+                cacheKey, result2
+            );
+        }
+
+        return result2;
+    }
+
+    /**
+     * Find the file within the cache.
+     *
+     * @param _fpath The vpath or renderPath to look for
+     * @returns boolean true if found, false otherwise
+     */
+    async find(_fpath): Promise<T | undefined> {
+
+        if (typeof _fpath !== 'string') {
+            throw new Error(`find parameter not string ${typeof _fpath}`);
+        }
+
+        const fpath = _fpath.startsWith('/')
+                    ? _fpath.substring(1)
+                    : _fpath;
+
+        const fcache = this;
+
+        const result1 = await this.findByPath(fpath);
+
+        // const result1 = await this.dao.selectAll({
+        //     or: [
+        //         { vpath: { eq: fpath }},
+        //         { renderPath: { eq: fpath }}
+        //     ]
+        // } as Filter<T>);
+
+        // console.log(`find ${_fpath} ${fpath} ==> result1 ${util.inspect(result1)} `);
+
+        const result2 = result1.filter(item => {
+            return !(fcache.ignoreFile(item));
+        });
+
+        // for (const result of result2) {
+        //     this.gatherInfoData(result);
+        // }
+
+        // console.log(`find ${_fpath} ${fpath} ==> result2 ${util.inspect(result2)} `);
+
+        let ret;
+        if (Array.isArray(result2) && result2.length > 0) {
+            ret = result2[0];
+        } else if (Array.isArray(result2) && result2.length <= 0) {
+            ret = undefined;
+        } else {
+            ret = result2;
+        }
+        if (ret) {
+            const value: T = this.cvtRowToObj(
+                this.validateRow(ret)
+            );
+            return value;
+        } else {
+            return undefined;
+        }
+
+        // PROBLEM:
+        // the metadata, docMetadata, baseMetadata,
+        // and info fields, are stored in
+        // the database as strings, but need
+        // to be unpacked into objects.
+        //
+        // Using validateRow or validateRows is
+        // useful, but does not convert those
+        // fields.
+    }
+
+    #fExistsInDir(fpath, dir: dirToMount) {
+        // console.log(`#fExistsInDir ${fpath} ${util.inspect(dir)}`);
+        if (dir.dest === '/') {
+            const fspath = path.join(
+                dir.src, fpath
+            );
+            let fsexists = FS.existsSync(fspath);
+
+            if (fsexists) {
+                let stats = FS.statSync(fspath);
+                return <VPathData> {
+                    vpath: fpath,
+                    renderPath: fpath,
+                    fspath: fspath,
+                    mime: undefined,
+                    mounted: dir.src,
+                    mountPoint: dir.dest,
+                    pathInMounted: fpath,
+                    statsMtime: stats.mtimeMs
+                };
+            } else {
+                return undefined;
+            }
+        }
+
+        let mp = dir.dest.startsWith('/')
+            ? dir.dest.substring(1)
+            : dir.dest;
+        mp = mp.endsWith('/')
+            ? mp
+            : (mp+'/');
+
+        if (fpath.startsWith(mp)) {
+            let pathInMounted
+                = fpath.replace(dir.dest, '');
+            let fspath = path.join(
+                dir.src, pathInMounted);
+            // console.log(`Checking exist for ${dir.dest} ${dir.src} ${pathInMounted} ${fspath}`);
+            let fsexists = FS.existsSync(fspath);
+
+            if (fsexists) {
+                let stats = FS.statSync(fspath);
+                return <VPathData> {
+                    vpath: fpath,
+                    renderPath: fpath,
+                    fspath: fspath,
+                    mime: undefined,
+                    mounted: dir.src,
+                    mountPoint: dir.dest,
+                    pathInMounted: pathInMounted,
+                    statsMtime: stats.mtimeMs
+                };
+            }
+        }
+
+        return undefined;
+    }
+
+    /**
+     * Fulfills the "find" operation not by
+     * looking in the database, but by scanning
+     * the filesystem using synchronous calls.
+     * 
+     * NOTE: This is used in partialSync
+     *
+     * @param _fpath 
+     * @returns 
+     */
+    findSync(_fpath): VPathData | undefined {
+
+        if (typeof _fpath !== 'string') {
+            throw new Error(`find parameter not string ${typeof _fpath}`);
+        }
+
+        const fpath = _fpath.startsWith('/')
+                    ? _fpath.substring(1)
+                    : _fpath;
+
+        // console.log(`findSync looking for ${fpath} in ${util.inspect(this.#dirs)}`);
+
+        for (const dir of this.#dirs) {
+            if (!(dir?.dest)) {
+                console.warn(`findSync bad dirs in ${util.inspect(this.dirs)}`);
+            }
+            const found = this.#fExistsInDir(fpath, dir);
+            if (found) {
+                // console.log(`findSync ${fpath} found`, found);
+                return found;
+            }
+        }
+        return undefined;
+    }
+
+}
+
+export class AssetsCache
+        extends BaseCache<Asset> {
+    
+    protected validateRow(row: any): Asset {
+        const { error, value } = validateAsset(row);
+        if (error) {
+            // console.error(`ASSET VALIDATION ERROR for`, row);
+            throw error;
+        } else return value;
+    }
+
+    protected validateRows(rows: any[]): Asset[] {
+        if (!Array.isArray(rows)) {
+            throw new Error(`AssetsCache validateRows must be given an array`);
+        }
+        const ret = new Array<Asset>();
+        for (const row of rows) {
+            ret.push(this.validateRow(row))
+        }
+        return ret;
+    }
+
+    protected cvtRowToObj(row: any): Asset {
+        if (typeof row.info === 'string') {
+            row.info = JSON.parse(row.info);
+        }
+        return <Asset>row;
+    }
+
+    gatherInfoData(info: Asset) {
+        if (typeof (<any>info).statsMtime === 'number') {
+            info.mtimeMs = (<any>info).statsMtime;
+        }
+        if (info.mime === null) {
+            info.mime = undefined;
+        }
+    }
+
+    #insertDocAssets;
+
+    protected async insertDocToDB(
+        info: Asset
+    ) {
+        if (!this.#insertDocAssets) {
+            this.#insertDocAssets =
+                await fsp.readFile(
+                    path.join(
+                        import.meta.dirname,
+                        'sql', 'insert-doc-assets.sql'
+                    ), 'utf-8'
+                );
+        }
+        await this.db.run(this.#insertDocAssets, {
+            $vpath: info.vpath,
+            $mime: info.mime,
+            $mounted: info.mounted,
+            $mountPoint: info.mountPoint,
+            $pathInMounted: info.pathInMounted,
+            $fspath: path.join(info.mounted, info.pathInMounted),
+            $dirname: path.dirname(info.vpath),
+            $mtimeMs: info.mtimeMs,
+            $info: JSON.stringify(info)
+        });
+    }
+
+    #updateDocAssets;
+
+    protected async updateDocInDB(info: Asset) {
+        if (!this.#updateDocAssets) {
+            this.#updateDocAssets =
+                await fsp.readFile(
+                    path.join(
+                        import.meta.dirname,
+                        'sql', 'update-doc-assets.sql'
+                    ), 'utf-8'
+                );
+        }
+        await this.db.run(this.#updateDocAssets, {
+            $vpath: info.vpath,
+            $mime: info.mime,
+            $mounted: info.mounted,
+            $mountPoint: info.mountPoint,
+            $pathInMounted: info.pathInMounted,
+            $fspath: path.join(info.mounted, info.pathInMounted),
+            $dirname: path.dirname(info.vpath),
+            $mtimeMs: info.mtimeMs,
+            $info: JSON.stringify(info)
+        });
+    }
+
+}
+
+export class PartialsCache
+        extends BaseCache<Partial> {
+    
+    protected validateRow(row: any): Partial {
+        const { error, value } = validatePartial(row);
+        if (error) throw error;
+        else return value;
+    }
+
+    protected validateRows(rows: any[]): Partial[] {
+        if (!Array.isArray(rows)) {
+            throw new Error(`PartialsCache validateRows must be given an array`);
+        }
+        const ret = new Array<Partial>();
+        for (const row of rows) {
+            ret.push(this.validateRow(row))
+        }
+        return ret;
+    }
+
+    protected cvtRowToObj(row: any): Partial {
+        if (typeof row.info === 'string') {
+            row.info = JSON.parse(row.info);
+        }
+        return <Partial>row;
+    }
+
+
+    gatherInfoData(info: Partial) {
+
+        let renderer = this.config.findRendererPath(info.vpath);
+        if (typeof (<any>info).statsMtime === 'number') {
+            info.mtimeMs = (<any>info).statsMtime;
+        }
+        if (info.mime === null) {
+            info.mime = undefined;
+        }
+        if (renderer) {
+            info.rendererName = renderer.name;
+
+            if (renderer.parseMetadata) {
+
+                const rc = renderer.parseMetadata(<any>{
+                    fspath: info.fspath,
+                    content: FS.readFileSync(info.fspath, 'utf-8')
+                });
+
+                // docBody is the parsed body -- e.g. following the frontmatter
+                info.docBody = rc.body;
+            }
+        }
+    }
+
+    #insertDocPartials;
+
+    protected async insertDocToDB(
+        info: Partial
+    ) {
+        if (!this.#insertDocPartials) {
+            this.#insertDocPartials =
+                await fsp.readFile(
+                    path.join(
+                        import.meta.dirname,
+                        'sql', 'insert-doc-partials.sql'
+                    ), 'utf-8'
+                );
+        }
+        await this.db.run(this.#insertDocPartials, {
+            $vpath: info.vpath,
+            $mime: info.mime,
+            $mounted: info.mounted,
+            $mountPoint: info.mountPoint,
+            $pathInMounted: info.pathInMounted,
+            $fspath: path.join(info.mounted, info.pathInMounted),
+            $dirname: path.dirname(info.vpath),
+            $mtimeMs: info.mtimeMs,
+            $info: JSON.stringify(info),
+
+            $docBody: info.docBody,
+            $rendererName: info.rendererName
+        });
+    }
+
+    #updateDocPartials;
+
+    protected async updateDocInDB(
+        info: Partial
+    ) {
+        if (!this.#updateDocPartials) {
+            this.#updateDocPartials =
+                await fsp.readFile(
+                    path.join(
+                        import.meta.dirname,
+                        'sql', 'update-doc-partials.sql'
+                    ), 'utf-8'
+                );
+        }
+        await this.db.run(this.#updateDocPartials, {
+            $vpath: info.vpath,
+            $mime: info.mime,
+            $mounted: info.mounted,
+            $mountPoint: info.mountPoint,
+            $pathInMounted: info.pathInMounted,
+            $fspath: path.join(info.mounted, info.pathInMounted),
+            $dirname: path.dirname(info.vpath),
+            $mtimeMs: info.mtimeMs,
+            $info: JSON.stringify(info),
+
+            $docBody: info.docBody,
+            $rendererName: info.rendererName
+        });
+    }
+
+}
+
+export class LayoutsCache
+        extends BaseCache<Layout> {
+    
+    protected validateRow(row: any): Layout {
+        const { error, value } = validateLayout(row);
+        if (error) throw error;
+        else return value;
+    }
+
+    protected validateRows(rows: any[]): Layout[] {
+        if (!Array.isArray(rows)) {
+            throw new Error(`LayoutsCache validateRows must be given an array`);
+        }
+        const ret = new Array<Layout>();
+        for (const row of rows) {
+            ret.push(this.validateRow(row))
+        }
+        return ret;
+    }
+
+    protected cvtRowToObj(row: any): Layout {
+        if (typeof row.info === 'string') {
+            row.info = JSON.parse(row.info);
+        }
+        return <Layout>row;
+    }
+
+    gatherInfoData(info: Layout) {
+
+        let renderer = this.config.findRendererPath(info.vpath);
+        if (typeof (<any>info).statsMtime === 'number') {
+            info.mtimeMs = (<any>info).statsMtime;
+        }
+        if (info.mime === null) {
+            info.mime = undefined;
+        }
+        if (renderer) {
+            info.rendererName = renderer.name;
+
+            const renderPath
+                = renderer.filePath(info.vpath);
+
+            info.rendersToHTML =
+                micromatch.isMatch(
+                    renderPath,
+                    '**/*.html')
+             || micromatch.isMatch(
+                    renderPath,
+                    '*.html')
+            ? true : false;
+
+            if (renderer.parseMetadata) {
+
+                const rc = renderer.parseMetadata(<any>{
+                    fspath: info.fspath,
+                    content: FS.readFileSync(info.fspath, 'utf-8')
+                });
+
+                // docBody is the parsed body -- e.g. following the frontmatter
+                info.docBody = rc.body;
+            }
+        } else {
+            info.rendersToHTML = false;
+        }
+    }
+
+    #insertDocLayouts;
+
+    protected async insertDocToDB(
+        info: Layout
+    ) {
+        if (!this.#insertDocLayouts) {
+            this.#insertDocLayouts =
+                await fsp.readFile(
+                    path.join(
+                        import.meta.dirname,
+                        'sql', 'insert-doc-layouts.sql'
+                    ), 'utf-8'
+                );
+        }
+        await this.db.run(this.#insertDocLayouts, {
+            $vpath: info.vpath,
+            $mime: info.mime,
+            $mounted: info.mounted,
+            $mountPoint: info.mountPoint,
+            $pathInMounted: info.pathInMounted,
+            $fspath: path.join(info.mounted, info.pathInMounted),
+            $dirname: path.dirname(info.vpath),
+            $mtimeMs: info.mtimeMs,
+            $info: JSON.stringify(info),
+
+            $rendersToHTML: info.rendersToHTML,
+            $docBody: info.docBody,
+            $rendererName: info.rendererName
+        });
+    }
+
+    #updateDocLayouts;
+
+    protected async updateDocInDB(
+        info: Layout
+    ) {
+        if (!this.#updateDocLayouts) {
+            this.#updateDocLayouts =
+                await fsp.readFile(
+                    path.join(
+                        import.meta.dirname,
+                        'sql', 'update-doc-layouts.sql'
+                    ), 'utf-8'
+                );
+        }
+        await this.db.run(this.#updateDocLayouts, {
+            $vpath: info.vpath,
+            $mime: info.mime,
+            $mounted: info.mounted,
+            $mountPoint: info.mountPoint,
+            $pathInMounted: info.pathInMounted,
+            $fspath: path.join(info.mounted, info.pathInMounted),
+            $dirname: path.dirname(info.vpath),
+            $mtimeMs: info.mtimeMs,
+            $info: JSON.stringify(info),
+
+            $rendersToHTML: info.rendersToHTML,
+            $docBody: info.docBody,
+            $rendererName: info.rendererName
+        });
+    }
+}
+
+export class DocumentsCache
+        extends BaseCache<Document> {
+    
+    protected validateRow(row: any): Document {
+        const { error, value }
+                    = validateDocument(row);
+        if (error) {
+            console.error(`DOCUMENT VALIDATION ERROR for ${util.inspect(row)}`, error.stack);
+            throw error;
+        } else return value;
+    }
+
+    protected validateRows(rows: any[]): Document[] {
+        if (!Array.isArray(rows)) {
+            throw new Error(`DocumentsCache validateRows must be given an array`);
+        }
+        const ret = new Array<Document>();
+        for (const row of rows) {
+            ret.push(this.validateRow(row))
+        }
+        return ret;
+    }
+
+    protected cvtRowToObj(row: any): Document {
+        // console.log(`Documents cvtRowToObj`, row);
+        if (typeof row.info === 'string') {
+            row.info = JSON.parse(row.info);
+        }
+        if (typeof row.baseMetadata === 'string') {
+            row.baseMetadata
+                = JSON.parse(row.baseMetadata);
+        }
+        if (typeof row.docMetadata === 'string') {
+            row.docMetadata
+                = JSON.parse(row.docMetadata);
+        }
+        if (typeof row.metadata === 'string') {
+            row.metadata
+                = JSON.parse(row.metadata);
+        }
+        if (typeof row.tags === 'string') {
+            row.tags
+                = JSON.parse(row.tags);
+        }
+        return <Document>row;
+    }
+
+    gatherInfoData(info: Document) {
+
+        info.renderPath = info.vpath;
+        info.dirname = path.dirname(info.vpath);
+        if (info.dirname === '.') info.dirname = '/';
+        info.parentDir = path.dirname(info.dirname);
+
+        // find the mounted directory,
+        // get the baseMetadata
+        for (let dir of this.dirs) {
+            if (dir.src === info.mounted) {
+                if (dir.baseMetadata) {
+                    info.baseMetadata = dir.baseMetadata;
+                }
+                break;
+            }
+        }
+
+        if (typeof (<any>info).statsMtime === 'number') {
+            info.mtimeMs = (<any>info).statsMtime;
+        }
+        if (info.mime === null) {
+            info.mime = undefined;
+        }
+        let renderer = this.config.findRendererPath(info.vpath);
+        if (renderer) {
+            info.rendererName = renderer.name;
+
+            info.renderPath
+                = renderer.filePath(info.vpath);
+
+            info.rendersToHTML =
+                micromatch.isMatch(
+                    info.renderPath,
+                    '**/*.html')
+             || micromatch.isMatch(
+                    info.renderPath,
+                    '*.html')
+            ? true : false;
+
+            if (renderer.parseMetadata) {
+
+                const rc = renderer.parseMetadata(<any>{
+                    fspath: info.fspath,
+                    content: FS.readFileSync(info.fspath, 'utf-8')
+                });
+
+                // docMetadata is the unmodified metadata/frontmatter
+                // in the document
+                info.docMetadata = rc.metadata;
+                // docContent is the unparsed original content
+                // including any frontmatter
+                info.docContent = rc.content;
+                // docBody is the parsed body -- e.g. following the frontmatter
+                info.docBody = rc.body;
+
+                // This is the computed metadata that includes data from 
+                // several sources
+                info.metadata = { };
+                if (!info.docMetadata) info.docMetadata = {};
+
+                // The rest of this is adapted from the old function
+                // HTMLRenderer.newInitMetadata
+
+                // For starters the metadata is collected from several sources.
+                // 1) the metadata specified in the directory mount where
+                //    this document was found
+                // 2) metadata in the project configuration
+                // 3) the metadata in the document, as captured in docMetadata
+
+                for (let yprop in info.baseMetadata) {
+                    // console.log(`initMetadata ${basedir} ${fpath} baseMetadata ${baseMetadata[yprop]}`);
+                    info.metadata[yprop] = info.baseMetadata[yprop];
+                }
+                for (let yprop in this.config.metadata) {
+                    info.metadata[yprop] = this.config.metadata[yprop];
+                }
+
+                let fmmcount = 0;
+                for (let yprop in info.docMetadata) {
+                    info.metadata[yprop] = info.docMetadata[yprop];
+                    fmmcount++;
+                }
+
+                // The rendered version of the content lands here
+                info.metadata.content = "";
+                // The document object has been useful for 
+                // communicating the file path and other data.
+                info.metadata.document = {};
+                info.metadata.document.basedir = info.mountPoint;
+                info.metadata.document.relpath = info.pathInMounted;
+                info.metadata.document.relrender = renderer.filePath(info.pathInMounted);
+                info.metadata.document.path = info.vpath;
+                info.metadata.document.renderTo = info.renderPath;
+
+                // Ensure the <em>tags</em> field is an array
+                if (!(info.metadata.tags)) {
+                    info.metadata.tags = [];
+                } else if (typeof (info.metadata.tags) === 'string') {
+                    let taglist = [];
+                    const re = /\s*,\s*/;
+                    info.metadata.tags.split(re).forEach(tag => {
+                        taglist.push(tag.trim());
+                    });
+                    info.metadata.tags = taglist;
+                } else if (!Array.isArray(info.metadata.tags)) {
+                    throw new Error(
+                        `FORMAT ERROR - ${info.vpath} has badly formatted tags `,
+                        info.metadata.tags);
+                }
+                info.docMetadata.tags = info.metadata.tags;
+
+                // The root URL for the project
+                info.metadata.root_url = this.config.root_url;
+
+                // Compute the URL this document will render to
+                if (this.config.root_url) {
+                    let uRootUrl = new URL(this.config.root_url, 'http://example.com');
+                    uRootUrl.pathname = path.normalize(
+                            path.join(uRootUrl.pathname, info.metadata.document.renderTo)
+                    );
+                    info.metadata.rendered_url = uRootUrl.toString();
+                } else {
+                    info.metadata.rendered_url = info.metadata.document.renderTo;
+                }
+
+                // info.metadata.rendered_date = info.stats.mtime;
+
+                const parsePublDate = (date) => {
+                    const parsed = Date.parse(date);
+                    if (! isNaN(parsed)) {
+                        info.metadata.publicationDate
+                            = new Date(parsed);
+                        // info.publicationDate = info.metadata.publicationDate;
+                        info.publicationTime
+                            = info.metadata.publicationDate.getTime();
+                    }
+                };
+
+                if (info.docMetadata
+                 && typeof info.docMetadata.publDate === 'string') {
+                    parsePublDate(info.docMetadata.publDate);
+                }
+                if (info.docMetadata
+                 && typeof info.docMetadata.publicationDate === 'string') {
+                    parsePublDate(info.docMetadata.publicationDate);
+                }
+
+                if (!info.metadata.publicationDate) {
+                    var dateSet = false;
+                    if (info.docMetadata
+                     && info.docMetadata.publDate) {
+                        parsePublDate(info.docMetadata.publDate);
+                        dateSet = true;
+                    }
+                    if (info.docMetadata
+                     && typeof info.docMetadata.publicationDate === 'string') {
+                        parsePublDate(info.docMetadata.publicationDate);
+                        dateSet = true;
+                    }
+                    if (! dateSet && info.mtimeMs) {
+                        info.metadata.publicationDate
+                            = new Date(info.mtimeMs);
+                        // info.publicationDate = info.metadata.publicationDate;
+                        info.publicationTime
+                            = info.mtimeMs;
+                        // console.log(`${info.vpath} metadata.publicationDate ${info.metadata.publicationDate} set from stats.mtime`);
+                    }
+                    if (!info.metadata.publicationDate) {
+                        info.metadata.publicationDate
+                            = new Date();
+                        // info.publicationDate = info.metadata.publicationDate;
+                        info.publicationTime
+                            = info.metadata.publicationDate.getTime();
+                        // console.log(`${info.vpath} metadata.publicationDate ${info.metadata.publicationDate} set from current time`);
+                    }
+                }
+            }
+        } else {
+            info.rendersToHTML = false;
+            info.docMetadata = {};
+            info.docBody = '';
+            info.docContent = '';
+            info.rendererName = '';
+            info.publicationTime = 0;
+        }
+    }
+
+    // NOTE: Certain fields are not handled
+    // here because they're GENERATED from
+    // JSON data.
+    //
+    //      publicationTime
+    //      baseMetadata
+    //      metadata
+    //      tags
+    //      layout
+    //      blogtag
+    //
+    // Those fields are not touched by
+    // the insert/update functions because
+    // SQLITE3 takes care of it.
+
+    #insertDocDocuments;
+    #insertLembedDocuments;
+
+    protected async insertDocToDB(
+        info: Document
+    ) {
+        if (!this.#insertDocDocuments) {
+            this.#insertDocDocuments =
+                await fsp.readFile(
+                    path.join(
+                        import.meta.dirname,
+                        'sql', 'insert-doc-documents.sql'
+                    ), 'utf-8'
+                );
+        }
+        if (!this.#insertLembedDocuments) {
+            this.#insertLembedDocuments =
+                await fsp.readFile(
+                    path.join(
+                        import.meta.dirname,
+                        'sql', 'insert-lembed-documents.sql'
+                    ), 'utf-8'
+                );
+        }
+
+        // let mtime;
+        // if (typeof info.mtimeMs === 'number'
+        //  || typeof info.mtimeMs === 'string'
+        // ) {
+        //     mtime = new Date(info.mtimeMs).toISOString();
+        // }
+        const toInsert = {
+            $vpath: info.vpath,
+            $mime: info.mime,
+            $mounted: info.mounted,
+            $mountPoint: info.mountPoint,
+            $pathInMounted: info.pathInMounted,
+            $fspath: path.join(info.mounted, info.pathInMounted),
+            $dirname: path.dirname(info.vpath),
+            $mtimeMs: info.mtimeMs,
+            $info: JSON.stringify(info),
+            $renderPath: info.renderPath,
+            $rendersToHTML: info.rendersToHTML,
+            $parentDir: info.parentDir,
+            $docMetadata: JSON.stringify(info.docMetadata),
+            $docContent: info.docContent,
+            $docBody: info.docBody,
+            $rendererName: info.rendererName
+        };
+        // console.log(`insert doc ${info.vpath}`, toInsert);
+        await this.db.run(this.#insertDocDocuments, toInsert);
+
+
+        // if (typeof lembedModelName === 'string') {
+        //     console.log({
+        //         lembedModelName,
+        //         bodyType: typeof info.docBody
+        //     });
+        // } else {
+        //     console.log({
+        //         typeName: typeof lembedModelName,
+        //         bodyType: typeof info.docBody
+        //     })
+        // }
+
+        // This handles computing embeddings
+        // for the title and body
+        if (typeof lembedModelName === 'string'
+         // && typeof info.title === 'string'
+         && typeof info.docBody === 'string'
+        ) {
+            console.log(this.#insertLembedDocuments, {
+                $vpath: info.vpath,
+                $lembedModel: lembedModelName,
+                // $titleEmbed: info.title,
+                $bodyEmbed:  info.docBody
+            });
+            await this.db.run(this.#insertLembedDocuments, {
+                $vpath: info.vpath,
+                $lembedModel: lembedModelName,
+                // $titleEmbed: info.title,
+                $bodyEmbed:  info.docBody
+            });
+            console.log(`vec_documents inserted ${info.vpath}`);
+        }
+
+        if (info.metadata) {
+            // console.log({
+            //     vpath: info.vpath,
+            //     tags: info.metadata.tags
+            // });
+            await this.addDocTagGlue(
+                info.vpath, info.metadata.tags
+            );
+        }
+    }
+
+    #updateDocDocuments;
+    #updateLembedDocuments;
+
+    protected async updateDocInDB(
+        info: Document
+    ) {
+        if (!this.#updateDocDocuments) {
+            this.#updateDocDocuments =
+                await fsp.readFile(
+                    path.join(
+                        import.meta.dirname,
+                        'sql', 'update-doc-documents.sql'
+                    ), 'utf-8'
+                );
+        }
+        if (!this.#updateLembedDocuments) {
+            this.#updateLembedDocuments =
+                await fsp.readFile(
+                    path.join(
+                        import.meta.dirname,
+                        'sql', 'update-lembed-documents.sql'
+                    ), 'utf-8'
+                );
+        }
+        await this.db.run(this.#updateDocDocuments, {
+            $vpath: info.vpath,
+            $mime: info.mime,
+            $mounted: info.mounted,
+            $mountPoint: info.mountPoint,
+            $pathInMounted: info.pathInMounted,
+            $fspath: path.join(info.mounted, info.pathInMounted),
+            $dirname: path.dirname(info.vpath),
+            $mtimeMs: info.mtimeMs,
+            $info: JSON.stringify(info),
+
+            $renderPath: info.renderPath,
+            $rendersToHTML: info.rendersToHTML,
+            $parentDir: info.parentDir,
+            $docMetadata: JSON.stringify(info.docMetadata),
+            $docContent: info.docContent,
+            $docBody: info.docBody,
+            $rendererName: info.rendererName
+        });
+
+        // This handles computing embeddings
+        // for the title and body
+        if (typeof lembedModelName === 'string'
+         // && typeof info.title === 'string'
+         && typeof info.docBody === 'string'
+        ) {
+            await this.db.run(this.#updateLembedDocuments, {
+                $vpath: info.vpath,
+                $lembedModel: lembedModelName,
+                // $titleEmbed: info.title,
+                $bodyEmbed:  info.docBody
+            });
+        }
+
+        await tglue.deleteTagGlue(info.vpath);
+        if (info.metadata) {
+            await tglue.addTagGlue(info.vpath, info.metadata.tags);
+        }
+    }
+
+    protected async deleteDocTagGlue(vpath) {
+        try {
+            await tglue.deleteTagGlue(vpath);
+        } catch (err) {
+            // ignore
+            // This can throw an error like:
+            // documentsCache ERROR {
+            //     code: 'changed',
+            //     name: 'documents',
+            //     vpath: '_mermaid/render3356739382.mermaid',
+            //     error: Error: delete from 'TAGGLUE' failed: nothing changed
+            //      ... stack trace
+            // }
+            // In such a case there is no tagGlue for the document.
+            // This "error" is spurious.
+            //
+            // TODO Is there another query to run that will
+            // not throw an error if nothing was changed?
+            // In other words, this could hide a legitimate
+            // error.
+        }
+    }
+
+    protected async addDocTagGlue(vpath: string, tags: string | string[]) {
+        if (typeof tags !== 'string'
+         && !Array.isArray(tags)
+        ) {
+            throw new Error(`addDocTagGlue must be given a tags array, was given: ${util.inspect(tags)}`);
+        }
+        await tglue.addTagGlue(vpath, 
+            Array.isArray(tags)
+            ? tags
+            : [ tags ]);
+    }
+
+    async addTagDescription(tag: string, description: string) {
+        return tdesc.addDesc(tag, description);
+    }
+
+    async getTagDescription(tag: string)
+        : Promise<string | undefined>
+    {
+        return tdesc.getDesc(tag);
+    }
+
+    #searchSemantic;
+
+    async semanticSearchDocs(searchFor: string)
+        : Promise<Array<{
+            vpath: string,
+            distance: number
+        }>>
+    {
+        if (!this.#searchSemantic) {
+            this.#searchSemantic =
+                await fsp.readFile(
+                    path.join(
+                        import.meta.dirname,
+                        'sql', 'doc-search-semantic.sql'
+                    ), 'utf-8'
+                );
+        }
+
+        const results = <Array<{
+            vpath: string,
+            distance: number
+        }>> await this.db.all(this.#searchSemantic, {
+            $lembedModel: lembedModelName,
+            $searchFor: searchFor
+        });
+
+        return results;
+    }
+
+    protected indexChainCache;
+
+    async indexChain(_fpath)
+        : Promise<indexChainItem[]>
+    {
+
+        const fpath = _fpath.startsWith('/')
+                    ? _fpath.substring(1) 
+                    : _fpath;
+        const parsed = path.parse(fpath);
+
+        const doCaching
+            = this.config.cachingTimeout > 0;
+        let cacheKey;
+
+        if (doCaching) {
+            if (!this.indexChainCache) {
+                this.indexChainCache
+                    = new Cache(this.config.cachingTimeout);
+            }
+
+            cacheKey = JSON.stringify({
+                dbname: this.quotedDBName,
+                fpath,
+                parsed
+            });
+
+            const cached
+                = this.indexChainCache.get(cacheKey);
+            if (cached) {
+                return cached;
+            }
+        }
+
+        // console.log(`indexChain ${_fpath} ${fpath}`, parsed);
+
+        const filez: Document[] = [];
+        const self = await this.findByPath(fpath);
+        let fileName = fpath;
+        if (Array.isArray(self) && self.length >= 1) {
+            filez.push(self[0]);
+            fileName = self[0].renderPath;
+        }
+
+        let parentDir;
+        let dirName = path.dirname(fpath);
+        let done = false;
+        while (!(dirName === '.' || dirName === parsed.root)) {
+            if (path.basename(fileName) === 'index.html') {
+                parentDir = path.dirname(path.dirname(fileName));
+            } else {
+                parentDir = path.dirname(fileName);
+            }
+            let lookFor = path.join(parentDir, "index.html");
+
+            const index = await this.findByPath(lookFor);
+
+            if (Array.isArray(index) && index.length >= 1) {
+                filez.push(index[0]);
+            }
+
+            fileName = lookFor;
+            dirName = path.dirname(lookFor);
+        }
+
+        const ret = filez
+                .map(function(obj: any) {
+                    return <indexChainItem>{
+                        title: obj.docMetadata.title,
+                        vpath: obj.vpath,
+                        foundDir: obj.mountPoint,
+                        foundPath: obj.renderPath,
+                        filename: '/' + obj.renderPath
+                    };
+                    // obj.foundDir = obj.mountPoint;
+                    // obj.foundPath = obj.renderPath;
+                    // obj.filename = '/' + obj.renderPath;
+                    // return obj;
+                })
+                .reverse();
+
+        if (doCaching && cacheKey) {
+            this.indexChainCache.put(
+                cacheKey, ret
+            );
+        }
+
+        return ret;
+    }
+
+    protected siblingsCache;
+    #siblingsSQL;
+
+    /**
+     * Finds all the documents in the same directory
+     * as the named file.
+     *
+     * This doesn't appear to be used anywhere.
+     *
+     * @param _fpath 
+     * @returns 
+     */
+    async siblings(_fpath) {
+        let vpath = _fpath.startsWith('/')
+                  ? _fpath.substring(1)
+                  : _fpath;
+        let dirname = path.dirname(vpath);
+
+        const doCaching
+            = this.config.cachingTimeout > 0;
+        let cacheKey;
+
+        if (doCaching) {
+            if (!this.siblingsCache) {
+                this.siblingsCache
+                    = new Cache(this.config.cachingTimeout);
+            }
+
+            cacheKey = JSON.stringify({
+                dbname: this.quotedDBName,
+                vpath,
+                dirname
+            });
+
+            const cached
+                = this.siblingsCache.get(cacheKey);
+            if (cached) {
+                return cached;
+            }
+        }
+
+        if (!this.#siblingsSQL) {
+            this.#siblingsSQL =
+                await fsp.readFile(
+                    path.join(
+                        import.meta.dirname,
+                        'sql', 'siblings.sql'
+                    ), 'utf-8'
+                );
+        }
+
+        const siblings
+            = await this.db.all(this.#siblingsSQL, {
+            $dirname: dirname,
+            $vpath: vpath
+        });
+
+        const ignored = siblings.filter(item => {
+            return !this.ignoreFile(item);
+        });
+
+        const mapped = this.validateRows(ignored);
+        const ret = mapped.map(item => {
+            return this.cvtRowToObj(item)
+        });
+
+        if (doCaching && cacheKey) {
+            this.siblingsCache.put(
+                cacheKey, ret
+            );
+        }
+
+        return ret;
+    }
+
+    #docsForDirname;
+    #dirsForParentdir;
+
+    /**
+     * Returns a tree of items starting from the document
+     * named in _rootItem.  The parameter should be an
+     * actual document in the tree, such as `path/to/index.html`.
+     * The return is a tree-shaped set of objects like the following;
+     * 
+  tree:
+    rootItem: folder/folder/index.html
+    dirname: folder/folder
+    items:
+        - vpath: folder/folder/index.html.md
+          renderPath: folder/folder/index.html
+    childFolders:
+        - dirname: folder/folder/folder
+          children:
+              rootItem: folder/folder/folder/index.html
+              dirname: folder/folder/folder
+              items:
+                - vpath: folder/folder/folder/index.html.md
+                  renderPath: folder/folder/folder/index.html
+                - vpath: folder/folder/folder/page1.html.md
+                  renderPath: folder/folder/folder/page1.html
+                - vpath: folder/folder/folder/page2.html.md
+                  renderPath: folder/folder/folder/page2.html
+              childFolders: []
+        - dirname: folder/folder/folder2
+          children:
+              rootItem: folder/folder/folder2/index.html
+              dirname: folder/folder/folder2
+              items:
+                - vpath: folder/folder/folder2/index.html.md
+                  renderPath: folder/folder/folder2/index.html
+                - vpath: folder/folder/folder2/page1.html.md
+                  renderPath: folder/folder/folder2/page1.html
+                - vpath: folder/folder/folder2/page2.html.md
+                  renderPath: folder/folder/folder2/page2.html
+              childFolders: []
+     *
+     * The objects under `items` are actully the full Document object
+     * from the cache, but for the interest of compactness most of
+     * the fields have been deleted.
+     *
+     * @param _rootItem 
+     * @returns 
+     */
+    async childItemTree(_rootItem: string) {
+
+        // console.log(`childItemTree ${_rootItem}`);
+
+        let rootItem = await this.find(
+                _rootItem.startsWith('/')
+                    ? _rootItem.substring(1)
+                    : _rootItem);
+        if (!rootItem) {
+            // console.warn(`childItemTree no rootItem found for path ${_rootItem}`);
+            return undefined;
+        }
+        if (!(typeof rootItem === 'object')
+         || !('vpath' in rootItem)
+        ) {
+            // console.warn(`childItemTree found invalid object for ${_rootItem} - ${util.inspect(rootItem)}`);
+            return undefined;
+        }
+        let dirname = path.dirname(rootItem.vpath);
+
+        if (!this.#docsForDirname) {
+            this.#docsForDirname =
+                await fsp.readFile(
+                    path.join(
+                        import.meta.dirname,
+                        'sql', 'docs-for-dirname.sql'
+                    ), 'utf-8'
+                );
+        }
+
+        // Picks up everything from the current level.
+        // Differs from siblings by getting everything.
+        const _items = <any[]>await this.db.all(this.#docsForDirname, {
+            $dirname: dirname
+        });
+        const items: Document[]
+            = this.validateRows(_items)
+            .map(item => {
+                return this.cvtRowToObj(item)
+            });
+
+        if (!this.#dirsForParentdir) {
+            this.#dirsForParentdir =
+                await fsp.readFile(
+                    path.join(
+                        import.meta.dirname,
+                        'sql', 'dirs-for-parentdir.sql'
+                    ), 'utf-8'
+                );
+        }
+
+        const _childFolders = <any[]>await this.db.all(this.#dirsForParentdir, {
+            $dirname: dirname
+        });
+        const childFolders = new Array<{ dirname: string }>();
+        for (const cf of _childFolders) {
+            if (typeof cf.dirname === 'string') {
+                childFolders.push({
+                    dirname: cf.dirname
+                });
+            } else {
+                throw new Error(`childItemTree(${_rootItem}) no dirname fields in childFolders`);
+            }
+        }
+        const cfs = [];
+        for (const cf of childFolders) {
+            cfs.push(await this.childItemTree(
+                path.join(cf.dirname, 'index.html')
+            ));
+        }
+
+        return {
+            rootItem,
+            dirname,
+            items: items,
+            // Uncomment this to generate simplified output
+            // for debugging.
+            // .map(item => {
+            //     return {
+            //         vpath: item.vpath,
+            //         renderPath: item.renderPath
+            //     }
+            // }),
+            childFolders: cfs
+        }
+    }
+
+    #indexFilesSQL;
+    #indexFilesSQLrenderPath;
+
+    /**
+     * Find the index files (renders to index.html)
+     * within the named subtree.
+     * 
+     * It appears this was written for booknav.
+     * But, it appears that booknav does not
+     * use this function.
+     *
+     * @param rootPath 
+     * @returns 
+     */
+    async indexFiles(rootPath?: string) {
+        let rootP = rootPath?.startsWith('/')
+                  ? rootPath?.substring(1)
+                  : rootPath;
+
+        if (!this.#indexFilesSQL) {
+            this.#indexFilesSQL =
+                await fsp.readFile(
+                    path.join(
+                        import.meta.dirname,
+                        'sql', 'index-doc-files.sql'
+                    ), 'utf-8'
+                );
+        }
+
+        if (!this.#indexFilesSQLrenderPath) {
+            this.#indexFilesSQLrenderPath =
+                await fsp.readFile(
+                    path.join(
+                        import.meta.dirname,
+                        'sql', 'index-doc-files-renderPath.sql'
+                    ), 'utf-8'
+                );
+        }
+
+        const indexes = 
+            (
+                typeof rootP === 'string'
+             && rootP.length >= 1
+            )
+            ? <any[]> await this.db.all(
+                    this.#indexFilesSQLrenderPath, { $rootP: `${rootP}%` }
+                )
+            : <any[]> await this.db.all(
+                this.#indexFilesSQL
+            );
+        
+        const mapped = this.validateRows(indexes);
+        return mapped.map(item => {
+            return this.cvtRowToObj(item)
+        });
+
+        // It's proved difficult to get the regexp
+        // to work in this mode:
+        //
+        // return await this.search({
+        //     rendersToHTML: true,
+        //     renderpathmatch: /\/index.html$/,
+        //     rootPath: rootPath
+        // });
+    }
+
+    #filesForSetTimes;
+
+    /**
+     * For every file in the documents cache,
+     * set the access and modifications.
+     * 
+     * This is used from cli.ts docs-set-dates
+     *
+     * ????? Why would this be useful?
+     * I can see doing this for the rendered
+     * files in the output directory.  But this is
+     * for the files in the documents directories. ????
+     */
+    async setTimes() {
+
+        // The SELECT below produces row objects per
+        // this interface definition.  This function looks
+        // for a valid date from the document metadata,
+        // and ensures the fspath file is set to that date.
+        //
+        // As said in the comment above.... WHY?
+        // I can understand doing this for the rendered output.
+        // For what purpose did I create this function?
+        const setter = (row: {
+            vpath: string,
+            fspath: string,
+            mtimeMs: number,
+            publicationTime: number,
+            publDate: string,
+            publicationDate: string
+        }) => {
+            let parsed = NaN;
+            if (row.publDate) {
+                parsed = Date.parse(row.publDate);
+            } else if (row.publicationDate) {
+                parsed = Date.parse(row.publicationDate);
+            } else if (row.publicationTime) {
+                parsed = row.publicationTime;
+            }
+            if (! isNaN(parsed)) {
+                const dp = new Date(parsed);
+                FS.utimesSync(
+                    row.fspath,
+                    dp,
+                    dp
+                );
+            } 
+        }
+
+        if (!this.#filesForSetTimes) {
+            this.#filesForSetTimes =
+                await fsp.readFile(
+                    path.join(
+                        import.meta.dirname,
+                        'sql', 'files-for-settimes.sql'
+                    ), 'utf-8'
+                );
+        }
+
+        await this.db.each(this.#filesForSetTimes, { },
+        (row: {
+            vpath: string,
+            fspath: string,
+            mtimeMs: number,
+            publicationTime: number,
+            publDate: string,
+            publicationDate: string
+        }) => {
+            if (row.publDate
+             || row.publicationDate
+             || row.publicationTime
+            ) {
+                setter(row);
+            }
+        });
+    }
+
+    // This was written for tagged-content
+    async documentsWithTag(tagnm: string | string[])
+        : Promise<Array<string>>
+    {
+        let tags: string[];
+        if (typeof tagnm === 'string') {
+            tags = [ tagnm ];
+        } else if (Array.isArray(tagnm)) {
+            tags = tagnm;
+        } else {
+            throw new Error(`documentsWithTag given bad tags array ${util.inspect(tagnm)}`);
+        }
+
+        // Correctly handle tag strings with
+        // varying quotes.  A document might have these tags:
+        //
+        //    tags:
+        //    - Teaser's
+        //    - Teasers
+        //    - Something "quoted"
+        //
+        // These SQL queries work:
+        //
+        // sqlite> select * from TAGGLUE where tagName IN ( 'Something "quoted"', "Teaser's" );
+        // teaser-content.html.md|Teaser's
+        // teaser-content.html.md|Something "quoted"
+        // sqlite> select * from TAGGLUE where tagName IN ( 'Something "quoted"', 'Teaser''s' );
+        // teaser-content.html.md|Teaser's
+        // teaser-content.html.md|Something "quoted"
+        //
+        // But, this does not:
+        //
+        // sqlite> select * from TAGGLUE where tagName = 'Teaser's';
+        // '  ...> 
+        //
+        // The original code behavior was this:
+        //
+        // $ node ../dist/cli.js docs-with-tag config-normal.mjs "Teaser's"
+        // docs-with-tags command ERRORED Error: SQLITE_ERROR: near "s": syntax error
+        //
+        // An attempted fix:
+        // $ node ../dist/cli.js docs-with-tag config-normal.mjs "Teaser's"
+        // documentsWithTag [ "Teaser's" ]  ( 'Teaser\'s' ) 
+        // docs-with-tags command ERRORED Error: SQLITE_ERROR: near "s": syntax error
+        //
+        // Another attempted fix:
+        // $ node ../dist/cli.js docs-with-tag config-normal.mjs "Teaser's"
+        // documentsWithTag [ "Teaser's" ]  ( "Teaser''s" ) 
+        // []
+        // []
+        //
+        // And:
+        // $ node ../dist/cli.js docs-with-tag config-normal.mjs 'Something "quoted"'
+        // documentsWithTag [ 'Something "quoted"' ]  ( "Something "quoted"" ) 
+        // docs-with-tags command ERRORED Error: SQLITE_ERROR: near "quoted": syntax error
+        //
+        // The code below produces:
+        // $ node ../dist/cli.js docs-with-tag config-normal.mjs "Teaser's" 'Something "quoted"'
+        // documentsWithTag [ "Teaser's", 'Something "quoted"' ]  ( 'Teaser''s','Something "quoted"' ) 
+        // [ { vpath: 'teaser-content.html.md' } ]
+        // [ 'teaser-content.html.md' ]
+
+        // console.log(`documentsWithTag ${util.inspect(tags)} ${tagstring}`);
+
+        const vpaths = await tglue.pathsForTag(tags);
+        
+        // console.log(vpaths);
+
+        if (!Array.isArray(vpaths)) {
+            throw new Error(`documentsWithTag non-Array result ${util.inspect(vpaths)}`);
+        }
+
+        return vpaths;
+    }
+
+    /**
+     * Get an array of tags used by all documents.
+     * This uses the JSON extension to extract
+     * the tags from the metadata object.
+     *
+     * @returns 
+     */
+    async tags() {
+        const tags = await tglue.tags();
+        
+        const ret = Array.from(tags);
+        return ret.sort((a: string, b: string) => {
+            var tagA = a.toLowerCase();
+            var tagB = b.toLowerCase();
+            if (tagA < tagB) return -1;
+            if (tagA > tagB) return 1;
+            return 0;
+        });
+    }
+
+    #docLinkData;
+
+    /**
+     * Retrieve the data for an internal link
+     * within the site documents.  Forming an
+     * internal link is at a minimum the rendered
+     * path for the document and its title.
+     * The teaser, if available, can be used in
+     * a tooltip. The thumbnail is an image that
+     * could be displayed.
+     *
+     * @param vpath 
+     * @returns 
+     */
+    async docLinkData(vpath: string): Promise<{
+
+        // The vpath reference
+        vpath: string;
+        // The path it renders to
+        renderPath: string;
+        // The title string from that page
+        title: string;
+        // The teaser text from that page
+        teaser?: string;
+        // The hero image (thumbnail)
+        thumbnail?: string;
+    }> {
+
+        if (!this.#docLinkData) {
+            this.#docLinkData =
+                await fsp.readFile(
+                    path.join(
+                        import.meta.dirname,
+                        'sql', 'doc-link-data.sql'
+                    ), 'utf-8'
+                );
+        }
+
+        const found = <any[]> await this.db.all(this.#docLinkData, {
+            $vpath: vpath
+        });
+
+        if (Array.isArray(found)) {
+
+            const doc = found[0];
+
+            // if (!doc.metadata) {
+            //     console.warn(`WARNING docLinkData no metadata for ${vpath}`);
+            // }
+
+            // const docInfo = await this.find(vpath);
+            return {
+                vpath,
+                renderPath: doc.renderPath,
+                title: doc.title,
+                teaser: doc.teaser,
+                // thumbnail
+            };
+        } else {
+            return {
+                vpath,
+                renderPath: undefined,
+                title: undefined
+            };
+        }
+    }
+
+    private searchCache;
+
+    /**
+     * Perform descriptive search operations using direct SQL queries
+     * for better performance and scalability.
+     *
+     * @param options Search options object
+     * @returns Promise<Array<Document>>
+     */
+    async search(options): Promise<Array<Document>> {
+        const fcache = this;
+
+        if (!this.searchCache) {
+            this.searchCache = new Cache(
+                this.config.cachingTimeout
+            );
+        }
+
+        // First, see if the search results are already
+        // computed and in the cache.
+
+        // The issue here is that the options
+        // object can contain RegExp values.
+        // The RegExp object does not have
+        // a toJSON function.  This hook
+        // causes RegExp to return the
+        // .toString() value instead.
+        //
+        // Source: https://stackoverflow.com/questions/20276531/stringifying-a-regular-expression
+        //
+        // A similar issue exists with Functions
+        // in the object.
+        //
+        // Source: https://stackoverflow.com/questions/6754919/json-stringify-function
+        const cacheKey = JSON.stringify(
+            options,
+            function(key, value) {
+                if (value instanceof RegExp) {
+                    return value.toString();
+                } else if (typeof value === 'function') {
+                    return value + ''; // implicitly `toString` it
+                } else {
+                    return value;
+                }
+            }
+        );
+
+        // A timeout of 0 means to disable caching
+        const cached =
+            this.config.cachingTimeout > 0
+            ? this.searchCache.get(cacheKey)
+            : undefined;
+
+        // console.log(`search ${util.inspect(options)} ==> ${cacheKey} ${cached ? 'hasCached' : 'noCached'}`);
+
+        // If the cache has an entry, skip computing
+        // anything.
+        if (cached) { // 1 minute cache
+            return cached;
+        }
+
+        // NOTE: Entries are added to the cache at the bottom
+        // of this function
+
+        try {
+            const { sql, params } = this.buildSearchQuery(options);
+            // console.log(`search ${sql}`);
+            const results
+                = await this.db.all(sql, params);
+
+            const documents
+                = this.validateRows(results)
+                .map(item => {
+                    return this.cvtRowToObj(item)
+                });
+
+            // Apply post-SQL filters that can't be done in SQL
+            let filteredResults = documents;
+
+            // Filter by renderers (requires config lookup)
+            if (options.renderers
+             && Array.isArray(options.renderers)
+            ) {
+                filteredResults = filteredResults.filter(item => {
+                    let renderer = fcache.config.findRendererPath(item.vpath);
+                    if (!renderer) return false;
+                    
+                    let found = false;
+                    for (const r of options.renderers) {
+                        if (typeof r === 'string' && r === renderer.name) {
+                            found = true;
+                        } else if (typeof r === 'object' || typeof r === 'function') {
+                            console.error('WARNING: Matching renderer by object class is no longer supported', r);
+                        }
+                    }
+                    return found;
+                });
+            }
+
+            // Apply custom filter function
+            if (options.filterfunc) {
+                filteredResults = filteredResults.filter(item => {
+                    return options.filterfunc(fcache.config, options, item);
+                });
+            }
+
+            // Apply custom sort function (if SQL sorting wasn't used)
+            if (typeof options.sortFunc === 'function') {
+                filteredResults = filteredResults.sort(options.sortFunc);
+            }
+
+            // Add the results to the cache
+            if (this.config.cachingTimeout > 0) {
+                this.searchCache.put(
+                    cacheKey, filteredResults
+                );
+            }
+            return filteredResults;
+
+        } catch (err: any) {
+            throw new Error(`DocumentsFileCache.search error: ${err.message}`);
+        }
+    }
+
+    /**
+     * Build SQL query and parameters for search options
+     */
+    private buildSearchQuery(options): {
+        sql: string,
+        params: any
+    } {
+        const params: any = {};
+        const whereClauses: string[] = [];
+        const joins: string[] = [];
+        let paramCounter = 0;
+
+        // console.log(`buildSearchQuery ${util.inspect(options)}`);
+
+        // Helper to create unique parameter names
+        const addParam = (value: any): string => {
+            const paramName = `$param${++paramCounter}`;
+            params[paramName] = value;
+            return paramName;
+        };
+
+        // Base query
+        let sql = `
+            SELECT DISTINCT d.* FROM ${this.quotedDBName} d
+        `;
+
+        // MIME type filtering
+        if (options.mime) {
+            if (typeof options.mime === 'string') {
+                whereClauses.push(`d.mime = ${addParam(options.mime)}`);
+            } else if (Array.isArray(options.mime)) {
+                const placeholders = options.mime.map(mime => addParam(mime)).join(', ');
+                whereClauses.push(`d.mime IN (${placeholders})`);
+            }
+        }
+
+        // Renders to HTML filtering
+        if (typeof options.rendersToHTML === 'boolean') {
+            whereClauses.push(`d.rendersToHTML = ${addParam(options.rendersToHTML ? 1 : 0)}`);
+        }
+
+        // Root path filtering
+        if (typeof options.rootPath === 'string') {
+            whereClauses.push(`d.renderPath LIKE ${addParam(options.rootPath + '%')}`);
+        }
+
+        // Glob pattern matching
+        if (options.glob && typeof options.glob === 'string') {
+            const escapedGlob = options.glob.indexOf("'") >= 0 
+                ? options.glob.replaceAll("'", "''") 
+                : options.glob;
+            whereClauses.push(`d.vpath GLOB ${addParam(escapedGlob)}`);
+        }
+
+        // Render glob pattern matching
+        if (options.renderglob && typeof options.renderglob === 'string') {
+            const escapedGlob = options.renderglob.indexOf("'") >= 0 
+                ? options.renderglob.replaceAll("'", "''") 
+                : options.renderglob;
+            whereClauses.push(`d.renderPath GLOB ${addParam(escapedGlob)}`);
+        }
+
+        // Blog tag filtering
+        // Ensure that the blogtags array is used,
+        // if present, with the blogtag value used
+        // otherwise.
+        //
+        // The purpose for the blogtags value is to
+        // support a pseudo-blog made of the items
+        // from multiple actual blogs.
+        // if (typeof options.blogtags !== 'undefined'
+        //  || typeof options.blogtag !== 'undefined'
+        // ) {
+        //     console.log(` blogtags ${util.inspect(options.blogtags)} blogtag ${util.inspect(options.blogtag)}`);
+        // }
+        if (Array.isArray(options.blogtags)) {
+            const placeholders = options.blogtags.map(tag => addParam(tag)).join(', ');
+            whereClauses.push(`d.blogtag IN (${placeholders})`);
+            // console.log(`d.blogtag IN (${placeholders})`);
+        } else if (typeof options.blogtag === 'string') {
+            whereClauses.push(`d.blogtag = ${addParam(options.blogtag)}`);
+            // console.log(`d.blogtag = ${options.blogtag}`);
+        } else if (typeof options.blogtags === 'string') {
+            throw new Error(`search ERROR invalid blogtags array ${util.inspect(options.blogtags)}`);
+        }
+
+        // Tag filtering using TAGGLUE table
+        if (options.tag && typeof options.tag === 'string') {
+            joins.push(`INNER JOIN TAGGLUE tg ON d.vpath = tg.docvpath`);
+            whereClauses.push(`tg.tagName = ${addParam(options.tag)}`);
+        }
+
+        // Layout filtering
+        if (options.layouts) {
+            if (Array.isArray(options.layouts)) {
+                if (options.layouts.length === 1) {
+                    whereClauses.push(`d.layout = ${addParam(options.layouts[0])}`);
+                } else if (options.layouts.length > 1) {
+                    const placeholders = options.layouts.map(layout => addParam(layout)).join(', ');
+                    whereClauses.push(`d.layout IN (${placeholders})`);
+                }
+            } else {
+                whereClauses.push(`d.layout = ${addParam(options.layouts)}`);
+            }
+        }
+
+        // Path regex matching
+        const regexClauses: string[] = [];
+        if (typeof options.pathmatch === 'string') {
+            regexClauses.push(`d.vpath regexp ${addParam(options.pathmatch)}`);
+        } else if (options.pathmatch instanceof RegExp) {
+            regexClauses.push(`d.vpath regexp ${addParam(options.pathmatch.source)}`);
+        } else if (Array.isArray(options.pathmatch)) {
+            for (const match of options.pathmatch) {
+                if (typeof match === 'string') {
+                    regexClauses.push(`d.vpath regexp ${addParam(match)}`);
+                } else if (match instanceof RegExp) {
+                    regexClauses.push(`d.vpath regexp ${addParam(match.source)}`);
+                } else {
+                    throw new Error(`search ERROR invalid pathmatch regexp ${util.inspect(match)}`);
+                }
+            }
+        } else if ('pathmatch' in options) {
+            throw new Error(`search ERROR invalid pathmatch ${util.inspect(options.pathmatch)}`);
+        }
+
+        // Render path regex matching
+        // if (typeof options.renderpathmatch !== 'undefined') {
+        //     console.log(util.inspect(options.renderpathmatch, false, 3));
+        // }
+        if (typeof options.renderpathmatch === 'string') {
+            // console.log(`d.renderPath regexp string ${options.renderpathmatch}`);
+            regexClauses.push(`d.renderPath regexp ${addParam(options.renderpathmatch)}`);
+        } else if (options.renderpathmatch instanceof RegExp) {
+            // console.log(`d.renderPath regexp regexp ${options.renderpathmatch.source}`);
+            regexClauses.push(`d.renderPath regexp ${addParam(options.renderpathmatch.source)}`);
+        } else if (Array.isArray(options.renderpathmatch)) {
+            for (const match of options.renderpathmatch) {
+                if (typeof match === 'string') {
+                    // console.log(`d.renderPath regexp array string ${match}`);
+                    regexClauses.push(`d.renderPath regexp ${addParam(match)}`);
+                } else if (match instanceof RegExp) {
+                    // console.log(`d.renderPath regexp array regexp ${match.source}`);
+                    regexClauses.push(`d.renderPath regexp ${addParam(match.source)}`);
+                } else {
+                    throw new Error(`search ERROR invalid renderpathmatch regexp ${util.inspect(match)}`);
+                }
+            }
+        } else if ('renderpathmatch' in options) {
+            throw new Error(`search ERROR invalid renderpathmatch ${util.inspect(options.renderpathmatch)}`);
+        }
+
+        if (regexClauses.length > 0) {
+            whereClauses.push(`(${regexClauses.join(' OR ')})`);
+        }
+
+        // Add JOINs to query
+        if (joins.length > 0) {
+            sql += ' ' + joins.join(' ');
+        }
+
+        // Add WHERE clause
+        if (whereClauses.length > 0) {
+            sql += ' WHERE ' + whereClauses.join(' AND ');
+        }
+
+        // Add ORDER BY clause
+        let orderBy = '';
+        if (typeof options.sortBy === 'string') {
+            // Handle special cases that need JSON extraction or complex logic
+            if (options.sortBy === 'publicationDate'
+             || options.sortBy === 'publicationTime'
+            ) {
+                // Use COALESCE to handle null publication dates
+                orderBy = `ORDER BY COALESCE(
+                    d.publicationTime,
+                    d.mtimeMs
+                )`;
+            } else {
+                // For all other fields, sort by the column directly
+                // This allows sorting by any valid column in the DOCUMENTS table
+                orderBy = `ORDER BY d.${SqlString.escapeId(options.sortBy)}`;
+            }
+        } else if (options.reverse || options.sortByDescending) {
+            // If reverse/sortByDescending is specified without sortBy, 
+            // use a default ordering (by modification time)
+            orderBy = 'ORDER BY d.mtimeMs';
+        }
+
+        // Handle sort direction
+        if (orderBy) {
+            if (options.sortByDescending || options.reverse) {
+                orderBy += ' DESC';
+            } else {
+                orderBy += ' ASC';
+            }
+            sql += ' ' + orderBy;
+        }
+
+        // Add LIMIT and OFFSET
+        if (typeof options.limit === 'number') {
+            sql += ` LIMIT ${addParam(options.limit)}`;
+        }
+        if (typeof options.offset === 'number') {
+            sql += ` OFFSET ${addParam(options.offset)}`;
+        }
+
+        return { sql, params };
+    }
+
+}
+
+export var assetsCache: AssetsCache;
+export var partialsCache: PartialsCache;
+export var layoutsCache: LayoutsCache;
+export var documentsCache: DocumentsCache;
+
+export async function setup(
+    config: Configuration,
+    db: AsyncDatabase
+): Promise<void> {
+
+    // Initialize tag and tag description support (used by DocumentsCache)
+    await tglue.init(db);
+    await tdesc.init(db);
+
+    //// ASSETS
+
+    await doCreateAssetsTable(db);
+
+    assetsCache = new AssetsCache(
+        config,
+        'assets',
+        config.assetDirs,
+        db,
+        'ASSETS'
+    );
+    await assetsCache.setup();
+
+    assetsCache.on('error', (...args) => {
+        console.error(`assetsCache ERROR ${util.inspect(args)}`)
+    });
+
+    //// PARTIALS
+
+    await doCreatePartialsTable(db);
+
+    partialsCache = new PartialsCache(
+        config,
+        'partials',
+        config.partialsDirs,
+        db,
+        'PARTIALS'
+    );
+    await partialsCache.setup();
+
+    partialsCache.on('error', (...args) => {
+        console.error(`partialsCache ERROR ${util.inspect(args)}`)
+    });
+
+    //// LAYOUTS
+
+    await doCreateLayoutsTable(db);
+
+    layoutsCache = new LayoutsCache(
+        config,
+        'layouts',
+        config.layoutDirs,
+        db,
+        'LAYOUTS'
+    );
+    await layoutsCache.setup();
+
+    layoutsCache.on('error', (...args) => {
+        console.error(`layoutsCache ERROR ${util.inspect(args)}`)
+    });
+
+    //// DOCUMENTS
+
+    await doCreateDocumentsTable(db);
+    await doCreateVecDocumentsTable(db);
+
+    documentsCache = new DocumentsCache(
+        config,
+        'documents',
+        config.documentDirs,
+        db,
+        'DOCUMENTS'
+    );
+    await documentsCache.setup();
+
+    documentsCache.on('error', (err) => {
+        console.error(`documentsCache ERROR ${util.inspect(err)}`);
+        // process.exit(0);
+    });
+
+    await config.hookPluginCacheSetup();
+
+}
+
+export async function closeFileCaches() {
+    if (documentsCache) {
+        await documentsCache.close();
+        documentsCache = undefined;
+    }
+    if (assetsCache) {
+        await assetsCache.close();
+        assetsCache = undefined;
+    }
+    if (layoutsCache) {
+        await layoutsCache.close();
+        layoutsCache = undefined;
+    }
+    if (partialsCache) {
+        await partialsCache.close();
+        partialsCache = undefined;
+    }
+}

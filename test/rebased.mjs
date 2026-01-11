@@ -4,7 +4,7 @@ import { default as akasha } from '../dist/index.js';
 import { assert } from 'chai';
 import { default as _image_size } from 'image-size';
 const sizeOf = promisify(_image_size);
-const filecache = await import('../dist/cache/file-cache-sqlite.js');
+const filecache = await import('../dist/cache/cache-sqlite.js');
 
 // Note this is an ES6 module and to use it we must 
 // use an async function along with the await keyword
@@ -458,7 +458,7 @@ describe('rebased teaser, content', function() {
         assert.include("Image caption", $('body #resizeto250figure figcaption').html());
 
         assert.equal($('body #resizerss').length, 1);
-        assert.include("rss_button.png", $('body #resizerss').attr('src'));
+        assert.include("rss_button-png.png", $('body #resizerss').attr('src'));
         assert.notExists($('body #resizerss').attr('resize-width'));
         assert.notExists($('body #resizerss').attr('resize-to'));
 
@@ -678,7 +678,7 @@ describe('rebased teaser, content', function() {
         let size250 = await sizeOf('out-rebased/img/Human-Skeleton-250-figure.jpg');
         assert.equal(size250.width, 250);
 
-        let sizerss = await sizeOf('out-rebased/rss_button.png');
+        let sizerss = await sizeOf('out-rebased/rss_button-png.png');
         assert.equal(sizerss.width, 50);
 
         let sizerssjpg = await sizeOf('out-rebased/rss_button.jpg');

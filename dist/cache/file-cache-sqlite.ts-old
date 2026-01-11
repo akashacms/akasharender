@@ -17,7 +17,7 @@
  *  limitations under the License.
  */
 
-import { DirsWatcher, dirToWatch, VPathData } from '@akashacms/stacked-dirs';
+// import { DirsWatcher, dirToWatch, VPathData } from '@akashacms/stacked-dirs';
 import path from 'node:path';
 import util from 'node:util';
 import url  from 'node:url';
@@ -26,20 +26,20 @@ import FS from 'fs';
 import EventEmitter from 'events';
 import micromatch from 'micromatch';
 
-import {
-    field,
-    FieldOpts,
-    fk,
-    id,
-    index,
-    table,
-    TableOpts,
-    SqlDatabase,
-    schema,
-    BaseDAO,
-    Filter,
-    Where
-} from 'sqlite3orm';
+// import {
+//     field,
+//     FieldOpts,
+//     fk,
+//     id,
+//     index,
+//     table,
+//     TableOpts,
+//     SqlDatabase,
+//     schema,
+//     BaseDAO,
+//     Filter,
+//     Where
+// } from 'sqlite3orm';
 
 import { sqdb } from '../sqdb.js';
 import { Configuration, dirToMount } from '../index.js';

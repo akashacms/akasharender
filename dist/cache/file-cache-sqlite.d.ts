@@ -48,7 +48,7 @@ export declare class Partial {
     metadata: any;
     info: any;
 }
-export declare const partialsDAO: BaseDAO<Partial>;
+export declare const partialsDAO: any;
 export declare class Layout {
     vpath: string;
     mime: string;
@@ -64,7 +64,7 @@ export declare class Layout {
     metadata: any;
     info: any;
 }
-export declare const layoutsDAO: BaseDAO<Layout>;
+export declare const layoutsDAO: any;
 export declare class Document {
     vpath: string;
     mime: string;
@@ -87,12 +87,8 @@ export declare class Document {
     info: any;
 }
 type TdocumentssDAO = BaseDAO<Document>;
-export declare const documentsDAO: BaseDAO<Document>;
-declare class TagGlue {
-    docvpath: string;
-    tagName: string;
-}
-export declare const tagGlueDAO: BaseDAO<TagGlue>;
+export declare const documentsDAO: any;
+export declare const tagGlueDAO: any;
 /**
  * Type for return from paths method.  The fields here
  * are whats in the Asset/Layout/Partial classes above
@@ -197,7 +193,7 @@ export declare class BaseFileCache<T extends Asset | Layout | Partial | Document
      * @returns
      */
     findSync(_fpath: any): VPathData | undefined;
-    findAll(): Promise<T[]>;
+    findAll(): Promise<any>;
 }
 export declare class TemplatesFileCache<T extends Layout | Partial, Tdao extends BaseDAO<T>> extends BaseFileCache<T, Tdao> {
     constructor(config: Configuration, name: string, dirs: dirToMount[], dao: Tdao);
@@ -231,7 +227,7 @@ export declare class DocumentsFileCache extends BaseFileCache<Document, Tdocumen
      * @param _fpath
      * @returns
      */
-    siblings(_fpath: any): Promise<Document[]>;
+    siblings(_fpath: any): Promise<any>;
     /**
      * Returns a tree of items starting from the document
      * named in _rootItem.  The parameter should be an
@@ -290,7 +286,7 @@ export declare class DocumentsFileCache extends BaseFileCache<Document, Tdocumen
      * @param rootPath
      * @returns
      */
-    indexFiles(rootPath?: string): Promise<any[]>;
+    indexFiles(rootPath?: string): Promise<any>;
     /**
      * For every file in the documents cache,
      * set the access and modifications.

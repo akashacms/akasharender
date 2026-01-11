@@ -1,6 +1,6 @@
 /**
  *
- * Copyright 2014-2024 David Herron
+ * Copyright 2014-2025 David Herron
  *
  * This file is part of AkashaCMS (http://akashacms.com/).
  *
@@ -18,65 +18,89 @@
  */
 
 import path from 'node:path';
+import { promises as fsp } from 'node:fs';
+// import { __dirname } from './index.js';
 
-import {
-    BaseDAO, field, schema, table
-} from 'sqlite3orm';
 import { sqdb } from './sqdb.js';
+import { AsyncDatabase } from 'promised-sqlite3';
 
-@table({ name: 'TRACES' })
+const sql_create_table = await fsp.readFile(
+    path.join(
+        import.meta.dirname, 'sql', 'data-create-table.sql'
+    ),
+    'utf-8'
+);
+
+const sql_add_report = await fsp.readFile(
+    path.join(
+        import.meta.dirname, 'sql', 'data-add-report.sql'
+    ),
+    'utf-8'
+);
+
+const sql_delete_traces = await fsp.readFile(
+    path.join(
+        import.meta.dirname, 'sql', 'data-delete-traces.sql'
+    ),
+    'utf-8'
+);
+
+const sql_delete_all_traces = await fsp.readFile(
+    path.join(
+        import.meta.dirname, 'sql', 'data-delete-all-traces.sql'
+    ),
+    'utf-8'
+);
+
+const sql_get_all_traces = await fsp.readFile(
+    path.join(
+        import.meta.dirname, 'sql', 'data-get-all-traces.sql'
+    ),
+    'utf-8'
+);
+
+const sql_get_for_file = await fsp.readFile(
+    path.join(
+        import.meta.dirname, 'sql', 'data-for-file.sql'
+    ),
+    'utf-8'
+);
+
 class Trace {
-    @field({ name: 'basedir', dbtype: 'TEXT' })
     basedir: string;
-
-    @field({ name: 'fpath', dbtype: 'TEXT' })
     fpath: string;
-
-    @field({
-        name: 'fullpath',
-        // This caused an error
-        // dbtype: 'TEXT AS (concat(basedir, "/", fpath))',
-        // ERROR: cannot INSERT into generated column "fullpath"
-        dbtype: 'TEXT',
-    })
     fullpath?: string;
-
-    @field({ name: 'renderTo', dbtype: 'TEXT' })
     renderTo: string;
-
-    @field({
-        name: 'stage',
-        dbtype: "TEXT DEFAULT(datetime('now') || 'Z')"
-    })
     stage: string;
-    
-    @field({
-        name: 'start',
-        dbtype: "TEXT DEFAULT(datetime('now') || 'Z')"
-    })
     start: string;
-
-    @field({
-        name: 'now',
-        dbtype: "TEXT DEFAULT(datetime('now') || 'Z')"
-    })
     now: string;
-
 }
 
-await schema().createTable(sqdb, 'TRACES');
-const dao = new BaseDAO<Trace>(Trace, sqdb);
+export async function init() {
+    await (await sqdb).run(sql_create_table);
+}
 
-export async function report(basedir, fpath, renderTo, stage, start) {
+export async function report(
+    basedir, fpath, renderTo, stage, start: Date
+) {
     const trace    = new Trace();
     trace.basedir  = basedir;
     trace.fpath    = fpath;
     trace.fullpath = path.join(basedir, fpath);
     trace.renderTo = renderTo;
     trace.stage    = stage;
-    trace.start    = start;
+    trace.start    = start.toISOString();
     trace.now      = new Date().toISOString();
-    await dao.insert(trace);
+    // console.log(`data report`, trace);
+    await (await sqdb).run(await sql_add_report, {
+        $basedir:  trace.basedir,
+        $fpath:    trace.fpath,
+        $fullpath: trace.fullpath,
+        $renderTo: trace.renderTo,
+        $stage:    trace.stage,
+        $start:    trace.start,
+        $now:       trace.now
+    });
 };
 
 /**
@@ -88,21 +112,22 @@ export async function report(basedir, fpath, renderTo, stage, start) {
  */
 export async function remove(basedir, fpath) {
     try {
-        await dao.deleteAll({ basedir, fpath });
+        await (await sqdb).run(await sql_delete_traces, {
+            $basedir: basedir,
+            $fpath:   fpath
+        });
     } catch (err) {}
 };
 
 export async function removeAll() {
     try {
-        await dao.deleteAll({});
+        await (await sqdb).run(await sql_delete_all_traces);
     } catch (err) {}
 };
 
 export async function print() {
-
-    const traces = await dao.selectAll({
-        order: { fullpath: true }
-    });
+    const traces
+        = await (await sqdb).all<Trace>(await sql_get_all_traces);
 
     for (let trace of traces) {
         console.log(`${trace.fullpath} ${trace.renderTo} ${trace.stage} ${(new Date(trace.now).valueOf() - new Date(trace.start).valueOf()) / 1000} seconds`)
@@ -110,13 +135,15 @@ export async function print() {
 };
 
 export async function data4file(basedir, fpath) {
+    // console.log(`data4file ${basedir} ${fpath}`);
     let ret = "";
-    const traces = await dao.selectAll({
-        where: {
-            basedir: { eq: basedir },
-            fpath:   { eq: fpath }
-        }
+
+    const traces
+        = await (await sqdb).all<Trace>(await sql_get_for_file, {
+        $basedir: basedir,
+        $fpath:   fpath
     });
+
     for (let trace of traces) {
         if (trace.basedir === basedir && trace.fpath === fpath) {
             ret += `${trace.fullpath} ${trace.renderTo} ${trace.stage} ${(new Date(trace.now).valueOf() - new Date(trace.start).valueOf()) / 1000} seconds\n`;

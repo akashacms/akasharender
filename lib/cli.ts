@@ -29,11 +29,12 @@ import path from 'node:path';
 import util from 'node:util';
 import * as data from './data.js';
 import YAML from 'js-yaml';
+import { RenderingResults } from './render.js';
 
 const _watchman = import('./cache/watchman.js');
 
 process.title = 'akasharender';
-program.version('0.7.5');
+program.version('0.9.5');
 
 program
     .command('copy-assets <configFN>')
@@ -85,6 +86,12 @@ metadata: ${util.inspect(doc.metadata)}
         }
     });
 
+function formatResult(result: RenderingResults) {
+    return `
+${result.renderFormat} ${result.vpath} ==> ${result.renderPath}
+FIRST ${result.renderFirstElapsed} LAYOUT ${result.renderLayoutElapsed} MAHA ${result.renderMahaElapsed} TOTAL ${result.renderTotalElapsed}`;
+}
+
 program
     .command('render-document <configFN> <documentFN>')
     .description('Render a document into output directory')
@@ -97,11 +104,19 @@ program
             await akasha.setup(config);
             await data.removeAll();
             // console.log(`render-document before renderPath ${documentFN}`);
-            let result = await akasha.renderPath(config, documentFN);
-            console.log(result);
+            let result = await akasha.renderPath2(config, documentFN);
+            // console.log(result);
+            console.log(formatResult(result));
+            if (Array.isArray(result.errors)
+                && result.errors.length >= 1
+            ) {
+                for (const error of result.errors) {
+                    console.log(error.stack);
+                }
+            }
             await akasha.closeCaches();
         } catch (e) {
-            console.error(`render-document command ERRORED ${e.stack}`);
+            console.error(`render-document command ERRORED`, e);
         }
     });
 
@@ -112,6 +127,7 @@ program
     .option('--copy-assets', 'First, copy the assets')
     .option('--results-to <resultFile>', 'Store the results into the named file')
     .option('--perfresults <perfResultsFile>', 'Store the time to render each document')
+    .option('--caching-timeout <timeout>', 'The time, in miliseconds, to honor entries in the search cache')
     .action(async (configFN, cmdObj) => {
         // console.log(`render: akasha: ${util.inspect(akasha)}`);
         try {
@@ -124,58 +140,68 @@ program
             if (cmdObj.copyAssets) {
                 await config.copyAssets();
             }
-            let results = await akasha.render(config);
+            if (typeof cmdObj.cachingTimeout === 'string') {
+                config.setCachingTimeout(
+                    Number.parseInt(cmdObj.cachingTimeout)
+                );
+            }
+            let results = <RenderingResults[]> await akasha.render2(config);
             if (!cmdObj.quiet) {
                 for (let result of results) {
 
                     // TODO --- if AKASHARENDER_TRACE_RENDER then output tracing data
                     // TODO --- also set process.env.GLOBFS_TRACE=1
 
-                    if (result.error) {
-                        console.error(result.error);
-                    } else {
-                        console.log(result.result);
-                        // console.log(util.inspect(result.result));
+                    // console.log(result)
+                    console.log(formatResult(result));
+                    if (Array.isArray(result.errors)
+                     && result.errors.length >= 1
+                    ) {
+                        for (const error of result.errors) {
+                            console.log(error.stack);
+                        }
                     }
                 }
             }
             if (cmdObj.resultsTo) {
                 const output = fs.createWriteStream(cmdObj.resultsTo);
                 for (let result of results) {
-                    if (result.error) {
-                        output.write('****ERROR '+ result.error + '\n');
-                    } else {
-                        output.write(result.result + '\n');
-                        // console.log(util.inspect(result.result));
+                    output.write(formatResult(result));
+                    if (Array.isArray(result.errors)
+                     && result.errors.length >= 1
+                    ) {
+                        for (const error of result.errors) {
+                            output.write(error.stack);
+                        }
                     }
                 }
                 output.close();
             }
             if (cmdObj.perfresults) {
-                const output = fs.createWriteStream(cmdObj.perfresults);
-                for (let result of results) {
-                    if (result.error) {
-                        // Ignore
-                    } else if (result.result.startsWith('COPY')) {
-                        // Ignore
-                    } else {
-                        let results = result.result.split('\n');
-                        let perf = results[0];
-                        let matches = perf.match(/.* ==> (.*) \(([0-9\.]+) seconds\)$/);
-                        if (!matches) continue;
-                        if (matches.length < 3) continue;
-                        let fn = matches[1];
-                        let time = matches[2];
-                        let report = `${time} ${fn}`;
-                        for (let i = 1; i < results.length; i++) {
-                            let stages = results[i].match(/(FRONTMATTER|FIRST RENDER|SECOND RENDER|MAHABHUTA|RENDERED) ([0-9\.]+) seconds$/);
-                            if (!stages || stages.length < 3) continue;
-                            report += ` ${stages[1]} ${stages[2]}`;
-                        }
-                        output.write(`${report}\n`);
-                    }
+                const reports = [];
+            for (let result of results) {
+                    const report: {
+                        renderedPath?: string;
+                        format: string;
+                        time?: number;
+                        first?: number;
+                        second?: number;
+                        mahabhuta?: number;
+                        rendered?: number;
+                    } = {
+                        renderedPath: result.vpath,
+                        format: result.renderFormat,
+                        time: result.renderStart,
+                        first: result.renderFirstElapsed,
+                        second: result.renderLayoutElapsed,
+                        mahabhuta: result.renderMahaElapsed,
+                        rendered: result.renderTotalElapsed
+                    };
+                    reports.push(report);
                 }
-                output.close();
+                fsp.writeFile(cmdObj.perfresults,
+                        JSON.stringify(reports, undefined, 4),
+                        'utf-8');
             }
             await akasha.closeCaches();
         } catch (e) {
@@ -464,6 +490,25 @@ program
     });
 
 program
+    .command('index-chain <configFN> startPath')
+    .description('List the index chain starting from the path')
+    .action(async (configFN, startPath) => {
+        // console.log(`render: akasha: ${util.inspect(akasha)}`);
+        try {
+            const config = (await import(
+                path.join(process.cwd(), configFN)
+            )).default;
+            let akasha = config.akasha;
+            await akasha.setup(config);
+            const docinfo = await akasha.filecache.documentsCache.indexChain(startPath);
+            console.log(`index chain ${startPath} `, docinfo);
+            await akasha.closeCaches();
+        } catch (e) {
+            console.error(`index-chain command ERRORED ${e.stack}`);
+        }
+    });
+
+program
     .command('siblings <configFN> <vpath>')
     .description('List the sibling pages to the named document')
     .action(async (configFN, vpath) => {
@@ -487,6 +532,24 @@ program
             await akasha.closeCaches();
         } catch (e) {
             console.error(`siblings command ERRORED ${e.stack}`);
+        }
+    });
+
+program
+    .command('docs-semantic <configFN> <searchFor>')
+    .description('List the document vpaths semantically matching the string')
+    .action(async (configFN, searchFor) => {
+        // console.log(`render: akasha: ${util.inspect(akasha)}`);
+        try {
+            const config = (await import(
+                path.join(process.cwd(), configFN)
+            )).default;
+            let akasha = config.akasha;
+            await akasha.setup(config);
+            console.log(await akasha.filecache.documentsCache.semanticSearchDocs(searchFor));
+            await akasha.closeCaches();
+        } catch (e) {
+            console.error(`docs-semantic command ERRORED ${e.stack}`);
         }
     });
 

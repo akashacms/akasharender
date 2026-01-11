@@ -1,0 +1,122 @@
+[
+    {
+        "sql": "\nCREATE TABLE IF NOT EXISTS \"ASSETS\" (\n  `vpath` TEXT PRIMARY KEY,\n  `renderPath` TEXT  GENERATED ALWAYS\n        AS (vpath) STORED,\n  `mime` TEXT,\n  `mounted` TEXT,\n  `mountPoint` TEXT,\n  `pathInMounted` TEXT,\n  `fspath` TEXT,\n  `dirname` TEXT,\n  `mtimeMs` REAL,\n  `info` TEXT\n) WITHOUT ROWID;",
+        "time": 1
+    },
+    {
+        "sql": "\nCREATE TABLE IF NOT EXISTS \"PARTIALS\" (\n  `vpath` TEXT PRIMARY KEY,\n  `renderPath` TEXT  GENERATED ALWAYS\n        AS (vpath) STORED,\n  `mime` TEXT,\n  `mounted` TEXT,\n  `mountPoint` TEXT,\n  `pathInMounted` TEXT,\n  `fspath` TEXT,\n  `dirname` TEXT,\n  `mtimeMs` REAL,\n  `docBody` TEXT,\n  `rendererName` TEXT,\n  `info` TEXT\n) WITHOUT ROWID;",
+        "time": 0
+    },
+    {
+        "sql": "\nCREATE TABLE IF NOT EXISTS \"LAYOUTS\" (\n  `vpath` TEXT PRIMARY KEY,\n  `renderPath` TEXT  GENERATED ALWAYS\n        AS (vpath) STORED,\n  `mime` TEXT,\n  `mounted` TEXT,\n  `mountPoint` TEXT,\n  `pathInMounted` TEXT,\n  `fspath` TEXT,\n  `dirname` TEXT,\n  `mtimeMs` REAL,\n  `rendersToHTML` INTEGER,\n  `docBody` TEXT,\n  `rendererName` TEXT,\n  `info` TEXT\n) WITHOUT ROWID;",
+        "time": 0
+    },
+    {
+        "sql": "\n            INSERT INTO 'ASSETS'\n            (\n                vpath,\n                mime,\n                mounted,\n                mountPoint,\n                pathInMounted,\n                fspath,\n                dirname,\n                mtimeMs,\n                info\n            )\n            VALUES\n            (\n                $vpath,\n                $mime,\n                $mounted,\n                $mountPoint,\n                $pathInMounted,\n                $fspath,\n                $dirname,\n                $mtimeMs,\n                $info\n            )\n        ",
+        "time": 0
+    },
+    {
+        "sql": "\n            INSERT INTO 'ASSETS'\n            (\n                vpath,\n                mime,\n                mounted,\n                mountPoint,\n                pathInMounted,\n                fspath,\n                dirname,\n                mtimeMs,\n                info\n            )\n            VALUES\n            (\n                $vpath,\n                $mime,\n                $mounted,\n                $mountPoint,\n                $pathInMounted,\n                $fspath,\n                $dirname,\n                $mtimeMs,\n                $info\n            )\n        ",
+        "time": 0
+    },
+    {
+        "sql": "\n            INSERT INTO 'ASSETS'\n            (\n                vpath,\n                mime,\n                mounted,\n                mountPoint,\n                pathInMounted,\n                fspath,\n                dirname,\n                mtimeMs,\n                info\n            )\n            VALUES\n            (\n                $vpath,\n                $mime,\n                $mounted,\n                $mountPoint,\n                $pathInMounted,\n                $fspath,\n                $dirname,\n                $mtimeMs,\n                $info\n            )\n        ",
+        "time": 0
+    },
+    {
+        "sql": "\nCREATE TABLE IF NOT EXISTS \"DOCUMENTS\" (\n  `vpath` TEXT PRIMARY KEY,\n  `mime` TEXT,\n  `mounted` TEXT,\n  `mountPoint` TEXT,\n  `pathInMounted` TEXT,\n  `fspath` TEXT,\n  `dirname` TEXT,\n  `mtimeMs` REAL,\n  `renderPath` TEXT,\n  `rendersToHTML` INTEGER,\n  `parentDir` TEXT,\n  `publicationTime` INTEGER GENERATED ALWAYS\n        AS (json_extract(info, '$.publicationTime')) STORED,\n  `baseMetadata` TEXT GENERATED ALWAYS\n        AS (json_extract(info, '$.baseMetadata')) STORED,\n  `docMetadata` TEXT,\n  `docContent` TEXT,\n  `docBody` TEXT,\n  `metadata` TEXT GENERATED ALWAYS\n        AS (json_extract(info, '$.metadata')) STORED,\n  `tags` TEXT GENERATED ALWAYS\n        AS (json_extract(info, '$.metadata.tags')) STORED,\n  `layout` TEXT GENERATED ALWAYS\n        AS (json_extract(metadata, '$.layout')) STORED,\n  `blogtag` TEXT GENERATED ALWAYS\n        AS (json_extract(metadata, '$.blogtag')) STORED,\n  `rendererName` TEXT,\n  `info` TEXT\n) WITHOUT ROWID;",
+        "time": 1
+    },
+    {
+        "sql": "\n            INSERT INTO 'PARTIALS'\n            (\n                vpath,\n                mime,\n                mounted,\n                mountPoint,\n                pathInMounted,\n                fspath,\n                dirname,\n                mtimeMs,\n                info,\n\n                docBody,\n                rendererName\n            )\n            VALUES\n            (\n                $vpath,\n                $mime,\n                $mounted,\n                $mountPoint,\n                $pathInMounted,\n                $fspath,\n                $dirname,\n                $mtimeMs,\n                $info,\n\n                $docBody,\n                $rendererName\n            )\n        ",
+        "time": 0
+    },
+    {
+        "sql": "\n            INSERT INTO 'PARTIALS'\n            (\n                vpath,\n                mime,\n                mounted,\n                mountPoint,\n                pathInMounted,\n                fspath,\n                dirname,\n                mtimeMs,\n                info,\n\n                docBody,\n                rendererName\n            )\n            VALUES\n            (\n                $vpath,\n                $mime,\n                $mounted,\n                $mountPoint,\n                $pathInMounted,\n                $fspath,\n                $dirname,\n                $mtimeMs,\n                $info,\n\n                $docBody,\n                $rendererName\n            )\n        ",
+        "time": 0
+    },
+    {
+        "sql": "\n            INSERT INTO 'PARTIALS'\n            (\n                vpath,\n                mime,\n                mounted,\n                mountPoint,\n                pathInMounted,\n                fspath,\n                dirname,\n                mtimeMs,\n                info,\n\n                docBody,\n                rendererName\n            )\n            VALUES\n            (\n                $vpath,\n                $mime,\n                $mounted,\n                $mountPoint,\n                $pathInMounted,\n                $fspath,\n                $dirname,\n                $mtimeMs,\n                $info,\n\n                $docBody,\n                $rendererName\n            )\n        ",
+        "time": 0
+    },
+    {
+        "sql": "\n            INSERT INTO 'PARTIALS'\n            (\n                vpath,\n                mime,\n                mounted,\n                mountPoint,\n                pathInMounted,\n                fspath,\n                dirname,\n                mtimeMs,\n                info,\n\n                docBody,\n                rendererName\n            )\n            VALUES\n            (\n                $vpath,\n                $mime,\n                $mounted,\n                $mountPoint,\n                $pathInMounted,\n                $fspath,\n                $dirname,\n                $mtimeMs,\n                $info,\n\n                $docBody,\n                $rendererName\n            )\n        ",
+        "time": 0
+    },
+    {
+        "sql": "\n            INSERT INTO 'PARTIALS'\n            (\n                vpath,\n                mime,\n                mounted,\n                mountPoint,\n                pathInMounted,\n                fspath,\n                dirname,\n                mtimeMs,\n                info,\n\n                docBody,\n                rendererName\n            )\n            VALUES\n            (\n                $vpath,\n                $mime,\n                $mounted,\n                $mountPoint,\n                $pathInMounted,\n                $fspath,\n                $dirname,\n                $mtimeMs,\n                $info,\n\n                $docBody,\n                $rendererName\n            )\n        ",
+        "time": 0
+    },
+    {
+        "sql": "\n            INSERT INTO 'PARTIALS'\n            (\n                vpath,\n                mime,\n                mounted,\n                mountPoint,\n                pathInMounted,\n                fspath,\n                dirname,\n                mtimeMs,\n                info,\n\n                docBody,\n                rendererName\n            )\n            VALUES\n            (\n                $vpath,\n                $mime,\n                $mounted,\n                $mountPoint,\n                $pathInMounted,\n                $fspath,\n                $dirname,\n                $mtimeMs,\n                $info,\n\n                $docBody,\n                $rendererName\n            )\n        ",
+        "time": 0
+    },
+    {
+        "sql": "\n            INSERT INTO 'PARTIALS'\n            (\n                vpath,\n                mime,\n                mounted,\n                mountPoint,\n                pathInMounted,\n                fspath,\n                dirname,\n                mtimeMs,\n                info,\n\n                docBody,\n                rendererName\n            )\n            VALUES\n            (\n                $vpath,\n                $mime,\n                $mounted,\n                $mountPoint,\n                $pathInMounted,\n                $fspath,\n                $dirname,\n                $mtimeMs,\n                $info,\n\n                $docBody,\n                $rendererName\n            )\n        ",
+        "time": 0
+    },
+    {
+        "sql": "\n            INSERT INTO 'PARTIALS'\n            (\n                vpath,\n                mime,\n                mounted,\n                mountPoint,\n                pathInMounted,\n                fspath,\n                dirname,\n                mtimeMs,\n                info,\n\n                docBody,\n                rendererName\n            )\n            VALUES\n            (\n                $vpath,\n                $mime,\n                $mounted,\n                $mountPoint,\n                $pathInMounted,\n                $fspath,\n                $dirname,\n                $mtimeMs,\n                $info,\n\n                $docBody,\n                $rendererName\n            )\n        ",
+        "time": 0
+    },
+    {
+        "sql": "\n            INSERT INTO 'PARTIALS'\n            (\n                vpath,\n                mime,\n                mounted,\n                mountPoint,\n                pathInMounted,\n                fspath,\n                dirname,\n                mtimeMs,\n                info,\n\n                docBody,\n                rendererName\n            )\n            VALUES\n            (\n                $vpath,\n                $mime,\n                $mounted,\n                $mountPoint,\n                $pathInMounted,\n                $fspath,\n                $dirname,\n                $mtimeMs,\n                $info,\n\n                $docBody,\n                $rendererName\n            )\n        ",
+        "time": 0
+    },
+    {
+        "sql": "\n            INSERT INTO 'PARTIALS'\n            (\n                vpath,\n                mime,\n                mounted,\n                mountPoint,\n                pathInMounted,\n                fspath,\n                dirname,\n                mtimeMs,\n                info,\n\n                docBody,\n                rendererName\n            )\n            VALUES\n            (\n                $vpath,\n                $mime,\n                $mounted,\n                $mountPoint,\n                $pathInMounted,\n                $fspath,\n                $dirname,\n                $mtimeMs,\n                $info,\n\n                $docBody,\n                $rendererName\n            )\n        ",
+        "time": 0
+    },
+    {
+        "sql": "\n            INSERT INTO 'PARTIALS'\n            (\n                vpath,\n                mime,\n                mounted,\n                mountPoint,\n                pathInMounted,\n                fspath,\n                dirname,\n                mtimeMs,\n                info,\n\n                docBody,\n                rendererName\n            )\n            VALUES\n            (\n                $vpath,\n                $mime,\n                $mounted,\n                $mountPoint,\n                $pathInMounted,\n                $fspath,\n                $dirname,\n                $mtimeMs,\n                $info,\n\n                $docBody,\n                $rendererName\n            )\n        ",
+        "time": 0
+    },
+    {
+        "sql": "\n            INSERT INTO 'PARTIALS'\n            (\n                vpath,\n                mime,\n                mounted,\n                mountPoint,\n                pathInMounted,\n                fspath,\n                dirname,\n                mtimeMs,\n                info,\n\n                docBody,\n                rendererName\n            )\n            VALUES\n            (\n                $vpath,\n                $mime,\n                $mounted,\n                $mountPoint,\n                $pathInMounted,\n                $fspath,\n                $dirname,\n                $mtimeMs,\n                $info,\n\n                $docBody,\n                $rendererName\n            )\n        ",
+        "time": 0
+    },
+    {
+        "sql": "\n            INSERT INTO 'PARTIALS'\n            (\n                vpath,\n                mime,\n                mounted,\n                mountPoint,\n                pathInMounted,\n                fspath,\n                dirname,\n                mtimeMs,\n                info,\n\n                docBody,\n                rendererName\n            )\n            VALUES\n            (\n                $vpath,\n                $mime,\n                $mounted,\n                $mountPoint,\n                $pathInMounted,\n                $fspath,\n                $dirname,\n                $mtimeMs,\n                $info,\n\n                $docBody,\n                $rendererName\n            )\n        ",
+        "time": 0
+    },
+    {
+        "sql": "\n            INSERT INTO 'PARTIALS'\n            (\n                vpath,\n                mime,\n                mounted,\n                mountPoint,\n                pathInMounted,\n                fspath,\n                dirname,\n                mtimeMs,\n                info,\n\n                docBody,\n                rendererName\n            )\n            VALUES\n            (\n                $vpath,\n                $mime,\n                $mounted,\n                $mountPoint,\n                $pathInMounted,\n                $fspath,\n                $dirname,\n                $mtimeMs,\n                $info,\n\n                $docBody,\n                $rendererName\n            )\n        ",
+        "time": 0
+    },
+    {
+        "sql": "\n            INSERT INTO 'PARTIALS'\n            (\n                vpath,\n                mime,\n                mounted,\n                mountPoint,\n                pathInMounted,\n                fspath,\n                dirname,\n                mtimeMs,\n                info,\n\n                docBody,\n                rendererName\n            )\n            VALUES\n            (\n                $vpath,\n                $mime,\n                $mounted,\n                $mountPoint,\n                $pathInMounted,\n                $fspath,\n                $dirname,\n                $mtimeMs,\n                $info,\n\n                $docBody,\n                $rendererName\n            )\n        ",
+        "time": 0
+    },
+    {
+        "sql": "\n            INSERT INTO 'PARTIALS'\n            (\n                vpath,\n                mime,\n                mounted,\n                mountPoint,\n                pathInMounted,\n                fspath,\n                dirname,\n                mtimeMs,\n                info,\n\n                docBody,\n                rendererName\n            )\n            VALUES\n            (\n                $vpath,\n                $mime,\n                $mounted,\n                $mountPoint,\n                $pathInMounted,\n                $fspath,\n                $dirname,\n                $mtimeMs,\n                $info,\n\n                $docBody,\n                $rendererName\n            )\n        ",
+        "time": 0
+    },
+    {
+        "sql": "\n            INSERT INTO 'PARTIALS'\n            (\n                vpath,\n                mime,\n                mounted,\n                mountPoint,\n                pathInMounted,\n                fspath,\n                dirname,\n                mtimeMs,\n                info,\n\n                docBody,\n                rendererName\n            )\n            VALUES\n            (\n                $vpath,\n                $mime,\n                $mounted,\n                $mountPoint,\n                $pathInMounted,\n                $fspath,\n                $dirname,\n                $mtimeMs,\n                $info,\n\n                $docBody,\n                $rendererName\n            )\n        ",
+        "time": 0
+    },
+    {
+        "sql": "\n            INSERT INTO 'PARTIALS'\n            (\n                vpath,\n                mime,\n                mounted,\n                mountPoint,\n                pathInMounted,\n                fspath,\n                dirname,\n                mtimeMs,\n                info,\n\n                docBody,\n                rendererName\n            )\n            VALUES\n            (\n                $vpath,\n                $mime,\n                $mounted,\n                $mountPoint,\n                $pathInMounted,\n                $fspath,\n                $dirname,\n                $mtimeMs,\n                $info,\n\n                $docBody,\n                $rendererName\n            )\n        ",
+        "time": 0
+    },
+    {
+        "sql": "\n            INSERT INTO 'PARTIALS'\n            (\n                vpath,\n                mime,\n                mounted,\n                mountPoint,\n                pathInMounted,\n                fspath,\n                dirname,\n                mtimeMs,\n                info,\n\n                docBody,\n                rendererName\n            )\n            VALUES\n            (\n                $vpath,\n                $mime,\n                $mounted,\n                $mountPoint,\n                $pathInMounted,\n                $fspath,\n                $dirname,\n                $mtimeMs,\n                $info,\n\n                $docBody,\n                $rendererName\n            )\n        ",
+        "time": 0
+    },
+    {
+        "sql": "\n            INSERT INTO 'PARTIALS'\n            (\n                vpath,\n                mime,\n                mounted,\n                mountPoint,\n                pathInMounted,\n                fspath,\n                dirname,\n                mtimeMs,\n                info,\n\n                docBody,\n                rendererName\n            )\n            VALUES\n            (\n                $vpath,\n                $mime,\n                $mounted,\n                $mountPoint,\n                $pathInMounted,\n                $fspath,\n                $dirname,\n                $mtimeMs,\n                $info,\n\n                $docBody,\n                $rendererName\n            )\n        ",
+        "time": 0
+    },
+    {
+        "sql": "\n        CREATE TABLE IF NOT EXISTS\n        TAGGLUE (\n            docvpath STRING,\n            tagName STRING\n        );",
+        "time": 0
+    },
+    {
+        "sql": "\n        CREATE TABLE IF NOT EXISTS\n        TAGDESCRIPTION (\n            tagName STRING UNIQUE,\n            description STRING\n        );",
+        "time": 0
+    },
+    {
+        "sql": "",
+        "time": null
+    }
+]

@@ -16,7 +16,9 @@
  *  See the License for the specific language governing permissions and
  *  limitations under the License.
  */
-import { VPathData } from '@akashacms/stacked-dirs';
+import { dirToMount, VPathData } from './cache/vfstack.js';
+export type { dirToMount, VPathData } from './cache/vfstack.js';
+export { isDirToMount } from './cache/vfstack.js';
 import * as Renderers from '@akashacms/renderers';
 export * as Renderers from '@akashacms/renderers';
 import { Renderer } from '@akashacms/renderers';
@@ -27,8 +29,8 @@ import * as cheerio from 'cheerio';
 export * from './mahafuncs.js';
 export * as relative from 'relative';
 export { Plugin } from './Plugin.js';
-export { render, renderDocument, renderContent } from './render.js';
-import * as filecache from './cache/file-cache-sqlite.js';
+export { render, render2, renderDocument, renderDocument2, renderContent } from './render.js';
+import * as filecache from './cache/cache-sqlite.js';
 export { newSQ3DataStore } from './sqdb.js';
 /**
  * Performs setup of things so that AkashaRender can function.
@@ -47,6 +49,7 @@ export declare function cacheSetup(config: any): Promise<void>;
 export declare function closeCaches(): Promise<void>;
 export declare function fileCachesReady(config: any): Promise<void>;
 export declare function renderPath(config: any, path2r: any): Promise<string>;
+export declare function renderPath2(config: any, path2r: any): Promise<import("./render.js").RenderingResults>;
 /**
  * Reads a file from the rendering directory.  It is primarily to be
  * used in test cases, where we'll run a build then read the individual
@@ -82,6 +85,13 @@ export declare function partial(config: any, fname: any, metadata: any): Promise
  * @returns String containing the rendered stuff
  */
 export declare function partialSync(config: any, fname: any, metadata: any): any;
+export type indexChainItem = {
+    title: string;
+    vpath: string;
+    foundPath: string;
+    foundDir: string;
+    filename: string;
+};
 /**
  * Starting from a virtual path in the documents, searches upwards to
  * the root of the documents file-space, finding files that
@@ -92,7 +102,7 @@ export declare function partialSync(config: any, fname: any, metadata: any): any
  * @param {*} fname
  * @returns
  */
-export declare function indexChain(config: any, fname: any): Promise<any[]>;
+export declare function indexChain(config: any, fname: any): Promise<indexChainItem[]>;
 /**
  * Manipulate the rel= attributes on a link returned from Mahabhuta.
  *
@@ -146,28 +156,6 @@ export type stylesheetItem = {
  * converted to the dirToWatch structure
  * used by StackedDirs.
  */
-export type dirToMount = string | {
-    /**
-     * The fspath to mount
-     */
-    src: string;
-    /**
-     * The virtual filespace
-     * location
-     */
-    dest: string;
-    /**
-     * Array of GLOB patterns
-     * of files to ignore
-     */
-    ignore?: string[];
-    /**
-     * An object containing
-     * metadata that's to
-     * apply to every file
-     */
-    baseMetadata?: any;
-};
 /**
  * Configuration of an AkashaRender project, including the input directories,
  * output directory, plugins, and various settings.
@@ -204,61 +192,40 @@ export declare class Configuration {
     set cacheDir(dirnm: string);
     get cacheDir(): string;
     get akasha(): any;
-    documentsCache(): Promise<filecache.DocumentsFileCache>;
-    assetsCache(): Promise<filecache.BaseFileCache<filecache.Asset, import("sqlite3orm").BaseDAO<filecache.Asset>>>;
-    layoutsCache(): Promise<filecache.TemplatesFileCache<filecache.Layout, import("sqlite3orm").BaseDAO<filecache.Layout>>>;
-    partialsCache(): Promise<filecache.TemplatesFileCache<filecache.Partial, import("sqlite3orm").BaseDAO<filecache.Partial>>>;
+    documentsCache(): Promise<filecache.DocumentsCache>;
+    assetsCache(): Promise<filecache.AssetsCache>;
+    layoutsCache(): Promise<filecache.LayoutsCache>;
+    partialsCache(): Promise<filecache.PartialsCache>;
     /**
      * Add a directory to the documentDirs configuration array
-     * @param {string} dir The pathname to use
+     * @param {string | dirToMount} dir The pathname to use or dirToMount object
      */
-    addDocumentsDir(dir: dirToMount): this;
+    addDocumentsDir(dir: string | dirToMount): this;
     get documentDirs(): dirToMount[];
     /**
      * Look up the document directory information for a given document directory.
      * @param {string} dirname The document directory to search for
      */
-    documentDirInfo(dirname: string): string | {
-        /**
-         * The fspath to mount
-         */
-        src: string;
-        /**
-         * The virtual filespace
-         * location
-         */
-        dest: string;
-        /**
-         * Array of GLOB patterns
-         * of files to ignore
-         */
-        ignore?: string[];
-        /**
-         * An object containing
-         * metadata that's to
-         * apply to every file
-         */
-        baseMetadata?: any;
-    };
+    documentDirInfo(dirname: string): dirToMount;
     /**
      * Add a directory to the layoutDirs configurtion array
-     * @param {string} dir The pathname to use
+     * @param {string | dirToMount} dir The pathname to use or dirToMount object
      */
-    addLayoutsDir(dir: dirToMount): this;
+    addLayoutsDir(dir: string | dirToMount): this;
     get layoutDirs(): dirToMount[];
     /**
      * Add a directory to the partialDirs configurtion array
-     * @param {string} dir The pathname to use
+     * @param {string | dirToMount} dir The pathname to use or dirToMount object
      * @returns {Configuration}
      */
-    addPartialsDir(dir: dirToMount): this;
+    addPartialsDir(dir: string | dirToMount): this;
     get partialsDirs(): dirToMount[];
     /**
      * Add a directory to the assetDirs configurtion array
-     * @param {string} dir The pathname to use
+     * @param {string | dirToMount} dir The pathname to use or dirToMount object
      * @returns {Configuration}
      */
-    addAssetsDir(dir: dirToMount): this;
+    addAssetsDir(dir: string | dirToMount): this;
     get assetDirs(): dirToMount[];
     /**
      * Add an array of Mahabhuta functions
@@ -286,6 +253,17 @@ export declare class Configuration {
     addMetadata(index: string, value: any): this;
     get metadata(): any;
     /**
+     * Add tag descriptions to the database.  The purpose
+     * is for example a tag index page can give a
+     * description at the top of the page.
+     *
+     * @param tagdescs
+     */
+    addTagDescriptions(tagdescs: Array<{
+        tagName: string;
+        description: string;
+    }>): Promise<void>;
+    /**
     * Document the URL for a website project.
     * @param {string} root_url
     * @returns {Configuration}
@@ -299,6 +277,17 @@ export declare class Configuration {
      */
     setConcurrency(concurrency: number): this;
     get concurrency(): number;
+    /**
+     * Set the time, in miliseconds, to honor
+     * the SearchCache in the search function.
+     *
+     * Default is 60000 (1 minute).
+     *
+     * Set to 0 to disable caching.
+     * @param timeout
+     */
+    setCachingTimeout(timeout: number): void;
+    get cachingTimeout(): number;
     /**
      * Declare JavaScript to add within the head tag of rendered pages.
      * @param script

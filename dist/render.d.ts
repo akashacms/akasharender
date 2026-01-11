@@ -18,27 +18,24 @@
  */
 import { Configuration } from './index.js';
 import { RenderingContext } from '@akashacms/renderers';
-/**
- * Where renderDocument is meant for a document on disk
- * and indexed by a DocumentsFileCache instance, this
- * function is meant for documents created from in-memory
- * data.  For instance, the tagged-content plugin generates
- * tag pages listing links to documents based on their tag.
- * These pages are instantiate out of data rather than
- * existing on-disk.
- *
- * Required data:
- *     * Blank page - with frontmatter including a "layout" template reference
- *     * File-name to use for virtual page, which also determines the rendered output file
- *     * Metadata derived from the frontmatter and filled with other stuff including the data to render into the page,
- *
- * @param config
- * @param docInfo
- */
-export declare function renderVirtualDocument(config: Configuration, docInfo: {
-    vpath: string;
-    document: string;
-}): Promise<void>;
+export type RenderingResults = {
+    vpath?: string;
+    renderPath?: string;
+    renderFormat: string;
+    renderStart?: number;
+    renderEnd?: number;
+    renderFirstStart?: number;
+    renderFirstEnd?: number;
+    renderLayoutStart?: number;
+    renderLayoutEnd?: number;
+    renderMahaStart?: number;
+    renderMahaEnd?: number;
+    renderFirstElapsed?: number;
+    renderLayoutElapsed?: number;
+    renderMahaElapsed?: number;
+    renderTotalElapsed?: number;
+    errors?: Array<Error>;
+};
 /**
  * The core part of rendering content using a renderer.
  * This function looks for the renderer, and if none is
@@ -54,6 +51,35 @@ export declare function renderContent(config: Configuration, rc: RenderingContex
     format?: string;
     rendered: string;
 }>;
+/**
+ * Attempt to rewrite renderDocument with cleaner code, and a
+ * different method for collecting performance/timing data.
+ *
+ * The existing renderDocument is messy and hard to understand.
+ * Goal: make it more straight-forward, easy to understand.
+ * Goal: store all data in a well designed object
+ *
+ * The existing performance measurements are imprecise by using
+ * the Date object, and by not computing the elapsed time of
+ * each segment.  Instead, it computs the time from the start
+ * for each segment, which isn't useful.  We want to see the
+ * elapsed time.
+ *
+ * For precise time measures this uses the Node.js performance
+ * hooks to get accurate timestamps.
+ *
+ * This code has not been executed as yet.
+ *
+ * Tasks:
+ * * TODO Implement CSS renderFormat
+ * * TODO Implement the != HTML renderFormat
+ * * TODO Test and fix bugs
+ *
+ * @param config
+ * @param docInfo
+ * @returns
+ */
+export declare function renderDocument2(config: Configuration, docInfo: any): Promise<RenderingResults>;
 /**
  * Render a document, accounting for the main content,
  * a layout template (if any), and Mahabhuta (if the content
@@ -74,4 +100,15 @@ export declare function renderDocument(config: Configuration, docInfo: any): Pro
  * @returns
  */
 export declare function render(config: any): Promise<any[]>;
+/**
+ * Render all the documents in a site using renderDocument2,
+ * limiting the number of simultaneous rendering tasks
+ * to the number in config.concurrency.
+ *
+ * Returns structured RenderingResults data instead of text strings.
+ *
+ * @param config
+ * @returns Array of RenderingResults with performance and error data
+ */
+export declare function render2(config: any): Promise<Array<RenderingResults>>;
 //# sourceMappingURL=render.d.ts.map

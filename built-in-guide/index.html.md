@@ -23,8 +23,6 @@ With that, macros can be invoked this way:
 {{ ak_core.rssHeaderMeta("/rss-for-header.xml") }}
 ```
 
-
-
 # Simplification for `figure/img` tags
 
 This construct is recommended in the HTML5 world for its microformat goodness
@@ -218,7 +216,6 @@ For Nunjucks templates, this custom tag can be used:
 {% akfooterjs %}
 {% endakfooterjs %}
 ```
-
 
 # Teaser content
 
