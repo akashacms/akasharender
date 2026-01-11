@@ -35,5 +35,6 @@ node_modules
 
 # dist
 
+*.gguf
 test/nomic-embed-text-v1.5.Q8_0.gguf
 

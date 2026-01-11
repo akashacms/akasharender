@@ -44,7 +44,6 @@
     "akasharender": "dist/cli.js"
   },
   "dependencies": {
-    "24": "^0.0.0",
     "@akashacms/renderers": "akashacms/rendering-engines",
     "cache": "^3.0.0",
     "commander": "^14.x",
@@ -56,6 +55,7 @@
     "joi": "^18.0.1",
     "mahabhuta": "^0.9.x",
     "micromatch": "^4.0.8",
+    "mime": "^4.1.0",
     "promised-sqlite3": "^2.1.0",
     "relative": "^3.0.x",
     "rss": "^1.2.x",
