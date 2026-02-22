@@ -173,7 +173,9 @@ For example:
 layout: video-page.html.ejs
 title: Race 4, Buenos Aires pre-race driver interviews (Formula E)
 publicationDate: Jan 8, 2015
-tags: Electric Racing, Formula E 2014
+tags: 
+  - Electric Racing
+  - Formula E 2014
 teaser: Going into the fourth race, drivers talk about their experiences and hopes.
 videoUrls:
   - url: https://www.youtube.com/watch?v=O3lHuEmP9-g
@@ -196,6 +198,15 @@ Support for metadata variables in renderer
 * NunjucksRenderer: Can substitute variables into rendered output
 * HandlebarsRenderer: Can substitute variables into rendered output
 
+### Categorizing documents with tags
+
+The `tags` array shown above is a tool for adding categorization to documents.
+
+This array is to contain an array of strings.  Each string is treated as if it is a descriptive keyword phrase related to the document contents.
+
+To make use of this feature, look at the `@akashacms/plugins-tagged-content` plugin.
+
+There is no central tags registry.  Instead, tags are declared in documents as shown above.  A list of all declared tags is kept in the project configuration.
 ### Page Layouts
 
 HTMLRenderer supports much more than just rendering content files.  That would be very boring and not useful to simply render from a document directory to the rendering destination directory.  
