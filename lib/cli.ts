@@ -30,6 +30,7 @@ import util from 'node:util';
 import * as data from './data.js';
 import YAML from 'js-yaml';
 import { RenderingResults } from './render.js';
+import { refactorTag } from './refactor-tags.js';
 
 const _watchman = import('./cache/watchman.js');
 
@@ -557,17 +558,94 @@ program
     .command('tags <configFN>')
     .description('List the tags')
     .action(async (configFN) => {
-        // console.log(`render: akasha: ${util.inspect(akasha)}`);
         try {
             const config = (await import(
                 path.join(process.cwd(), configFN)
             )).default;
             let akasha = config.akasha;
             await akasha.setup(config);
-            console.log(await akasha.filecache.documentsCache.tags());
+            const tags = await akasha.filecache.documentsCache.tags();
+            console.log(YAML.dump({ tags }, { indent: 4 }));
             await akasha.closeCaches();
         } catch (e) {
-            console.error(`docinfo command ERRORED ${e.stack}`);
+            console.error(`tags command ERRORED ${e.stack}`);
+        }
+    });
+
+program
+    .command('similar-tags <configFN>')
+    .description('Find groups of similar tags')
+    .option('--threshold <n>', 'Levenshtein distance threshold', '2')
+    .action(async (configFN, cmdObj) => {
+        try {
+            const config = (await import(
+                path.join(process.cwd(), configFN)
+            )).default;
+            let akasha = config.akasha;
+            await akasha.setup(config);
+            const threshold = parseInt(cmdObj.threshold, 10);
+            const groups = await akasha.filecache.documentsCache.findSimilarTags(threshold);
+            console.log(YAML.dump({ similarTagGroups: groups }, { indent: 4 }));
+            await akasha.closeCaches();
+        } catch (e) {
+            console.error(`similar-tags command ERRORED ${e.stack}`);
+        }
+    });
+
+program
+    .command('tags-without-descriptions <configFN>')
+    .description('List tags that have no description')
+    .action(async (configFN) => {
+        try {
+            const config = (await import(
+                path.join(process.cwd(), configFN)
+            )).default;
+            let akasha = config.akasha;
+            await akasha.setup(config);
+            const tags = await akasha.filecache.documentsCache.tagsWithoutDescriptions();
+            console.log(YAML.dump({ tagsWithoutDescriptions: tags }, { indent: 4 }));
+            await akasha.closeCaches();
+        } catch (e) {
+            console.error(`tags-without-descriptions command ERRORED ${e.stack}`);
+        }
+    });
+
+program
+    .command('unused-tag-descriptions <configFN>')
+    .description('List tag descriptions that are not used by any document')
+    .action(async (configFN) => {
+        try {
+            const config = (await import(
+                path.join(process.cwd(), configFN)
+            )).default;
+            let akasha = config.akasha;
+            await akasha.setup(config);
+            const tags = await akasha.filecache.documentsCache.unusedTagDescriptions();
+            console.log(YAML.dump({ unusedTagDescriptions: tags }, { indent: 4 }));
+            await akasha.closeCaches();
+        } catch (e) {
+            console.error(`unused-tag-descriptions command ERRORED ${e.stack}`);
+        }
+    });
+
+program
+    .command('refactor-tag <configFN> <oldTag> <newTag>')
+    .description('Rename a tag across all documents')
+    .option('--dry-run', 'List changes without modifying files', false)
+    .action(async (configFN, oldTag, newTag, cmdObj) => {
+        try {
+            const config = (await import(
+                path.join(process.cwd(), configFN)
+            )).default;
+            let akasha = config.akasha;
+            await akasha.setup(config);
+            const result = await refactorTag(config, oldTag, newTag, {
+                dryRun: cmdObj.dryRun
+            });
+            console.log(YAML.dump({ refactorResult: result }, { indent: 4 }));
+            await akasha.closeCaches();
+        } catch (e) {
+            console.error(`refactor-tag command ERRORED ${e.stack}`);
         }
     });
 

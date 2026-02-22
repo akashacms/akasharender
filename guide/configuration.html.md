@@ -322,6 +322,24 @@ module.exports = new mahabhuta.MahafuncArray("example.com website", {});
 
 Then you add Mahabhuta custom element classes to that object.
 
+# Tag descriptions
+
+In most cases, document tags are simply declared in a document and that's it.  In some cases, you will want to add a description for certain (or all) tags.
+
+In the project configuration, use this function:
+
+```js
+ config
+	.addTagDescriptions([
+		{
+			tagName: 'Name of Tag',
+			description: 'Describing the cosmic significance of this tag'
+		},
+		// More tag descriptions
+	]);
+```
+
+
 # Plugins
 
 Plugins extend the capabilities of AkashaRender.  We can loosely define AkashaCMS as the result of combining AkashaRender with the various plugins.  

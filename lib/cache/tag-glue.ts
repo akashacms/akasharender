@@ -24,6 +24,14 @@ import { promises as fsp } from 'node:fs';
 import { AsyncDatabase } from 'promised-sqlite3';
 
 import SqlString from 'sqlstring-sqlite';
+import { distance as levenshtein } from 'fastest-levenshtein';
+import pluralize from 'pluralize';
+
+import type {
+    SimilarTagGroup,
+    SimilarityReason,
+    TagWithoutDescription
+} from '../types.js';
 
 // function to initialize a TAGGLUE database table
 
@@ -58,6 +66,20 @@ const selectAllTags = await fsp.readFile(
 const selectVpathForTag = await fsp.readFile(
     path.join(import.meta.dirname, 'sql',
         'select-vpath-for-tag.sql'
+    ),
+    'utf-8'
+);
+
+const selectAllTagsWithDocs = await fsp.readFile(
+    path.join(import.meta.dirname, 'sql',
+        'select-all-tags-with-docs.sql'
+    ),
+    'utf-8'
+);
+
+const selectTagsWithoutDescriptions = await fsp.readFile(
+    path.join(import.meta.dirname, 'sql',
+        'select-tags-without-descriptions.sql'
     ),
     'utf-8'
 );
@@ -161,6 +183,127 @@ export class TagGlue {
         });
     }
 
+    /**
+     * Find groups of similar tags based on case-insensitive matching,
+     * plural/singular variants, and Levenshtein distance.
+     * 
+     * @param threshold - Maximum Levenshtein distance to consider tags similar (default: 2)
+     * @returns Array of SimilarTagGroup objects, each containing similar tags and their documents
+     */
+    async findSimilarTags(threshold: number = 2): Promise<SimilarTagGroup[]> {
+        // Get all tags with their documents
+        const rows = <{
+            tagName: string;
+            docvpath: string;
+        }[]> await this.db.all(selectAllTagsWithDocs);
+
+        // Build a map of tag -> documents
+        const tagDocs = new Map<string, string[]>();
+        for (const row of rows) {
+            if (!tagDocs.has(row.tagName)) {
+                tagDocs.set(row.tagName, []);
+            }
+            tagDocs.get(row.tagName)!.push(row.docvpath);
+        }
+
+        const allTags = Array.from(tagDocs.keys());
+        const processed = new Set<string>();
+        const groups: SimilarTagGroup[] = [];
+
+        for (let i = 0; i < allTags.length; i++) {
+            const tag1 = allTags[i];
+            if (processed.has(tag1)) continue;
+
+            const similarTags: string[] = [tag1];
+            const reasons = new Set<SimilarityReason>();
+
+            for (let j = i + 1; j < allTags.length; j++) {
+                const tag2 = allTags[j];
+                if (processed.has(tag2)) continue;
+
+                const tagReasons = this.#checkSimilarity(tag1, tag2, threshold);
+                if (tagReasons.length > 0) {
+                    similarTags.push(tag2);
+                    tagReasons.forEach(r => reasons.add(r));
+                }
+            }
+
+            // Only create a group if there are multiple similar tags
+            if (similarTags.length > 1) {
+                const documentsByTag: Record<string, string[]> = {};
+                for (const tag of similarTags) {
+                    documentsByTag[tag] = tagDocs.get(tag) || [];
+                    processed.add(tag);
+                }
+
+                groups.push({
+                    tags: similarTags,
+                    reasons: Array.from(reasons),
+                    documentsByTag
+                });
+            }
+        }
+
+        return groups;
+    }
+
+    /**
+     * Check if two tags are similar and return the reasons why.
+     */
+    #checkSimilarity(tag1: string, tag2: string, threshold: number): SimilarityReason[] {
+        const reasons: SimilarityReason[] = [];
+
+        // Case-insensitive match
+        if (tag1.toLowerCase() === tag2.toLowerCase()) {
+            reasons.push('case-insensitive');
+        }
+
+        // Plural/singular match
+        const singular1 = pluralize.singular(tag1.toLowerCase());
+        const singular2 = pluralize.singular(tag2.toLowerCase());
+        if (singular1 === singular2 && tag1.toLowerCase() !== tag2.toLowerCase()) {
+            reasons.push('plural-singular');
+        }
+
+        // Levenshtein distance (only check if not already matched by other criteria)
+        if (reasons.length === 0) {
+            const dist = levenshtein(tag1.toLowerCase(), tag2.toLowerCase());
+            if (dist > 0 && dist <= threshold) {
+                reasons.push('levenshtein');
+            }
+        }
+
+        return reasons;
+    }
+
+    /**
+     * Find tags that have no description in the TAGDESCRIPTION table.
+     * 
+     * @returns Array of TagWithoutDescription objects
+     */
+    async tagsWithoutDescriptions(): Promise<TagWithoutDescription[]> {
+        const rows = <{
+            tagName: string;
+            docvpath: string;
+        }[]> await this.db.all(selectTagsWithoutDescriptions);
+
+        // Group by tagName
+        const tagDocs = new Map<string, string[]>();
+        for (const row of rows) {
+            if (!tagDocs.has(row.tagName)) {
+                tagDocs.set(row.tagName, []);
+            }
+            tagDocs.get(row.tagName)!.push(row.docvpath);
+        }
+
+        const result: TagWithoutDescription[] = [];
+        for (const [tagName, documents] of tagDocs) {
+            result.push({ tagName, documents });
+        }
+
+        return result;
+    }
+
 }
 
 const createTableTagDescription = await fsp.readFile(
@@ -187,6 +330,13 @@ const deleteTagDescription = await fsp.readFile(
 const selectTagDescription = await fsp.readFile(
     path.join(import.meta.dirname, 'sql',
         'select-tag-description.sql'
+    ),
+    'utf-8'
+);
+
+const selectUnusedDescriptions = await fsp.readFile(
+    path.join(import.meta.dirname, 'sql',
+        'select-unused-descriptions.sql'
     ),
     'utf-8'
 );
@@ -257,5 +407,18 @@ export class TagDescriptions {
         )
             ? undefined
             : rows[0].description;
+    }
+
+    /**
+     * Find tag descriptions that are defined but not used by any document.
+     * 
+     * @returns Array of tag names that have descriptions but no documents use them
+     */
+    async unusedTagDescriptions(): Promise<string[]> {
+        const rows = <{
+            tagName: string;
+        }[]> await this.db.all(selectUnusedDescriptions);
+
+        return rows.map(row => row.tagName);
     }
 }
