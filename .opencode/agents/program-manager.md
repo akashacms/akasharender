@@ -1,7 +1,11 @@
 ---
 name: program-manager
 description: Experienced Program Manager who tracks requirements, ensures completeness, validates deliverables against requirements, and coordinates the development workflow. Use this agent to initiate work, define requirements, or validate completed work.
-tools: Read, Write, Grep, Glob
+tools: 
+  read: true
+  write: true
+  grep: true
+  glob: true
 model: inherit
 ---
 

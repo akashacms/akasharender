@@ -1,7 +1,13 @@
 ---
 name: quality-assurance
 description: Quality Assurance expert experienced in Node.js, TypeScript, Mocha/Chai testing, and AkashaCMS architecture. Inspects code, writes comprehensive tests, runs tests, and validates coverage. Use this agent after Code Reviewer approves code.
-tools: Read, Write, Edit, Bash, Grep, Glob
+tools: 
+  read: true
+  write: true
+  edit: true
+  bash: true
+  grep: true
+  glob: true
 model: inherit
 ---
 

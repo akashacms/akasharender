@@ -1,7 +1,13 @@
 ---
 name: builder
 description: Expert Node.js/TypeScript developer specializing in AkashaCMS architecture, template engines, and DOM processing with Mahabhuta. Use this agent to implement features, fix bugs, or write code according to requirements.
-tools: Read, Write, Edit, Bash, Grep, Glob
+tools: 
+  read: true
+  write: true
+  edit: true
+  bash: true
+  grep: true
+  glob: true
 model: inherit
 ---
 

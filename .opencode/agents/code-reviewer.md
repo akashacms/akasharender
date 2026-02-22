@@ -1,7 +1,11 @@
 ---
 name: code-reviewer
 description: Strict code reviewer experienced in Node.js, TypeScript, and AkashaCMS architecture. Performs sanity checks, architectural validation, and clean code review. Use this agent after Builder completes code to verify quality before QA.
-tools: Read, Grep, Glob, Write
+tools: 
+  read: true
+  grep: true
+  glob: true
+  write: true
 model: inherit
 ---
 
