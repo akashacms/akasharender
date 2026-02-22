@@ -13,12 +13,12 @@
             "state": {
               "type": "markdown",
               "state": {
-                "file": "STACKED-DIRS-REPLACE.md",
+                "file": "guide/vfstack.html.md",
                 "mode": "source",
                 "source": false
               },
               "icon": "lucide-file",
-              "title": "STACKED-DIRS-REPLACE"
+              "title": "vfstack.html"
             }
           }
         ]
@@ -169,33 +169,53 @@
       "bases:Create new base": false
     }
   },
-  "active": "f1debd4c9b9de827",
+  "active": "22d5d39f1604774d",
   "lastOpenFiles": [
+    "guide/theming.html.md",
+    "guide/rendering-engines.html.md",
+    "guide/plugins-using.html.md",
+    "guide/layouts-partials.html.md",
+    "guide/database.html.md",
+    "guide/3-create-content.html.md",
+    "guide/configuration.html.md",
+    "guide/command-line.html.md",
+    "FEATURE-Tag-Wrangling.md",
+    "session-ses_37d6.md",
+    "WORKFLOW.md",
+    "test/documents/tags-refactor-test.html.md",
+    "test/documents/tags-similar-typo.html.md",
+    "test/documents/tags-similar-plural.html.md",
+    "test/documents/tags-similar-case2.html.md",
+    "test/documents/tags-similar-case.html.md",
+    "IMPLEMENTATION-tags.md",
+    "dist/refactor-tags.d.ts",
+    "dist/refactor-tags.d.ts.map",
+    "dist/refactor-tags.js",
+    "lib/refactor-tags.ts",
+    "test/AGENTS.md",
+    "dist/cache/sql/select-unused-descriptions.sql",
+    "dist/cache/sql/select-tags-without-descriptions.sql",
+    "dist/cache/sql/select-all-tags-with-docs.sql",
+    "lib/cache/sql/select-unused-descriptions.sql",
+    "lib/cache/sql/select-tags-without-descriptions.sql",
+    "lib/cache/sql/select-all-tags-with-docs.sql",
+    "node_modules/fastest-levenshtein/README.md",
+    "node_modules/fastest-levenshtein/LICENSE.md",
+    "node_modules/pluralize/Readme.md",
+    "session-ses_37ba.md",
+    "AGENTS.md",
     "test/out/mounted/img/Human-Skeleton-150.jpg",
     "test/out/mounted/img/Human-Skeleton-250-figure.jpg",
     "test/out/mounted/img/Human-Skeleton-mounted-100.jpg",
     "test/out/img/Human-Skeleton-from-mounted-to-img-100.jpg",
     "test/out/hier/dir1/dir2/img/tesla-nema.jpg",
-    "test/out/hier/dir1/dir2/img",
     "test/out/img/Human-Skeleton-50.jpg",
     "test/out/img/Human-Skeleton-150.jpg",
     "test/out/img/Human-Skeleton-250-figure.jpg",
     "test/out/rss_button-png.png",
     "test/out/rss_button.jpg",
-    "test/out/img/Human-Skeleton-mounted-100.jpg",
-    "test/out/njk-func.html",
-    "test/out/img2resize-handlebars.html",
-    "test/out/img2resize-liquid.html",
-    "test/out/img2resize-nunjucks.html",
-    "test/out/img2resize.html",
-    "test/out/teaser-njk-macro.html",
-    "test/out/hier-broke/dir1/dir2/sibling.html",
-    "test/out/hier-broke/dir1/dir2/index.html",
-    "test/out/hier-broke/dir1/sibling.html",
     "CACHE-ARCHITECTURE.md",
     "PREPARED-STATEMENTS-PLAN.md",
-    "PHASE4-COMPLETION.md",
-    "VFSTACK-INTEGRATION-STATUS.md",
-    "guide/vfstack.html.md"
+    "PHASE4-COMPLETION.md"
   ]
 }
