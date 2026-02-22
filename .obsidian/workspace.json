@@ -169,8 +169,11 @@
       "bases:Create new base": false
     }
   },
-  "active": "22d5d39f1604774d",
+  "active": "f1debd4c9b9de827",
   "lastOpenFiles": [
+    "ai-assistance/session-ses_37d6.md",
+    "ai-assistance/session-ses_37ba.md",
+    "ai-assistance/FEATURE-Tag-Wrangling.md",
     "guide/theming.html.md",
     "guide/rendering-engines.html.md",
     "guide/plugins-using.html.md",
@@ -213,9 +216,6 @@
     "test/out/img/Human-Skeleton-150.jpg",
     "test/out/img/Human-Skeleton-250-figure.jpg",
     "test/out/rss_button-png.png",
-    "test/out/rss_button.jpg",
-    "CACHE-ARCHITECTURE.md",
-    "PREPARED-STATEMENTS-PLAN.md",
-    "PHASE4-COMPLETION.md"
+    "test/out/rss_button.jpg"
   ]
 }
