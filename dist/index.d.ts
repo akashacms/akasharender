@@ -29,6 +29,9 @@ import * as cheerio from 'cheerio';
 export * from './mahafuncs.js';
 export * as relative from 'relative';
 export { Plugin } from './Plugin.js';
+import type { TagDescription } from './types.js';
+export type { TagDescription } from './types.js';
+export { validTagDescription } from './types.js';
 export { render, render2, renderDocument, renderDocument2, renderContent } from './render.js';
 import * as filecache from './cache/cache-sqlite.js';
 export { newSQ3DataStore } from './sqdb.js';
@@ -257,12 +260,15 @@ export declare class Configuration {
      * is for example a tag index page can give a
      * description at the top of the page.
      *
+     * NOTE: Potential bug - This function replaces the entire #descriptions
+     * array rather than merging with existing descriptions. If called multiple
+     * times, earlier descriptions will be lost. Current assumption is this
+     * function is only called once from the configuration file. A future
+     * enhancement would be to merge descriptions instead of replacing.
+     *
      * @param tagdescs
      */
-    addTagDescriptions(tagdescs: Array<{
-        tagName: string;
-        description: string;
-    }>): Promise<void>;
+    addTagDescriptions(tagdescs: TagDescription[]): Promise<void>;
     /**
     * Document the URL for a website project.
     * @param {string} root_url

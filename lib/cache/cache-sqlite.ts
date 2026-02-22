@@ -31,6 +31,10 @@ import micromatch from 'micromatch';
 import {
     TagGlue, TagDescriptions
 } from './tag-glue.js';
+import type {
+    SimilarTagGroup,
+    TagWithoutDescription
+} from '../types.js';
 import {
     createAssetsTable,
     createDocumentsTable,
@@ -2060,6 +2064,35 @@ export class DocumentsCache
             if (tagA > tagB) return 1;
             return 0;
         });
+    }
+
+    /**
+     * Find groups of similar tags based on case-insensitive matching,
+     * plural/singular variants, and Levenshtein distance.
+     * 
+     * @param threshold - Maximum Levenshtein distance to consider tags similar (default: 2)
+     * @returns Array of SimilarTagGroup objects
+     */
+    async findSimilarTags(threshold: number = 2): Promise<SimilarTagGroup[]> {
+        return await tglue.findSimilarTags(threshold);
+    }
+
+    /**
+     * Find tags that have no description in the TAGDESCRIPTION table.
+     * 
+     * @returns Array of TagWithoutDescription objects
+     */
+    async tagsWithoutDescriptions(): Promise<TagWithoutDescription[]> {
+        return await tglue.tagsWithoutDescriptions();
+    }
+
+    /**
+     * Find tag descriptions that are defined but not used by any document.
+     * 
+     * @returns Array of tag names
+     */
+    async unusedTagDescriptions(): Promise<string[]> {
+        return await tdesc.unusedTagDescriptions();
     }
 
     #docLinkData;

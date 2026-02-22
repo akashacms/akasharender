@@ -50,6 +50,10 @@ export * as relative from 'relative';
 import { Plugin } from './Plugin.js';
 export { Plugin } from './Plugin.js';
 
+import type { TagDescription } from './types.js';
+export type { TagDescription } from './types.js';
+export { validTagDescription } from './types.js';
+
 import { render, render2, renderDocument, renderContent, renderDocument2 } from './render.js';
 export { render, render2, renderDocument, renderDocument2, renderContent } from './render.js';
 
@@ -1033,22 +1037,22 @@ export class Configuration {
 
     get metadata() { return this.#metadata; }
 
-    #descriptions: Array<{
-        tagName: string,
-        description: string
-    }>;
+    #descriptions: TagDescription[];
 
     /**
      * Add tag descriptions to the database.  The purpose
      * is for example a tag index page can give a
      * description at the top of the page.
      *
+     * NOTE: Potential bug - This function replaces the entire #descriptions
+     * array rather than merging with existing descriptions. If called multiple
+     * times, earlier descriptions will be lost. Current assumption is this
+     * function is only called once from the configuration file. A future
+     * enhancement would be to merge descriptions instead of replacing.
+     *
      * @param tagdescs 
      */
-    async addTagDescriptions(tagdescs: Array<{
-        tagName: string,
-        description: string
-    }>) {
+    async addTagDescriptions(tagdescs: TagDescription[]) {
         if (!Array.isArray(tagdescs)) {
             throw new Error(`addTagDescriptions must be given an array of tag descriptions`);
         }
@@ -1059,6 +1063,7 @@ export class Configuration {
                 throw new Error(`Incorrect tag description ${util.inspect(desc)}`);
             }
         }
+        // TODO: Consider merging with existing descriptions instead of replacing
         this.#descriptions = tagdescs;
     }
 

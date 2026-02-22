@@ -19,6 +19,7 @@
 import { VPathData, dirToMount } from './vfstack.js';
 import { Configuration, indexChainItem } from '../index.js';
 import EventEmitter from 'events';
+import type { SimilarTagGroup, TagWithoutDescription } from '../types.js';
 import { PathsReturnType } from './schema.js';
 import { AsyncDatabase } from 'promised-sqlite3';
 import { BaseCacheEntry, Asset, Partial, Layout, Document } from './schema.js';
@@ -306,6 +307,26 @@ export declare class DocumentsCache extends BaseCache<Document> {
      * @returns
      */
     tags(): Promise<string[]>;
+    /**
+     * Find groups of similar tags based on case-insensitive matching,
+     * plural/singular variants, and Levenshtein distance.
+     *
+     * @param threshold - Maximum Levenshtein distance to consider tags similar (default: 2)
+     * @returns Array of SimilarTagGroup objects
+     */
+    findSimilarTags(threshold?: number): Promise<SimilarTagGroup[]>;
+    /**
+     * Find tags that have no description in the TAGDESCRIPTION table.
+     *
+     * @returns Array of TagWithoutDescription objects
+     */
+    tagsWithoutDescriptions(): Promise<TagWithoutDescription[]>;
+    /**
+     * Find tag descriptions that are defined but not used by any document.
+     *
+     * @returns Array of tag names
+     */
+    unusedTagDescriptions(): Promise<string[]>;
     /**
      * Retrieve the data for an internal link
      * within the site documents.  Forming an
