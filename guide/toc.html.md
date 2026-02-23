@@ -45,7 +45,11 @@ outline:
     <li><a href="index.html" id="index"></a></li>
     <li><a href="2-setup.html" id="setup"></a></li>
     <li><a href="3-create-content.html" id="create-content"></a></li>
-    <li><a href="configuration.html" id="configuration"></a></li>
+    <li><a href="configuration.html" id="configuration"></a>
+	    <ol>
+		    <li><a href="markdown-it-customization.html></a></li>
+		</ol>
+    </li>
     <li><a href="layouts-partials.html" id="layouts-partials"></a>
         <ol>
             <li><a href="css-less.html" id="css-less"></a></li>

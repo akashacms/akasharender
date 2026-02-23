@@ -431,6 +431,22 @@ The Markdown renderer has a `use` function that is used as so.  The first argume
 
 The example shown here shows how to implement the PlantUML so that AkashaCMS documents can have embedded UML diagrams.
 
+We can also change the behavior of Markdown-IT by passing it options, like so:
+
+```js
+config.findRendererName('.html.md')
+	.configuration({
+		html: true,
+		xhtmlOut: false,
+		breaks: false,
+		linkify: true,
+		typographer: false,
+	})
+```
+
+This object is passed to Markdown-IT during its initialization, and customizes the HTML output it generates.  The full list of options supported by this object are listed in the package README: https://www.npmjs.com/package/markdown-it
+
+Also see: https://markdown-it.github.io/markdown-it/
 # The Overridability Principle
 
 A key principle in AkashaCMS is that a project or Plugin can override functionality provided by a Plugin.  
