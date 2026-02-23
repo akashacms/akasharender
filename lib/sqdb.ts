@@ -46,32 +46,37 @@ export const sqdb = await AsyncDatabase.open(dburl);
 // sqdb.loadExtension(sqleanLibs.reLibPath);
 sqdb.inner.loadExtension(sqlite_regex.getLoadablePath());
 
-const lembedModelFile = typeof process.env.AK_LEMBED_MODEL === 'string'
-        ? process.env.AK_LEMBED_MODEL
-        : undefined;
-export const lembedModelName = typeof process.env.AK_LEMBED_MODEL_NAME === 'string'
-        ? process.env.AK_LEMBED_MODEL_NAME
-        : undefined;
+//// EXPERIMENTAL CODE for an internal vector database
 
-if (typeof lembedModelFile !== 'undefined') {
-    console.log({
-        lembedModelFile,
-        lembedModelName,
-        lembed: sqlite_lembed.getLoadablePath(),
-        vec: sqlite_vec.getLoadablePath()
-    });
-    sqlite_lembed.load(<any>sqdb.inner);
-    sqlite_vec.load(<any>sqdb.inner);
+// const lembedModelFile = typeof process.env.AK_LEMBED_MODEL === 'string'
+//         ? process.env.AK_LEMBED_MODEL
+//         : undefined;
+// export const lembedModelName = typeof process.env.AK_LEMBED_MODEL_NAME === 'string'
+//         ? process.env.AK_LEMBED_MODEL_NAME
+//         : undefined;
 
-    await sqdb.run(`
-        INSERT INTO temp.lembed_models(name, model)
-        select ?, lembed_model_from_file(?);
-    `, [
-        lembedModelName,
-        lembedModelFile
-    ]);
-}
+// if (typeof lembedModelFile !== 'undefined') {
+//     console.log({
+//         lembedModelFile,
+//         lembedModelName,
+//         lembed: sqlite_lembed.getLoadablePath(),
+//         vec: sqlite_vec.getLoadablePath()
+//     });
+//     sqlite_lembed.load(<any>sqdb.inner);
+//     sqlite_vec.load(<any>sqdb.inner);
 
+//     await sqdb.run(`
+//         INSERT INTO temp.lembed_models(name, model)
+//         select ?, lembed_model_from_file(?);
+//     `, [
+//         lembedModelName,
+//         lembedModelFile
+//     ]);
+// }
+
+//// END EXPERIMENTAL VECTOR DATABASE
+
+// Performance boost
 await sqdb.run('PRAGMA journal_mode=WAL;');
 
 // if (typeof process.env.AK_PROFILE === 'string') {
