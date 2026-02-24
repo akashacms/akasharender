@@ -72,15 +72,6 @@ Configuration for MarkdownIT will require JavaScript.  Instead of plugins like "
 
 
 
-1. In Renderers, develop a method for configuring MarkdownIT with native plugins
-2. Possible processing order
-   1. "content-template" header to name the template system for the content?
-   2. First render using the content template system, then render either MarkdownIT or AsciiDoc
-   3. "layout" header to name the layout template, processing the layout template using the content from step 2
-3. Develop file cache system on top of Stacked Dirs
-   1. Store file information along with in-memory indexes
-   2. Query mechanism e.g. for "collections"
-4. 
 
 # Bring in support for News sitemaps
 
@@ -133,43 +124,6 @@ Instead of creating an index page for every tag, instead have - index page name 
 
 Index page generation could be in the base plugin instead of built-in.
 
-
-??????
-Instead, when a document arrives with tags, enter the information into an index Map.
-
-```js
-const tagIndex = new Map<tagName, Array<vpath>>()
-```
-
-This keeps a list for each tag name mapping to a list of vpath's.  But, how to maintain it?
-
-Have to consider
-
-* When the fileCache initially adds a document, recording the tags in that array
-* When the fileCache updates a document, handle the update to tags->vpath mapping
-* When the fileCache deletes a document, handle deleting the tags->vpath mappings
-
-Hence it requires creating a Class to manage the association.  It should have methods:
-
-* recordDocumentTags(documentInfo) --
-* updateDocumentTags(documentInfo) --
-* forgetDocumentTags(documentInfo) --
-/????????????
-
-
-# The customers of StackedDirs need to receive typed data
-
-UPDATE: A JSON Schema is not required.  The StackedDirs package exports a class, VPathData, that is well structured.  I've added some comments for documentation.  There is also a type guard function which can enforce correctness.  I've just made a change, to export that function, and to also use it in a few more places.
-
-For code using StackedDirs - that code must know the correct type.  As it is, it's an anonymous object received on an EventEmitter listener.
-
-What's needed is a listener API function that receives typed parameters.  Maybe.
-
-Prevent failures by preventing creation of bad file information
-
-In AkashaRender/FileCache extend that schema, and simplify the data structure.  Currently there are many special cases.
-
-Define types for these objects so that VSCode can intelligently assist with writing code.
 
 # Implementing an article style where a parallel pane automatically scrolls through code.
 
