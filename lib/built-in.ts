@@ -298,6 +298,7 @@ export const mahabhutaArray = function(
     ret.addMahafunc(new AnchorCleanup(config, akasha, plugin));
 
     ret.addFinalMahafunc(new MungedAttrRemover(config, akasha, plugin));
+    ret.addFinalMahafunc(new BlankLinkDefanger(config, akasha, plugin));
 
     return ret;
 };
@@ -1042,6 +1043,23 @@ class MungedAttrRemover extends Munger {
         return '';
     }
 }
+
+/**
+ * Handles the recommendations in:
+ * https://javascript.plainenglish.io/one-line-of-html-that-makes-external-links-safer-95fe4ba6ff28
+ */
+class BlankLinkDefanger extends Munger {
+    get selector() { return 'html body a[target=_blank]'; }
+    get elementName() { return 'html body a[target=_blank]'; }
+    async process($, $element, metadata, setDirty: Function, done?: Function): Promise<string> {
+        // console.log($element);
+        this.akasha.linkRelSetAttr($element, 'noopener', true);
+        this.akasha.linkRelSetAttr($element, 'noreferrer', true);
+        console.log(`Changed rel attr to ${$element.attr('rel')}`);
+        return '';
+    }
+}
+
 
 ////////////// Nunjucks Extensions
 

@@ -796,6 +796,11 @@ describe('Documents cache', function() {
             fspath: '**/documents/teaser-njk-macro.html.md',
             vpath: 'teaser-njk-macro.html.md',
             renderPath: 'teaser-njk-macro.html'
+        },
+        {
+            fspath: '**/documents/target-blank.html.md',
+            vpath: 'target-blank.html.md',
+            renderPath: 'target-blank.html'
         }
     ];
     
