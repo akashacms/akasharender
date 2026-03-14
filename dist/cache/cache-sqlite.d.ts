@@ -23,6 +23,18 @@ import type { SimilarTagGroup, TagWithoutDescription } from '../types.js';
 import { PathsReturnType } from './schema.js';
 import { AsyncDatabase } from 'promised-sqlite3';
 import { BaseCacheEntry, Asset, Partial, Layout, Document } from './schema.js';
+/**
+ * Base class for file caches (documents, assets, layouts, partials).
+ * Scans directories, stores file information in SQLite database, and emits events.
+ *
+ * Events emitted:
+ * - 'added' (name: string, vpath: string) - Emitted when a file is successfully
+ *   added to the cache during initial scan or update. Useful for tracking that
+ *   all files are processed before 'ready' is emitted.
+ * - 'ready' (name: string) - Emitted when initial directory scan and file
+ *   processing is complete. After this event, isReady() will return immediately.
+ * - 'error' (error: Error) - Emitted when an error occurs during processing.
+ */
 export declare class BaseCache<T extends BaseCacheEntry> extends EventEmitter {
     #private;
     /**

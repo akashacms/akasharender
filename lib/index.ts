@@ -129,7 +129,7 @@ export async function setup(config) {
     config.renderers.partialSyncFunc = (fname, metadata) => {
         // console.log(`calling partialSync ${fname}`);
         return partialSync(config, fname, metadata);
-    }
+    };
 
     await cacheSetup(config);
     await fileCachesReady(config);
@@ -589,6 +589,7 @@ export class Configuration {
     #root_url: string;
     #plugins;
     #pluginData;
+    #verbose: boolean;
     
     constructor(modulepath) {
 
@@ -621,6 +622,8 @@ export class Configuration {
 
         this.#plugins = [];
         this.#pluginData = [];
+        
+        this.#verbose = false;
 
         /*
          * Is this the best place for this?  It is necessary to
@@ -795,6 +798,9 @@ export class Configuration {
 
     set cacheDir(dirnm: string) { this.#cachedir = dirnm; }
     get cacheDir() { return this.#cachedir; }
+
+    set verbose(val: boolean) { this.#verbose = val; }
+    get verbose() { return this.#verbose; }
 
     // set akasha(_akasha)  { this[_config_akasha] = _akasha; }
     get akasha() { return module_exports; }
