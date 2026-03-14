@@ -67,6 +67,18 @@ const tglue = new TagGlue();
 const tdesc = new TagDescriptions();
 // tdesc.init(sqdb._db);
 
+/**
+ * Base class for file caches (documents, assets, layouts, partials).
+ * Scans directories, stores file information in SQLite database, and emits events.
+ * 
+ * Events emitted:
+ * - 'added' (name: string, vpath: string) - Emitted when a file is successfully 
+ *   added to the cache during initial scan or update. Useful for tracking that 
+ *   all files are processed before 'ready' is emitted.
+ * - 'ready' (name: string) - Emitted when initial directory scan and file 
+ *   processing is complete. After this event, isReady() will return immediately.
+ * - 'error' (error: Error) - Emitted when an error occurs during processing.
+ */
 export class BaseCache<
     T extends BaseCacheEntry
 > extends EventEmitter {
@@ -150,6 +162,9 @@ export class BaseCache<
                     this.gatherInfoData(vpathData as any as T);
                     await this.insertDocToDB(vpathData as any as T);
                     await this.config.hookFileAdded(this.name, vpathData);
+                    // Emit 'added' event to track when files are processed
+                    // This helps verify that all files are added before 'ready' is emitted
+                    this.emit('added', this.name, vpathData.vpath);
                 } catch (err) {
                     console.error(`Error gathering info for ${vpathData.vpath}: ${err.message}`);
                 }
@@ -2512,6 +2527,28 @@ export async function setup(
     await tglue.init(db);
     await tdesc.init(db);
 
+    // Helper to setup verbose event listeners if verbose mode is enabled
+    const setupVerboseListeners = (cache: any, cacheName: string) => {
+        if (config.verbose) {
+            cache.on('added', (name: string, vpath: string) => {
+                console.log(`[ADDED] ${name}: ${vpath}`);
+            });
+            
+            cache.on('ready', (name: string) => {
+                console.log(`[READY] ${name}\n`);
+            });
+            
+            cache.on('error', (err: Error) => {
+                console.error(`[ERROR] ${cacheName}:`, err.message);
+            });
+        } else {
+            // Always setup error listener, even in non-verbose mode
+            cache.on('error', (...args) => {
+                console.error(`${cacheName} ERROR ${util.inspect(args)}`);
+            });
+        }
+    };
+
     //// ASSETS
 
     await doCreateAssetsTable(db);
@@ -2523,11 +2560,10 @@ export async function setup(
         db,
         'ASSETS'
     );
+    
+    setupVerboseListeners(assetsCache, 'assetsCache');
+    
     await assetsCache.setup();
-
-    assetsCache.on('error', (...args) => {
-        console.error(`assetsCache ERROR ${util.inspect(args)}`)
-    });
 
     //// PARTIALS
 
@@ -2540,11 +2576,10 @@ export async function setup(
         db,
         'PARTIALS'
     );
+    
+    setupVerboseListeners(partialsCache, 'partialsCache');
+    
     await partialsCache.setup();
-
-    partialsCache.on('error', (...args) => {
-        console.error(`partialsCache ERROR ${util.inspect(args)}`)
-    });
 
     //// LAYOUTS
 
@@ -2557,11 +2592,10 @@ export async function setup(
         db,
         'LAYOUTS'
     );
+    
+    setupVerboseListeners(layoutsCache, 'layoutsCache');
+    
     await layoutsCache.setup();
-
-    layoutsCache.on('error', (...args) => {
-        console.error(`layoutsCache ERROR ${util.inspect(args)}`)
-    });
 
     //// DOCUMENTS
 
@@ -2575,12 +2609,10 @@ export async function setup(
         db,
         'DOCUMENTS'
     );
+    
+    setupVerboseListeners(documentsCache, 'documentsCache');
+    
     await documentsCache.setup();
-
-    documentsCache.on('error', (err) => {
-        console.error(`documentsCache ERROR ${util.inspect(err)}`);
-        // process.exit(0);
-    });
 
     await config.hookPluginCacheSetup();
 

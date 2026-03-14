@@ -872,16 +872,143 @@ program
 program
     .command('index <configFN>')
     .description('Loads configuration, indexes content, then exits')
-    .action(async (configFN) => {
+    .option('--verbose', 'Show detailed event tracking (added, ready, error events)')
+    .action(async (configFN, cmdObj) => {
         try {
             const config = (await import(
                 path.join(process.cwd(), configFN)
             )).default;
             let akasha = config.akasha;
-            await akasha.setup(config);
+            
+            if (cmdObj.verbose) {
+                console.log('Indexing files with verbose output...\n');
+                const startTime = Date.now();
+                
+                // Enable verbose mode in config
+                config.verbose = true;
+                
+                await akasha.setup(config);
+                
+                const setupTime = Date.now();
+                const elapsed = setupTime - startTime;
+                
+                // Get file counts
+                const filecache = akasha.filecache;
+                const documentCount = (await filecache.documentsCache.paths()).length;
+                const assetCount = (await filecache.assetsCache.paths()).length;
+                const layoutCount = (await filecache.layoutsCache.paths()).length;
+                const partialCount = (await filecache.partialsCache.paths()).length;
+                
+                console.log(`✓ Indexing completed in ${elapsed}ms\n`);
+                console.log('=== Summary ===');
+                console.log(`Documents: ${documentCount} files`);
+                console.log(`Assets: ${assetCount} files`);
+                console.log(`Layouts: ${layoutCount} files`);
+                console.log(`Partials: ${partialCount} files`);
+                console.log(`Total: ${documentCount + assetCount + layoutCount + partialCount} files`);
+            } else {
+                // Normal mode - just setup
+                await akasha.setup(config);
+            }
+            
             await akasha.closeCaches();
         } catch (e) {
-            console.error(`partialinfo command ERRORED ${e.stack}`);
+            console.error(`index command ERRORED ${e.stack}`);
+        }
+    });
+
+program
+    .command('check-ready <configFN>')
+    .description('Verify that all files are loaded before isReady triggers (diagnostic tool)')
+    .option('--verbose', 'Show detailed file-by-file tracking')
+    .option('--delay <ms>', 'Wait time in milliseconds to check for late additions (default: 2000)', '2000')
+    .action(async (configFN, cmdObj) => {
+        try {
+            const config = (await import(
+                path.join(process.cwd(), configFN)
+            )).default;
+            let akasha = config.akasha;
+            
+            console.log('Running isReady timing check...\n');
+            
+            // Capture initial state
+            const startTime = Date.now();
+            await akasha.setup(config);
+            const setupTime = Date.now();
+            
+            // Get counts immediately after setup
+            const filecache = akasha.filecache;
+            const countsAfterSetup = {
+                documents: (await filecache.documentsCache.paths()).length,
+                assets: (await filecache.assetsCache.paths()).length,
+                layouts: (await filecache.layoutsCache.paths()).length,
+                partials: (await filecache.partialsCache.paths()).length
+            };
+            
+            console.log(`✓ Setup completed in ${setupTime - startTime}ms`);
+            console.log(`  Documents: ${countsAfterSetup.documents}`);
+            console.log(`  Assets: ${countsAfterSetup.assets}`);
+            console.log(`  Layouts: ${countsAfterSetup.layouts}`);
+            console.log(`  Partials: ${countsAfterSetup.partials}`);
+            
+            // Wait specified delay to see if any additional files appear
+            const delayMs = parseInt(cmdObj.delay);
+            console.log(`\nWaiting ${delayMs}ms to check for late additions...`);
+            await new Promise(resolve => setTimeout(resolve, delayMs));
+            
+            const countsAfterDelay = {
+                documents: (await filecache.documentsCache.paths()).length,
+                assets: (await filecache.assetsCache.paths()).length,
+                layouts: (await filecache.layoutsCache.paths()).length,
+                partials: (await filecache.partialsCache.paths()).length
+            };
+            
+            // Compare counts
+            let issueDetected = false;
+            const checkCache = (name: string) => {
+                const before = countsAfterSetup[name];
+                const after = countsAfterDelay[name];
+                if (before !== after) {
+                    console.error(`\n❌ ISSUE DETECTED: ${name} count changed from ${before} to ${after}`);
+                    console.error(`   This indicates files were added after isReady!`);
+                    issueDetected = true;
+                    return false;
+                } else {
+                    if (cmdObj.verbose) {
+                        console.log(`✓ ${name}: ${before} files (stable)`);
+                    }
+                    return true;
+                }
+            };
+            
+            console.log('\nResults:');
+            const docsOk = checkCache('documents');
+            const assetsOk = checkCache('assets');
+            const layoutsOk = checkCache('layouts');
+            const partialsOk = checkCache('partials');
+            
+            if (!issueDetected) {
+                console.log('\n✅ SUCCESS: No files added after isReady. Timing is correct.');
+                console.log('\nAll caches are stable:');
+                console.log(`  ✓ Documents: ${countsAfterSetup.documents} files`);
+                console.log(`  ✓ Assets: ${countsAfterSetup.assets} files`);
+                console.log(`  ✓ Layouts: ${countsAfterSetup.layouts} files`);
+                console.log(`  ✓ Partials: ${countsAfterSetup.partials} files`);
+            } else {
+                console.error('\n⚠️  FAILURE: Files were added after isReady triggered!');
+                console.error('   This indicates a race condition that needs to be fixed.');
+                console.error('\n   Please report this issue at:');
+                console.error('   https://github.com/akashacms/akasharender/issues');
+            }
+            
+            await akasha.closeCaches();
+            
+            if (issueDetected) {
+                process.exit(1);
+            }
+        } catch (e) {
+            console.error(`check-ready command ERRORED ${e.stack}`);
+            process.exit(1);
         }
     });
 

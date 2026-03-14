@@ -194,6 +194,8 @@ export declare class Configuration {
     get configDir(): string;
     set cacheDir(dirnm: string);
     get cacheDir(): string;
+    set verbose(val: boolean);
+    get verbose(): boolean;
     get akasha(): any;
     documentsCache(): Promise<filecache.DocumentsCache>;
     assetsCache(): Promise<filecache.AssetsCache>;
