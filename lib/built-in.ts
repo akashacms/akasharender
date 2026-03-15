@@ -1055,7 +1055,7 @@ class BlankLinkDefanger extends Munger {
         // console.log($element);
         this.akasha.linkRelSetAttr($element, 'noopener', true);
         this.akasha.linkRelSetAttr($element, 'noreferrer', true);
-        console.log(`Changed rel attr to ${$element.attr('rel')}`);
+        // console.log(`Changed rel attr to ${$element.attr('rel')}`);
         return '';
     }
 }
