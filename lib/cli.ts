@@ -96,11 +96,15 @@ FIRST ${result.renderFirstElapsed} LAYOUT ${result.renderLayoutElapsed} MAHA ${r
 program
     .command('render-document <configFN> <documentFN>')
     .description('Render a document into output directory')
-    .action(async (configFN, documentFN) => {
+    .option('--perf-data-dir <dataDir>', 'Directory for output of Mahabhuta performance measurements')
+    .action(async (configFN, documentFN, cmdObj) => {
         try {
             const config = (await import(
                 path.join(process.cwd(), configFN)
             )).default;
+            if (typeof cmdObj?.perfDataDir === 'string') {
+                config.perfDataDir = cmdObj.perfDataDir;
+            }
             let akasha = config.akasha;
             await akasha.setup(config);
             await data.removeAll();

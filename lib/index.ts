@@ -39,6 +39,10 @@ import { Renderer } from '@akashacms/renderers';
 export { Renderer } from '@akashacms/renderers';
 import * as mahabhuta from 'mahabhuta';
 export * as mahabhuta from 'mahabhuta';
+const {
+    PerfDataStore, 
+    FilesystemPerfDataStore
+} = mahabhuta;
 import * as cheerio from 'cheerio';
 import mahaPartial from 'mahabhuta/maha/partial.js';
 
@@ -590,6 +594,7 @@ export class Configuration {
     #plugins;
     #pluginData;
     #verbose: boolean;
+    #perfDataDir: string;
     
     constructor(modulepath) {
 
@@ -624,6 +629,8 @@ export class Configuration {
         this.#pluginData = [];
         
         this.#verbose = false;
+
+        this.#perfDataDir = undefined;
 
         /*
          * Is this the best place for this?  It is necessary to
@@ -801,6 +808,11 @@ export class Configuration {
 
     set verbose(val: boolean) { this.#verbose = val; }
     get verbose() { return this.#verbose; }
+
+    set perfDataDir(storeDir: string) {
+        this.#perfDataDir = storeDir;
+    }
+    get perfDataDir() { return this.#perfDataDir; }
 
     // set akasha(_akasha)  { this[_config_akasha] = _akasha; }
     get akasha() { return module_exports; }

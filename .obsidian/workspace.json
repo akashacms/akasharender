@@ -167,6 +167,7 @@
   },
   "active": "ae05fc002cd440a8",
   "lastOpenFiles": [
+    "test/documents/target-blank.html.md",
     "guide/vfstack.html.md",
     "test/out/mounted/img/Human-Skeleton-150.jpg",
     "test/out/mounted/img/Human-Skeleton-250-figure.jpg",
@@ -188,7 +189,6 @@
     "test/out/img2resize.html",
     "test/out/img2resize-nunjucks.html",
     "test/out/hier-broke/dir1/dir2/sibling.html",
-    "test/documents/target-blank.html.md",
     "test/documents/shown-content.html copy.md",
     "ai-assistance/is-ready/session-ses_3136.md",
     "ai-assistance/is-ready/PHASE4-COMPLETE.md",
