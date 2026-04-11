@@ -54,7 +54,7 @@
     "highlight.js": "^11.11.x",
     "html-entities": "^2.6.x",
     "joi": "^18.0.1",
-    "mahabhuta": "file:../mahabhuta",
+    "mahabhuta": "^0.9.x",
     "micromatch": "^4.0.8",
     "mime": "^4.1.0",
     "pluralize": "^8.0.0",
