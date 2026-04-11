@@ -266,7 +266,7 @@ export class VFStack {
                 : (dir.src + '/');
 
             if (fspath.indexOf(dirsrc) === 0) {
-                const pathInMounted = fspath.substring(dir.src.length).substring(1);
+                const pathInMounted = fspath.substring(dirsrc.length);
                 const vpath = dir.dest === '/'
                     ? pathInMounted
                     : path.join(dir.dest, pathInMounted);
