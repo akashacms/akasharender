@@ -131,10 +131,7 @@ All cache classes extend EventEmitter and emit events for file lifecycle (source
 
 - `'added'` - File discovered during initial scan
 - `'ready'` - Initial scan completed
-- `'add'` - New file detected (during watch mode)
-- `'change'` - Existing file modified (during watch mode)
-- `'unlink'` - File deleted (during watch mode)
-- `'error'` - Error during scanning or watching
+- `'error'` - Error during scanning
 
 Plugins and rendering code can listen to these events to respond to file changes.
 

@@ -175,11 +175,6 @@ The pipeline optimizes rendering through (source: [lib/render.ts](../../lib/rend
 - Tag lists, layout queries cached
 - Reduces redundant SQL execution
 
-**Incremental Rendering** (in watch mode):
-- Only re-render changed files
-- File watching detects modifications
-- Cache invalidation for changed files
-
 ### Integration with CLI
 
 The command-line interface invokes the rendering pipeline (source: [lib/cli.mjs](../../lib/cli.mjs)):
@@ -208,13 +203,6 @@ await config.hookBeforeSiteRendered();
 **After Rendering**:
 ```javascript
 await config.hookSiteRendered();
-```
-
-**Per-File Events** (during file watching):
-```javascript
-await config.hookFileAdded(fpath);
-await config.hookFileChanged(fpath);
-await config.hookFileUnlinked(fpath);
 ```
 
 ## Key Parameters
@@ -253,12 +241,7 @@ Use the rendering pipeline:
    npx akasharender render --copy-assets config.mjs
    ```
 
-3. **Incremental Builds**: Re-render changed files in watch mode
-   ```bash
-   npx akasharender watch config.mjs
-   ```
-
-4. **Programmatic Rendering**: Invoke from custom scripts
+3. **Programmatic Rendering**: Invoke from custom scripts
    ```javascript
    import * as akasha from 'akasharender';
    const config = new akasha.Configuration();
@@ -351,13 +334,6 @@ await config.hookBeforeSiteRendered();
 ```
 
 Always handle errors in plugin lifecycle hooks.
-
-**Incremental Rendering Correctness**: In watch mode, cache invalidation must be correct:
-- Changing a layout should re-render all documents using it
-- Changing a partial should re-render documents including it
-- Changing global metadata should re-render all documents
-
-AkashaRender's file watching handles these dependencies.
 
 ## Sources
 

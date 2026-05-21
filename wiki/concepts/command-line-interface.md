@@ -16,7 +16,7 @@ confidence: high
 
 ## Definition
 
-The Command-Line Interface (CLI) is the `akasharender` executable tool built with Commander.js that provides over 30 commands for rendering websites, managing content, inspecting configuration, analyzing tags, watching for changes, and publishing to GitHub Pages. It serves as the primary user interface for AkashaRender, dynamically importing configuration files and orchestrating the rendering, caching, and deployment workflows (source: [lib/cli.ts](../../lib/cli.ts):1-1019).
+The Command-Line Interface (CLI) is the `akasharender` executable tool built with Commander.js that provides over 30 commands for rendering websites, managing content, inspecting configuration, analyzing tags, and publishing to GitHub Pages. It serves as the primary user interface for AkashaRender, dynamically importing configuration files and orchestrating the rendering, caching, and deployment workflows (source: [lib/cli.ts](../../lib/cli.ts):1-1019).
 
 ## How It Works
 
@@ -72,9 +72,6 @@ program.command('command-name <configFN>')
 **Search Commands** (source: [lib/cli.ts](../../lib/cli.ts)):
 - `docs-semantic <configFN> <searchFor>` - Semantic search for documents using vector embeddings
 
-**Development Commands** (source: [lib/cli.ts](../../lib/cli.ts)):
-- `watch <configFN>` - Watches for file changes and automatically rebuilds, using the watchman module
-
 **Utility Commands** (source: [lib/cli.ts](../../lib/cli.ts)):
 - `docs-set-dates <configFN>` - Sets filesystem access and modification times for documents based on metadata
 
@@ -107,8 +104,6 @@ program.command('command-name <configFN>')
 
 **Site Building**: Run `render` to build entire site from source to output directory (source: [lib/cli.ts](../../lib/cli.ts)).
 
-**Development**: Use `watch` during development to automatically rebuild on file changes (source: [lib/cli.ts](../../lib/cli.ts)).
-
 **Deployment**: Use `gh-pages-publish` to deploy rendered site to GitHub Pages (source: [lib/cli.ts](../../lib/cli.ts)).
 
 **Content Inspection**: Use document inspection commands to debug rendering issues or verify metadata (source: [lib/cli.ts](../../lib/cli.ts)).
@@ -131,8 +126,6 @@ program.command('command-name <configFN>')
 
 **gh-pages Dependency**: GitHub Pages publishing requires the gh-pages npm package and proper Git configuration (source: [lib/cli.ts](../../lib/cli.ts):25).
 
-**Watch Mode**: The watch command uses a separate watchman module that must be imported dynamically, adding complexity (source: [lib/cli.ts](../../lib/cli.ts):35).
-
 **Command Count**: With 30+ commands, the help output can be overwhelming. Consider grouping or using subcommands (source: [lib/cli.ts](../../lib/cli.ts)).
 
 **Async Everywhere**: All command actions are async, requiring proper promise handling. Missing await can cause silent failures (source: [lib/cli.ts](../../lib/cli.ts)).
@@ -149,7 +142,6 @@ program.command('command-name <configFN>')
 - [Rendering Pipeline](./rendering-pipeline.md) - Executed by render commands
 - [Tag Refactoring](./tag-refactoring.md) - Invoked by refactor-tag command
 - [Tag System](./tag-system.md) - Queried by tag commands
-- [File Watching](./file-watching.md) - Implemented in watch command
 - [Performance Profiling](./performance-profiling.md) - Enabled via CLI options
 
 ## Backlinks

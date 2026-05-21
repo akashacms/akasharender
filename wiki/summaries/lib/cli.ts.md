@@ -38,7 +38,6 @@ This file implements the AkashaRender command-line interface (CLI) tool (source:
 - `render <configFN>` - Renders entire site with options for quiet mode, asset copying, results output, and performance profiling
 - `render-document <configFN> <documentFN>` - Renders a single document with optional performance data output
 - `copy-assets <configFN>` - Copies all assets to output directory
-- `watch <configFN>` - Watches for file changes and automatically rebuilds
 
 **Publishing Commands** (source: [lib/cli.ts](../../lib/cli.ts)):
 - `gh-pages-publish <configFN>` - Publishes to GitHub Pages with extensive options for branch, repo, remote, CNAME, Git user config, and commit messages

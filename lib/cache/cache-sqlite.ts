@@ -94,8 +94,7 @@ export class BaseCache<
 
     /**
      * @param config AkashaRender Configuration object
-     * @param dirs array of directories and mount points to watch
-     * @param name string giving the name for this watcher name
+     * @param name string giving the name for this cache
      * @param db The PROMISED SQLITE3 AsyncDatabase instance to use
      * @param dbname The database name to use
      */

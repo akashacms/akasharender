@@ -337,6 +337,21 @@ Describe the change(s) and rationale
 Add a Markdown list of the files being changed
 ```
 
+**IMPORTANT: Log File Immutability**
+
+Log files in `wiki/log/` serve as an audit trail and must be treated as write-once, read-only records:
+
+1. **Write Once**: Once a log file is created and written to `wiki/log/`, it must NEVER be modified afterward
+2. **No Edits**: Do not edit, update, or append to existing log files
+3. **Read-Only Permissions**: After writing a log file, immediately set it to read-only with `chmod 0444 <logfile>` to prevent accidental modifications
+4. **New Entries**: If additional logging is needed, create a new log file with a new timestamp
+5. **Audit Integrity**: This ensures the audit trail remains accurate and tamper-proof
+
+Example workflow:
+```bash
+# After creating wiki/log/20260521T120000+0000.md
+chmod 0444 wiki/log/20260521T120000+0000.md
+```
 
 ## Citation rules
 

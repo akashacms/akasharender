@@ -129,32 +129,6 @@ Each worker independently:
 - Writes output file
 - Returns performance metrics
 
-### Layout Change Re-rendering
-
-When a layout changes in watch mode, multiple documents need re-rendering (source: [lib/cache/watchman.ts](../../lib/cache/watchman.ts)):
-
-```javascript
-async function renderForLayout(config, info) {
-    // Find all documents using this layout
-    const documents = await documentsCache.documentsForLayout(info.vpath);
-    
-    // Create queue with concurrency of 10
-    const queue = fastq.promise(
-        async (docInfo) => {
-            return await renderDocument(config, docInfo);
-        },
-        10  // Higher concurrency for re-rendering
-    );
-    
-    // Queue all affected documents
-    const results = await Promise.all(
-        documents.map(doc => queue.push(doc))
-    );
-}
-```
-
-Note: Watch mode uses concurrency of 10 for re-rendering, higher than the default 3 for full builds (source: [lib/cache/watchman.ts](../../lib/cache/watchman.ts)).
-
 ### Performance Benefits
 
 Concurrent rendering provides significant speedups for multi-core systems (source: [lib/render.ts](../../lib/render.ts)):

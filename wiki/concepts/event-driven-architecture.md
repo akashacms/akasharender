@@ -69,13 +69,8 @@ The event-driven architecture uses Node.js's EventEmitter pattern to publish eve
 
 #### error
 - **Signature**: `emit('error', error: Error)`
-- **When**: Error occurs during file processing or watching
+- **When**: Error occurs during file processing
 - **Purpose**: Graceful error handling without crashing the process
-
-#### change, add, unlink (File Watching)
-- **Signature**: `emit(event, collection: string, info: FileInfo)`
-- **When**: File system changes detected during watch mode
-- **Purpose**: Trigger incremental re-rendering or asset copying
 
 ### Event Listener Registration
 

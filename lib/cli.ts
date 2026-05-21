@@ -32,7 +32,7 @@ import YAML from 'js-yaml';
 import { RenderingResults } from './render.js';
 import { refactorTag } from './refactor-tags.js';
 
-const _watchman = import('./cache/watchman.js');
+
 
 process.title = 'akasharender';
 program.version('0.9.5');
@@ -211,28 +211,6 @@ program
             await akasha.closeCaches();
         } catch (e) {
             console.error(`render command ERRORED ${e.stack}`);
-        }
-    });
-
-program
-    .command('watch <configFN>')
-    .description('Track changes to files in a site, and rebuild anything that changes')
-    .action(async (configFN, cmdObj) => {
-        // console.log(`render: akasha: ${util.inspect(akasha)}`);
-        try {
-            const config = (await import(
-                path.join(process.cwd(), configFN)
-            )).default;
-            let akasha = config.akasha;
-            await akasha.setup(config);
-            await data.removeAll();
-            // console.log('CALLING config.hookBeforeSiteRendered');
-            await config.hookBeforeSiteRendered();
-            const watchman = (await _watchman).watchman;
-            await watchman(config);
-            // await akasha.closeCaches();
-        } catch (e) {
-            console.error(`watch command ERRORED ${e.stack}`);
         }
     });
 
