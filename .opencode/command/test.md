@@ -7,5 +7,5 @@ Run the full test suite, showing errors.  The test suite is located in the test 
 
 To run the test suite, the following command should be used
 
-[ -s "$NVM_DIR/nvm.sh" ] && \. "$NVM_DIR/nvm.sh" && nvm use 24 && cd test && npm run test
+[ -s "$NVM_DIR/nvm.sh" ] && \. "$NVM_DIR/nvm.sh" && nvm use 24 && cd test && npm run build && npm run test
 
