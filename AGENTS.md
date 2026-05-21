@@ -133,6 +133,21 @@ The site, http://akashacms.com/, is the primary site for AkashaCMS documentation
 * **Minimal example** - Small example website (../akashacms-skeleton)
 * **Open Source Site** - Demonstrates how an open source software project could build a website, host it on GitHub Pages, while incorporating advanced features.
 
+## Wiki Directory - LLM-CODE-WIKI
+
+The `wiki/` directory contains an LLM-CODE-WIKI knowledge base that documents AkashaRender's codebase through AI-generated summaries, concepts, and architectural documentation.
+
+**IMPORTANT: When modifying files in the `wiki/` directory, you MUST follow the rules and workflows defined in `wiki/AGENTS.md`.**
+
+Key points:
+- The wiki has its own comprehensive ruleset in `wiki/AGENTS.md` covering file naming, frontmatter format, required sections, workflows, and citation rules
+- Wiki files are structured documentation (summaries, concepts, answers, architecture, implementation, logs)
+- Log files in `wiki/log/` are write-once, read-only audit trails (must be set to chmod 0444 after creation)
+- All wiki changes must be logged in `wiki/log/` with timestamped entries
+- Wiki pages must follow strict formatting and citation requirements
+
+Before making any changes to wiki files, read and follow the guidelines in `wiki/AGENTS.md`.
+
 ## Multi-Agent Development Workflow
 
 This project uses a collaborative multi-agent system for software development. Four specialized agents work together, iterating through requirements, implementation, review, and testing until the code is correct.
