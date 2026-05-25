@@ -8,7 +8,7 @@ This directory contains high-level architecture documentation for major subsyste
 
 ## Architecture Documents
 
-(No architecture documents yet - these will be created to provide overviews of major subsystems)
+- **[Sitemap Validation Architecture](./sitemap-validation.md)**: Architecture design for validating generated sitemaps against local filesystem. Covers current sitemap generation process, research on existing tools, and proposed validator design with URL-to-filesystem mapping algorithm.
 
 ## Suggested Topics
 

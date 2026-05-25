@@ -31,6 +31,7 @@ import * as data from './data.js';
 import YAML from 'js-yaml';
 import { RenderingResults } from './render.js';
 import { refactorTag } from './refactor-tags.js';
+import { SitemapValidator } from './sitemap-validator.js';
 
 
 
@@ -990,6 +991,36 @@ program
             }
         } catch (e) {
             console.error(`check-ready command ERRORED ${e.stack}`);
+            process.exit(1);
+        }
+    });
+
+program
+    .command('validate-sitemap <configFN>')
+    .description('Validate sitemap XML file against rendered output directory')
+    .option('--sitemap <filename>', 'Sitemap filename relative to output directory', 'sitemap.xml')
+    .option('--strict', 'Exit with error code if validation fails', false)
+    .option('--json', 'Output results as JSON', false)
+    .action(async (configFN, cmdObj) => {
+        try {
+            const config = (await import(
+                path.join(process.cwd(), configFN)
+            )).default;
+            
+            const validator = new SitemapValidator(config, cmdObj.sitemap);
+            const result = await validator.validate();
+            
+            if (cmdObj.json) {
+                console.log(JSON.stringify(result, null, 2));
+            } else {
+                console.log(SitemapValidator.formatReport(result));
+            }
+            
+            if (cmdObj.strict && (result.invalidEntries > 0 || result.errors.length > 0)) {
+                process.exit(1);
+            }
+        } catch (e) {
+            console.error(`validate-sitemap command ERRORED ${e.stack}`);
             process.exit(1);
         }
     });

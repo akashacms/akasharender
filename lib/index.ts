@@ -61,6 +61,14 @@ export { validTagDescription } from './types.js';
 import { render, render2, renderDocument, renderContent, renderDocument2 } from './render.js';
 export { render, render2, renderDocument, renderDocument2, renderContent } from './render.js';
 
+export {
+    SitemapValidator,
+    type SitemapEntry,
+    type EntryValidation,
+    type XMLValidation,
+    type ValidationResult
+} from './sitemap-validator.js';
+
 const __filename = import.meta.filename;
 const __dirname = import.meta.dirname;
 

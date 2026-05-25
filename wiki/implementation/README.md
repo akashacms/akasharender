@@ -8,7 +8,7 @@ This directory contains implementation guides for developing new features, fixin
 
 ## Implementation Guides
 
-(No implementation guides yet - these will be created when working on specific features or fixes)
+- **[Sitemap Validation Implementation Guide](./sitemap-validation.md)**: Detailed implementation specifications for building a custom sitemap validator. Includes complete TypeScript class implementation, CLI integration, test suite design, and phase-by-phase implementation plan.
 
 ## Guide Types
 

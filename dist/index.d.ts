@@ -33,6 +33,7 @@ import type { TagDescription } from './types.js';
 export type { TagDescription } from './types.js';
 export { validTagDescription } from './types.js';
 export { render, render2, renderDocument, renderDocument2, renderContent } from './render.js';
+export { SitemapValidator, type SitemapEntry, type EntryValidation, type XMLValidation, type ValidationResult } from './sitemap-validator.js';
 import * as filecache from './cache/cache-sqlite.js';
 export { newSQ3DataStore } from './sqdb.js';
 /**
