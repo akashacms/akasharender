@@ -116,6 +116,31 @@ export declare function indexChain(config: any, fname: any): Promise<indexChainI
  *
  */
 export declare function linkRelSetAttr($link: any, attr: any, doattr: any): void;
+/**
+ * Compute an absolute vpath from a relative path reference.
+ *
+ * This function resolves a relative path (like "../file.html" or "./file.html")
+ * to an absolute vpath in the virtual filesystem, based on the vpath of the
+ * current document.
+ *
+ * If the input path is already absolute (starts with '/'), it is returned
+ * as-is after normalization.
+ *
+ * @param baseVpath The vpath of the document making the reference (e.g., metadata.document.path)
+ * @param relativePath The path to resolve (can be relative or absolute)
+ * @returns The absolute vpath in the virtual filesystem
+ *
+ * @example
+ * // From document at 'hier/dir1/page.html.md' referencing '../sibling/file.html'
+ * resolveVpath('hier/dir1/page.html.md', '../sibling/file.html')
+ * // Returns: '/hier/sibling/file.html'
+ *
+ * @example
+ * // Already absolute path
+ * resolveVpath('hier/dir1/page.html.md', '/absolute/path.html')
+ * // Returns: '/absolute/path.html'
+ */
+export declare function resolveVpath(baseVpath: string, relativePath: string): string;
 export declare function generateRSS(config: any, configrss: any, feedData: any, items: any, renderTo: any): Promise<void>;
 /**
  * The AkashaRender project configuration object.

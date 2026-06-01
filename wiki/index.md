@@ -1,7 +1,7 @@
 ---
 title: "AkashaRender Code Wiki"
 date-created: 2026-05-20T12:00:00+00:00
-last-updated: 2026-05-20T12:00:00+00:00
+last-updated: 2026-05-22T00:00:00+00:00
 ---
 
 # AkashaRender Code Wiki
@@ -80,11 +80,15 @@ Detailed answers to technical questions about the codebase:
 
 ### [Architecture](./architecture/README.md)
 
-Architecture documentation for major subsystems (to be populated).
+High-level architecture documentation for major subsystems:
+
+- **[Sitemap Validation Architecture](./architecture/sitemap-validation.md)**: Design for validating generated sitemaps against local filesystem
 
 ### [Implementation](./implementation/README.md)
 
-Implementation guides for features and modifications (to be populated).
+Implementation guides for features and modifications:
+
+- **[Sitemap Validation Implementation](./implementation/sitemap-validation.md)**: Complete implementation guide for building the sitemap validator
 
 ### [Log](./log/README.md)
 

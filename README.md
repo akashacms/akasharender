@@ -18,6 +18,8 @@ Commands:
   document <configFN> <documentFN>         Show information about a document
   render-document <configFN> <documentFN>  Render a document into output directory
   render [options] <configFN>              Render a site into output directory
+  validate-sitemap [options] <configFN>    Validate sitemap XML file against rendered 
+                                           output directory
   check-ready [options] <configFN>         Verify that all files are loaded before 
                                            isReady triggers (diagnostic tool)
   explain <configFN>                       Explain a cache query
@@ -182,6 +184,98 @@ Use this command to:
 - Debug missing or unexpected files
 - Measure how long indexing takes
 - Test configuration changes before rendering
+
+### validate-sitemap - Validate Sitemap Against Rendered Output
+
+The `validate-sitemap` command validates your generated sitemap XML file against the actual rendered output directory. It ensures that every URL in the sitemap corresponds to a file that exists in your output directory.
+
+```bash
+npx akasharender validate-sitemap config.js [options]
+```
+
+Options:
+- `--sitemap <filename>` - Sitemap filename relative to output directory (default: sitemap.xml)
+- `--strict` - Exit with error code 1 if validation fails (useful for CI/CD)
+- `--json` - Output results as JSON instead of human-readable text
+
+The command validates:
+1. **XML Structure** - Checks for correct XML format, namespace, and required elements
+2. **File Existence** - Verifies each URL in the sitemap maps to an actual file in the output directory
+3. **URL Mapping** - Ensures URLs match your site's base URL and follow correct conventions
+
+**Example output:**
+```
+Sitemap Validation Report
+=========================
+
+Sitemap: out/sitemap.xml
+Total Entries: 150
+Valid Entries: 148
+Invalid Entries: 2
+
+Missing Files:
+  ✗ out/blog/old-post.html
+    URL: https://example.com/blog/old-post.html
+  ✗ out/projects/archived.html
+    URL: https://example.com/projects/archived.html
+
+XML Validation: ✓ Valid
+  - Namespace: ✓ Correct
+  - Well-formed: ✓ Yes
+
+Summary: ✗ Validation failed: 2 invalid entries, 0 errors
+```
+
+**JSON output (--json):**
+```bash
+npx akasharender validate-sitemap config.js --json > validation-report.json
+```
+
+This produces a structured JSON report suitable for parsing in CI/CD pipelines or custom tooling.
+
+**Strict mode for CI/CD:**
+```bash
+# Fails build if sitemap has invalid entries
+npx akasharender validate-sitemap config.js --strict
+```
+
+**Validate custom sitemap:**
+```bash
+# For sites with multiple sitemaps
+npx akasharender validate-sitemap config.js --sitemap blog-sitemap.xml
+```
+
+Use this command to:
+- Catch broken links before deployment
+- Verify sitemap accuracy after site builds
+- Integrate sitemap validation into CI/CD pipelines
+- Debug why pages aren't appearing in search engines
+- Ensure sitemap stays synchronized with rendered content
+
+**Common issues detected:**
+- Files referenced in sitemap but not rendered (deleted or renamed pages)
+- Incorrect base URLs (wrong domain in sitemap entries)
+- Malformed sitemap XML (missing namespace, invalid structure)
+- Directory URLs not mapping to index.html correctly
+
+**CI/CD Integration Example:**
+```yaml
+# GitHub Actions
+- name: Build site
+  run: npx akasharender render config.js
+
+- name: Validate sitemap
+  run: npx akasharender validate-sitemap config.js --strict --json > validation.json
+
+- name: Upload validation report
+  uses: actions/upload-artifact@v3
+  with:
+    name: sitemap-validation
+    path: validation.json
+```
+
+
+# AkashaCMS Plugins
 
 AkashaCMS plugins extend the capabilities of the system.
 

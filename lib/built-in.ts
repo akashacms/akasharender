@@ -33,7 +33,7 @@ import mahaMetadata from 'mahabhuta/maha/metadata.js';
 import mahaPartial from 'mahabhuta/maha/partial.js';
 import Renderers from '@akashacms/renderers';
 import {encode} from 'html-entities';
-import { Configuration, CustomElement, Munger, PageProcessor, javaScriptItem } from './index.js';
+import { Configuration, CustomElement, Munger, PageProcessor, javaScriptItem, resolveVpath } from './index.js';
 
 const pluginName = "akashacms-builtin";
 
@@ -756,13 +756,7 @@ class ShowContent extends CustomElement {
         const style   = $element.attr('style');
         const dest    = $element.attr('dest');
         const contentImage = $element.attr('content-image');
-        let doc2read;
-        if (! href.startsWith('/')) {
-            let dir = path.dirname(metadata.document.path);
-            doc2read = path.join('/', dir, href);
-        } else {
-            doc2read = href;
-        }
+        const doc2read = resolveVpath(metadata.document.path, href);
         // console.log(`ShowContent ${util.inspect(metadata.document)} ${doc2read}`);
         const documents = this.akasha.filecache.documentsCache;
         const doc = await documents.find(doc2read);
@@ -899,15 +893,7 @@ class AnchorCleanup extends Munger {
             // means we only process the link once.
             $link.attr('munged', 'yes');
 
-            let absolutePath;
-
-            if (!path.isAbsolute(href)) {
-                absolutePath = path.join(path.dirname(metadata.document.path), href);
-                // console.log(`AnchorCleanup href ${href} uHref.pathname ${uHref.pathname} not absolute, absolutePath ${absolutePath}`);
-            } else {
-                absolutePath = href;
-                // console.log(`AnchorCleanup href ${href} uHref.pathname ${uHref.pathname} absolute, absolutePath ${absolutePath}`);
-            }
+            let absolutePath = resolveVpath(metadata.document.path, href);
 
             // The idea for this section is to ensure all local href's are 
             // for a relative path rather than an absolute path
