@@ -17,7 +17,7 @@
  *  limitations under the License.
  */
 import Joi from "joi";
-import { AsyncDatabase } from 'promised-sqlite3';
+import { AsyncDatabase } from '../async-node-sqlite.js';
 /**
  * Every cache entry has these fields.  For
  * most cache types, there will be additional

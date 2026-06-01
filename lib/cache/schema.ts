@@ -20,7 +20,7 @@
 import path from 'node:path';
 import { promises as fsp } from 'node:fs';
 import Joi from "joi";
-import { AsyncDatabase } from 'promised-sqlite3';
+import { AsyncDatabase } from '../async-node-sqlite.js';
 import { lembedModelName } from '../sqdb.js';
 
 /**
@@ -201,8 +201,8 @@ export const joiPartial = Joi.object({
     info: Joi.any(),
 
     // Added fields
-    docBody: Joi.string().optional().allow(null),
-    rendererName: Joi.string().optional().allow(null)
+    docBody: Joi.string().min(0).optional().allow(null, ''),
+    rendererName: Joi.string().min(0).optional().allow(null, '')
 
 });
 
@@ -272,7 +272,7 @@ export const joiLayout = Joi.object({
             Joi.boolean(),
             Joi.number().integer().min(0).max(1)
         ),
-    docBody: Joi.string().optional().allow(null),
+    docBody: Joi.string().min(0).optional().allow(null, ''),
     rendererName: Joi.string().min(0).optional().allow(null)
 
 });

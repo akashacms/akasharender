@@ -48,8 +48,8 @@ import {
     PathsReturnType, validateAsset, validateDocument, validateLayout, validatePartial, validatePathsReturnType
 } from './schema.js';
 
-import { Database } from 'sqlite3';
-import { AsyncDatabase } from 'promised-sqlite3';
+import { DatabaseSync } from 'node:sqlite';
+import { AsyncDatabase } from '../async-node-sqlite.js';
 import SqlString from 'sqlstring-sqlite';
 import {
     BaseCacheEntry,
@@ -230,6 +230,18 @@ export class BaseCache<
                 await fsp.readFile(fname), params
         );
         return sql;
+    }
+
+    /**
+     * Convert undefined values to null in parameter object
+     * node:sqlite does not accept undefined values
+     */
+    protected nullifyUndefined(params: Record<string, any>): Record<string, any> {
+        const result: Record<string, any> = {};
+        for (const [key, value] of Object.entries(params)) {
+            result[key] = value === undefined ? null : value;
+        }
+        return result;
     }
 
     protected findPathMountedSQL
@@ -754,8 +766,9 @@ export class AssetsCache
         if (typeof (<any>info).statsMtime === 'number') {
             info.mtimeMs = (<any>info).statsMtime;
         }
-        if (info.mime === null) {
-            info.mime = undefined;
+        // Keep mime as null if it's null or undefined - SQL NULL is valid
+        if (info.mime === undefined) {
+            info.mime = null;
         }
     }
 
@@ -774,14 +787,14 @@ export class AssetsCache
                 );
         }
         await this.db.run(this.#insertDocAssets, {
-            $vpath: info.vpath,
-            $mime: info.mime,
-            $mounted: info.mounted,
-            $mountPoint: info.mountPoint,
-            $pathInMounted: info.pathInMounted,
-            $fspath: path.join(info.mounted, info.pathInMounted),
-            $dirname: path.dirname(info.vpath),
-            $mtimeMs: info.mtimeMs,
+            $vpath: info.vpath ?? '',
+            $mime: info.mime ?? null,
+            $mounted: info.mounted ?? '',
+            $mountPoint: info.mountPoint ?? '',
+            $pathInMounted: info.pathInMounted ?? '',
+            $fspath: path.join(info.mounted ?? '', info.pathInMounted ?? ''),
+            $dirname: path.dirname(info.vpath ?? ''),
+            $mtimeMs: info.mtimeMs ?? 0,
             $info: JSON.stringify(info)
         });
     }
@@ -799,14 +812,14 @@ export class AssetsCache
                 );
         }
         await this.db.run(this.#updateDocAssets, {
-            $vpath: info.vpath,
-            $mime: info.mime,
-            $mounted: info.mounted,
-            $mountPoint: info.mountPoint,
-            $pathInMounted: info.pathInMounted,
-            $fspath: path.join(info.mounted, info.pathInMounted),
-            $dirname: path.dirname(info.vpath),
-            $mtimeMs: info.mtimeMs,
+            $vpath: info.vpath ?? '',
+            $mime: info.mime ?? null,
+            $mounted: info.mounted ?? '',
+            $mountPoint: info.mountPoint ?? '',
+            $pathInMounted: info.pathInMounted ?? '',
+            $fspath: path.join(info.mounted ?? '', info.pathInMounted ?? ''),
+            $dirname: path.dirname(info.vpath ?? ''),
+            $mtimeMs: info.mtimeMs ?? 0,
             $info: JSON.stringify(info)
         });
     }
@@ -847,8 +860,9 @@ export class PartialsCache
         if (typeof (<any>info).statsMtime === 'number') {
             info.mtimeMs = (<any>info).statsMtime;
         }
-        if (info.mime === null) {
-            info.mime = undefined;
+        // Keep mime as null if it's null or undefined - SQL NULL is valid
+        if (info.mime === undefined) {
+            info.mime = null;
         }
         if (renderer) {
             info.rendererName = renderer.name;
@@ -862,8 +876,16 @@ export class PartialsCache
 
                 // docBody is the parsed body -- e.g. following the frontmatter
                 info.docBody = rc.body;
+            } else {
+                // Renderer exists but doesn't parse metadata
+                info.docBody = '';
             }
+        } else {
+            // No renderer found
+            info.docBody = '';
+            info.rendererName = '';
         }
+
     }
 
     #insertDocPartials;
@@ -881,18 +903,17 @@ export class PartialsCache
                 );
         }
         await this.db.run(this.#insertDocPartials, {
-            $vpath: info.vpath,
-            $mime: info.mime,
-            $mounted: info.mounted,
-            $mountPoint: info.mountPoint,
-            $pathInMounted: info.pathInMounted,
-            $fspath: path.join(info.mounted, info.pathInMounted),
-            $dirname: path.dirname(info.vpath),
-            $mtimeMs: info.mtimeMs,
+            $vpath: info.vpath ?? '',
+            $mime: info.mime ?? null,
+            $mounted: info.mounted ?? '',
+            $mountPoint: info.mountPoint ?? '',
+            $pathInMounted: info.pathInMounted ?? '',
+            $fspath: path.join(info.mounted ?? '', info.pathInMounted ?? ''),
+            $dirname: path.dirname(info.vpath ?? ''),
+            $mtimeMs: info.mtimeMs ?? 0,
             $info: JSON.stringify(info),
-
-            $docBody: info.docBody,
-            $rendererName: info.rendererName
+            $docBody: info.docBody ?? '',
+            $rendererName: info.rendererName ?? ''
         });
     }
 
@@ -911,18 +932,18 @@ export class PartialsCache
                 );
         }
         await this.db.run(this.#updateDocPartials, {
-            $vpath: info.vpath,
-            $mime: info.mime,
-            $mounted: info.mounted,
-            $mountPoint: info.mountPoint,
-            $pathInMounted: info.pathInMounted,
-            $fspath: path.join(info.mounted, info.pathInMounted),
-            $dirname: path.dirname(info.vpath),
-            $mtimeMs: info.mtimeMs,
+            $vpath: info.vpath ?? '',
+            $mime: info.mime ?? null,
+            $mounted: info.mounted ?? '',
+            $mountPoint: info.mountPoint ?? '',
+            $pathInMounted: info.pathInMounted ?? '',
+            $fspath: path.join(info.mounted ?? '', info.pathInMounted ?? ''),
+            $dirname: path.dirname(info.vpath ?? ''),
+            $mtimeMs: info.mtimeMs ?? 0,
             $info: JSON.stringify(info),
 
-            $docBody: info.docBody,
-            $rendererName: info.rendererName
+            $docBody: info.docBody ?? '',
+            $rendererName: info.rendererName ?? ''
         });
     }
 
@@ -961,8 +982,9 @@ export class LayoutsCache
         if (typeof (<any>info).statsMtime === 'number') {
             info.mtimeMs = (<any>info).statsMtime;
         }
-        if (info.mime === null) {
-            info.mime = undefined;
+        // Keep mime as null if it's null or undefined - SQL NULL is valid
+        if (info.mime === undefined) {
+            info.mime = null;
         }
         if (renderer) {
             info.rendererName = renderer.name;
@@ -988,10 +1010,17 @@ export class LayoutsCache
 
                 // docBody is the parsed body -- e.g. following the frontmatter
                 info.docBody = rc.body;
+            } else {
+                // Renderer exists but doesn't parse metadata
+                info.docBody = '';
             }
         } else {
+            // No renderer found
             info.rendersToHTML = false;
+            info.docBody = '';
+            info.rendererName = '';
         }
+
     }
 
     #insertDocLayouts;
@@ -1008,20 +1037,20 @@ export class LayoutsCache
                     ), 'utf-8'
                 );
         }
+        
         await this.db.run(this.#insertDocLayouts, {
-            $vpath: info.vpath,
-            $mime: info.mime,
-            $mounted: info.mounted,
-            $mountPoint: info.mountPoint,
-            $pathInMounted: info.pathInMounted,
-            $fspath: path.join(info.mounted, info.pathInMounted),
-            $dirname: path.dirname(info.vpath),
-            $mtimeMs: info.mtimeMs,
+            $vpath: info.vpath ?? '',
+            $mime: info.mime ?? null,
+            $mounted: info.mounted ?? '',
+            $mountPoint: info.mountPoint ?? '',
+            $pathInMounted: info.pathInMounted ?? '',
+            $fspath: path.join(info.mounted ?? '', info.pathInMounted ?? ''),
+            $dirname: path.dirname(info.vpath ?? ''),
+            $mtimeMs: info.mtimeMs ?? 0,
             $info: JSON.stringify(info),
-
-            $rendersToHTML: info.rendersToHTML,
-            $docBody: info.docBody,
-            $rendererName: info.rendererName
+            $rendersToHTML: (info.rendersToHTML ?? false) ? 1 : 0,  // Convert boolean to 0/1
+            $docBody: info.docBody ?? '',
+            $rendererName: info.rendererName ?? ''
         });
     }
 
@@ -1040,19 +1069,19 @@ export class LayoutsCache
                 );
         }
         await this.db.run(this.#updateDocLayouts, {
-            $vpath: info.vpath,
-            $mime: info.mime,
-            $mounted: info.mounted,
-            $mountPoint: info.mountPoint,
-            $pathInMounted: info.pathInMounted,
-            $fspath: path.join(info.mounted, info.pathInMounted),
-            $dirname: path.dirname(info.vpath),
-            $mtimeMs: info.mtimeMs,
+            $vpath: info.vpath ?? '',
+            $mime: info.mime ?? null,
+            $mounted: info.mounted ?? '',
+            $mountPoint: info.mountPoint ?? '',
+            $pathInMounted: info.pathInMounted ?? '',
+            $fspath: path.join(info.mounted ?? '', info.pathInMounted ?? ''),
+            $dirname: path.dirname(info.vpath ?? ''),
+            $mtimeMs: info.mtimeMs ?? 0,
             $info: JSON.stringify(info),
 
-            $rendersToHTML: info.rendersToHTML,
-            $docBody: info.docBody,
-            $rendererName: info.rendererName
+            $rendersToHTML: (info.rendersToHTML ?? false) ? 1 : 0,  // Convert boolean to 0/1
+            $docBody: info.docBody ?? '',
+            $rendererName: info.rendererName ?? ''
         });
     }
 }
@@ -1125,8 +1154,9 @@ export class DocumentsCache
         if (typeof (<any>info).statsMtime === 'number') {
             info.mtimeMs = (<any>info).statsMtime;
         }
-        if (info.mime === null) {
-            info.mime = undefined;
+        // Keep mime as null if it's null or undefined - SQL NULL is valid
+        if (info.mime === undefined) {
+            info.mime = null;
         }
         let renderer = this.config.findRendererPath(info.vpath);
         if (renderer) {
@@ -1289,6 +1319,7 @@ export class DocumentsCache
             info.docContent = '';
             info.rendererName = '';
             info.publicationTime = 0;
+            info.renderPath = info.vpath;  // No renderer, use vpath as renderPath
         }
     }
 
@@ -1338,26 +1369,24 @@ export class DocumentsCache
         // ) {
         //     mtime = new Date(info.mtimeMs).toISOString();
         // }
-        const toInsert = {
-            $vpath: info.vpath,
-            $mime: info.mime,
-            $mounted: info.mounted,
-            $mountPoint: info.mountPoint,
-            $pathInMounted: info.pathInMounted,
-            $fspath: path.join(info.mounted, info.pathInMounted),
-            $dirname: path.dirname(info.vpath),
-            $mtimeMs: info.mtimeMs,
+        await this.db.run(this.#insertDocDocuments, {
+            $vpath: info.vpath ?? '',
+            $mime: info.mime ?? null,
+            $mounted: info.mounted ?? '',
+            $mountPoint: info.mountPoint ?? '',
+            $pathInMounted: info.pathInMounted ?? '',
+            $fspath: path.join(info.mounted ?? '', info.pathInMounted ?? ''),
+            $dirname: path.dirname(info.vpath ?? ''),
+            $mtimeMs: info.mtimeMs ?? 0,
             $info: JSON.stringify(info),
-            $renderPath: info.renderPath,
-            $rendersToHTML: info.rendersToHTML,
-            $parentDir: info.parentDir,
-            $docMetadata: JSON.stringify(info.docMetadata),
-            $docContent: info.docContent,
-            $docBody: info.docBody,
-            $rendererName: info.rendererName
-        };
-        // console.log(`insert doc ${info.vpath}`, toInsert);
-        await this.db.run(this.#insertDocDocuments, toInsert);
+            $renderPath: info.renderPath ?? info.vpath ?? '',
+            $rendersToHTML: (info.rendersToHTML ?? false) ? 1 : 0,  // Convert boolean to 0/1
+            $parentDir: info.parentDir ?? '',
+            $docMetadata: JSON.stringify(info.docMetadata ?? {}),
+            $docContent: info.docContent ?? '',
+            $docBody: info.docBody ?? '',
+            $rendererName: info.rendererName ?? ''
+        });
 
 
         // if (typeof lembedModelName === 'string') {
@@ -1385,10 +1414,10 @@ export class DocumentsCache
                 $bodyEmbed:  info.docBody
             });
             await this.db.run(this.#insertLembedDocuments, {
-                $vpath: info.vpath,
-                $lembedModel: lembedModelName,
+                $vpath: info.vpath ?? '',
+                $lembedModel: lembedModelName ?? '',
                 // $titleEmbed: info.title,
-                $bodyEmbed:  info.docBody
+                $bodyEmbed:  info.docBody ?? ''
             });
             console.log(`vec_documents inserted ${info.vpath}`);
         }
@@ -1429,23 +1458,23 @@ export class DocumentsCache
                 );
         }
         await this.db.run(this.#updateDocDocuments, {
-            $vpath: info.vpath,
-            $mime: info.mime,
-            $mounted: info.mounted,
-            $mountPoint: info.mountPoint,
-            $pathInMounted: info.pathInMounted,
-            $fspath: path.join(info.mounted, info.pathInMounted),
-            $dirname: path.dirname(info.vpath),
-            $mtimeMs: info.mtimeMs,
+            $vpath: info.vpath ?? '',
+            $mime: info.mime ?? null,
+            $mounted: info.mounted ?? '',
+            $mountPoint: info.mountPoint ?? '',
+            $pathInMounted: info.pathInMounted ?? '',
+            $fspath: path.join(info.mounted ?? '', info.pathInMounted ?? ''),
+            $dirname: path.dirname(info.vpath ?? ''),
+            $mtimeMs: info.mtimeMs ?? 0,
             $info: JSON.stringify(info),
 
-            $renderPath: info.renderPath,
-            $rendersToHTML: info.rendersToHTML,
-            $parentDir: info.parentDir,
-            $docMetadata: JSON.stringify(info.docMetadata),
-            $docContent: info.docContent,
-            $docBody: info.docBody,
-            $rendererName: info.rendererName
+            $renderPath: info.renderPath ?? info.vpath ?? '',
+            $rendersToHTML: (info.rendersToHTML ?? false) ? 1 : 0,  // Convert boolean to 0/1
+            $parentDir: info.parentDir ?? '',
+            $docMetadata: JSON.stringify(info.docMetadata ?? {}),
+            $docContent: info.docContent ?? '',
+            $docBody: info.docBody ?? '',
+            $rendererName: info.rendererName ?? ''
         });
 
         // This handles computing embeddings
@@ -1455,10 +1484,10 @@ export class DocumentsCache
          && typeof info.docBody === 'string'
         ) {
             await this.db.run(this.#updateLembedDocuments, {
-                $vpath: info.vpath,
-                $lembedModel: lembedModelName,
+                $vpath: info.vpath ?? '',
+                $lembedModel: lembedModelName ?? '',
                 // $titleEmbed: info.title,
-                $bodyEmbed:  info.docBody
+                $bodyEmbed:  info.docBody ?? ''
             });
         }
 

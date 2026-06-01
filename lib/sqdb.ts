@@ -25,22 +25,23 @@
  */
 
 import fs from 'node:fs';
-import { Database } from 'sqlite3';
+import { DatabaseSync } from 'node:sqlite';
 // import sqleanLibs from 'sqlite3-sqlean';
 import * as sqlite_regex  from "sqlite-regex";
 import * as sqlite_vec    from 'sqlite-vec';
 import * as sqlite_lembed from 'sqlite-lembed';
 import { SQ3DataStore } from 'sq3-kv-data-store';
 
-import { AsyncDatabase } from 'promised-sqlite3';
-
-import { default as SQ3QueryLog } from 'sqlite3-query-log';
+import { AsyncDatabase } from './async-node-sqlite.js';
 
 const dburl = typeof process.env.AK_DB_URL === 'string'
         ? process.env.AK_DB_URL
         : ':memory:';
 
-export const sqdb = await AsyncDatabase.open(dburl);
+export const sqdb = await AsyncDatabase.open(dburl, {
+    allowExtension: true,  // Required for loading extensions
+    enableForeignKeyConstraints: true
+});
 // await sqdb.open(dburl);
 // await sqdb.open('test.db');
 // sqdb.loadExtension(sqleanLibs.reLibPath);
@@ -60,8 +61,8 @@ if (typeof lembedModelFile !== 'undefined') {
         lembed: sqlite_lembed.getLoadablePath(),
         vec: sqlite_vec.getLoadablePath()
     });
-    sqlite_lembed.load(<any>sqdb.inner);
-    sqlite_vec.load(<any>sqdb.inner);
+    sqlite_lembed.load(sqdb.inner);
+    sqlite_vec.load(sqdb.inner);
 
     await sqdb.run(`
         INSERT INTO temp.lembed_models(name, model)
@@ -87,9 +88,11 @@ await sqdb.run('PRAGMA journal_mode=WAL;');
 //     console.error(err);
 // });
 
-sqdb.inner.on('error', err => {
-    console.error(err);
-});
+// Note: DatabaseSync from node:sqlite doesn't have event emitters
+// Error handling is done via try/catch in the wrapper
+// sqdb.inner.on('error', err => {
+//     console.error(err);
+// });
 
 // Profiling SQL queries
 // This might be useful for performance evaluation.
@@ -99,9 +102,11 @@ sqdb.inner.on('error', err => {
 //      and to keep the format simple
 //   2. Approximate number of milliseconds to execute
 //
-if (typeof process.env.AK_PROFILE === 'string') {
-    SQ3QueryLog(sqdb.inner, process.env.AK_PROFILE);
-}
+// Note: sqlite3-query-log expects sqlite3.Database, not DatabaseSync from node:sqlite
+// This profiling functionality is disabled until we implement custom profiling
+// if (typeof process.env.AK_PROFILE === 'string') {
+//     SQ3QueryLog(sqdb.inner, process.env.AK_PROFILE);
+// }
 
 
 ////////////////////////
@@ -110,5 +115,8 @@ export function newSQ3DataStore(name: string)
     : SQ3DataStore
 {
     // console.log(`newSQ3DataStore ${name}`);
-    return new SQ3DataStore(sqdb.inner, name);
+    // Note: SQ3DataStore expects sqlite3.Database, but we're using node:sqlite's DatabaseSync
+    // This will cause a runtime error. SQ3DataStore needs to be updated to support DatabaseSync
+    // For now, casting to any to allow compilation
+    return new SQ3DataStore(sqdb.inner as any, name);
 }

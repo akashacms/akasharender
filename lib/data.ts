@@ -22,7 +22,7 @@ import { promises as fsp } from 'node:fs';
 // import { __dirname } from './index.js';
 
 import { sqdb } from './sqdb.js';
-import { AsyncDatabase } from 'promised-sqlite3';
+import { AsyncDatabase } from './async-node-sqlite.js';
 
 const sql_create_table = await fsp.readFile(
     path.join(

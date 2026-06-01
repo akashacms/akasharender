@@ -21,7 +21,7 @@ import util from 'node:util';
 import path from 'node:path';
 import { promises as fsp } from 'node:fs';
 
-import { AsyncDatabase } from 'promised-sqlite3';
+import { AsyncDatabase } from '../async-node-sqlite.js';
 
 import SqlString from 'sqlstring-sqlite';
 import { distance as levenshtein } from 'fastest-levenshtein';
