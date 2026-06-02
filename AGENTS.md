@@ -29,8 +29,8 @@ The scope for AkashaCMS is rendering static HTML websites, rendering EPUB books 
 - Plugin system: Extend `Plugin` class from `lib/Plugin.ts`
 - Rendering: Uses `@akashacms/renderers` for template processing
 - Server-side DOM Manipulation: After rendering to HTML, Mahabhuta (`mahabhuta`) is used to drive DOM manipulation using functions defined in the plugins.
-- Stacked Directories: Four kinds of directories are defined: assets, partials, layouts, and documents.  For each type, multiple directories can be stacked on top of one another in a virtual filesystem.  A key principle is the ability to override a file, such as a partial template, by mounting a directory on the corresponding directory stack, and adding a file of the same name to that directory.  The @akashacms/stacked-dirs package is key to this.
-- Caching: SQLite-based file caching in `lib/cache/`.  The file information is gathered by the Stacked Directories feature, and also supports dynamically updating files that change in the filesystem.
+- Stacked Directories: Four kinds of directories are defined: assets, partials, layouts, and documents.  For each type, multiple directories can be stacked on top of one another in a virtual filesystem.  A key principle is the ability to override a file, such as a partial template, by mounting a directory on the corresponding directory stack, and adding a file of the same name to that directory.  This is implemented by the VFStack class in `lib/cache/vfstack.ts`.
+- Caching: SQLite-based file caching in `lib/cache/`.  The file information is gathered by the VFStack scanning process during initialization.
 - In-Memory SQLITE3 database: A lot of data is kept in this database, allowing for ease of accessing the data in any desired fashion.
 - Database request caching: Some database queries are repeated multiple times, and a cache is used to hold such data to prevent excess queries for the same data.
 - Testing: Mocha with Chai assertions, ES modules (.mjs files)
@@ -96,12 +96,12 @@ The `render` function renders all files in the documents directories into the ou
 
 ## Core Dependencies
 - **mahabhuta**: DOM manipulation engine for post-processing HTML (../mahabhuta, https://www.npmjs.com/package/mahabhuta, https://github.com/akashacms/mahabhuta).
-- **@akashacms/stacked-dirs**: Virtual file system for layered directory structures, as well as interactive watching for file changes. (../stacked-directories, https://www.npmjs.com/package/@akashacms/stacked-dirs, https://akashacms.github.io/stacked-directories/, https://github.com/akashacms/stacked-directories)
+- **VFStack** (lib/cache/vfstack.ts): Internal virtual file system for layered directory structures. Provides stacked directory functionality for assets, partials, layouts, and documents.
 - **@akashacms/renderers**: Template rendering engines (Markdown, EJS, Nunjucks, etc.) (../renderers, https://www.npmjs.com/package/@akashacms/renderers, https://github.com/akashacms/rendering-engines)
 
 ## AkashaCMS plugins
 
-"AkashaCMS" is the name for an ecosystem including AkashaRender, Mahabhuta, @akashacms/stacked-dirs, @akashacms/renderers, and the plugins.  The plugins are used by AkashaRender to extend its functionality.
+"AkashaCMS" is the name for an ecosystem including AkashaRender, Mahabhuta, @akashacms/renderers, and the plugins.  The plugins are used by AkashaRender to extend its functionality.
 
 * **@akashacms/plugins-base** - Base functionality for building websites (../akashacms-base, https://www.npmjs.com/package/@akashacms/plugins-base, https://github.com/akashacms/akashacms-base)
 * **@akashacms/plugins-blog-podcast** - Supports building a blog on an AkashaCMS website (../akashacms-blog-podcast, https://www.npmjs.com/package/@akashacms/plugins-blog-podcast, https://github.com/akashacms/akashacms-blog-podcast)
@@ -132,3 +132,136 @@ The site, http://akashacms.com/, is the primary site for AkashaCMS documentation
 * **Blog Skeleton** - Shows how to configure the `@akashacms/plugins-blog-podcast` plugin.  (../akashacms-blog-skeleton)
 * **Minimal example** - Small example website (../akashacms-skeleton)
 * **Open Source Site** - Demonstrates how an open source software project could build a website, host it on GitHub Pages, while incorporating advanced features.
+
+## Wiki Directory - LLM-CODE-WIKI
+
+The `wiki/` directory contains an LLM-CODE-WIKI knowledge base that documents AkashaRender's codebase through AI-generated summaries, concepts, and architectural documentation.
+
+**IMPORTANT: When modifying files in the `wiki/` directory, you MUST follow the rules and workflows defined in `wiki/AGENTS.md`.**
+
+Key points:
+- The wiki has its own comprehensive ruleset in `wiki/AGENTS.md` covering file naming, frontmatter format, required sections, workflows, and citation rules
+- Wiki files are structured documentation (summaries, concepts, answers, architecture, implementation, logs)
+- Log files in `wiki/log/` are write-once, read-only audit trails (must be set to chmod 0444 after creation)
+- All wiki changes must be logged in `wiki/log/` with timestamped entries
+- Wiki pages must follow strict formatting and citation requirements
+
+Before making any changes to wiki files, read and follow the guidelines in `wiki/AGENTS.md`.
+
+## Multi-Agent Development Workflow
+
+This project uses a collaborative multi-agent system for software development. Four specialized agents work together, iterating through requirements, implementation, review, and testing until the code is correct.
+
+### The Agents
+
+| Agent | Role | Tools |
+|-------|------|-------|
+| **Program Manager** | Requirements, coordination, validation | Read, Write, Grep, Glob |
+| **Builder** | Code implementation | Read, Write, Edit, Bash, Grep, Glob |
+| **Code Reviewer** | Quality and architecture checks | Read, Grep, Glob, Write |
+| **Quality Assurance** | Test writing and execution | Read, Write, Edit, Bash, Grep, Glob |
+
+Agent definitions are in `.opencode/agents/`.
+
+### Workflow Process
+
+```
+PM (requirements) --> Builder --> Code Reviewer --> QA --> PM (validation)
+                         ^              |            |           |
+                         |              v            v           v
+                         +-------- NEEDS_REVISION ---------------+
+```
+
+1. **Program Manager** defines requirements and acceptance criteria
+2. **Builder** implements the code and runs the build
+3. **Code Reviewer** validates quality, architecture, and conventions
+4. **QA** writes comprehensive tests and runs them
+5. **Program Manager** validates deliverables against requirements
+6. Any agent can route back to Builder if issues are found
+
+### State Management
+
+Agents communicate via `WORKFLOW.md` in the project root. Each agent runs with fresh context (no inherited memory), so all state must be persisted in this file.
+
+The workflow file tracks:
+- Source feature plan (if applicable)
+- Current phase and task
+- Requirements with acceptance criteria
+- Handoff notes between agents
+- Files changed
+- Validation results
+
+### Starting New Work
+
+**Option 1: Ad-hoc Task**
+```
+@program-manager Add a function to validate configuration options
+```
+
+**Option 2: From a Feature Plan**
+```
+@program-manager Please start working on @FEATURE-Tag-Wrangling.md
+```
+
+Or use the command:
+```
+/feature-plan FEATURE-Tag-Wrangling.md
+```
+
+### Feature Plan Files
+
+Feature plans (e.g., `FEATURE-*.md`) document larger features with:
+- Problem context and background
+- Requested functionality
+- Main tasks with detailed specifications
+- Phased implementation plan
+- Testing requirements
+
+When working from a feature plan:
+1. Program Manager reads the entire plan
+2. Identifies completed tasks (marked DONE) vs pending tasks
+3. Extracts requirements for the next task
+4. Creates `WORKFLOW.md` scoped to that task
+5. After task completion, returns to the plan for the next task
+
+### Continuing Work
+
+If `WORKFLOW.md` exists:
+1. Check the "Next Agent" field to see who should work
+2. Invoke that agent: `@builder`, `@code-reviewer`, `@quality-assurance`, or `@program-manager`
+3. The agent reads `WORKFLOW.md` and continues from the current state
+
+### Agent Invocation Examples
+
+```
+# Start from a feature plan
+@program-manager Read FEATURE-Tag-Wrangling.md and begin Phase 1
+
+# Continue with builder after PM sets requirements
+@builder
+
+# Review code after builder completes
+@code-reviewer
+
+# Run QA after code review passes
+@quality-assurance
+
+# Validate completion after QA passes
+@program-manager
+```
+
+### Commands
+
+- `/workflow` - Start or continue the development workflow
+- `/feature-plan <file>` - Start work from a feature plan file
+- `/build` - Build the project (can be used independently)
+- `/test` - Run the test suite (can be used independently)
+
+### Best Practices
+
+1. **One task at a time**: Complete each task fully before starting the next
+2. **Read WORKFLOW.md first**: Every agent should read the workflow state before starting
+3. **Update handoff notes**: Document decisions, issues, and context for the next agent
+4. **Mark completed tasks**: Update feature plan files when tasks are done
+5. **Don't skip steps**: Every code change should go through Code Review and QA
+6. **Route back when needed**: If something is wrong, send it back rather than proceeding
