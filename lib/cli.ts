@@ -30,8 +30,10 @@ import util from 'node:util';
 import * as data from './data.js';
 import YAML from 'js-yaml';
 import { RenderingResults } from './render.js';
+import { refactorTag } from './refactor-tags.js';
+import { SitemapValidator } from './sitemap-validator.js';
 
-const _watchman = import('./cache/watchman.js');
+
 
 process.title = 'akasharender';
 program.version('0.9.5');
@@ -95,11 +97,15 @@ FIRST ${result.renderFirstElapsed} LAYOUT ${result.renderLayoutElapsed} MAHA ${r
 program
     .command('render-document <configFN> <documentFN>')
     .description('Render a document into output directory')
-    .action(async (configFN, documentFN) => {
+    .option('--perf-data-dir <dataDir>', 'Directory for output of Mahabhuta performance measurements')
+    .action(async (configFN, documentFN, cmdObj) => {
         try {
             const config = (await import(
                 path.join(process.cwd(), configFN)
             )).default;
+            if (typeof cmdObj?.perfDataDir === 'string') {
+                config.perfDataDir = cmdObj.perfDataDir;
+            }
             let akasha = config.akasha;
             await akasha.setup(config);
             await data.removeAll();
@@ -206,28 +212,6 @@ program
             await akasha.closeCaches();
         } catch (e) {
             console.error(`render command ERRORED ${e.stack}`);
-        }
-    });
-
-program
-    .command('watch <configFN>')
-    .description('Track changes to files in a site, and rebuild anything that changes')
-    .action(async (configFN, cmdObj) => {
-        // console.log(`render: akasha: ${util.inspect(akasha)}`);
-        try {
-            const config = (await import(
-                path.join(process.cwd(), configFN)
-            )).default;
-            let akasha = config.akasha;
-            await akasha.setup(config);
-            await data.removeAll();
-            // console.log('CALLING config.hookBeforeSiteRendered');
-            await config.hookBeforeSiteRendered();
-            const watchman = (await _watchman).watchman;
-            await watchman(config);
-            // await akasha.closeCaches();
-        } catch (e) {
-            console.error(`watch command ERRORED ${e.stack}`);
         }
     });
 
@@ -557,17 +541,94 @@ program
     .command('tags <configFN>')
     .description('List the tags')
     .action(async (configFN) => {
-        // console.log(`render: akasha: ${util.inspect(akasha)}`);
         try {
             const config = (await import(
                 path.join(process.cwd(), configFN)
             )).default;
             let akasha = config.akasha;
             await akasha.setup(config);
-            console.log(await akasha.filecache.documentsCache.tags());
+            const tags = await akasha.filecache.documentsCache.tags();
+            console.log(YAML.dump({ tags }, { indent: 4 }));
             await akasha.closeCaches();
         } catch (e) {
-            console.error(`docinfo command ERRORED ${e.stack}`);
+            console.error(`tags command ERRORED ${e.stack}`);
+        }
+    });
+
+program
+    .command('similar-tags <configFN>')
+    .description('Find groups of similar tags')
+    .option('--threshold <n>', 'Levenshtein distance threshold', '2')
+    .action(async (configFN, cmdObj) => {
+        try {
+            const config = (await import(
+                path.join(process.cwd(), configFN)
+            )).default;
+            let akasha = config.akasha;
+            await akasha.setup(config);
+            const threshold = parseInt(cmdObj.threshold, 10);
+            const groups = await akasha.filecache.documentsCache.findSimilarTags(threshold);
+            console.log(YAML.dump({ similarTagGroups: groups }, { indent: 4 }));
+            await akasha.closeCaches();
+        } catch (e) {
+            console.error(`similar-tags command ERRORED ${e.stack}`);
+        }
+    });
+
+program
+    .command('tags-without-descriptions <configFN>')
+    .description('List tags that have no description')
+    .action(async (configFN) => {
+        try {
+            const config = (await import(
+                path.join(process.cwd(), configFN)
+            )).default;
+            let akasha = config.akasha;
+            await akasha.setup(config);
+            const tags = await akasha.filecache.documentsCache.tagsWithoutDescriptions();
+            console.log(YAML.dump({ tagsWithoutDescriptions: tags }, { indent: 4 }));
+            await akasha.closeCaches();
+        } catch (e) {
+            console.error(`tags-without-descriptions command ERRORED ${e.stack}`);
+        }
+    });
+
+program
+    .command('unused-tag-descriptions <configFN>')
+    .description('List tag descriptions that are not used by any document')
+    .action(async (configFN) => {
+        try {
+            const config = (await import(
+                path.join(process.cwd(), configFN)
+            )).default;
+            let akasha = config.akasha;
+            await akasha.setup(config);
+            const tags = await akasha.filecache.documentsCache.unusedTagDescriptions();
+            console.log(YAML.dump({ unusedTagDescriptions: tags }, { indent: 4 }));
+            await akasha.closeCaches();
+        } catch (e) {
+            console.error(`unused-tag-descriptions command ERRORED ${e.stack}`);
+        }
+    });
+
+program
+    .command('refactor-tag <configFN> <oldTag> <newTag>')
+    .description('Rename a tag across all documents')
+    .option('--dry-run', 'List changes without modifying files', false)
+    .action(async (configFN, oldTag, newTag, cmdObj) => {
+        try {
+            const config = (await import(
+                path.join(process.cwd(), configFN)
+            )).default;
+            let akasha = config.akasha;
+            await akasha.setup(config);
+            const result = await refactorTag(config, oldTag, newTag, {
+                dryRun: cmdObj.dryRun
+            });
+            console.log(YAML.dump({ refactorResult: result }, { indent: 4 }));
+            await akasha.closeCaches();
+        } catch (e) {
+            console.error(`refactor-tag command ERRORED ${e.stack}`);
         }
     });
 
@@ -794,16 +855,173 @@ program
 program
     .command('index <configFN>')
     .description('Loads configuration, indexes content, then exits')
-    .action(async (configFN) => {
+    .option('--verbose', 'Show detailed event tracking (added, ready, error events)')
+    .action(async (configFN, cmdObj) => {
         try {
             const config = (await import(
                 path.join(process.cwd(), configFN)
             )).default;
             let akasha = config.akasha;
-            await akasha.setup(config);
+            
+            if (cmdObj.verbose) {
+                console.log('Indexing files with verbose output...\n');
+                const startTime = Date.now();
+                
+                // Enable verbose mode in config
+                config.verbose = true;
+                
+                await akasha.setup(config);
+                
+                const setupTime = Date.now();
+                const elapsed = setupTime - startTime;
+                
+                // Get file counts
+                const filecache = akasha.filecache;
+                const documentCount = (await filecache.documentsCache.paths()).length;
+                const assetCount = (await filecache.assetsCache.paths()).length;
+                const layoutCount = (await filecache.layoutsCache.paths()).length;
+                const partialCount = (await filecache.partialsCache.paths()).length;
+                
+                console.log(`✓ Indexing completed in ${elapsed}ms\n`);
+                console.log('=== Summary ===');
+                console.log(`Documents: ${documentCount} files`);
+                console.log(`Assets: ${assetCount} files`);
+                console.log(`Layouts: ${layoutCount} files`);
+                console.log(`Partials: ${partialCount} files`);
+                console.log(`Total: ${documentCount + assetCount + layoutCount + partialCount} files`);
+            } else {
+                // Normal mode - just setup
+                await akasha.setup(config);
+            }
+            
             await akasha.closeCaches();
         } catch (e) {
-            console.error(`partialinfo command ERRORED ${e.stack}`);
+            console.error(`index command ERRORED ${e.stack}`);
+        }
+    });
+
+program
+    .command('check-ready <configFN>')
+    .description('Verify that all files are loaded before isReady triggers (diagnostic tool)')
+    .option('--verbose', 'Show detailed file-by-file tracking')
+    .option('--delay <ms>', 'Wait time in milliseconds to check for late additions (default: 2000)', '2000')
+    .action(async (configFN, cmdObj) => {
+        try {
+            const config = (await import(
+                path.join(process.cwd(), configFN)
+            )).default;
+            let akasha = config.akasha;
+            
+            console.log('Running isReady timing check...\n');
+            
+            // Capture initial state
+            const startTime = Date.now();
+            await akasha.setup(config);
+            const setupTime = Date.now();
+            
+            // Get counts immediately after setup
+            const filecache = akasha.filecache;
+            const countsAfterSetup = {
+                documents: (await filecache.documentsCache.paths()).length,
+                assets: (await filecache.assetsCache.paths()).length,
+                layouts: (await filecache.layoutsCache.paths()).length,
+                partials: (await filecache.partialsCache.paths()).length
+            };
+            
+            console.log(`✓ Setup completed in ${setupTime - startTime}ms`);
+            console.log(`  Documents: ${countsAfterSetup.documents}`);
+            console.log(`  Assets: ${countsAfterSetup.assets}`);
+            console.log(`  Layouts: ${countsAfterSetup.layouts}`);
+            console.log(`  Partials: ${countsAfterSetup.partials}`);
+            
+            // Wait specified delay to see if any additional files appear
+            const delayMs = parseInt(cmdObj.delay);
+            console.log(`\nWaiting ${delayMs}ms to check for late additions...`);
+            await new Promise(resolve => setTimeout(resolve, delayMs));
+            
+            const countsAfterDelay = {
+                documents: (await filecache.documentsCache.paths()).length,
+                assets: (await filecache.assetsCache.paths()).length,
+                layouts: (await filecache.layoutsCache.paths()).length,
+                partials: (await filecache.partialsCache.paths()).length
+            };
+            
+            // Compare counts
+            let issueDetected = false;
+            const checkCache = (name: string) => {
+                const before = countsAfterSetup[name];
+                const after = countsAfterDelay[name];
+                if (before !== after) {
+                    console.error(`\n❌ ISSUE DETECTED: ${name} count changed from ${before} to ${after}`);
+                    console.error(`   This indicates files were added after isReady!`);
+                    issueDetected = true;
+                    return false;
+                } else {
+                    if (cmdObj.verbose) {
+                        console.log(`✓ ${name}: ${before} files (stable)`);
+                    }
+                    return true;
+                }
+            };
+            
+            console.log('\nResults:');
+            const docsOk = checkCache('documents');
+            const assetsOk = checkCache('assets');
+            const layoutsOk = checkCache('layouts');
+            const partialsOk = checkCache('partials');
+            
+            if (!issueDetected) {
+                console.log('\n✅ SUCCESS: No files added after isReady. Timing is correct.');
+                console.log('\nAll caches are stable:');
+                console.log(`  ✓ Documents: ${countsAfterSetup.documents} files`);
+                console.log(`  ✓ Assets: ${countsAfterSetup.assets} files`);
+                console.log(`  ✓ Layouts: ${countsAfterSetup.layouts} files`);
+                console.log(`  ✓ Partials: ${countsAfterSetup.partials} files`);
+            } else {
+                console.error('\n⚠️  FAILURE: Files were added after isReady triggered!');
+                console.error('   This indicates a race condition that needs to be fixed.');
+                console.error('\n   Please report this issue at:');
+                console.error('   https://github.com/akashacms/akasharender/issues');
+            }
+            
+            await akasha.closeCaches();
+            
+            if (issueDetected) {
+                process.exit(1);
+            }
+        } catch (e) {
+            console.error(`check-ready command ERRORED ${e.stack}`);
+            process.exit(1);
+        }
+    });
+
+program
+    .command('validate-sitemap <configFN>')
+    .description('Validate sitemap XML file against rendered output directory')
+    .option('--sitemap <filename>', 'Sitemap filename relative to output directory', 'sitemap.xml')
+    .option('--strict', 'Exit with error code if validation fails', false)
+    .option('--json', 'Output results as JSON', false)
+    .action(async (configFN, cmdObj) => {
+        try {
+            const config = (await import(
+                path.join(process.cwd(), configFN)
+            )).default;
+            
+            const validator = new SitemapValidator(config, cmdObj.sitemap);
+            const result = await validator.validate();
+            
+            if (cmdObj.json) {
+                console.log(JSON.stringify(result, null, 2));
+            } else {
+                console.log(SitemapValidator.formatReport(result));
+            }
+            
+            if (cmdObj.strict && (result.invalidEntries > 0 || result.errors.length > 0)) {
+                process.exit(1);
+            }
+        } catch (e) {
+            console.error(`validate-sitemap command ERRORED ${e.stack}`);
+            process.exit(1);
         }
     });
 
