@@ -30,13 +30,19 @@ import path from 'node:path';
 // const oembetter = require('oembetter')();
 import RSS from 'rss';
 import fastq from 'fastq';
-import { DirsWatcher, VPathData, dirToWatch, mimedefine } from '@akashacms/stacked-dirs';
+import { mimedefine, dirToMount, isDirToMount, VPathData } from './cache/vfstack.js';
+export type { dirToMount, VPathData } from './cache/vfstack.js';
+export { isDirToMount } from './cache/vfstack.js';
 import * as Renderers from '@akashacms/renderers';
 export * as Renderers from '@akashacms/renderers';
 import { Renderer } from '@akashacms/renderers';
 export { Renderer } from '@akashacms/renderers';
 import * as mahabhuta from 'mahabhuta';
 export * as mahabhuta from 'mahabhuta';
+const {
+    PerfDataStore, 
+    FilesystemPerfDataStore
+} = mahabhuta;
 import * as cheerio from 'cheerio';
 import mahaPartial from 'mahabhuta/maha/partial.js';
 
@@ -48,8 +54,20 @@ export * as relative from 'relative';
 import { Plugin } from './Plugin.js';
 export { Plugin } from './Plugin.js';
 
+import type { TagDescription } from './types.js';
+export type { TagDescription } from './types.js';
+export { validTagDescription } from './types.js';
+
 import { render, render2, renderDocument, renderContent, renderDocument2 } from './render.js';
 export { render, render2, renderDocument, renderDocument2, renderContent } from './render.js';
+
+export {
+    SitemapValidator,
+    type SitemapEntry,
+    type EntryValidation,
+    type XMLValidation,
+    type ValidationResult
+} from './sitemap-validator.js';
 
 const __filename = import.meta.filename;
 const __dirname = import.meta.dirname;
@@ -123,7 +141,7 @@ export async function setup(config) {
     config.renderers.partialSyncFunc = (fname, metadata) => {
         // console.log(`calling partialSync ${fname}`);
         return partialSync(config, fname, metadata);
-    }
+    };
 
     await cacheSetup(config);
     await fileCachesReady(config);
@@ -437,6 +455,51 @@ export function linkRelSetAttr($link, attr, doattr) {
     }
 };
 
+/**
+ * Compute an absolute vpath from a relative path reference.
+ * 
+ * This function resolves a relative path (like "../file.html" or "./file.html")
+ * to an absolute vpath in the virtual filesystem, based on the vpath of the
+ * current document.
+ * 
+ * If the input path is already absolute (starts with '/'), it is returned
+ * as-is after normalization.
+ * 
+ * @param baseVpath The vpath of the document making the reference (e.g., metadata.document.path)
+ * @param relativePath The path to resolve (can be relative or absolute)
+ * @returns The absolute vpath in the virtual filesystem
+ * 
+ * @example
+ * // From document at 'hier/dir1/page.html.md' referencing '../sibling/file.html'
+ * resolveVpath('hier/dir1/page.html.md', '../sibling/file.html')
+ * // Returns: '/hier/sibling/file.html'
+ * 
+ * @example
+ * // Already absolute path
+ * resolveVpath('hier/dir1/page.html.md', '/absolute/path.html')
+ * // Returns: '/absolute/path.html'
+ */
+export function resolveVpath(baseVpath: string, relativePath: string): string {
+    if (!baseVpath || typeof baseVpath !== 'string') {
+        throw new Error(`resolveVpath: baseVpath must be a non-empty string, got ${typeof baseVpath}`);
+    }
+    if (!relativePath || typeof relativePath !== 'string') {
+        throw new Error(`resolveVpath: relativePath must be a non-empty string, got ${typeof relativePath}`);
+    }
+
+    // If the path is already absolute, return it normalized
+    if (path.isAbsolute(relativePath)) {
+        return path.normalize(relativePath);
+    }
+
+    // Get the directory of the base vpath
+    const dir = path.dirname(baseVpath);
+    
+    // Join with '/' prefix to ensure we get an absolute vpath
+    // and normalize to clean up any .. or . segments
+    return path.normalize(path.join('/', dir, relativePath));
+}
+
 ///////////////// RSS Feed Generation
 
 export async function generateRSS(config, configrss, feedData, items, renderTo) {
@@ -552,34 +615,6 @@ export type stylesheetItem = {
  * converted to the dirToWatch structure
  * used by StackedDirs.
  */
-export type dirToMount =
-    string
-    | {
-        /**
-         * The fspath to mount
-         */
-        src: string,
-
-        /**
-         * The virtual filespace
-         * location
-         */
-        dest: string,
-
-        /**
-         * Array of GLOB patterns
-         * of files to ignore
-         */
-        ignore?: string[],
-
-        /**
-         * An object containing
-         * metadata that's to
-         * apply to every file
-         */
-        baseMetadata?: any
-    };
-
 /**
  * Configuration of an AkashaRender project, including the input directories,
  * output directory, plugins, and various settings.
@@ -611,6 +646,8 @@ export class Configuration {
     #root_url: string;
     #plugins;
     #pluginData;
+    #verbose: boolean;
+    #perfDataDir: string;
     
     constructor(modulepath) {
 
@@ -643,6 +680,10 @@ export class Configuration {
 
         this.#plugins = [];
         this.#pluginData = [];
+        
+        this.#verbose = false;
+
+        this.#perfDataDir = undefined;
 
         /*
          * Is this the best place for this?  It is necessary to
@@ -818,6 +859,14 @@ export class Configuration {
     set cacheDir(dirnm: string) { this.#cachedir = dirnm; }
     get cacheDir() { return this.#cachedir; }
 
+    set verbose(val: boolean) { this.#verbose = val; }
+    get verbose() { return this.#verbose; }
+
+    set perfDataDir(storeDir: string) {
+        this.#perfDataDir = storeDir;
+    }
+    get perfDataDir() { return this.#perfDataDir; }
+
     // set akasha(_akasha)  { this[_config_akasha] = _akasha; }
     get akasha() { return module_exports; }
 
@@ -828,12 +877,11 @@ export class Configuration {
 
     /**
      * Add a directory to the documentDirs configuration array
-     * @param {string} dir The pathname to use
+     * @param {string | dirToMount} dir The pathname to use or dirToMount object
      */
-    addDocumentsDir(dir: dirToMount) {
-        // If we have a configDir, and it's a relative directory, make it
-        // relative to the configDir
+    addDocumentsDir(dir: string | dirToMount) {
         let dirMount: dirToMount;
+        
         if (typeof dir === 'string') {
             if (!path.isAbsolute(dir) && this.configDir != null) {
                 dirMount = {
@@ -846,18 +894,22 @@ export class Configuration {
                     dest: '/'
                 };
             }
-        } else if (typeof dir === 'object') {
+        } else {
             if (!path.isAbsolute(dir.src) && this.configDir != null) {
-                dir.src = path.join(this.configDir, dir.src);
-                dirMount = dir;
+                dirMount = {
+                    ...dir,
+                    src: path.join(this.configDir, dir.src)
+                };
             } else {
                 dirMount = dir;
             }
-        } else {
-            throw new Error(`addDocumentsDir - directory to mount of wrong type ${util.inspect(dir)}`);
         }
+        
+        if (!isDirToMount(dirMount)) {
+            throw new Error(`addDocumentsDir - invalid dirToMount object: ${util.inspect(dirMount)}`);
+        }
+        
         this.#documentDirs.push(dirMount);
-        // console.log(`addDocumentsDir ${util.inspect(dir)} ==> ${util.inspect(this[_config_documentDirs])}`);
         return this;
     }
 
@@ -883,12 +935,11 @@ export class Configuration {
 
     /**
      * Add a directory to the layoutDirs configurtion array
-     * @param {string} dir The pathname to use
+     * @param {string | dirToMount} dir The pathname to use or dirToMount object
      */
-    addLayoutsDir(dir: dirToMount) {
-        // If we have a configDir, and it's a relative directory, make it
-        // relative to the configDir
+    addLayoutsDir(dir: string | dirToMount) {
         let dirMount: dirToMount;
+        
         if (typeof dir === 'string') {
             if (!path.isAbsolute(dir) && this.configDir != null) {
                 dirMount = {
@@ -901,20 +952,23 @@ export class Configuration {
                     dest: '/'
                 };
             }
-        } else if (typeof dir === 'object') {
+        } else {
             if (!path.isAbsolute(dir.src) && this.configDir != null) {
-                dir.src = path.join(this.configDir, dir.src);
-                dirMount = dir;
+                dirMount = {
+                    ...dir,
+                    src: path.join(this.configDir, dir.src)
+                };
             } else {
                 dirMount = dir;
             }
-        } else {
-            throw new Error(`addLayoutsDir - directory to mount of wrong type ${util.inspect(dir)}`);
         }
+        
+        if (!isDirToMount(dirMount)) {
+            throw new Error(`addLayoutsDir - invalid dirToMount object: ${util.inspect(dirMount)}`);
+        }
+        
         this.#layoutDirs.push(dirMount);
-        // console.log(`AkashaRender Configuration addLayoutsDir ${util.inspect(dir)} ${util.inspect(dirMount)} layoutDirs ${util.inspect(this.#layoutDirs)} Renderers layoutDirs ${util.inspect(this.#renderers.layoutDirs)}`);
         this.#renderers.addLayoutDir(dirMount.src);
-        // console.log(`AkashaRender Configuration addLayoutsDir ${util.inspect(dir)} layoutDirs ${util.inspect(this.#layoutDirs)} Renderers layoutDirs ${util.inspect(this.#renderers.layoutDirs)}`);
         return this;
     }
 
@@ -922,13 +976,12 @@ export class Configuration {
 
     /**
      * Add a directory to the partialDirs configurtion array
-     * @param {string} dir The pathname to use
+     * @param {string | dirToMount} dir The pathname to use or dirToMount object
      * @returns {Configuration}
      */
-    addPartialsDir(dir: dirToMount) {
-        // If we have a configDir, and it's a relative directory, make it
-        // relative to the configDir
+    addPartialsDir(dir: string | dirToMount) {
         let dirMount: dirToMount;
+        
         if (typeof dir === 'string') {
             if (!path.isAbsolute(dir) && this.configDir != null) {
                 dirMount = {
@@ -941,17 +994,21 @@ export class Configuration {
                     dest: '/'
                 };
             }
-        } else if (typeof dir === 'object') {
+        } else {
             if (!path.isAbsolute(dir.src) && this.configDir != null) {
-                dir.src = path.join(this.configDir, dir.src);
-                dirMount = dir;
+                dirMount = {
+                    ...dir,
+                    src: path.join(this.configDir, dir.src)
+                };
             } else {
                 dirMount = dir;
             }
-        } else {
-            throw new Error(`addPartialsDir - directory to mount of wrong type ${util.inspect(dir)}`);
         }
-        // console.log(`addPartialsDir `, dir);
+        
+        if (!isDirToMount(dirMount)) {
+            throw new Error(`addPartialsDir - invalid dirToMount object: ${util.inspect(dirMount)}`);
+        }
+        
         this.#partialDirs.push(dirMount);
         this.#renderers.addPartialDir(dirMount.src);
         return this;
@@ -961,13 +1018,12 @@ export class Configuration {
     
     /**
      * Add a directory to the assetDirs configurtion array
-     * @param {string} dir The pathname to use
+     * @param {string | dirToMount} dir The pathname to use or dirToMount object
      * @returns {Configuration}
      */
-    addAssetsDir(dir: dirToMount) {
-        // If we have a configDir, and it's a relative directory, make it
-        // relative to the configDir
+    addAssetsDir(dir: string | dirToMount) {
         let dirMount: dirToMount;
+        
         if (typeof dir === 'string') {
             if (!path.isAbsolute(dir) && this.configDir != null) {
                 dirMount = {
@@ -980,16 +1036,21 @@ export class Configuration {
                     dest: '/'
                 };
             }
-        } else if (typeof dir === 'object') {
+        } else {
             if (!path.isAbsolute(dir.src) && this.configDir != null) {
-                dir.src = path.join(this.configDir, dir.src);
-                dirMount = dir;
+                dirMount = {
+                    ...dir,
+                    src: path.join(this.configDir, dir.src)
+                };
             } else {
                 dirMount = dir;
             }
-        } else {
-            throw new Error(`addAssetsDir - directory to mount of wrong type ${util.inspect(dir)}`);
         }
+        
+        if (!isDirToMount(dirMount)) {
+            throw new Error(`addAssetsDir - invalid dirToMount object: ${util.inspect(dirMount)}`);
+        }
+        
         this.#assetsDirs.push(dirMount);
         return this;
     }
@@ -1047,22 +1108,22 @@ export class Configuration {
 
     get metadata() { return this.#metadata; }
 
-    #descriptions: Array<{
-        tagName: string,
-        description: string
-    }>;
+    #descriptions: TagDescription[];
 
     /**
      * Add tag descriptions to the database.  The purpose
      * is for example a tag index page can give a
      * description at the top of the page.
      *
+     * NOTE: Potential bug - This function replaces the entire #descriptions
+     * array rather than merging with existing descriptions. If called multiple
+     * times, earlier descriptions will be lost. Current assumption is this
+     * function is only called once from the configuration file. A future
+     * enhancement would be to merge descriptions instead of replacing.
+     *
      * @param tagdescs 
      */
-    async addTagDescriptions(tagdescs: Array<{
-        tagName: string,
-        description: string
-    }>) {
+    async addTagDescriptions(tagdescs: TagDescription[]) {
         if (!Array.isArray(tagdescs)) {
             throw new Error(`addTagDescriptions must be given an array of tag descriptions`);
         }
@@ -1073,6 +1134,7 @@ export class Configuration {
                 throw new Error(`Incorrect tag description ${util.inspect(desc)}`);
             }
         }
+        // TODO: Consider merging with existing descriptions instead of replacing
         this.#descriptions = tagdescs;
     }
 
@@ -1483,6 +1545,7 @@ const module_exports = {
     indexChain,
     relative,
     linkRelSetAttr,
+    resolveVpath,
     generateRSS,
     Configuration
 } as any;
