@@ -21,7 +21,9 @@ import path from 'node:path';
 import { promises as fsp } from 'node:fs';
 import util from 'node:util';
 import * as data from './data.js';
-import mahabhuta from 'mahabhuta';
+import mahabhuta, {
+    FilesystemPerfDataStore
+} from 'mahabhuta';
 
 import fastq from 'fastq';
 import type { queueAsPromised } from "fastq";
@@ -486,7 +488,14 @@ export async function renderDocument2(
         
         ret.renderedMaha =  await mahabhuta.processAsync(
             ret.renderMahaContext.content, ret.renderMahaContext.metadata,
-            ret.config.mahafuncs
+            ret.config.mahafuncs,
+            // For performance collection
+            config.perfDataDir 
+            ? new FilesystemPerfDataStore(config.perfDataDir)
+            : undefined,
+            config.perfDataDir 
+            ? ret.docInfo.vpath
+            : undefined
         );
     } catch (e2) {
         const error = new Error(`Error with Mahabhuta ${ret.docInfo.vpath} with ${ret.docInfo?.metadata?.layout} ${e2.stack ? e2.stack : e2}`);
