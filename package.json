@@ -44,7 +44,7 @@
     "akasharender": "dist/cli.js"
   },
   "dependencies": {
-    "@akashacms/renderers": "akashacms/rendering-engines",
+    "@akashacms/renderers": "^0.9.x",
     "cache": "^3.0.0",
     "commander": "^14.x",
     "fastest-levenshtein": "^1.0.16",
