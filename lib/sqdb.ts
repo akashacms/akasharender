@@ -83,9 +83,9 @@ await sqdb.run('PRAGMA journal_mode=WAL;');
 // sqdb.inner.on('trace', sql => {
 //     console.log(sql);
 // });
-sqdb.inner.on('error', err => {
-    console.error(err);
-});
+// sqdb.inner.on('error', err => {
+//     console.error(err);
+// });
 
 sqdb.inner.on('error', err => {
     console.error(err);

@@ -1,6 +1,6 @@
 {
   "name": "akasharender",
-  "version": "0.9.5",
+  "version": "0.9.6",
   "description": "Rendering support for generating static HTML websites or EPUB eBooks",
   "keywords": [
     "content management system",
@@ -44,11 +44,10 @@
     "akasharender": "dist/cli.js"
   },
   "dependencies": {
-    "24": "^0.0.0",
-    "@akashacms/renderers": "akashacms/rendering-engines",
-    "@akashacms/stacked-dirs": "akashacms/stacked-directories",
+    "@akashacms/renderers": "^0.9.x",
     "cache": "^3.0.0",
     "commander": "^14.x",
+    "fastest-levenshtein": "^1.0.16",
     "fastq": "^1.19.x",
     "gh-pages": "^6.3.x",
     "gray-matter": "^4.x",
@@ -57,10 +56,13 @@
     "joi": "^18.0.1",
     "mahabhuta": "^0.9.x",
     "micromatch": "^4.0.8",
+    "mime": "^4.1.0",
+    "pluralize": "^8.0.0",
     "promised-sqlite3": "^2.1.0",
     "relative": "^3.0.x",
     "rss": "^1.2.x",
     "sharp": "^0.34.x",
+    "sitemap": "^8.0.0",
     "sq3-kv-data-store": "^1.0.x",
     "sqlite-lembed": "^0.0.1-alpha.8",
     "sqlite-regex": "^0.2.4-alpha.1",
