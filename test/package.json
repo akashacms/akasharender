@@ -23,8 +23,6 @@
     "assets-exist": "cmp assets/file-virgin.txt out/file-virgin.txt",
     "setup": "npm install && cd .. && npm install",
     "clean": "rm -rf node_modules out out-rebased",
-    "watch": "npm-run-all --parallel watcher preview",
-    "watcher": "node ../dist/cli.js watch config-normal.mjs",
     "preview": "live-server out"
   },
   "author": "",
