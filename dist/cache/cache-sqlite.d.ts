@@ -16,18 +16,30 @@
  *  See the License for the specific language governing permissions and
  *  limitations under the License.
  */
-import { dirToWatch, VPathData } from '@akashacms/stacked-dirs';
-import { Configuration, dirToMount, indexChainItem } from '../index.js';
+import { VPathData, dirToMount } from './vfstack.js';
+import { Configuration, indexChainItem } from '../index.js';
 import EventEmitter from 'events';
+import type { SimilarTagGroup, TagWithoutDescription } from '../types.js';
 import { PathsReturnType } from './schema.js';
 import { AsyncDatabase } from 'promised-sqlite3';
 import { BaseCacheEntry, Asset, Partial, Layout, Document } from './schema.js';
+/**
+ * Base class for file caches (documents, assets, layouts, partials).
+ * Scans directories, stores file information in SQLite database, and emits events.
+ *
+ * Events emitted:
+ * - 'added' (name: string, vpath: string) - Emitted when a file is successfully
+ *   added to the cache during initial scan or update. Useful for tracking that
+ *   all files are processed before 'ready' is emitted.
+ * - 'ready' (name: string) - Emitted when initial directory scan and file
+ *   processing is complete. After this event, isReady() will return immediately.
+ * - 'error' (error: Error) - Emitted when an error occurs during processing.
+ */
 export declare class BaseCache<T extends BaseCacheEntry> extends EventEmitter {
     #private;
     /**
      * @param config AkashaRender Configuration object
-     * @param dirs array of directories and mount points to watch
-     * @param name string giving the name for this watcher name
+     * @param name string giving the name for this cache
      * @param db The PROMISED SQLITE3 AsyncDatabase instance to use
      * @param dbname The database name to use
      */
@@ -40,8 +52,7 @@ export declare class BaseCache<T extends BaseCacheEntry> extends EventEmitter {
     get quotedDBName(): any;
     close(): Promise<void>;
     /**
-     * Set up receiving events from DirsWatcher, and dispatching to
-     * the handler methods.
+     * Scan the directory stack and populate the database.
      */
     setup(): Promise<void>;
     /**
@@ -106,32 +117,8 @@ export declare class BaseCache<T extends BaseCacheEntry> extends EventEmitter {
      */
     protected findByPath(vpath: string): Promise<any>;
     gatherInfoData(info: T): void;
-    protected handleChanged(name: any, info: any): Promise<void>;
-    /**
-     * We receive this:
-     *
-     * {
-     *    fspath: fspath,
-     *    vpath: vpath,
-     *    mime: mime.getType(fspath),
-     *    mounted: dir.mounted,
-     *    mountPoint: dir.mountPoint,
-     *    pathInMounted: computed relative path
-     *    stack: [ array of these instances ]
-     * }
-     *
-     * Need to add:
-     *    renderPath
-     *    And for HTML render files, add the baseMetadata and docMetadata
-     *
-     * Should remove the stack, since it's likely not useful to us.
-     */
-    protected handleAdded(name: any, info: any): Promise<void>;
     protected insertDocToDB(info: T): Promise<void>;
     protected updateDocInDB(info: T): Promise<void>;
-    protected handleUnlinkedSQL: Map<string, string>;
-    protected handleUnlinked(name: any, info: any): Promise<void>;
-    protected handleReady(name: any): Promise<void>;
     /**
      * Allow a caller to wait until the <em>ready</em> event has
      * been sent from the DirsWatcher instance.  This event means the
@@ -144,7 +131,7 @@ export declare class BaseCache<T extends BaseCacheEntry> extends EventEmitter {
      * @param {*} info
      * @returns
      */
-    fileDirMount(info: any): dirToWatch;
+    fileDirMount(info: any): dirToMount;
     /**
      * Should this file be ignored, based on the `ignore` field
      * in the matching `dir` mount entry.
@@ -230,7 +217,6 @@ export declare class DocumentsCache extends BaseCache<Document> {
     protected addDocTagGlue(vpath: string, tags: string | string[]): Promise<void>;
     addTagDescription(tag: string, description: string): Promise<void>;
     getTagDescription(tag: string): Promise<string | undefined>;
-    protected handleUnlinked(name: any, info: any): Promise<void>;
     semanticSearchDocs(searchFor: string): Promise<Array<{
         vpath: string;
         distance: number;
@@ -332,6 +318,26 @@ export declare class DocumentsCache extends BaseCache<Document> {
      * @returns
      */
     tags(): Promise<string[]>;
+    /**
+     * Find groups of similar tags based on case-insensitive matching,
+     * plural/singular variants, and Levenshtein distance.
+     *
+     * @param threshold - Maximum Levenshtein distance to consider tags similar (default: 2)
+     * @returns Array of SimilarTagGroup objects
+     */
+    findSimilarTags(threshold?: number): Promise<SimilarTagGroup[]>;
+    /**
+     * Find tags that have no description in the TAGDESCRIPTION table.
+     *
+     * @returns Array of TagWithoutDescription objects
+     */
+    tagsWithoutDescriptions(): Promise<TagWithoutDescription[]>;
+    /**
+     * Find tag descriptions that are defined but not used by any document.
+     *
+     * @returns Array of tag names
+     */
+    unusedTagDescriptions(): Promise<string[]>;
     /**
      * Retrieve the data for an internal link
      * within the site documents.  Forming an

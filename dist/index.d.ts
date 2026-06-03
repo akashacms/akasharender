@@ -16,7 +16,9 @@
  *  See the License for the specific language governing permissions and
  *  limitations under the License.
  */
-import { VPathData } from '@akashacms/stacked-dirs';
+import { dirToMount, VPathData } from './cache/vfstack.js';
+export type { dirToMount, VPathData } from './cache/vfstack.js';
+export { isDirToMount } from './cache/vfstack.js';
 import * as Renderers from '@akashacms/renderers';
 export * as Renderers from '@akashacms/renderers';
 import { Renderer } from '@akashacms/renderers';
@@ -27,7 +29,11 @@ import * as cheerio from 'cheerio';
 export * from './mahafuncs.js';
 export * as relative from 'relative';
 export { Plugin } from './Plugin.js';
+import type { TagDescription } from './types.js';
+export type { TagDescription } from './types.js';
+export { validTagDescription } from './types.js';
 export { render, render2, renderDocument, renderDocument2, renderContent } from './render.js';
+export { SitemapValidator, type SitemapEntry, type EntryValidation, type XMLValidation, type ValidationResult } from './sitemap-validator.js';
 import * as filecache from './cache/cache-sqlite.js';
 export { newSQ3DataStore } from './sqdb.js';
 /**
@@ -110,6 +116,31 @@ export declare function indexChain(config: any, fname: any): Promise<indexChainI
  *
  */
 export declare function linkRelSetAttr($link: any, attr: any, doattr: any): void;
+/**
+ * Compute an absolute vpath from a relative path reference.
+ *
+ * This function resolves a relative path (like "../file.html" or "./file.html")
+ * to an absolute vpath in the virtual filesystem, based on the vpath of the
+ * current document.
+ *
+ * If the input path is already absolute (starts with '/'), it is returned
+ * as-is after normalization.
+ *
+ * @param baseVpath The vpath of the document making the reference (e.g., metadata.document.path)
+ * @param relativePath The path to resolve (can be relative or absolute)
+ * @returns The absolute vpath in the virtual filesystem
+ *
+ * @example
+ * // From document at 'hier/dir1/page.html.md' referencing '../sibling/file.html'
+ * resolveVpath('hier/dir1/page.html.md', '../sibling/file.html')
+ * // Returns: '/hier/sibling/file.html'
+ *
+ * @example
+ * // Already absolute path
+ * resolveVpath('hier/dir1/page.html.md', '/absolute/path.html')
+ * // Returns: '/absolute/path.html'
+ */
+export declare function resolveVpath(baseVpath: string, relativePath: string): string;
 export declare function generateRSS(config: any, configrss: any, feedData: any, items: any, renderTo: any): Promise<void>;
 /**
  * The AkashaRender project configuration object.
@@ -154,28 +185,6 @@ export type stylesheetItem = {
  * converted to the dirToWatch structure
  * used by StackedDirs.
  */
-export type dirToMount = string | {
-    /**
-     * The fspath to mount
-     */
-    src: string;
-    /**
-     * The virtual filespace
-     * location
-     */
-    dest: string;
-    /**
-     * Array of GLOB patterns
-     * of files to ignore
-     */
-    ignore?: string[];
-    /**
-     * An object containing
-     * metadata that's to
-     * apply to every file
-     */
-    baseMetadata?: any;
-};
 /**
  * Configuration of an AkashaRender project, including the input directories,
  * output directory, plugins, and various settings.
@@ -211,6 +220,10 @@ export declare class Configuration {
     get configDir(): string;
     set cacheDir(dirnm: string);
     get cacheDir(): string;
+    set verbose(val: boolean);
+    get verbose(): boolean;
+    set perfDataDir(storeDir: string);
+    get perfDataDir(): string;
     get akasha(): any;
     documentsCache(): Promise<filecache.DocumentsCache>;
     assetsCache(): Promise<filecache.AssetsCache>;
@@ -218,55 +231,34 @@ export declare class Configuration {
     partialsCache(): Promise<filecache.PartialsCache>;
     /**
      * Add a directory to the documentDirs configuration array
-     * @param {string} dir The pathname to use
+     * @param {string | dirToMount} dir The pathname to use or dirToMount object
      */
-    addDocumentsDir(dir: dirToMount): this;
+    addDocumentsDir(dir: string | dirToMount): this;
     get documentDirs(): dirToMount[];
     /**
      * Look up the document directory information for a given document directory.
      * @param {string} dirname The document directory to search for
      */
-    documentDirInfo(dirname: string): string | {
-        /**
-         * The fspath to mount
-         */
-        src: string;
-        /**
-         * The virtual filespace
-         * location
-         */
-        dest: string;
-        /**
-         * Array of GLOB patterns
-         * of files to ignore
-         */
-        ignore?: string[];
-        /**
-         * An object containing
-         * metadata that's to
-         * apply to every file
-         */
-        baseMetadata?: any;
-    };
+    documentDirInfo(dirname: string): dirToMount;
     /**
      * Add a directory to the layoutDirs configurtion array
-     * @param {string} dir The pathname to use
+     * @param {string | dirToMount} dir The pathname to use or dirToMount object
      */
-    addLayoutsDir(dir: dirToMount): this;
+    addLayoutsDir(dir: string | dirToMount): this;
     get layoutDirs(): dirToMount[];
     /**
      * Add a directory to the partialDirs configurtion array
-     * @param {string} dir The pathname to use
+     * @param {string | dirToMount} dir The pathname to use or dirToMount object
      * @returns {Configuration}
      */
-    addPartialsDir(dir: dirToMount): this;
+    addPartialsDir(dir: string | dirToMount): this;
     get partialsDirs(): dirToMount[];
     /**
      * Add a directory to the assetDirs configurtion array
-     * @param {string} dir The pathname to use
+     * @param {string | dirToMount} dir The pathname to use or dirToMount object
      * @returns {Configuration}
      */
-    addAssetsDir(dir: dirToMount): this;
+    addAssetsDir(dir: string | dirToMount): this;
     get assetDirs(): dirToMount[];
     /**
      * Add an array of Mahabhuta functions
@@ -298,12 +290,15 @@ export declare class Configuration {
      * is for example a tag index page can give a
      * description at the top of the page.
      *
+     * NOTE: Potential bug - This function replaces the entire #descriptions
+     * array rather than merging with existing descriptions. If called multiple
+     * times, earlier descriptions will be lost. Current assumption is this
+     * function is only called once from the configuration file. A future
+     * enhancement would be to merge descriptions instead of replacing.
+     *
      * @param tagdescs
      */
-    addTagDescriptions(tagdescs: Array<{
-        tagName: string;
-        description: string;
-    }>): Promise<void>;
+    addTagDescriptions(tagdescs: TagDescription[]): Promise<void>;
     /**
     * Document the URL for a website project.
     * @param {string} root_url

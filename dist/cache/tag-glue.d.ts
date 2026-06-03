@@ -17,6 +17,7 @@
  *  limitations under the License.
  */
 import { AsyncDatabase } from 'promised-sqlite3';
+import type { SimilarTagGroup, TagWithoutDescription } from '../types.js';
 export declare class TagGlue {
     #private;
     get db(): AsyncDatabase;
@@ -25,6 +26,20 @@ export declare class TagGlue {
     deleteTagGlue(vpath: string): Promise<void>;
     tags(): Promise<string[]>;
     pathsForTag(tagName: string | string[]): Promise<string[]>;
+    /**
+     * Find groups of similar tags based on case-insensitive matching,
+     * plural/singular variants, and Levenshtein distance.
+     *
+     * @param threshold - Maximum Levenshtein distance to consider tags similar (default: 2)
+     * @returns Array of SimilarTagGroup objects, each containing similar tags and their documents
+     */
+    findSimilarTags(threshold?: number): Promise<SimilarTagGroup[]>;
+    /**
+     * Find tags that have no description in the TAGDESCRIPTION table.
+     *
+     * @returns Array of TagWithoutDescription objects
+     */
+    tagsWithoutDescriptions(): Promise<TagWithoutDescription[]>;
 }
 export declare class TagDescriptions {
     #private;
@@ -33,5 +48,11 @@ export declare class TagDescriptions {
     addDesc(tag: string, description: string): Promise<void>;
     deleteDesc(tag: string): Promise<void>;
     getDesc(tag: string): Promise<string | undefined>;
+    /**
+     * Find tag descriptions that are defined but not used by any document.
+     *
+     * @returns Array of tag names that have descriptions but no documents use them
+     */
+    unusedTagDescriptions(): Promise<string[]>;
 }
 //# sourceMappingURL=tag-glue.d.ts.map
