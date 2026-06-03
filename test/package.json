@@ -5,10 +5,11 @@
   "main": "index.js",
   "type": "commonjs",
   "scripts": {
-    "test": "npm-run-all test-normal test-rebased test-cache test-absolute test-copy-render",
+    "test": "npm-run-all test-normal test-rebased test-cache test-isready-timing test-absolute test-copy-render",
     "test-normal": "mocha ./index.mjs",
     "test-rebased": "mocha ./rebased.mjs",
     "test-cache": "mocha ./test-cache.mjs",
+    "test-isready-timing": "mocha ./test-isready-timing.mjs",
     "test-bad-formatting": "mocha ./bad-formatting.mjs",
     "test-absolute": "mocha ./test-relative.mjs",
     "build": "npm-run-all build:copy build:render",

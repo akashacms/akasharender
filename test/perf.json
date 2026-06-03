@@ -1,0 +1,677 @@
+[
+    {
+        "renderedPath": "code/foo.css",
+        "format": "COPY",
+        "time": 1232.214312,
+        "first": 2.2977710000000116,
+        "second": 0,
+        "mahabhuta": 0,
+        "rendered": 2.3949330000000373
+    },
+    {
+        "renderedPath": "code/foo.js",
+        "format": "COPY",
+        "time": 1232.481712,
+        "first": 2.640961999999945,
+        "second": 0,
+        "mahabhuta": 0,
+        "rendered": 2.6453710000000683
+    },
+    {
+        "renderedPath": "hier/dir1/dir2/index.html.md",
+        "format": "HTML",
+        "time": 1232.559278,
+        "first": 1.3062750000001415,
+        "second": 6.272641999999905,
+        "mahabhuta": 69.80545799999982,
+        "rendered": 90.35059000000001
+    },
+    {
+        "renderedPath": "hier/dir1/index.html.md",
+        "format": "HTML",
+        "time": 1233.586907,
+        "first": 0.5156079999999292,
+        "second": 29.342527999999902,
+        "mahabhuta": 48.75265499999978,
+        "rendered": 89.59307799999988
+    },
+    {
+        "renderedPath": "hier/imgdir/img/tesla-nema.jpg",
+        "format": "COPY",
+        "time": 1233.758174,
+        "first": 1.1784840000000258,
+        "second": 0,
+        "mahabhuta": 0,
+        "rendered": 1.1844409999998788
+    },
+    {
+        "renderedPath": "hier/imgdir/index.html.md",
+        "format": "HTML",
+        "time": 1234.7558,
+        "first": 0.054302000000006956,
+        "second": 35.946316000000024,
+        "mahabhuta": 44.04931199999987,
+        "rendered": 88.83150999999998
+    },
+    {
+        "renderedPath": "hier/index.html.md",
+        "format": "HTML",
+        "time": 1235.020796,
+        "first": 0.020599999999831198,
+        "second": 42.18883000000005,
+        "mahabhuta": 39.037581000000046,
+        "rendered": 96.28848599999992
+    },
+    {
+        "renderedPath": "img/Human-Skeleton.jpg",
+        "format": "COPY",
+        "time": 1235.215862,
+        "first": 34.35625100000016,
+        "second": 0,
+        "mahabhuta": 0,
+        "rendered": 34.36166299999991
+    },
+    {
+        "renderedPath": "something.ignore",
+        "format": "COPY",
+        "time": 1269.686372,
+        "first": 11.13731400000006,
+        "second": 0,
+        "mahabhuta": 0,
+        "rendered": 11.152504000000135
+    },
+    {
+        "renderedPath": "style.css.less",
+        "format": "CSS",
+        "time": 1280.950216,
+        "first": 35.287049000000025,
+        "second": 0,
+        "mahabhuta": 0,
+        "rendered": 35.50417700000003
+    },
+    {
+        "renderedPath": "subdir/index.html.md",
+        "format": "HTML",
+        "time": 1316.560355,
+        "first": 0.033198000000083994,
+        "second": 0.5585229999999228,
+        "mahabhuta": 5.405434999999898,
+        "rendered": 15.601899999999887
+    },
+    {
+        "renderedPath": "toignore.txt",
+        "format": "COPY",
+        "time": 1323.041687,
+        "first": 9.584169999999858,
+        "second": 0,
+        "mahabhuta": 0,
+        "rendered": 9.587298000000146
+    },
+    {
+        "renderedPath": "mounted/img/Human-Skeleton.jpg",
+        "format": "COPY",
+        "time": 1323.264072,
+        "first": 9.787312999999813,
+        "second": 0,
+        "mahabhuta": 0,
+        "rendered": 9.791265000000067
+    },
+    {
+        "renderedPath": "mounted/img2resize.html.md",
+        "format": "HTML",
+        "time": 1323.663636,
+        "first": 7.49010700000008,
+        "second": 10.80699299999992,
+        "mahabhuta": 69.41473900000005,
+        "rendered": 95.094513
+    },
+    {
+        "renderedPath": "anchor-cleanups-handlebars.html.md",
+        "format": "HTML",
+        "time": 1331.388913,
+        "first": 0.6395489999999882,
+        "second": 25.751183000000083,
+        "mahabhuta": 274.471505,
+        "rendered": 302.64866000000006
+    },
+    {
+        "renderedPath": "anchor-cleanups-liquid.html.md",
+        "format": "HTML",
+        "time": 1332.225889,
+        "first": 0.31752899999992223,
+        "second": 66.09357900000009,
+        "mahabhuta": 234.31180900000004,
+        "rendered": 483.4651919999999
+    },
+    {
+        "renderedPath": "anchor-cleanups-nunjucks.html.md",
+        "format": "HTML",
+        "time": 1332.673508,
+        "first": 0.29261700000006385,
+        "second": 35.53498000000013,
+        "mahabhuta": 262.9794219999999,
+        "rendered": 373.29432499999984
+    },
+    {
+        "renderedPath": "anchor-cleanups.html.md",
+        "format": "HTML",
+        "time": 1333.142787,
+        "first": 0.3214390000000549,
+        "second": 0.5703450000000885,
+        "mahabhuta": 224.22259499999996,
+        "rendered": 490.06035999999995
+    },
+    {
+        "renderedPath": "asciidoctor-handlebars.html.adoc",
+        "format": "HTML",
+        "time": 1418.842467,
+        "first": 83.19100099999991,
+        "second": 2.218751999999995,
+        "mahabhuta": 43.253062,
+        "rendered": 139.49682700000017
+    },
+    {
+        "renderedPath": "asciidoctor-liquid.html.adoc",
+        "format": "HTML",
+        "time": 1558.425671,
+        "first": 31.40415699999994,
+        "second": 2.223342999999886,
+        "mahabhuta": 38.49896399999989,
+        "rendered": 249.4449320000001
+    },
+    {
+        "renderedPath": "asciidoctor-nunjucks.html.adoc",
+        "format": "HTML",
+        "time": 1634.173628,
+        "first": 31.939358000000084,
+        "second": 1.5208270000000539,
+        "mahabhuta": 38.19229799999994,
+        "rendered": 194.8710860000001
+    },
+    {
+        "renderedPath": "asciidoctor.html.adoc",
+        "format": "HTML",
+        "time": 1706.065732,
+        "first": 25.979871999999887,
+        "second": 0.5850479999999152,
+        "mahabhuta": 75.13844799999993,
+        "rendered": 142.9925169999999
+    },
+    {
+        "renderedPath": "body-class-handlebars.html.md",
+        "format": "HTML",
+        "time": 1807.942325,
+        "first": 0.05200599999989208,
+        "second": 2.3545110000000022,
+        "mahabhuta": 5.244818000000123,
+        "rendered": 34.15924199999995
+    },
+    {
+        "renderedPath": "body-class-liquid.html.md",
+        "format": "HTML",
+        "time": 1815.75348,
+        "first": 0.03174599999988459,
+        "second": 1.5292309999999816,
+        "mahabhuta": 5.075616999999966,
+        "rendered": 18.536451999999827
+    },
+    {
+        "renderedPath": "body-class-nunjucks.html.md",
+        "format": "HTML",
+        "time": 1823.309304,
+        "first": 0.048135999999885826,
+        "second": 1.3980380000000423,
+        "mahabhuta": 3.7701650000001337,
+        "rendered": 31.888079999999945
+    },
+    {
+        "renderedPath": "body-class.html.md",
+        "format": "HTML",
+        "time": 1829.141281,
+        "first": 0.03362199999992299,
+        "second": 0.5445099999999456,
+        "mahabhuta": 4.471517000000176,
+        "rendered": 674.217105
+    },
+    {
+        "renderedPath": "code-embed-handlebars.html.md",
+        "format": "HTML",
+        "time": 1834.369863,
+        "first": 0.6306789999998728,
+        "second": 1.5930430000000797,
+        "mahabhuta": 919.356616,
+        "rendered": 946.6776880000002
+    },
+    {
+        "renderedPath": "code-embed-liquid.html.md",
+        "format": "HTML",
+        "time": 1842.204083,
+        "first": 0.792786999999862,
+        "second": 1.5674889999997959,
+        "mahabhuta": 913.7002300000001,
+        "rendered": 955.2894809999998
+    },
+    {
+        "renderedPath": "code-embed-nunjucks.html.md",
+        "format": "HTML",
+        "time": 1849.15066,
+        "first": 0.3161870000001272,
+        "second": 1.4317939999998543,
+        "mahabhuta": 928.816274,
+        "rendered": 1014.344597
+    },
+    {
+        "renderedPath": "code-embed.html.md",
+        "format": "HTML",
+        "time": 1855.266347,
+        "first": 0.3342999999999847,
+        "second": 0.5380159999999705,
+        "mahabhuta": 1164.0469770000002,
+        "rendered": 1185.7954160000002
+    },
+    {
+        "renderedPath": "ejs-include.html.ejs",
+        "format": "HTML",
+        "time": 2503.534632,
+        "first": 2.168162999999822,
+        "second": 0.6979120000000876,
+        "mahabhuta": 243.67463899999984,
+        "rendered": 254.89356300000009
+    },
+    {
+        "renderedPath": "fig-img-handlebars.html.md",
+        "format": "HTML",
+        "time": 2758.505798,
+        "first": 0.30958600000030856,
+        "second": 1.7394649999996545,
+        "mahabhuta": 16.95351299999993,
+        "rendered": 57.56201699999974
+    },
+    {
+        "renderedPath": "fig-img-liquid.html.md",
+        "format": "HTML",
+        "time": 2781.138098,
+        "first": 0.3564569999998639,
+        "second": 1.6716590000000906,
+        "mahabhuta": 14.233921999999893,
+        "rendered": 113.48648400000002
+    },
+    {
+        "renderedPath": "fig-img-nunjucks.html.md",
+        "format": "HTML",
+        "time": 2797.573758,
+        "first": 0.2626660000000811,
+        "second": 1.2038040000002184,
+        "mahabhuta": 16.900837000000138,
+        "rendered": 78.64364800000021
+    },
+    {
+        "renderedPath": "fig-img.html.md",
+        "format": "HTML",
+        "time": 2816.170989,
+        "first": 0.1855719999998655,
+        "second": 0.5169549999995979,
+        "mahabhuta": 28.706734999999753,
+        "rendered": 83.38111600000002
+    },
+    {
+        "renderedPath": "hier/dir1/dir2/nested-anchor.html.md",
+        "format": "HTML",
+        "time": 2863.61155,
+        "first": 0.2336080000000038,
+        "second": 0.6035950000000412,
+        "mahabhuta": 41.4871119999998,
+        "rendered": 100.90131100000008
+    },
+    {
+        "renderedPath": "hier/dir1/dir2/nested-img-resize.html.md",
+        "format": "HTML",
+        "time": 2876.298211,
+        "first": 0.14156899999989037,
+        "second": 0.5082340000003569,
+        "mahabhuta": 4.7558100000001104,
+        "rendered": 49.25173000000041
+    },
+    {
+        "renderedPath": "hier/dir1/dir2/sibling.html.md",
+        "format": "HTML",
+        "time": 2894.707498,
+        "first": 0.023479000000406813,
+        "second": 0.5301730000001044,
+        "mahabhuta": 4.203481000000011,
+        "rendered": 42.63401799999974
+    },
+    {
+        "renderedPath": "hier/dir1/sibling.html.md",
+        "format": "HTML",
+        "time": 2899.613445,
+        "first": 0.021385000000009313,
+        "second": 0.4454889999997249,
+        "mahabhuta": 3.6086700000000747,
+        "rendered": 54.72211700000025
+    },
+    {
+        "renderedPath": "img2figimg-handlebars.html.md",
+        "format": "HTML",
+        "time": 2925.650128,
+        "first": 0.27758700000003955,
+        "second": 1.5231549999998606,
+        "mahabhuta": 9.795012000000042,
+        "rendered": 65.89667599999984
+    },
+    {
+        "renderedPath": "img2figimg-liquid.html.md",
+        "format": "HTML",
+        "time": 2937.415208,
+        "first": 0.16674400000010792,
+        "second": 1.4105940000004011,
+        "mahabhuta": 10.407788999999866,
+        "rendered": 49.357640000000174
+    },
+    {
+        "renderedPath": "img2figimg-nunjucks.html.md",
+        "format": "HTML",
+        "time": 2954.432428,
+        "first": 0.25923599999987346,
+        "second": 1.5797630000001845,
+        "mahabhuta": 7.854587000000265,
+        "rendered": 37.64717900000005
+    },
+    {
+        "renderedPath": "img2figimg.html.md",
+        "format": "HTML",
+        "time": 2964.598478,
+        "first": 0.2570720000003348,
+        "second": 0.6258230000003095,
+        "mahabhuta": 9.220271000000139,
+        "rendered": 28.587125000000015
+    },
+    {
+        "renderedPath": "index.html.md",
+        "format": "HTML",
+        "time": 2986.870504,
+        "first": 0.026318000000173924,
+        "second": 0.4968220000000656,
+        "mahabhuta": 3.977722999999969,
+        "rendered": 25.088243000000148
+    },
+    {
+        "renderedPath": "json-data-handlebars.html.json",
+        "format": "HTML",
+        "time": 2991.638654,
+        "first": 2.36051899999984,
+        "second": 1.2706640000001244,
+        "mahabhuta": 3.5327069999998457,
+        "rendered": 29.51221200000009
+    },
+    {
+        "renderedPath": "json-data-liquid.html.json",
+        "format": "HTML",
+        "time": 2992.164829,
+        "first": 7.48896300000024,
+        "second": 0.977350000000115,
+        "mahabhuta": 5.803758000000016,
+        "rendered": 35.31290600000011
+    },
+    {
+        "renderedPath": "json-data-nunjucks.html.json",
+        "format": "HTML",
+        "time": 2993.277412,
+        "first": 14.015610999999808,
+        "second": 1.0370199999997567,
+        "mahabhuta": 3.435512000000017,
+        "rendered": 34.7245539999999
+    },
+    {
+        "renderedPath": "json-data.html.json",
+        "format": "HTML",
+        "time": 3012.0698,
+        "first": 0.41548499999998967,
+        "second": 0.425235000000157,
+        "mahabhuta": 3.892464000000018,
+        "rendered": 18.67667599999959
+    },
+    {
+        "renderedPath": "metadata-style-javascript.html.md",
+        "format": "HTML",
+        "time": 3021.250899,
+        "first": 0.0567919999998594,
+        "second": 0.6034619999995812,
+        "mahabhuta": 5.373677000000043,
+        "rendered": 24.721727999999985
+    },
+    {
+        "renderedPath": "njk-incl.html.md",
+        "format": "HTML",
+        "time": 3027.554374,
+        "first": 0.09567699999979595,
+        "second": 9.439204999999674,
+        "mahabhuta": 3.786805999999615,
+        "rendered": 24.81862000000001
+    },
+    {
+        "renderedPath": "partials-handlebars.html.handlebars",
+        "format": "HTML",
+        "time": 3028.121346,
+        "first": 0.4418550000000323,
+        "second": 1.3569370000000163,
+        "mahabhuta": 41.832504999999855,
+        "rendered": 71.48546100000021
+    },
+    {
+        "renderedPath": "partials-liquid.html.liquid",
+        "format": "HTML",
+        "time": 3030.82654,
+        "first": 0.7611020000003919,
+        "second": 0.5806529999999839,
+        "mahabhuta": 45.20238500000005,
+        "rendered": 76.71690600000011
+    },
+    {
+        "renderedPath": "partials-nunjucks.html.njk",
+        "format": "HTML",
+        "time": 3041.176187,
+        "first": 3.124351999999817,
+        "second": 0.4827309999996032,
+        "mahabhuta": 44.57031099999995,
+        "rendered": 73.68757499999992
+    },
+    {
+        "renderedPath": "partials.html.md",
+        "format": "HTML",
+        "time": 3046.057346,
+        "first": 0.28557699999964825,
+        "second": 0.4669969999999921,
+        "mahabhuta": 36.48937399999977,
+        "rendered": 78.7438830000001
+    },
+    {
+        "renderedPath": "select-elements.html.md",
+        "format": "HTML",
+        "time": 3052.430841,
+        "first": 0.1894689999999173,
+        "second": 0.6560090000002674,
+        "mahabhuta": 8.092103999999836,
+        "rendered": 37.14897999999994
+    },
+    {
+        "renderedPath": "show-content-handlebars.html.md",
+        "format": "HTML",
+        "time": 3089.654381,
+        "first": 1.168945999999778,
+        "second": 1.2441100000000915,
+        "mahabhuta": 32.665022000000135,
+        "rendered": 52.69202200000018
+    },
+    {
+        "renderedPath": "show-content-liquid.html.md",
+        "format": "HTML",
+        "time": 3099.692099,
+        "first": 0.6265840000000935,
+        "second": 1.1073409999999058,
+        "mahabhuta": 30.69887000000017,
+        "rendered": 51.125614999999925
+    },
+    {
+        "renderedPath": "show-content-nunjucks.html.md",
+        "format": "HTML",
+        "time": 3107.619056,
+        "first": 0.19031000000040876,
+        "second": 0.926560999999765,
+        "mahabhuta": 25.978204000000005,
+        "rendered": 47.51890700000013
+    },
+    {
+        "renderedPath": "show-content.html.md",
+        "format": "HTML",
+        "time": 3114.939862,
+        "first": 0.20477699999992183,
+        "second": 0.4103540000000976,
+        "mahabhuta": 26.015603000000283,
+        "rendered": 45.1770919999999
+    },
+    {
+        "renderedPath": "shown-content.html.md",
+        "format": "HTML",
+        "time": 3124.866319,
+        "first": 0.03155300000025818,
+        "second": 0.45075900000028923,
+        "mahabhuta": 4.030596999999943,
+        "rendered": 21.577703999999812
+    },
+    {
+        "renderedPath": "simple-style-javascript.html.md",
+        "format": "HTML",
+        "time": 3142.4356,
+        "first": 0.0735819999999876,
+        "second": 0.4461999999998625,
+        "mahabhuta": 3.400771999999961,
+        "rendered": 33.35976800000026
+    },
+    {
+        "renderedPath": "subdir/show-content-local.html.md",
+        "format": "HTML",
+        "time": 3146.49707,
+        "first": 0.16744499999958862,
+        "second": 0.3810110000003988,
+        "mahabhuta": 28.690883000000213,
+        "rendered": 52.93154200000026
+    },
+    {
+        "renderedPath": "subdir/shown-content-local.html.md",
+        "format": "HTML",
+        "time": 3150.941178,
+        "first": 0.04394000000002052,
+        "second": 0.5698409999999967,
+        "mahabhuta": 3.4846889999998893,
+        "rendered": 33.19372599999997
+    },
+    {
+        "renderedPath": "tags-array.html.md",
+        "format": "HTML",
+        "time": 3155.198356,
+        "first": 0.02341999999998734,
+        "second": 0.3897940000001654,
+        "mahabhuta": 4.410202000000027,
+        "rendered": 25.03314500000033
+    },
+    {
+        "renderedPath": "tags-string.html.md",
+        "format": "HTML",
+        "time": 3160.191156,
+        "first": 0.03809700000010707,
+        "second": 0.42978599999969447,
+        "mahabhuta": 5.735935000000154,
+        "rendered": 20.270952000000307
+    },
+    {
+        "renderedPath": "teaser-content.html.md",
+        "format": "HTML",
+        "time": 3175.880679,
+        "first": 0.09378599999990911,
+        "second": 0.7691450000002078,
+        "mahabhuta": 3.41146099999969,
+        "rendered": 41.795062000000144
+    },
+    {
+        "renderedPath": "teaser-njk-macro.html.md",
+        "format": "HTML",
+        "time": 3180.29311,
+        "first": 0.07283899999993082,
+        "second": 16.685367999999926,
+        "mahabhuta": 1.9576499999998305,
+        "rendered": 45.312319000000116
+    },
+    {
+        "renderedPath": "hier-broke/dir1/dir2/index.html.md",
+        "format": "HTML",
+        "time": 3180.499718,
+        "first": 0.014402000000245607,
+        "second": 0.4012870000001385,
+        "mahabhuta": 3.1354840000003605,
+        "rendered": 30.286399000000074
+    },
+    {
+        "renderedPath": "hier-broke/dir1/dir2/sibling.html.md",
+        "format": "HTML",
+        "time": 3184.192225,
+        "first": 0.018043000000034226,
+        "second": 0.3737530000003062,
+        "mahabhuta": 3.8541009999999005,
+        "rendered": 19.446578000000045
+    },
+    {
+        "renderedPath": "hier-broke/dir1/sibling.html.md",
+        "format": "HTML",
+        "time": 3199.523094,
+        "first": 0.032796999999845866,
+        "second": 0.4624669999998332,
+        "mahabhuta": 3.5391689999996743,
+        "rendered": 34.91931900000009
+    },
+    {
+        "renderedPath": "img2resize.html.md",
+        "format": "HTML",
+        "time": 3203.698688,
+        "first": 0.3057459999999992,
+        "second": 0.6808030000001963,
+        "mahabhuta": 5.954813000000286,
+        "rendered": 30.78652800000009
+    },
+    {
+        "renderedPath": "img2resize-nunjucks.html.md",
+        "format": "HTML",
+        "time": 3210.861561,
+        "first": 0.2857420000000275,
+        "second": 0.8803419999999278,
+        "mahabhuta": 5.560613000000103,
+        "rendered": 22.84083899999996
+    },
+    {
+        "renderedPath": "img2resize-liquid.html.md",
+        "format": "HTML",
+        "time": 3217.741112,
+        "first": 0.4004210000002786,
+        "second": 1.1116220000003523,
+        "mahabhuta": 5.934538999999859,
+        "rendered": 16.761845999999878
+    },
+    {
+        "renderedPath": "img2resize-handlebars.html.md",
+        "format": "HTML",
+        "time": 3225.671674,
+        "first": 0.26232200000004013,
+        "second": 1.2009620000003451,
+        "mahabhuta": 5.78661000000011,
+        "rendered": 17.351926999999705
+    },
+    {
+        "renderedPath": "njk-func.html.md",
+        "format": "HTML",
+        "time": 3234.040632,
+        "first": 0.176977000000079,
+        "second": 4.141859000000295,
+        "mahabhuta": 4.503003999999692,
+        "rendered": 9.58682699999963
+    }
+]

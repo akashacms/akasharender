@@ -1596,6 +1596,17 @@ describe('final funcs', function() {
             assert.equal($('body').attr('final'), 'ran');
         }
     });
+
+    it('should have correct rel= for target=_blank', async function() {
+
+        let { html, $ } = await akasha.readRenderedFile(config, 'target-blank.html');
+        const targets = $('a[target=_blank]');
+        assert.equal(targets.length, 1);
+        for (let target of targets) {
+            assert.isTrue($(target).attr('rel').includes('noopener'));
+            assert.isTrue($(target).attr('rel').includes('noreferrer'));
+        }
+    });
 });
 
 

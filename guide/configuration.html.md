@@ -263,6 +263,16 @@ config.addPartialsDir('partials')
 
 As for layout templates, you can have multiple `.addPartialsDir` directories.  The partials directories are searched in order, with the first matching file being the one that's used.  The filename selects a Renderer for rendering the partial.  Whether the partial renders the data it is given depends on the Renderer corresponding to the filename.
 
+## Verifying that all files are added correctly
+
+Making the following setting causes information to be printed about each file, and when each file cache is ready:
+
+```js
+config.verbose = true;
+```
+
+This output can be useful when trouble-shooting a site configuration.
+
 # Stylesheets and JavaScript
 
 Websites and EPUB's usually have Stylesheets and JavaScript.  Well, JavaScript isn't that useful in an EPUB, but is certainly useful in a website.  
@@ -321,6 +331,24 @@ module.exports = new mahabhuta.MahafuncArray("example.com website", {});
 ```
 
 Then you add Mahabhuta custom element classes to that object.
+
+# Tag descriptions
+
+In most cases, document tags are simply declared in a document and that's it.  In some cases, you will want to add a description for certain (or all) tags.
+
+In the project configuration, use this function:
+
+```js
+ config
+	.addTagDescriptions([
+		{
+			tagName: 'Name of Tag',
+			description: 'Describing the cosmic significance of this tag'
+		},
+		// More tag descriptions
+	]);
+```
+
 
 # Plugins
 

@@ -7,6 +7,7 @@ const __dirname = import.meta.dirname;
 const config = new akasha.Configuration();
 config.rootURL("https://example.akashacms.com");
 config.configDir = __dirname;
+// config.verbose = true;
 config
     .addAssetsDir({
         src: 'assets2',
