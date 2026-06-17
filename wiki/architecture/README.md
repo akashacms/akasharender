@@ -9,6 +9,7 @@ This directory contains high-level architecture documentation for major subsyste
 ## Architecture Documents
 
 - **[Sitemap Validation Architecture](./sitemap-validation.md)**: Architecture design for validating generated sitemaps against local filesystem. Covers current sitemap generation process, research on existing tools, and proposed validator design with URL-to-filesystem mapping algorithm.
+- **[Migrating AkashaRender to promised.node.sqlite](./promised-node-sqlite-migration.md)**: Architecture and phased migration plan for replacing the `sqlite3` + `promised-sqlite3` stack with the standalone `promised.node.sqlite` package built on `node:sqlite`. Covers the affected files, API compatibility, behavioral differences (extension loading, profiling, key-value store, undefined/boolean binding), the target design, and risks.
 
 ## Suggested Topics
 
