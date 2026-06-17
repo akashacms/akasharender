@@ -48,8 +48,7 @@ import {
     PathsReturnType, validateAsset, validateDocument, validateLayout, validatePartial, validatePathsReturnType
 } from './schema.js';
 
-import { Database } from 'sqlite3';
-import { AsyncDatabase } from 'promised-sqlite3';
+import { AsyncDatabase } from 'promised.node.sqlite';
 import SqlString from 'sqlstring-sqlite';
 import {
     BaseCacheEntry,
@@ -59,7 +58,7 @@ import {
     Document
 } from './schema.js';
 import Cache from 'cache';
-import { lembedModelName } from '../sqdb.js';
+import { sqdb, lembedModelName } from '../sqdb.js';
 
 const tglue = new TagGlue();
 // tglue.init(sqdb._db);
@@ -139,11 +138,13 @@ export class BaseCache<
         this.removeAllListeners('unlinked');
         this.removeAllListeners('ready');
 
-        try {
-            await this.#db.close();
-        } catch (err) {
-            // console.warn(`${this.name} error on close ${err.message}`);
-        }
+        // NOTE: The database connection is NOT closed here.
+        // All four caches (assets, partials, layouts, documents)
+        // share the single process-global `sqdb` connection.
+        // Closing it per-cache would close the shared connection
+        // on the first cache and then throw "database is not open"
+        // on the rest.  The shared connection is closed once by
+        // closeFileCaches().
     }
 
     /**
@@ -2633,5 +2634,19 @@ export async function closeFileCaches() {
     if (partialsCache) {
         await partialsCache.close();
         partialsCache = undefined;
+    }
+
+    // The four caches share the single process-global `sqdb`
+    // connection.  Close it once here, after all caches have
+    // detached.  Closing an already-closed connection throws
+    // (and the wrapper logs it), so only close when still open.
+    // This makes closeFileCaches() idempotent, e.g. when a test
+    // closes the caches more than once.
+    if (sqdb.inner.isOpen) {
+        try {
+            await sqdb.close();
+        } catch (err) {
+            // The shared connection may already be closed.
+        }
     }
 }

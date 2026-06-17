@@ -21,7 +21,7 @@ import { Configuration, indexChainItem } from '../index.js';
 import EventEmitter from 'events';
 import type { SimilarTagGroup, TagWithoutDescription } from '../types.js';
 import { PathsReturnType } from './schema.js';
-import { AsyncDatabase } from 'promised-sqlite3';
+import { AsyncDatabase } from 'promised.node.sqlite';
 import { BaseCacheEntry, Asset, Partial, Layout, Document } from './schema.js';
 /**
  * Base class for file caches (documents, assets, layouts, partials).

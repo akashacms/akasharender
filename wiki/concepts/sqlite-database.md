@@ -9,7 +9,7 @@ Categories:
   - sqlite
   - infrastructure
 date-created: 2026-05-20T12:00:00+00:00
-last-updated: 2026-05-20T12:00:00+00:00
+last-updated: 2026-06-17T16:45:26+03:00
 confidence: high
 ---
 
@@ -17,7 +17,9 @@ confidence: high
 
 ## Definition
 
-AkashaRender uses a shared SQLite database as its central data store for file metadata, caching, and performance tracing (source: [lib/sqdb.ts](../../lib/sqdb.ts)). By default, the database runs in-memory for fast access, with optional disk persistence, and is enhanced with extensions for regex matching, vector similarity search, and local embeddings.
+AkashaRender uses a shared SQLite database as its central data store for file metadata, caching, and performance tracing (source: [lib/sqdb.ts](../../lib/sqdb.ts)). By default, the database runs in-memory for fast access, with optional disk persistence, and is enhanced with the `sqlite-regex` extension for regular-expression matching.
+
+As of the June 2026 migration, the database is built on Node.js's built-in `node:sqlite` module via the `promised.node.sqlite` async wrapper, replacing the former `sqlite3` + `promised-sqlite3` stack and eliminating the heavy native dependency. See [Migrating AkashaRender to promised.node.sqlite](../architecture/promised-node-sqlite-migration.md).
 
 ## How It Works
 
@@ -30,10 +32,13 @@ const dburl = typeof process.env.AK_DB_URL === 'string'
         ? process.env.AK_DB_URL
         : ':memory:';
 
-export const sqdb = await AsyncDatabase.open(dburl);
+// allowExtension:true is required by node:sqlite to permit loadExtension
+export const sqdb = await AsyncDatabase.open(dburl, {
+    allowExtension: true
+});
 ```
 
-The `promised-sqlite3` library wraps the native `sqlite3` driver with Promise-based async/await APIs.
+The `promised.node.sqlite` library wraps the built-in `node:sqlite` `DatabaseSync` class with Promise-based async/await APIs. The wrapper also coerces JavaScript `undefined` to `null` and booleans to `1`/`0`, because `node:sqlite` rejects both at the parameter-binding boundary (unlike the more permissive `sqlite3`).
 
 ### Database Location
 
@@ -59,54 +64,22 @@ WAL benefits:
 
 ### SQLite Extensions
 
-Three extensions enhance database capabilities (source: [lib/sqdb.ts](../../lib/sqdb.ts)):
+One extension is loaded by default (source: [lib/sqdb.ts](../../lib/sqdb.ts)):
 
-**1. sqlite-regex**: Adds regular expression support to SQL queries
+**sqlite-regex**: Adds regular expression support to SQL queries
 ```sql
 SELECT * FROM documents WHERE vpath REGEXP '^blog/.*\.md$';
 ```
 
-**2. sqlite-vec**: Enables vector similarity search for semantic queries
-```sql
-SELECT * FROM documents 
-ORDER BY vec_distance_cosine(embedding, ?) 
-LIMIT 10;
-```
+It is loaded via `sqdb.inner.loadExtension(sqlite_regex.getLoadablePath())`, which requires the database to have been opened with `allowExtension: true`.
 
-**3. sqlite-lembed** (optional): Provides local embedding generation
-- Loads ML models directly into SQLite
-- Generates text embeddings for semantic search
-- Requires two environment variables:
-  - `AK_LEMBED_MODEL`: Path to embedding model file
-  - `AK_LEMBED_MODEL_NAME`: Model registration name
-
-```typescript
-if (typeof lembedModelFile !== 'undefined') {
-    sqlite_lembed.load(sqdb.inner);
-    sqlite_vec.load(sqdb.inner);
-    
-    await sqdb.run(`
-        INSERT INTO temp.lembed_models(name, model)
-        select ?, lembed_model_from_file(?);
-    `, [lembedModelName, lembedModelFile]);
-}
-```
+**Removed during the June 2026 migration** (because they were unused): the `sqlite-vec` (vector similarity search) and `sqlite-lembed` (local embedding generation) extensions, along with the `AK_LEMBED_MODEL` / `AK_LEMBED_MODEL_NAME` registration. The `lembedModelName` export remains but is always `undefined`, leaving the semantic-search code paths dormant. Re-enabling them requires re-adding the packages and the loader calls. See [Database Extensions](./database-extensions.md) and [Semantic Search](./semantic-search.md).
 
 ### Query Profiling
 
-Optional query profiling tracks SQL performance (source: [lib/sqdb.ts](../../lib/sqdb.ts)):
+SQL query profiling via the `AK_PROFILE` environment variable was **removed during the June 2026 migration**. It used the `sqlite3-query-log` package, which hooked `sqlite3.Database` events; `node:sqlite`'s `DatabaseSync` does not emit events, so the capability could not be carried over unchanged. The follow-up to restore it is tracked by [akashacms/akasharender#192](https://github.com/akashacms/akasharender/issues/192) (source: [lib/sqdb.ts](../../lib/sqdb.ts)).
 
-```typescript
-if (typeof process.env.AK_PROFILE === 'string') {
-    SQ3QueryLog(sqdb.inner, process.env.AK_PROFILE);
-}
-```
-
-When `AK_PROFILE` is set to a file path, the `sqlite3-query-log` library writes TSV-formatted profiling data:
-- Column 1: Base64-encoded SQL query (prevents newline issues)
-- Column 2: Execution time in milliseconds
-
-This enables performance analysis to identify slow queries.
+The other two profiling levels described in [Performance Profiling](./performance-profiling.md) (document-stage timing and Mahabhuta function timing) are unaffected.
 
 ### Database Usage Patterns
 
@@ -130,44 +103,41 @@ The database serves multiple purposes in AkashaRender:
 
 ### AsyncDatabase API
 
-The `promised-sqlite3` wrapper provides async/await methods (source: [lib/sqdb.ts](../../lib/sqdb.ts)):
+The `promised.node.sqlite` wrapper provides async/await methods (source: [lib/sqdb.ts](../../lib/sqdb.ts)):
 
 - `sqdb.run(sql, params)` - Execute statement (INSERT, UPDATE, DELETE)
 - `sqdb.get(sql, params)` - Fetch single row
 - `sqdb.all(sql, params)` - Fetch all rows
 - `sqdb.each(sql, params, callback)` - Process rows iteratively
 - `sqdb.exec(sql)` - Execute multiple statements
+- `sqdb.inner` - The underlying `node:sqlite` `DatabaseSync` (used for `loadExtension` and by the key-value store)
 
-All methods return Promises and support parameter binding to prevent SQL injection.
+All methods return Promises and support parameter binding (positional, array, or `$name` objects) to prevent SQL injection.
 
 ### Error Handling
 
-Database errors are logged to console (source: [lib/sqdb.ts](../../lib/sqdb.ts)):
-
-```typescript
-sqdb.inner.on('error', err => {
-    console.error(err);
-});
-```
+Unlike the former `sqlite3.Database`, `node:sqlite`'s `DatabaseSync` is not an EventEmitter, so the previous `sqdb.inner.on('error', ...)` listener was removed during the migration (source: [lib/sqdb.ts](../../lib/sqdb.ts)). Errors now surface as rejected Promises from the `AsyncDatabase` methods.
 
 Critical database failures during initialization cause `process.exit(1)` (source: [lib/index.ts](../../lib/index.ts)).
+
+The shared connection is closed once by `closeFileCaches()` (guarded by `sqdb.inner.isOpen`); the individual file caches no longer each close the shared connection (source: [lib/cache/cache-sqlite.ts](../../lib/cache/cache-sqlite.ts)).
 
 ## Key Parameters
 
 **Environment Variables**:
 - `AK_DB_URL` - Database location (default: `:memory:`)
-- `AK_LEMBED_MODEL` - Path to embedding model file (optional)
-- `AK_LEMBED_MODEL_NAME` - Model registration name (optional)
-- `AK_PROFILE` - SQL profiling output file path (optional)
+- `AK_LEMBED_MODEL` / `AK_LEMBED_MODEL_NAME` - *No longer used* (sqlite-lembed removed during the June 2026 migration)
+- `AK_PROFILE` - *No longer used* (SQL profiling removed; see [#192](https://github.com/akashacms/akasharender/issues/192))
 
 **Database Configuration**:
+- Driver: `node:sqlite` via the `promised.node.sqlite` async wrapper
 - Journal mode: WAL (Write-Ahead Logging)
 - Location: In-memory by default
-- Extensions: sqlite-regex, sqlite-vec, sqlite-lembed (conditional)
+- Extensions: sqlite-regex (sqlite-vec and sqlite-lembed removed)
 
 **Exported API**:
 - `sqdb` - Shared AsyncDatabase instance
-- `lembedModelName` - Configured embedding model name
+- `lembedModelName` - Always `undefined` (semantic search disabled)
 - `newSQ3DataStore(name)` - Factory for key-value stores
 
 ## When To Use
@@ -178,11 +148,11 @@ Critical database failures during initialization cause `process.exit(1)` (source
 
 2. **Pattern Matching**: Find files using regex patterns via sqlite-regex extension
 
-3. **Semantic Search**: Vector-based document search with sqlite-vec and sqlite-lembed
+3. **Semantic Search**: Vector-based document search with sqlite-vec and sqlite-lembed *(currently disabled — these extensions were removed in the June 2026 migration; the code paths remain dormant)*
 
 4. **Tag Management**: Query tag hierarchies, find similar tags, list documents by tag
 
-5. **Performance Analysis**: Track render times, identify bottlenecks with profiling
+5. **Performance Analysis**: Track render times, identify bottlenecks (document-stage and Mahabhuta timing; SQL-query profiling was removed in the migration)
 
 6. **Key-Value Storage**: Store plugin state, configuration, or transient data via `newSQ3DataStore()`
 
@@ -200,15 +170,13 @@ Critical database failures during initialization cause `process.exit(1)` (source
 
 **In-Memory Data Loss**: The default `:memory:` database loses all data when the process exits (source: [lib/sqdb.ts](../../lib/sqdb.ts)). For persistent caching across builds, set `AK_DB_URL` to a file path. However, this requires cache invalidation logic to detect stale data.
 
-**Extension Loading Failures**: SQLite extensions must be compiled for the correct platform and architecture (source: [lib/sqdb.ts](../../lib/sqdb.ts)). Missing or incompatible extensions cause initialization failure. The lembed extension is particularly platform-sensitive.
+**Extension Loading Failures**: The `sqlite-regex` extension must be compiled for the correct platform and architecture, and the database must be opened with `allowExtension: true` (source: [lib/sqdb.ts](../../lib/sqdb.ts)). Missing or incompatible extensions cause initialization failure.
 
-**Memory Consumption**: An in-memory database holds all tables and indexes in RAM (source: [lib/sqdb.ts](../../lib/sqdb.ts)). Large projects with thousands of documents and extensive embeddings can consume significant memory. Monitor process memory usage.
+**Strict Parameter Binding**: `node:sqlite` is stricter than the former `sqlite3` driver — it rejects `undefined` and JavaScript booleans at the binding boundary. The `promised.node.sqlite` wrapper coerces `undefined`→`null` and `true`/`false`→`1`/`0`, but code that bypasses the wrapper must account for this (source: [lib/sqdb.ts](../../lib/sqdb.ts)).
+
+**Memory Consumption**: An in-memory database holds all tables and indexes in RAM (source: [lib/sqdb.ts](../../lib/sqdb.ts)). Large projects with thousands of documents can consume significant memory. Monitor process memory usage.
 
 **Concurrent Write Limitations**: While WAL improves concurrency, SQLite still serializes writes (source: [lib/sqdb.ts](../../lib/sqdb.ts)). Heavy concurrent writes from parallel rendering operations may encounter lock contention. The `concurrency` setting in Configuration helps manage this.
-
-**Embedding Model Size**: Local embedding models loaded via sqlite-lembed can be 100MB+ (source: [lib/sqdb.ts](../../lib/sqdb.ts)). This increases memory usage and startup time. Only enable if semantic search is needed.
-
-**Query Profiling Overhead**: The `AK_PROFILE` setting adds per-query overhead (source: [lib/sqdb.ts](../../lib/sqdb.ts)). Enable only during performance investigation, not in production.
 
 **Parameter Binding Required**: Direct SQL string interpolation is vulnerable to SQL injection (source: [lib/sqdb.ts](../../lib/sqdb.ts)). Always use parameterized queries:
 ```javascript
@@ -228,10 +196,11 @@ Critical database failures during initialization cause `process.exit(1)` (source
 ## Related Pages
 
 - [File Caching](./file-caching.md) - Major use of SQLite database
-- [Database Extensions](./database-extensions.md) - sqlite-regex, sqlite-vec, sqlite-lembed
-- [Performance Profiling](./performance-profiling.md) - SQL query profiling
+- [Database Extensions](./database-extensions.md) - sqlite-regex (sqlite-vec/sqlite-lembed removed)
+- [Performance Profiling](./performance-profiling.md) - profiling levels
 - [Key-Value Store](./key-value-store.md) - SQ3DataStore usage
-- [Semantic Search](./semantic-search.md) - Vector embeddings with sqlite-vec
+- [Semantic Search](./semantic-search.md) - Vector embeddings (currently disabled)
+- [Migrating AkashaRender to promised.node.sqlite](../architecture/promised-node-sqlite-migration.md) - The migration architecture
 
 ## Backlinks
 

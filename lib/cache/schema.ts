@@ -20,7 +20,7 @@
 import path from 'node:path';
 import { promises as fsp } from 'node:fs';
 import Joi from "joi";
-import { AsyncDatabase } from 'promised-sqlite3';
+import { AsyncDatabase } from 'promised.node.sqlite';
 import { lembedModelName } from '../sqdb.js';
 
 /**

@@ -8,6 +8,7 @@ This directory contains a chronological audit trail of changes made to the wiki.
 
 ## 2026-06-17
 
+- **[20260617T182703+0300.md](./20260617T182703+0300.md)**: 2026-06-17 18:27 - Added Answer Page on Clinic Dependency and Profiling - Documented that `clinic` was never a dependency in `package.json` (it appears only in `PROFILING.md` as an optional global-install profiler) and explained how Clinic.js would help diagnose AkashaRender build performance
 - **[20260617T164526+0300.md](./20260617T164526+0300.md)**: 2026-06-17 16:45 - Implemented node:sqlite Migration and Updated Wiki - Completed the migration to promised.node.sqlite + node:sqlite-only sq3-kv-data-store (boolean/undefined coercion, single shared-DB close, removed sqlite-vec/lembed/query-log); full test suite passes; updated the sqdb summary and the sqlite-database / key-value-store concepts
 - **[20260617T160419+0300.md](./20260617T160419+0300.md)**: 2026-06-17 16:04 - Grounded sq3-kv-data-store Plan in Real Source and Cited Profiling Issue - Updated the plan to reference the real package source at `/home/david/Projects/nodejs/sqlite3-key-value-data-store` (src/index.ts, src/finder.ts, Mocha tests) and cited issue akashacms/akasharender#192 for the dropped SQL profiling
 - **[20260617T154222+0300.md](./20260617T154222+0300.md)**: 2026-06-17 15:42 - Revised KV-Store Strategy to Modify sq3-kv-data-store Instead of a Local Shim - Owner chose to make `sq3-kv-data-store` node:sqlite-only (drop `sqlite3`) and pass `sqdb.inner`, replacing the earlier local-shim plan

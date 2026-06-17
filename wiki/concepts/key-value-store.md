@@ -9,7 +9,7 @@ Categories:
   - storage
   - plugin-api
 created: 2026-05-21T03:00:00Z
-updated: 2026-05-21T03:00:00Z
+updated: 2026-06-17T16:45:26+03:00
 confidence: medium
 ---
 
@@ -31,11 +31,11 @@ The key-value store functionality is provided through the `newSQ3DataStore()` fa
 
 3. **Named Stores**: Each plugin or component can have its own isolated key-value store by using a unique table name.
 
-4. **Shared Database**: All stores use the same SQLite connection (`sqdb.inner`), managed by the main database configuration.
+4. **Shared Database**: All stores use the same SQLite connection (`sqdb.inner`), managed by the main database configuration. As of the June 2026 migration, `sqdb.inner` is a `node:sqlite` `DatabaseSync` instance (previously a `sqlite3.Database`).
 
 5. **Export**: The function is exported from `lib/index.ts`, making it available to plugins and external code.
 
-The `sq3-kv-data-store` package provides the underlying implementation, described as "Node.js key/value store for SQLITE3 that includes data search features."
+The `sq3-kv-data-store` package provides the underlying implementation. As of version 2.0.0 it is built on the built-in `node:sqlite` module (`DatabaseSync`/`StatementSync`) instead of the deprecated `sqlite3` package; the constructor and `DB` getter now use `DatabaseSync`. Its public API (`put`, `get`, `update`, `delete`, `exists`, `keys`, `find`, `findAll`, `drop`) is unchanged.
 
 (source: [lib/sqdb.ts](../../lib/sqdb.ts), [lib/index.ts](../../lib/index.ts))
 
@@ -55,8 +55,8 @@ import { newSQ3DataStore } from 'akasharender';
 // Create a store for plugin data
 const myStore = newSQ3DataStore('my_plugin_data');
 
-// Store and retrieve values (exact API depends on sq3-kv-data-store)
-await myStore.set('key', 'value');
+// Store and retrieve values
+await myStore.put('key', { some: 'value' });
 const value = await myStore.get('key');
 ```
 
@@ -76,9 +76,9 @@ The key-value store is particularly useful for plugins that need to persist data
 
 ## Risks & Pitfalls
 
-### Limited Documentation
+### API Reference
 
-The concept is minimally documented in the codebase. The exact API of `SQ3DataStore` is not specified—developers must refer to the `sq3-kv-data-store` package documentation.
+The `SQ3DataStore` public API is: `put(key, value)`, `get(key)`, `update(key, value)`, `delete(key)`, `exists(key)`, `keys(pattern?)`, `find(selectors)`, `findAll()`, and `drop()`. Values are stored as JSON. The `find` method supports a Mongo-like selector syntax (`$eq`, `$lt`, `$gt`, `$like`, `$glob`, `$regexp`, `$or`, `$and`, `$notnull`, etc.). See the `sq3-kv-data-store` package documentation for details.
 
 ### Table Name Conflicts
 
@@ -98,7 +98,7 @@ Unlike the main cache tables, key-value stores don't have TypeScript interfaces 
 
 ### Package Dependency
 
-This feature depends on an external package (`sq3-kv-data-store@1.0.1`). Changes or deprecation of that package could affect functionality.
+This feature depends on an external package (`sq3-kv-data-store`, version 2.0.0+, built on `node:sqlite`). Changes or deprecation of that package could affect functionality. AkashaRender currently references it as a git dependency until the node:sqlite version is published to npm.
 
 (source: [lib/sqdb.ts](../../lib/sqdb.ts))
 
@@ -108,6 +108,7 @@ This feature depends on an external package (`sq3-kv-data-store@1.0.1`). Changes
 - [Database Extensions](./database-extensions.md): Extensions available to the shared database connection
 - [Built-in Plugin](./built-in-plugin.md): Plugins can use key-value stores for persistence
 - [Cache Schema](./cache-schema.md): Structured alternative to key-value storage
+- [Migrating AkashaRender to promised.node.sqlite](../architecture/promised-node-sqlite-migration.md): The migration that moved this to node:sqlite
 
 ## Backlinks
 

@@ -17,8 +17,8 @@
  *  limitations under the License.
  */
 import { SQ3DataStore } from 'sq3-kv-data-store';
-import { AsyncDatabase } from 'promised-sqlite3';
+import { AsyncDatabase } from 'promised.node.sqlite';
 export declare const sqdb: AsyncDatabase;
-export declare const lembedModelName: string;
+export declare const lembedModelName: string | undefined;
 export declare function newSQ3DataStore(name: string): SQ3DataStore;
 //# sourceMappingURL=sqdb.d.ts.map

@@ -16,7 +16,7 @@
  *  See the License for the specific language governing permissions and
  *  limitations under the License.
  */
-import { AsyncDatabase } from 'promised-sqlite3';
+import { AsyncDatabase } from 'promised.node.sqlite';
 import type { SimilarTagGroup, TagWithoutDescription } from '../types.js';
 export declare class TagGlue {
     #private;

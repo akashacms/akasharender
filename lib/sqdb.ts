@@ -18,90 +18,47 @@
  */
 
 /**
- * SQL Database support using SQLITE3.
- * 
- * What's supported is SQLITE3ORM - a lightweight
- * ORM that runs on top of SQLITE3.
+ * SQL Database support using node:sqlite.
+ *
+ * The database connection is an AsyncDatabase from the
+ * promised.node.sqlite package, which wraps the built-in
+ * node:sqlite DatabaseSync class with an async API.
  */
 
-import fs from 'node:fs';
-import { Database } from 'sqlite3';
-// import sqleanLibs from 'sqlite3-sqlean';
 import * as sqlite_regex  from "sqlite-regex";
-import * as sqlite_vec    from 'sqlite-vec';
-import * as sqlite_lembed from 'sqlite-lembed';
 import { SQ3DataStore } from 'sq3-kv-data-store';
 
-import { AsyncDatabase } from 'promised-sqlite3';
-
-import { default as SQ3QueryLog } from 'sqlite3-query-log';
+import { AsyncDatabase } from 'promised.node.sqlite';
 
 const dburl = typeof process.env.AK_DB_URL === 'string'
         ? process.env.AK_DB_URL
         : ':memory:';
 
-export const sqdb = await AsyncDatabase.open(dburl);
-// await sqdb.open(dburl);
-// await sqdb.open('test.db');
-// sqdb.loadExtension(sqleanLibs.reLibPath);
+// node:sqlite requires allowExtension:true to permit
+// loadExtension, which is used to load sqlite-regex below.
+export const sqdb = await AsyncDatabase.open(dburl, {
+    allowExtension: true
+});
+
 sqdb.inner.loadExtension(sqlite_regex.getLoadablePath());
 
-const lembedModelFile = typeof process.env.AK_LEMBED_MODEL === 'string'
-        ? process.env.AK_LEMBED_MODEL
-        : undefined;
-export const lembedModelName = typeof process.env.AK_LEMBED_MODEL_NAME === 'string'
-        ? process.env.AK_LEMBED_MODEL_NAME
-        : undefined;
-
-if (typeof lembedModelFile !== 'undefined') {
-    console.log({
-        lembedModelFile,
-        lembedModelName,
-        lembed: sqlite_lembed.getLoadablePath(),
-        vec: sqlite_vec.getLoadablePath()
-    });
-    sqlite_lembed.load(<any>sqdb.inner);
-    sqlite_vec.load(<any>sqdb.inner);
-
-    await sqdb.run(`
-        INSERT INTO temp.lembed_models(name, model)
-        select ?, lembed_model_from_file(?);
-    `, [
-        lembedModelName,
-        lembedModelFile
-    ]);
-}
+// Embeddings (sqlite-lembed) and vector search (sqlite-vec)
+// are not currently used and have been removed.  The
+// lembedModelName export is retained, always undefined,
+// so the guarded code paths in schema.ts and
+// cache-sqlite.ts continue to compile and stay dormant.
+// Re-enabling semantic search requires re-adding the
+// sqlite-vec and sqlite-lembed packages and the loader
+// calls here.
+export const lembedModelName: string | undefined = undefined;
 
 await sqdb.run('PRAGMA journal_mode=WAL;');
 
-// if (typeof process.env.AK_PROFILE === 'string') {
-//     SQ3QueryLog(sqdb.inner, process.env.AK_PROFILE);
-// }
-
-// This traces SQL statements
-//
-// sqdb.inner.on('trace', sql => {
-//     console.log(sql);
-// });
-// sqdb.inner.on('error', err => {
-//     console.error(err);
-// });
-
-sqdb.inner.on('error', err => {
-    console.error(err);
-});
-
-// Profiling SQL queries
-// This might be useful for performance evaluation.
-// The output is TSV separated fields:
-//   1. base64-encoded SQL
-//      This was chosen to prevent newlines in this field
-//      and to keep the format simple
-//   2. Approximate number of milliseconds to execute
-//
-if (typeof process.env.AK_PROFILE === 'string') {
-    SQ3QueryLog(sqdb.inner, process.env.AK_PROFILE);
-}
+// NOTE: SQL query profiling via the AK_PROFILE environment
+// variable used the sqlite3-query-log package, which depended
+// on sqlite3.Database events.  node:sqlite's DatabaseSync does
+// not emit events, so that profiling has been removed.
+// See https://github.com/akashacms/akasharender/issues/192
 
 
 ////////////////////////

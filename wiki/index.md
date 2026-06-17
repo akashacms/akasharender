@@ -77,12 +77,14 @@ Key architectural concepts and patterns:
 Detailed answers to technical questions about the codebase:
 
 - **[Detailed Flow for Rendering a Single Page from vpath](./answers/rendering-flow-from-vpath.md)**: Step-by-step walkthrough of the complete rendering process
+- **[When Was Clinic Added as a Dependency, and How Would It Help AkashaRender?](./answers/clinic-dependency.md)**: `clinic` is not a dependency; it is an optional global-install profiler documented in PROFILING.md
 
 ### [Architecture](./architecture/README.md)
 
 High-level architecture documentation for major subsystems:
 
 - **[Sitemap Validation Architecture](./architecture/sitemap-validation.md)**: Design for validating generated sitemaps against local filesystem
+- **[Migrating AkashaRender to promised.node.sqlite](./architecture/promised-node-sqlite-migration.md)**: Plan to replace the `sqlite3` + `promised-sqlite3` stack with the standalone `promised.node.sqlite` package on `node:sqlite`
 
 ### [Implementation](./implementation/README.md)
 
