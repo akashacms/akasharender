@@ -6,6 +6,12 @@ title: Log index
 
 This directory contains a chronological audit trail of changes made to the wiki.
 
+## 2026-06-19
+
+- **[20260619T143000+0300.md](./20260619T143000+0300.md)**: 2026-06-19 14:30 - Added Answer Page on Bluesky / AT Protocol Integration - New answer covering Fediverse-vs-Bluesky crossover (separate protocols, bridged only via Bridgy Fed), why Bluesky does not crawl sites for content, and how an AkashaCMS site presents to Bluesky via shared Open Graph link cards and an optional `/.well-known/atproto-did` domain-handle verification artifact; cross-linked the companion Fediverse answer
+- **[20260619T133000+0300.md](./20260619T133000+0300.md)**: 2026-06-19 13:30 - Expanded Fediverse Answer with PHP Shim and Entity Explanations - Reframed the static-vs-dynamic limitation around shared hosting's PHP availability; added a minimal WebFinger PHP script + `.htaccess` rewrite (Tier 2); gave full explanations of the Actor, Collections, and Objects/Activities entities with example JSON and where PHP scripts (`inbox.php`, content-negotiating router, delivery) fit (Tier 3); updated the phased plan, bottom line, and summaries
+- **[20260619T120000+0300.md](./20260619T120000+0300.md)**: 2026-06-19 12:00 - Added Answer Page on ActivityPub and Fediverse Integration Elements - Created an answer outlining the elements required for ActivityPub/Fediverse integration; clarifies that ActivityPub is a JSON-LD/HTTP protocol (not an HTML-tag standard) and presents a tiered plugin design (Open Graph + `fediverse:creator` metadata, WebFinger/NodeInfo discovery, static actor JSON-LD, and live federation requiring a server)
+
 ## 2026-06-17
 
 - **[20260617T182703+0300.md](./20260617T182703+0300.md)**: 2026-06-17 18:27 - Added Answer Page on Clinic Dependency and Profiling - Documented that `clinic` was never a dependency in `package.json` (it appears only in `PROFILING.md` as an optional global-install profiler) and explained how Clinic.js would help diagnose AkashaRender build performance

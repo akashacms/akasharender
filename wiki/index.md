@@ -78,6 +78,8 @@ Detailed answers to technical questions about the codebase:
 
 - **[Detailed Flow for Rendering a Single Page from vpath](./answers/rendering-flow-from-vpath.md)**: Step-by-step walkthrough of the complete rendering process
 - **[When Was Clinic Added as a Dependency, and How Would It Help AkashaRender?](./answers/clinic-dependency.md)**: `clinic` is not a dependency; it is an optional global-install profiler documented in PROFILING.md
+- **[Elements Required for ActivityPub and Fediverse Integration](./answers/activitypub-fediverse-html-elements.md)**: ActivityPub is a JSON-LD/HTTP protocol, not an HTML-tag standard; outlines a tiered plugin design (Open Graph + `fediverse:creator` metadata, WebFinger/NodeInfo discovery, static actor JSON-LD, live federation), with PHP-shim scripts for shared hosting (WebFinger handler, content negotiation, inbox) and detailed explanations of the Actor/Collections/Objects-Activities entities
+- **[Bluesky / AT Protocol Integration and Crossover with the Fediverse](./answers/bluesky-atproto-integration.md)**: Bluesky (atproto) and the Fediverse (ActivityPub) are separate networks that only cross over via bridges (Bridgy Fed); Bluesky reads Open Graph for link cards and an optional `/.well-known/atproto-did` domain-handle verification artifact, which an AkashaCMS build can generate
 
 ### [Architecture](./architecture/README.md)
 
