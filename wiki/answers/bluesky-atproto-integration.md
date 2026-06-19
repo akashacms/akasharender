@@ -13,7 +13,7 @@ Categories:
   - open-graph
   - feature-design
 date-created: 2026-06-19T14:30:00+03:00
-last-updated: 2026-06-19T14:30:00+03:00
+last-updated: 2026-06-19T17:30:00+03:00
 confidence: medium
 ---
 
@@ -240,6 +240,9 @@ specifications before implementation.*
 ## Related Pages
 
 - [Elements Required for ActivityPub and Fediverse Integration](./activitypub-fediverse-html-elements.md) — Companion Fediverse answer; shared Open Graph and discovery-artifact design
+- [Useful Microformats and IndieWeb Markup for a Static Blog](./microformats-indieweb-for-static-blogs.md) — Companion answer; body-level semantic markup and `rel="me"` identity that complements domain-handle verification
+- [Social-Sharing Metadata: Open Graph, Twitter Cards, and Facebook](./social-sharing-metadata-opengraph-twitter-facebook.md) — The shared `og:*` head metadata that drives Bluesky link cards
+- [Webmention: Purpose, Markup, Protocol, and Server Software](./webmention-protocol-and-markup.md) — IndieWeb interaction protocol; Bridgy can feed silo/Fediverse interactions into Webmentions
 - [Built-in Plugin](../concepts/built-in-plugin.md) — Metadata and Open Graph injection pipeline
 - [Plugin System](../concepts/plugin-system.md) — How a Bluesky/Fediverse plugin would extend AkashaRender
 - [Site Rendering](../concepts/site-rendering.md) — Where the `/.well-known/atproto-did` artifact would be emitted during a build
@@ -247,3 +250,6 @@ specifications before implementation.*
 ## Backlinks
 
 - [Answer index](./README.md)
+- [Useful Microformats and IndieWeb Markup for a Static Blog](./microformats-indieweb-for-static-blogs.md)
+- [Social-Sharing Metadata: Open Graph, Twitter Cards, and Facebook](./social-sharing-metadata-opengraph-twitter-facebook.md)
+- [Webmention: Purpose, Markup, Protocol, and Server Software](./webmention-protocol-and-markup.md)

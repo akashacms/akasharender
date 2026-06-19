@@ -13,7 +13,7 @@ Categories:
   - webfinger
   - php-hosting
 date-created: 2026-06-19T12:00:00+03:00
-last-updated: 2026-06-19T14:30:00+03:00
+last-updated: 2026-06-19T17:30:00+03:00
 confidence: medium
 ---
 
@@ -460,6 +460,9 @@ specifications and project sources before implementation.*
 ## Related Pages
 
 - [Bluesky / AT Protocol Integration and Crossover with the Fediverse](./bluesky-atproto-integration.md) — Companion answer; shared Open Graph metadata and `/.well-known/` artifact generation, and why Fediverse and Bluesky only cross over via bridges
+- [Useful Microformats and IndieWeb Markup for a Static Blog](./microformats-indieweb-for-static-blogs.md) — Companion answer; body-level semantic markup (`h-entry`/`h-card`) and the shared `rel="me"` identity and Webmention concerns
+- [Social-Sharing Metadata: Open Graph, Twitter Cards, and Facebook](./social-sharing-metadata-opengraph-twitter-facebook.md) — The shared `og:*` head-metadata layer these link cards are built from, and a proposed frontmatter-driven implementation
+- [Webmention: Purpose, Markup, Protocol, and Server Software](./webmention-protocol-and-markup.md) — Complementary IndieWeb interaction protocol; reuses the same shared-hosting PHP-shim approach for a receiver
 - [Built-in Plugin](../concepts/built-in-plugin.md) — Metadata and Open Graph injection pipeline
 - [Custom Elements](../concepts/custom-elements.md) — Custom HTML tags via Mahabhuta, a model for injecting metadata
 - [Plugin System](../concepts/plugin-system.md) — How a Fediverse plugin would extend AkashaRender
@@ -469,3 +472,6 @@ specifications and project sources before implementation.*
 
 - [Answer index](./README.md)
 - [Bluesky / AT Protocol Integration and Crossover with the Fediverse](./bluesky-atproto-integration.md)
+- [Useful Microformats and IndieWeb Markup for a Static Blog](./microformats-indieweb-for-static-blogs.md)
+- [Social-Sharing Metadata: Open Graph, Twitter Cards, and Facebook](./social-sharing-metadata-opengraph-twitter-facebook.md)
+- [Webmention: Purpose, Markup, Protocol, and Server Software](./webmention-protocol-and-markup.md)
