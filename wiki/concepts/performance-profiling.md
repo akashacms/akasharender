@@ -86,5 +86,8 @@ These are captured in milliseconds with sub-millisecond precision and can be wri
 - [Mahabhuta System](./mahabhuta-system.md) - DOM processing profiled
 - [Database Indexing](./database-indexing.md) - Optimizing profiled queries
 - [Command-Line Interface](./command-line-interface.md) - Profiling CLI options
+- [Performance Measurement Methodology](./performance-measurement-methodology.md) - The practice of using these profiling tools
 
 ## Backlinks
+
+- [Performance Measurement Methodology](./performance-measurement-methodology.md)

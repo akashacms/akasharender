@@ -374,8 +374,10 @@ config.concurrency = 3;
 - [Configuration Class](./configuration-class.md) - Concurrency configuration
 - [File Caching](./file-caching.md) - Shared resource accessed by workers
 - [SQLite Database](./sqlite-database.md) - Database concurrency with WAL mode
+- [Performance Measurement Methodology](./performance-measurement-methodology.md) - How to verify whether concurrency is actually overlapping work
 
 ## Backlinks
 
 - [wiki/summaries/lib/render.ts.md](../summaries/lib/render.ts.md)
 - [wiki/concepts/rendering-pipeline.md](./rendering-pipeline.md)
+- [Performance Measurement Methodology](./performance-measurement-methodology.md)

@@ -1,7 +1,7 @@
 ---
 title: "AkashaRender Code Wiki"
 date-created: 2026-05-20T12:00:00+00:00
-last-updated: 2026-05-22T00:00:00+00:00
+last-updated: 2026-06-24T12:00:00+03:00
 ---
 
 # AkashaRender Code Wiki
@@ -59,6 +59,7 @@ Key architectural concepts and patterns:
 **Development Tools**:
 - **[Command-Line Interface](./concepts/command-line-interface.md)**: The akasharender CLI tool
 - **[Performance Profiling](./concepts/performance-profiling.md)**: Rendering timing measurements
+- **[Performance Measurement Methodology](./concepts/performance-measurement-methodology.md)**: How to measure, attribute, and interpret performance data before optimizing
 - **[Performance Tracing](./concepts/performance-tracing.md)**: Per-stage timing data in TRACES table
 - **[File Watching](./concepts/file-watching.md)**: Auto-rebuild on file changes
 

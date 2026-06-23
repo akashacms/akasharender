@@ -28,6 +28,7 @@ import path from 'node:path';
 import util from 'node:util';
 import EventEmitter from 'events';
 import micromatch from 'micromatch';
+import { performance } from 'node:perf_hooks';
 import {
     TagGlue, TagDescriptions
 } from './tag-glue.js';
@@ -153,22 +154,78 @@ export class BaseCache<
     async setup() {
         this.#is_ready = false;
 
+        // Optional indexing profiler, enabled by setting AK_PROFILE_INDEX.
+        // Accumulates wall time spent in each phase of indexing so we can
+        // see whether indexing time is dominated by file reads (read),
+        // metadata parsing (gatherInfoData), DB inserts (insertDocToDB),
+        // or plugin hooks (hookFileAdded).  Zero overhead when disabled.
+        const profile = !!process.env.AK_PROFILE_INDEX;
+        let tScan = 0, tGather = 0, tInsert = 0, tHook = 0;
+        let nFiles = 0;
+        const now = () => performance.now();
+
+        const scanStart = profile ? now() : 0;
         this.#vfstack = new VFStack(this.name, this.dirs);
         await this.#vfstack.scan();
+        if (profile) tScan = now() - scanStart;
 
+        // Collect the non-ignored entries once.
+        const entries: T[] = [];
         for (const vpathData of this.#vfstack) {
             if (!this.ignoreFile(vpathData)) {
+                entries.push(vpathData as any as T);
+            }
+        }
+
+        // Phase 2 (F4): gather metadata and insert into the database within
+        // a single transaction per cache.  Without an explicit transaction
+        // each db.run is its own implicit commit; wrapping thousands of
+        // inserts in one transaction is dramatically faster.  Per-file
+        // errors are still caught and logged (preserving prior behaviour);
+        // the transaction is committed at the end, or rolled back on a
+        // fatal error.
+        await this.db.exec('BEGIN');
+        try {
+            for (const info of entries) {
                 try {
-                    this.gatherInfoData(vpathData as any as T);
-                    await this.insertDocToDB(vpathData as any as T);
-                    await this.config.hookFileAdded(this.name, vpathData);
+                    if (profile) {
+                        nFiles++;
+                        let t = now();
+                        this.gatherInfoData(info);
+                        tGather += now() - t;
+                        t = now();
+                        await this.insertDocToDB(info);
+                        tInsert += now() - t;
+                        t = now();
+                        await this.config.hookFileAdded(this.name, info as any);
+                        tHook += now() - t;
+                    } else {
+                        this.gatherInfoData(info);
+                        await this.insertDocToDB(info);
+                        await this.config.hookFileAdded(this.name, info as any);
+                    }
                     // Emit 'added' event to track when files are processed
                     // This helps verify that all files are added before 'ready' is emitted
-                    this.emit('added', this.name, vpathData.vpath);
+                    this.emit('added', this.name, (info as any).vpath);
                 } catch (err) {
-                    console.error(`Error gathering info for ${vpathData.vpath}: ${err.message}`);
+                    console.error(`Error gathering info for ${(info as any).vpath}: ${err.message}`);
                 }
             }
+            await this.db.exec('COMMIT');
+        } catch (err) {
+            // A failure outside the per-file try/catch (e.g. the COMMIT
+            // itself) must not leave an open transaction.
+            try { await this.db.exec('ROLLBACK'); } catch (e) { /* ignore */ }
+            throw err;
+        }
+
+        if (profile) {
+            const f = (n: number) => (n / 1000).toFixed(3) + 's';
+            console.log(
+                `[AK_PROFILE_INDEX] ${this.name}: files=${nFiles} `
+              + `scan=${f(tScan)} gatherInfoData=${f(tGather)} `
+              + `insertDocToDB=${f(tInsert)} hookFileAdded=${f(tHook)}`
+            );
         }
 
         this.#is_ready = true;
@@ -360,6 +417,27 @@ export class BaseCache<
 
         // info.renderPath = info.vpath;
         throw new Error(`gatherInfoData must be overridden`);
+    }
+
+    /**
+     * Read the textual content for a file being indexed.
+     *
+     * gatherInfoData is synchronous (because the renderers'
+     * parseMetadata is synchronous), so this reads synchronously.
+     *
+     * NOTE: An earlier attempt (F6) pre-read all files asynchronously
+     * into memory before inserting, to overlap disk I/O.  On a large site
+     * this held every file's content in memory at once and caused severe
+     * GC pressure -- it made indexing ~40x SLOWER, not faster.  It was
+     * abandoned.  The synchronous read here, processing one file at a
+     * time, keeps the heap small and is fast (the OS page cache makes the
+     * reads cheap).  See ARCHITECTURE-performance-review.md.
+     *
+     * @param info The info object for the file
+     * @returns The file content as a UTF-8 string
+     */
+    protected fileContentFor(info: T): string {
+        return FS.readFileSync((info as any).fspath, 'utf-8');
     }
 
     protected async insertDocToDB(info: T) {
@@ -858,7 +936,7 @@ export class PartialsCache
 
                 const rc = renderer.parseMetadata(<any>{
                     fspath: info.fspath,
-                    content: FS.readFileSync(info.fspath, 'utf-8')
+                    content: this.fileContentFor(info)
                 });
 
                 // docBody is the parsed body -- e.g. following the frontmatter
@@ -984,7 +1062,7 @@ export class LayoutsCache
 
                 const rc = renderer.parseMetadata(<any>{
                     fspath: info.fspath,
-                    content: FS.readFileSync(info.fspath, 'utf-8')
+                    content: this.fileContentFor(info)
                 });
 
                 // docBody is the parsed body -- e.g. following the frontmatter
@@ -1149,7 +1227,7 @@ export class DocumentsCache
 
                 const rc = renderer.parseMetadata(<any>{
                     fspath: info.fspath,
-                    content: FS.readFileSync(info.fspath, 'utf-8')
+                    content: this.fileContentFor(info)
                 });
 
                 // docMetadata is the unmodified metadata/frontmatter

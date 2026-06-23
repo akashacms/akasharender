@@ -117,6 +117,24 @@ export declare class BaseCache<T extends BaseCacheEntry> extends EventEmitter {
      */
     protected findByPath(vpath: string): Promise<any>;
     gatherInfoData(info: T): void;
+    /**
+     * Read the textual content for a file being indexed.
+     *
+     * gatherInfoData is synchronous (because the renderers'
+     * parseMetadata is synchronous), so this reads synchronously.
+     *
+     * NOTE: An earlier attempt (F6) pre-read all files asynchronously
+     * into memory before inserting, to overlap disk I/O.  On a large site
+     * this held every file's content in memory at once and caused severe
+     * GC pressure -- it made indexing ~40x SLOWER, not faster.  It was
+     * abandoned.  The synchronous read here, processing one file at a
+     * time, keeps the heap small and is fast (the OS page cache makes the
+     * reads cheap).  See ARCHITECTURE-performance-review.md.
+     *
+     * @param info The info object for the file
+     * @returns The file content as a UTF-8 string
+     */
+    protected fileContentFor(info: T): string;
     protected insertDocToDB(info: T): Promise<void>;
     protected updateDocInDB(info: T): Promise<void>;
     /**

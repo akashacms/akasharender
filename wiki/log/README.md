@@ -6,6 +6,10 @@ title: Log index
 
 This directory contains a chronological audit trail of changes made to the wiki.
 
+## 2026-06-24
+
+- **[20260624T010424+0300.md](./20260624T010424+0300.md)**: 2026-06-24 01:04 - Add Performance Measurement Methodology concept page - New concept page documenting the measure-attribute-interpret-change-re-measure loop, the indexing-vs-rendering phase distinction, the `--perfresults`/`--perf-data-dir`/`AK_PROFILE_INDEX` tooling, the overlap-ratio and `user`/`real` parallelism checks, and the pitfalls learned from the techsparx.com review (wrong-bucket optimization, machine noise vs causal change, MahafuncArray double counting, the failed pre-read optimization, CPU-bound work not helped by async); cross-linked with Performance Profiling and Concurrent Rendering, and added to the concepts README and master index
+
 ## 2026-06-19
 
 - **[20260619T173000+0300.md](./20260619T173000+0300.md)**: 2026-06-19 17:30 - Added Answer Page on the Webmention Protocol - New answer describing Webmention (W3C protocol for decentralized cross-site reply/like/repost notifications, IndieWeb successor to Pingback): the `rel="webmention"` markup and microformats2 classification, the full discovery/`POST`/source-fetch-verification protocol, and server options (Webmention.io and other hosted services, or a self-hosted PHP receiver) with a build-time fetch-and-render approach for AkashaCMS; cross-linked the four companion answers

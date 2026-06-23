@@ -67,6 +67,7 @@ This directory contains documentation of key concepts, patterns, and architectur
 
 - **[Command-Line Interface](./command-line-interface.md)**: The akasharender executable tool with 30+ commands for rendering, managing content, and publishing
 - **[Performance Profiling](./performance-profiling.md)**: Built-in capability to measure and record rendering timing data at document, Mahabhuta, and SQL levels
+- **[Performance Measurement Methodology](./performance-measurement-methodology.md)**: The disciplined practice of measuring, attributing, and interpreting performance data before optimizing -- and avoiding machine-noise and wrong-bucket pitfalls
 - **[File Watching](./file-watching.md)**: Development mode feature monitoring file system changes and automatically triggering selective re-rendering
 
 ## Advanced Database Features

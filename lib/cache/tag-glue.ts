@@ -110,14 +110,6 @@ export class TagGlue {
 
     async addTagGlue(vpath: string, tags: string[]) {
         for (const tag of tags) {
-            // console.log(`
-            // INSERT INTO TAGGLUE (
-            //     docvpath, tagName
-            // )
-            // VALUES (
-            //     ${vpath}, ${tag}
-            // )
-            // `)
             await this.db.run(await insertTagglue, {
                 $vpath: vpath,
                 $tag: tag
