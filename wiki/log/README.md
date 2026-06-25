@@ -8,6 +8,7 @@ This directory contains a chronological audit trail of changes made to the wiki.
 
 ## 2026-06-24
 
+- **[20260624T153651+0300.md](./20260624T153651+0300.md)**: 2026-06-24 15:36 - Correct concurrency findings in Performance Measurement Methodology - New data showed techsparx.com had `config.concurrency=1` (not the default 3), so the original ~1.0 overlap ratio only confirmed serial-by-configuration; a follow-up experiment found in-process concurrency gives genuine but small (~6%) multi-core overlap (saturating ~5 workers), the async I/O-wait tail, while ~94% CPU-bound work serializes on one JS thread. Reframed the concurrency pitfall (concurrency vs parallelism; wrong-setting measurement) and corrected the `config.concurrency` parameter note
 - **[20260624T010424+0300.md](./20260624T010424+0300.md)**: 2026-06-24 01:04 - Add Performance Measurement Methodology concept page - New concept page documenting the measure-attribute-interpret-change-re-measure loop, the indexing-vs-rendering phase distinction, the `--perfresults`/`--perf-data-dir`/`AK_PROFILE_INDEX` tooling, the overlap-ratio and `user`/`real` parallelism checks, and the pitfalls learned from the techsparx.com review (wrong-bucket optimization, machine noise vs causal change, MahafuncArray double counting, the failed pre-read optimization, CPU-bound work not helped by async); cross-linked with Performance Profiling and Concurrent Rendering, and added to the concepts README and master index
 
 ## 2026-06-19

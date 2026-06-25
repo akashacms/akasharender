@@ -136,9 +136,11 @@ cores in parallel.
 - **`time` field** -- a `performance.now()` render-start timestamp, used for
   overlap analysis, not a duration
   (source: [lib/render.ts](../../lib/render.ts)).
-- **`config.concurrency`** -- the `fastq` worker count (default 3); relevant
-  only when work is I/O-bound
-  (source: [lib/index.ts](../../lib/index.ts)).
+- **`config.concurrency`** -- the `fastq` worker count (code default 3, but
+  individual sites may set it lower; techsparx.com had it at 1). Raising it
+  helps only to the extent work is I/O-bound; on a CPU-bound site the gain
+  saturates quickly (~5 workers, ~4% faster)
+  (source: [lib/index.ts](../../lib/index.ts), [ARCHITECTURE-performance-review.md](../../ARCHITECTURE-performance-review.md)).
 - **`user` vs `real` from `time(1)`** -- machine-level single-thread vs
   multi-core indicator.
 
@@ -174,10 +176,17 @@ cores in parallel.
 - **Treating `time` as a duration.** The `perfresults` `time` field is a
   start timestamp; using it as elapsed time produces nonsense
   (source: [lib/render.ts](../../lib/render.ts)).
-- **Assuming `config.concurrency` parallelizes CPU work.** Measured overlap
-  was ~1.0 and `user` approximately equalled `real`, confirming the render
-  is single-threaded CPU work that `async`/`fastq` cannot parallelize; only
-  multiple OS processes/threads can
+- **Confusing concurrency with parallelism, and measuring at the wrong
+  setting.** The initial overlap ratio of ~1.0 was produced with
+  `config.concurrency = 1` -- a serial configuration -- so it confirmed the
+  run was serial but did *not* test whether concurrency helps. A proper
+  experiment varying `config.concurrency` showed `user/real` rising to only
+  ~1.06 at concurrency 5+ (saturating there): in-process `fastq`/`async`
+  yields genuine but small (~6%) multi-core overlap, corresponding to the
+  async I/O-wait tail, while the ~94% CPU-bound work still serializes on the
+  one JS thread. Lesson: vary the parameter you are testing, and distinguish
+  concurrency (interleaving during I/O waits) from parallelism (CPU work on
+  multiple cores, which requires multiple OS processes/threads)
   (source: [ARCHITECTURE-performance-review.md](../../ARCHITECTURE-performance-review.md)).
 - **"Best practice" optimizations that backfire.** An attempt to overlap
   file reads by pre-reading all files into memory caused severe GC pressure
