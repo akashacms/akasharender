@@ -44,7 +44,7 @@
     "akasharender": "dist/cli.js"
   },
   "dependencies": {
-    "@akashacms/renderers": "^0.9.x",
+    "@akashacms/renderers": "akashacms/rendering-engines#0.10",
     "cache": "^3.0.0",
     "commander": "^14.x",
     "fastest-levenshtein": "^1.0.16",
@@ -81,5 +81,8 @@
   "overrides": {
     "rimraf@<4": "5.0.10",
     "glob@<9": "10.4.5"
+  },
+  "allowScripts": {
+    "sharp@0.34.5": true
   }
 }

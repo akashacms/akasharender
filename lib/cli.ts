@@ -28,7 +28,7 @@ import { promises as fsp } from 'node:fs';
 import path from 'node:path';
 import util from 'node:util';
 import * as data from './data.js';
-import YAML from 'js-yaml';
+import * as YAML from 'js-yaml';
 import { RenderingResults } from './render.js';
 import { refactorTag } from './refactor-tags.js';
 import { SitemapValidator } from './sitemap-validator.js';
