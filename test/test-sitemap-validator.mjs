@@ -1,7 +1,8 @@
 
 import { promises as fs } from 'node:fs';
 import path from 'node:path';
-import { assert } from 'chai';
+import { describe, it, before, after } from 'node:test';
+import { assert } from './test-assert.mjs';
 import * as akasha from '../dist/index.js';
 
 const __filename = import.meta.filename;

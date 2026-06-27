@@ -1,7 +1,8 @@
 
 import { promisify } from 'node:util';
 import { default as akasha } from '../dist/index.js';
-import { assert } from 'chai';
+import { describe, it, before, after } from 'node:test';
+import { assert } from './test-assert.mjs';
 import { default as _image_size } from 'image-size';
 const sizeOf = promisify(_image_size);
 const filecache = await import('../dist/cache/cache-sqlite.js');
@@ -27,7 +28,6 @@ let config_rebase;
 describe('build rebased site', function() {
     it('should create configuration', async function() {
 
-        this.timeout(75000);
         config_rebase = new akasha.Configuration();
         config_rebase.rootURL("https://example.akashacms.com/rebase/to/");
         config_rebase.configDir = __dirname;
@@ -70,7 +70,6 @@ describe('build rebased site', function() {
     });
 
     it('should run setup', async function() {
-        this.timeout(75000);
         await akasha.setup(config_rebase);
         // await akasha.fileCachesReady(config_rebase);
         // await akasha.cacheSetupComplete(config_rebase);
@@ -96,12 +95,10 @@ describe('build rebased site', function() {
     });
 
     it('should copy assets', async function() {
-        this.timeout(75000);
         await config_rebase.copyAssets();
     });
 
     it('should build site', async function() {
-        this.timeout(75000);
         let failed = false;
         let results = await akasha.render(config_rebase);
         for (let result of results) {
@@ -1034,7 +1031,6 @@ describe('Rebased index Chain', function() {
     });
 
     after(async function() {
-        this.timeout(75000);
         await akasha.closeCaches();
     });
 

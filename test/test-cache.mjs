@@ -5,7 +5,8 @@ import * as akasha from '../dist/index.js';
 const filecache = await import('../dist/cache/cache-sqlite.js');
 // import * as filecache from '../dist/cache/cache-sqlite.js';
 import minimatch from 'minimatch';
-import { assert }   from 'chai';
+import { describe, it, before, after } from 'node:test';
+import { assert }   from './test-assert.mjs';
 import { refactorTag } from '../dist/refactor-tags.js';
 
 const __filename = import.meta.filename;
@@ -16,7 +17,6 @@ let config;
 describe('Initialize cache test configuration', function() {
     it('should successfully configure test site', async function() {
         try {
-            this.timeout(25000);
             config = new akasha.Configuration();
             config.rootURL("https://example.akashacms.com");
             config.configDir = __dirname;
@@ -805,7 +805,6 @@ describe('Documents cache', function() {
     ];
     
     it('should find only allowed document paths', async function() {
-        this.timeout(75000);
         const documents = await filecache.documentsCache;
         await documents.isReady();
 
@@ -834,7 +833,6 @@ describe('Documents cache', function() {
 
     /* it('should have same for paths and pathsViews', async function() {
 
-        this.timeout(75000);
         const documents = filecache.documents;
         await documents.isReady();
 

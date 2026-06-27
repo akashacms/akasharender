@@ -4,7 +4,8 @@ import path from 'node:path';
 import { promisify } from 'node:util';
 import { default as akasha } from '../dist/index.js';
 const mahabhuta = akasha.mahabhuta;
-import { assert } from 'chai';
+import { describe, it, before, after } from 'node:test';
+import { assert } from './test-assert.mjs';
 import { default as _image_size } from 'image-size';
 const sizeOf = promisify(_image_size);
 
@@ -17,7 +18,6 @@ let config;
 
 describe('build site', function() {
     it('should construct configuration', async function() {
-        this.timeout(75000);
         config = new akasha.Configuration();
         config.rootURL("https://example.akashacms.com");
         config.configDir = __dirname;
@@ -70,7 +70,6 @@ describe('build site', function() {
     });
 
     it('should run setup', async function() {
-        this.timeout(75000);
         await akasha.setup(config);
         // await akasha.fileCachesReady(config);
         /* await Promise.all([
@@ -94,7 +93,6 @@ describe('build site', function() {
     });
 
     it('should copy assets', async function() {
-        this.timeout(75000);
         await config.copyAssets();
     });
 
@@ -104,7 +102,6 @@ describe('build site', function() {
     });
 
     it('should build site', async function() {
-        this.timeout(75000);
         let failed = false;
         let results = await akasha.render(config);
         for (let result of results) {
@@ -117,7 +114,6 @@ describe('build site', function() {
     });
 
     it('should close the configuration', async function() {
-        this.timeout(75000);
         await akasha.closeCaches();
     });
 });

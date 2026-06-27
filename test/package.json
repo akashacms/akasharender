@@ -5,13 +5,14 @@
   "main": "index.js",
   "type": "commonjs",
   "scripts": {
-    "test": "npm-run-all test-normal test-rebased test-cache test-isready-timing test-absolute test-copy-render",
-    "test-normal": "mocha ./index.mjs",
-    "test-rebased": "mocha ./rebased.mjs",
-    "test-cache": "mocha ./test-cache.mjs",
-    "test-isready-timing": "mocha ./test-isready-timing.mjs",
-    "test-bad-formatting": "mocha ./bad-formatting.mjs",
-    "test-absolute": "mocha ./test-relative.mjs",
+    "test": "npm-run-all test-normal test-rebased test-cache test-isready-timing test-absolute test-incremental test-copy-render",
+    "test-normal": "node --test ./index.mjs",
+    "test-rebased": "node --test ./rebased.mjs",
+    "test-cache": "node --test ./test-cache.mjs",
+    "test-isready-timing": "node --test ./test-isready-timing.mjs",
+    "test-absolute": "node --test ./test-relative.mjs",
+    "test-sitemap": "node --test ./test-sitemap-validator.mjs",
+    "test-incremental": "node --test ./test-incremental.mjs",
     "build": "npm-run-all build:copy build:render",
     "build:copy": "node ../dist/cli.js copy-assets config-normal.mjs",
     "build:render": "node ../dist/cli.js render config-normal.mjs",
@@ -29,9 +30,8 @@
   "license": "ISC",
   "dependencies": {
     "@compodoc/live-server": "^1.2.3",
-    "chai": "^5.1.x",
     "image-size": "^1.1.x",
-    "mocha": "^10.x.0",
+    "minimatch": "^10.x",
     "npm-run-all": "^4.1.5"
   },
   "devDependencies": {

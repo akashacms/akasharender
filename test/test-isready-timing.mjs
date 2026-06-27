@@ -2,7 +2,8 @@ import util   from 'util';
 import path   from 'path';
 import * as akasha from '../dist/index.js';
 const filecache = await import('../dist/cache/cache-sqlite.js');
-import { assert }   from 'chai';
+import { describe, it, before, after } from 'node:test';
+import { assert }   from './test-assert.mjs';
 
 const __filename = import.meta.filename;
 const __dirname = import.meta.dirname;
@@ -12,7 +13,6 @@ let config;
 describe('isReady timing verification', function() {
     
     it('should successfully configure test site', async function() {
-        this.timeout(25000);
         config = new akasha.Configuration();
         config.rootURL("https://example.akashacms.com");
         config.configDir = __dirname;
@@ -37,7 +37,6 @@ describe('isReady timing verification', function() {
     });
 
     it('should not add files after ready event is emitted', async function() {
-        this.timeout(25000);
         
         // Track events for each cache type
         const tracking = {
@@ -102,7 +101,6 @@ describe('isReady timing verification', function() {
     });
     
     it('should have stable file counts after isReady resolves', async function() {
-        this.timeout(10000);
         
         const documents = filecache.documentsCache;
         const assets = filecache.assetsCache;
@@ -146,7 +144,6 @@ describe('isReady timing verification', function() {
     });
 
     it('should have all files loaded when isReady resolves', async function() {
-        this.timeout(10000);
         
         const documents = filecache.documentsCache;
         await documents.isReady();

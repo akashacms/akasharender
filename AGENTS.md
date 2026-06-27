@@ -8,7 +8,7 @@ The scope for AkashaCMS is rendering static HTML websites, rendering EPUB books 
 - `npm run build` - Compile TypeScript to JavaScript
 - `npm run watch` - Watch mode compilation
 - `cd test && npm test` - Run full test suite
-- `cd test && npm run test-normal` - Run main tests (mocha ./index.mjs)
+- `cd test && npm run test-normal` - Run main tests (node --test ./index.mjs)
 - `cd test && npm run test-cache` - Run cache tests
 - `cd test && npm run test-rebased` - Run rebased tests
 
@@ -33,7 +33,7 @@ The scope for AkashaCMS is rendering static HTML websites, rendering EPUB books 
 - Caching: SQLite-based file caching in `lib/cache/`.  The file information is gathered by the VFStack scanning process during initialization.
 - In-Memory SQLITE3 database: A lot of data is kept in this database, allowing for ease of accessing the data in any desired fashion.
 - Database request caching: Some database queries are repeated multiple times, and a cache is used to hold such data to prevent excess queries for the same data.
-- Testing: Mocha with Chai assertions, ES modules (.mjs files)
+- Testing: Node.js built-in test runner (`node:test`) with a Chai-compatible `node:assert` helper (`test/test-assert.mjs`), ES modules (.mjs files)
 
 ## Configuring an AkashaCMS project
 

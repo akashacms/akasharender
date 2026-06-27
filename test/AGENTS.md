@@ -4,27 +4,44 @@ This document describes how to write tests, create test fixtures, and validate r
 
 ## Test Framework
 
-Tests use **Mocha** as the test runner and **Chai** for assertions. Test files are ES modules with `.mjs` extension.
+Tests use the Node.js built-in test runner (**`node:test`**) as the test
+runner.  Assertions use a small Chai-compatible helper, `test-assert.mjs`,
+which is implemented on top of `node:assert`.  Test files are ES modules
+with the `.mjs` extension.  Mocha and Chai are no longer used.
 
 ### Basic Test Structure
 
 ```javascript
-import { assert } from 'chai';
+import { describe, it, before, after } from 'node:test';
+import { assert } from './test-assert.mjs';
 import * as akasha from '../dist/index.js';
 const filecache = await import('../dist/cache/cache-sqlite.js');
 
 describe('Feature name', function() {
     it('should do something specific', async function() {
-        this.timeout(25000); // Set timeout for slow operations
-        
         const result = await someApiFunction();
-        
+
         assert.isDefined(result);
         assert.isArray(result);
         assert.equal(result.length, 3);
     });
 });
 ```
+
+### Notes on the migration from Mocha/Chai
+
+- `describe`, `it`, `before`, and `after` are imported from `node:test`.
+- The `assert` object comes from the local `test-assert.mjs` helper, which
+  provides the Chai `assert.*` methods used by this suite (`equal`,
+  `include`, `isTrue`, `isOk`, `exists`, `isArray`, `match`, `throws`,
+  etc.) backed by `node:assert`.  If a test needs an assertion that the
+  helper does not yet provide, add it to `test-assert.mjs`.
+- Mocha's `this.timeout(...)` is **not** available.  `node:test` does not
+  apply a default per-test timeout, so long-running tests no longer need
+  one.  If you must bound a test's run time, pass an options object:
+  `it('name', { timeout: 75000 }, async () => { ... })`.
+- Do not reference `this` inside test callbacks; `node:test` passes a
+  `TestContext` as the first argument instead.
 
 ### Key Test Files
 
@@ -185,12 +202,25 @@ it('should return undefined for tag without description', async function() {
 ```bash
 cd test
 npm test              # Run full test suite
-npm run test-normal   # Run main tests (mocha ./index.mjs)
+npm run test-normal   # Run main tests (node --test ./index.mjs)
 npm run test-cache    # Run cache tests
 npm run test-rebased  # Run rebased tests
 ```
 
+A single file can also be run directly:
+
+```bash
+node --test ./index.mjs
+```
+
+This directory is part of the parent npm workspaces setup (see the
+`workspaces` array in `../../package.json`).  Running `npm install` from the
+workspace root installs and links dependencies for the test directory, and
+resolves `akasharender` from the live working-tree checkout.
+
 ## Common Assertions
+
+These Chai-style methods are provided by `test-assert.mjs`:
 
 ```javascript
 // Existence
