@@ -9,6 +9,7 @@ This directory contains implementation guides for developing new features, fixin
 ## Implementation Guides
 
 - **[Sitemap Validation Implementation Guide](./sitemap-validation.md)**: Detailed implementation specifications for building a custom sitemap validator. Includes complete TypeScript class implementation, CLI integration, test suite design, and phase-by-phase implementation plan.
+- **[oEmbed Provider Implementation Guide for plugins-base](./oembed-provider.md)**: Concrete coding plan for adding an oEmbed provider to `@akashacms/plugins-base`: config-flag API (`generateOEmbed`), shared URL/path helper, `<head>` `<link>` injection via a new Mahabhuta element/partial, per-page JSON/XML file generation folded into `onSiteRendered`, payload builders, tests, and a phased plan.
 
 ## Guide Types
 

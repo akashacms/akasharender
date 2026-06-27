@@ -67,6 +67,12 @@ export type RenderingResults = {
     renderMahaElapsed?: number;
     renderTotalElapsed?: number;
 
+    // True when this document was not re-rendered because the
+    // existing output file is newer than the source document and
+    // its layout template.  See render2 and the --force-render-all
+    // option.  https://github.com/akashacms/akasharender/issues/61
+    skipped?: boolean;
+
     errors?: Array<Error>;
 };
 
@@ -840,16 +846,125 @@ export async function render(config) {
 };
 
 /**
+ * Determine whether a document can be skipped because its existing
+ * output file is up-to-date.
+ *
+ * A document is considered up-to-date when an output file exists and
+ * is newer than BOTH:
+ *
+ *   1. the source document, and
+ *   2. the layout template (if any) used by the document.
+ *
+ * As described in https://github.com/akashacms/akasharender/issues/61
+ * it is not feasible to determine the set of partials used by a given
+ * document, so changes to partials are NOT detected here.  Use
+ * `--force-render-all` (or the `forceRenderAll` option) to force every
+ * document to be re-rendered, for example after editing a partial.
+ *
+ * @param config   AkashaCMS Configuration
+ * @param docInfo  The document info object (from documentsCache.find)
+ * @returns `true` when rendering can be skipped, `false` otherwise.
+ */
+export async function isDocumentUpToDate(
+    config: Configuration,
+    docInfo
+): Promise<boolean> {
+
+    // Without a known render path we cannot locate the output file.
+    if (!docInfo || !docInfo.renderPath) {
+        return false;
+    }
+
+    // Only HTML documents pass through the layout/partial pipeline.
+    // CSS files and copied assets are cheap and have no layout
+    // dependency, so always re-process them to stay correct.
+    const renderer = config.findRendererPath(docInfo.vpath);
+    if (!renderer) {
+        return false;
+    }
+    const rc = <RenderingContext>{
+        fspath: docInfo.vpath,
+        content: docInfo.docContent,
+        body: docInfo.docBody,
+        metadata: docInfo.metadata
+    };
+    if (renderer.renderFormat(rc) !== 'HTML') {
+        return false;
+    }
+
+    // Locate the output file and read its modification time.
+    let outputMtimeMs;
+    try {
+        const renderDest = path.join(
+            config.renderTo, docInfo.renderPath);
+        const outStats = await fsp.stat(renderDest);
+        outputMtimeMs = outStats.mtimeMs;
+    } catch (err) {
+        // No output file (or not readable) => must render.
+        return false;
+    }
+
+    // The output must be newer than the source document.
+    if (typeof docInfo.mtimeMs !== 'number'
+     || docInfo.mtimeMs > outputMtimeMs
+    ) {
+        return false;
+    }
+
+    // The output must be newer than the layout template, if any.
+    if (docInfo?.metadata?.layout) {
+        try {
+            const layouts = config.akasha.filecache.layoutsCache;
+            const layout = await layouts.find(docInfo.metadata.layout);
+            // If the layout cannot be found, fall through to rendering
+            // so the existing error reporting in renderDocument2 runs.
+            if (!layout
+             || typeof layout.mtimeMs !== 'number'
+             || layout.mtimeMs > outputMtimeMs
+            ) {
+                return false;
+            }
+        } catch (err) {
+            return false;
+        }
+    }
+
+    return true;
+}
+
+/**
+ * Options controlling the behavior of render2.
+ */
+export type Render2Options = {
+    /**
+     * When true, every document is re-rendered regardless of
+     * output file timestamps.  This matches the historical
+     * behavior and is exposed on the CLI as `--force-render-all`.
+     */
+    forceRenderAll?: boolean;
+};
+
+/**
  * Render all the documents in a site using renderDocument2,
  * limiting the number of simultaneous rendering tasks
  * to the number in config.concurrency.
  * 
  * Returns structured RenderingResults data instead of text strings.
  *
+ * Unless `options.forceRenderAll` is set, documents whose output
+ * file is newer than both the source document and its layout
+ * template are skipped (see isDocumentUpToDate).
+ *
  * @param config
+ * @param options Optional rendering controls (e.g. forceRenderAll)
  * @returns Array of RenderingResults with performance and error data
  */
-export async function render2(config): Promise<Array<RenderingResults>> {
+export async function render2(
+    config,
+    options?: Render2Options
+): Promise<Array<RenderingResults>> {
+
+    const forceRenderAll = options?.forceRenderAll === true;
 
     const documents = <DocumentsCache>config.akasha.filecache.documentsCache;
     // await documents.isReady();
@@ -865,6 +980,9 @@ export async function render2(config): Promise<Array<RenderingResults>> {
         config: Configuration,
         info: Document
     }>;
+    // Documents that were skipped because their output is up-to-date.
+    // These are reported alongside the rendered documents.
+    const skippedResults = [] as Array<RenderingResults>;
     for (let entry of filez) {
         let include = true;
         // console.log(entry);
@@ -879,11 +997,29 @@ export async function render2(config): Promise<Array<RenderingResults>> {
         // else if (path.basename(entry.vpath) === '.placeholder') include = false;
 
         if (include) {
+            const info = await documents.find(entry.vpath);
+
+            // Skip documents whose output file is newer than both the
+            // source document and its layout template, unless the
+            // caller forced a full re-render.
+            // https://github.com/akashacms/akasharender/issues/61
+            if (!forceRenderAll
+             && await isDocumentUpToDate(config, info)
+            ) {
+                skippedResults.push(<RenderingResults>{
+                    vpath: info.vpath,
+                    renderPath: info.renderPath,
+                    renderFormat: 'HTML',
+                    skipped: true
+                });
+                continue;
+            }
+
             // The queue is an array of tuples containing the
             // config object and the path string
             filez2.push({
                 config: config,
-                info: await documents.find(entry.vpath)
+                info: info
             });
         }
     }
@@ -936,6 +1072,12 @@ export async function render2(config): Promise<Array<RenderingResults>> {
     const results: Array<RenderingResults> = [];
     for (let result of waitFor) {
         results.push(await result);
+    }
+
+    // Include the documents that were skipped because their
+    // output was up-to-date, so callers can report them.
+    for (let skipped of skippedResults) {
+        results.push(skipped);
     }
 
     // 4. Invoke hookSiteRendered

@@ -59,7 +59,8 @@ export type { TagDescription } from './types.js';
 export { validTagDescription } from './types.js';
 
 import { render, render2, renderDocument, renderContent, renderDocument2 } from './render.js';
-export { render, render2, renderDocument, renderDocument2, renderContent } from './render.js';
+export { render, render2, renderDocument, renderDocument2, renderContent, isDocumentUpToDate } from './render.js';
+export type { Render2Options, RenderingResults } from './render.js';
 
 export {
     SitemapValidator,

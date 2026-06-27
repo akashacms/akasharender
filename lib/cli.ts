@@ -89,6 +89,10 @@ metadata: ${util.inspect(doc.metadata)}
     });
 
 function formatResult(result: RenderingResults) {
+    if (result.skipped) {
+        return `
+SKIPPED ${result.renderFormat} ${result.vpath} ==> ${result.renderPath} (output up-to-date)`;
+    }
     return `
 ${result.renderFormat} ${result.vpath} ==> ${result.renderPath}
 FIRST ${result.renderFirstElapsed} LAYOUT ${result.renderLayoutElapsed} MAHA ${result.renderMahaElapsed} TOTAL ${result.renderTotalElapsed}`;
@@ -133,6 +137,7 @@ program
     .option('--copy-assets', 'First, copy the assets')
     .option('--results-to <resultFile>', 'Store the results into the named file')
     .option('--perfresults <perfResultsFile>', 'Store the time to render each document')
+    .option('--force-render-all', 'Re-render every document, ignoring output file timestamps')
     .option('--caching-timeout <timeout>', 'The time, in miliseconds, to honor entries in the search cache')
     .action(async (configFN, cmdObj) => {
         // console.log(`render: akasha: ${util.inspect(akasha)}`);
@@ -151,7 +156,9 @@ program
                     Number.parseInt(cmdObj.cachingTimeout)
                 );
             }
-            let results = <RenderingResults[]> await akasha.render2(config);
+            let results = <RenderingResults[]> await akasha.render2(config, {
+                forceRenderAll: cmdObj.forceRenderAll === true
+            });
             if (!cmdObj.quiet) {
                 for (let result of results) {
 

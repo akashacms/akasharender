@@ -91,12 +91,14 @@ High-level architecture documentation for major subsystems:
 
 - **[Sitemap Validation Architecture](./architecture/sitemap-validation.md)**: Design for validating generated sitemaps against local filesystem
 - **[Migrating AkashaRender to promised.node.sqlite](./architecture/promised-node-sqlite-migration.md)**: Plan to replace the `sqlite3` + `promised-sqlite3` stack with the standalone `promised.node.sqlite` package on `node:sqlite`
+- **[oEmbed Provider Architecture for AkashaCMS](./architecture/oembed-provider.md)**: Design for an oEmbed provider using precomputed JSON/XML referenced from `<head>` `<link>` tags, implemented in `@akashacms/plugins-base` behind a config flag
 
 ### [Implementation](./implementation/README.md)
 
 Implementation guides for features and modifications:
 
 - **[Sitemap Validation Implementation](./implementation/sitemap-validation.md)**: Complete implementation guide for building the sitemap validator
+- **[oEmbed Provider Implementation Guide for plugins-base](./implementation/oembed-provider.md)**: Coding plan for the oEmbed provider in `@akashacms/plugins-base` — config flag, `<head>` `<link>` injection, JSON/XML file generation in `onSiteRendered`, and tests
 
 ### [Log](./log/README.md)
 

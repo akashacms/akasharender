@@ -34,6 +34,7 @@ export type RenderingResults = {
     renderLayoutElapsed?: number;
     renderMahaElapsed?: number;
     renderTotalElapsed?: number;
+    skipped?: boolean;
     errors?: Array<Error>;
 };
 /**
@@ -101,14 +102,51 @@ export declare function renderDocument(config: Configuration, docInfo: any): Pro
  */
 export declare function render(config: any): Promise<any[]>;
 /**
+ * Determine whether a document can be skipped because its existing
+ * output file is up-to-date.
+ *
+ * A document is considered up-to-date when an output file exists and
+ * is newer than BOTH:
+ *
+ *   1. the source document, and
+ *   2. the layout template (if any) used by the document.
+ *
+ * As described in https://github.com/akashacms/akasharender/issues/61
+ * it is not feasible to determine the set of partials used by a given
+ * document, so changes to partials are NOT detected here.  Use
+ * `--force-render-all` (or the `forceRenderAll` option) to force every
+ * document to be re-rendered, for example after editing a partial.
+ *
+ * @param config   AkashaCMS Configuration
+ * @param docInfo  The document info object (from documentsCache.find)
+ * @returns `true` when rendering can be skipped, `false` otherwise.
+ */
+export declare function isDocumentUpToDate(config: Configuration, docInfo: any): Promise<boolean>;
+/**
+ * Options controlling the behavior of render2.
+ */
+export type Render2Options = {
+    /**
+     * When true, every document is re-rendered regardless of
+     * output file timestamps.  This matches the historical
+     * behavior and is exposed on the CLI as `--force-render-all`.
+     */
+    forceRenderAll?: boolean;
+};
+/**
  * Render all the documents in a site using renderDocument2,
  * limiting the number of simultaneous rendering tasks
  * to the number in config.concurrency.
  *
  * Returns structured RenderingResults data instead of text strings.
  *
+ * Unless `options.forceRenderAll` is set, documents whose output
+ * file is newer than both the source document and its layout
+ * template are skipped (see isDocumentUpToDate).
+ *
  * @param config
+ * @param options Optional rendering controls (e.g. forceRenderAll)
  * @returns Array of RenderingResults with performance and error data
  */
-export declare function render2(config: any): Promise<Array<RenderingResults>>;
+export declare function render2(config: any, options?: Render2Options): Promise<Array<RenderingResults>>;
 //# sourceMappingURL=render.d.ts.map
