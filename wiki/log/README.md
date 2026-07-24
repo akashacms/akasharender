@@ -6,6 +6,10 @@ title: Log index
 
 This directory contains a chronological audit trail of changes made to the wiki.
 
+## 2026-07-07
+
+- **[20260707T001637+0300.md](./20260707T001637+0300.md)**: 2026-07-07 00:16 - Added answer page on SQLite date/time storage options (issue #120) - New answer documenting the two current date/time conventions (epoch milliseconds for the file-cache `mtimeMs`/`publicationTime` columns, ISO-8601 text for TRACES), surveying the five SQLite storage options (ISO-8601 TEXT, Julian day, epoch seconds, epoch milliseconds, sqlean `time` extension) with trade-offs, recommending epoch milliseconds be kept; flags the stale "seconds since 1970" comment in `lib/cache/schema.ts`; updated the answers README and master index
+
 ## 2026-06-24
 
 - **[20260624T153651+0300.md](./20260624T153651+0300.md)**: 2026-06-24 15:36 - Correct concurrency findings in Performance Measurement Methodology - New data showed techsparx.com had `config.concurrency=1` (not the default 3), so the original ~1.0 overlap ratio only confirmed serial-by-configuration; a follow-up experiment found in-process concurrency gives genuine but small (~6%) multi-core overlap (saturating ~5 workers), the async I/O-wait tail, while ~94% CPU-bound work serializes on one JS thread. Reframed the concurrency pitfall (concurrency vs parallelism; wrong-setting measurement) and corrected the `config.concurrency` parameter note

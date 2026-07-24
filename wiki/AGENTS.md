@@ -31,6 +31,7 @@ The directory structure we'll use is:
 - *`../wiki/answers/`* -- As the user asks questions about the code base, some of the answers written by the LLM will be good enough to save.  Hence, this directory contains answers to questions.
 - *`../wiki/architecture/`*  -- The user may ask the LLM to write an overview of the architecture for the source code.
 - *`../wiki/implementation/`* -- The user may ask the LLM to write an implementation guide for a new feature, bug fix, or other task.
+- *`../wiki/memory/`* -- Holds *memory* pages: durable, reusable notes that help an LLM or LLM Agent write, debug, and maintain code in this project.  Whenever the LLM discovers information that will be useful for future work -- such as a debugging technique, a non-obvious build/test quirk, a recurring pitfall and its fix, or a working recipe for a common task -- it records that information as a memory page here.  The file `../wiki/memory/README.md` is the index of all memory pages.
 
 The paths labeled `../wiki/` actually correspond to the directory where this file resides.
 
@@ -50,7 +51,7 @@ Every wiki page,  uses these frontmatter properties:
 ```yaml
 ---
 title: "Page Title"
-type: concept | summary | answer | log
+type: concept | summary | answer | log | memory
 Sources:
   # List of raw source files this page draws from.
   - raw/path/to/file1.md
@@ -144,8 +145,26 @@ These are answers in response to a query.  Make the *Answer* section as long as 
 - `## Query` -- The user query which prompted this architecture
 - `## Architecture Pages` — Links to the related architecture pages
 - `## Architecture` -- Discuss the how an LLM or human coder should implement the task described in the *Query* section
-- `## Sources` — Which raw sources inform this page
-- `## Related Pages` — Wiki links to related pages
+- `## Sources` — Which raw sources inform this page
+- `## Related Pages` — Wiki links to related pages
+- `## Backlinks` -- Links to pages that link to this page
+
+**Memory pages (`wiki/memory/`)**
+
+A memory page records durable, reusable knowledge that will help an LLM or LLM Agent write, debug, and maintain code in this project in the future.  Create a memory page whenever you discover something worth remembering: a debugging technique, a non-obvious build/test/environment quirk, a recurring pitfall and its fix, a working recipe for a common task, or a hard-won insight about how subsystems interact.
+
+Memory pages use the standard frontmatter, with `type: memory`, plus two extra frontmatter fields to make them findable by full-text and semantic search:
+
+- `Symptoms:` — a YAML array of short strings describing the observable problems or situations this memory helps with (e.g. `"page missing expected content"`).  Omit for memory pages that are not about a problem symptom.
+- `Keywords:` — a YAML array of search keywords (subsystems, function names, error text) that should surface this page.
+
+Structure the body with these sections:
+
+- `## Context` — When and why this memory applies; the situation that led to it
+- `## Technique` — The reusable steps, recipe, or insight to remember
+- `## Pitfalls` — Known failure modes or common mistakes related to this memory
+- `## Sources` — Which raw source files or wiki pages inform this page (may be empty if purely operational)
+- `## Related Pages` — Wiki links to related pages (must include a link to `./README.md`)
 - `## Backlinks` -- Links to pages that link to this page
 
 **Log pages (`wiki/log/`)**
@@ -271,6 +290,39 @@ When the user asks a question about implementation about a feature in AkashaRend
 4. Cite specific wiki pages in your response
 5. Add the implementation plan document to the wiki
 
+### Memory Workflow
+
+The memory system exists so that useful, hard-won knowledge is not lost between work sessions.  Every LLM or LLM Agent working in this repository should both **consult** memory before starting work and **record** memory after learning something reusable.
+
+**When to create a memory page:**
+
+Create a memory page whenever, during any task, you learn something that would save time or prevent an error in the future.  Typical triggers include:
+
+- You worked out a technique for debugging a subsystem
+- You hit a non-obvious build, test, or environment quirk and found the fix
+- You discovered a recurring pitfall and how to avoid it
+- You found a working recipe for a common task (e.g. adding a CLI command, a plugin, or a test)
+- You learned a non-obvious way two subsystems interact
+
+Do **not** create a memory page for information that is already well captured by an existing summary, concept, answer, architecture, or implementation page — instead, link to or update that page.  Prefer updating an existing memory page over creating a near-duplicate.
+
+**To create or update a memory page:**
+
+1. Choose a lowercase-hyphenated file name matching the title slug, e.g. `wiki/memory/debugging-rendering-pipeline.md`
+2. Write the page using the **Memory pages** format above, including the `Symptoms` and `Keywords` frontmatter fields so the page is findable by search
+3. Cross-link: add links to related summary/concept/answer pages, and add a link back from those pages where appropriate
+4. Register the page in `wiki/memory/README.md`:
+   - Add an alphabetical entry under "Memory Pages" with a one-line summary
+   - Add the page under each of its `Categories` in the "By Category" list
+5. Update `wiki/index.md` only if a new memory *category* or a broadly-important memory should be surfaced from the master index
+6. Add a log entry to `wiki/log/` following the logging workflow
+
+**To find and use memory pages:**
+
+1. Before starting a debugging or coding task, read `wiki/memory/README.md` and scan the index and the "By Category" list for a relevant page
+2. If a symptom or error message is known, search the memory pages' `Symptoms` and `Keywords` frontmatter for a match
+3. Read matching memory pages and apply the recorded technique before deriving a solution from scratch
+
 ### Lint Workflow
 
 When the user asks you to lint or audit the wiki:
@@ -287,11 +339,14 @@ When the user asks you to lint or audit the wiki:
 - Check that all `wiki/concepts` files are linked from `wiki/concepts/README.md`
 - Check that all `wiki/architecture files are linked from `wiki/architecture/README.md`
 - Check that all `wiki/implementation` files are linked from `wiki/implementation/README.md`
+- Check that all `wiki/memory` files are linked from `wiki/memory/README.md`, and that each appears under a heading in the "By Category" list
 - Report findings as a numbered list with suggested fixes
 
 ### Maintaining navigation helper pages Workflow
 
-The directories `wiki/summaries/`, `wiki/concepts/`, `wiki/architecture/`, `wiki/answers/`, `wiki/implementation/`, and `wiki/log/` should have a file `README.md` listing links to the files contained in each directory.
+The directories `wiki/summaries/`, `wiki/concepts/`, `wiki/architecture/`, `wiki/answers/`, `wiki/implementation/`, `wiki/memory/`, and `wiki/log/` should have a file `README.md` listing links to the files contained in each directory.
+
+The `wiki/memory/README.md` file, in addition to the standard document list, must also contain a "By Category" list grouping the memory pages by their `Categories` frontmatter tag, so that memory pages are easy to find by topic.
 
 Each `README.md` should have a frontmatter section:
 

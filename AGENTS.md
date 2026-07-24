@@ -107,7 +107,7 @@ The `render` function renders all files in the documents directories into the ou
 * **@akashacms/plugins-blog-podcast** - Supports building a blog on an AkashaCMS website (../akashacms-blog-podcast, https://www.npmjs.com/package/@akashacms/plugins-blog-podcast, https://github.com/akashacms/akashacms-blog-podcast)
 * **@akashacms/plugins-booknav** - Supports a certain useful navigational style (../akashacms-booknav, https://www.npmjs.com/package/@akashacms/plugins-booknav, https://github.com/akashacms/akashacms-booknav)
 * **@akashacms/plugins-breadcrumbs** - Constructs breadcrumb trails to help navigate the website (../akashacms-breadcrumbs, https://www.npmjs.com/package/@akashacms/plugins-breadcrumbs, https://github.com/akashacms/akashacms-breadcrumbs)
-* **@akashacms/diagrams-maker** - Handles rendering diagrams using PlantUML, Mermaid, or Printora (../plugins-diagrams, https://www.npmjs.com/package/@akashacms/diagrams-maker, https://github.com/akashacms/plugins-diagrams)
+* **@akashacms/diagrams-maker** - Handles rendering diagrams using PlantUML, Mermaid, or Printora (../plugins-diagrams, https://www.npmjs.com/package/@akashacms/diagram-makers, https://github.com/akashacms/plugins-diagrams)
 * **@akashacms/plugins-external-links** - Processes links to external sites, adding FAVICONs and a glyph for external links (../akashacms-external-links, https://www.npmjs.com/package/@akashacms/plugins-external-links)
 * **@akashacms/plugins-footnotes** - Processes custom tags to add footnotes at the bottom of a web page (../akashacms-footnotes, https://www.npmjs.com/package/@akashacms/plugins-footnotes)
 * **@akashacms/plugins-authors** - For showing an information block describing the author of an article (../akashacms-plugins-authors, https://www.npmjs.com/package/@akashacms/plugins-authors)
@@ -147,6 +147,16 @@ Key points:
 - Wiki pages must follow strict formatting and citation requirements
 
 Before making any changes to wiki files, read and follow the guidelines in `wiki/AGENTS.md`.
+
+### Memory System
+
+The `wiki/memory/` directory is a **memory system** that lets LLMs and LLM Agents remember important information about writing and debugging code in this project across work sessions. Memory pages capture durable, reusable knowledge — debugging techniques, non-obvious build/test/environment quirks, recurring pitfalls and their fixes, working recipes for common tasks, and insights about how subsystems interact.
+
+**Creating memory (record what you learn):** Whenever you come across information that will be useful for future work — for example a technique for debugging the code, or a fix for a confusing build failure — create a memory page in `wiki/memory/`. Memory pages are Markdown with frontmatter and follow the same rules as the rest of the wiki. The full format, required frontmatter (including the `Symptoms` and `Keywords` search fields), required sections, and the step-by-step "Memory Workflow" are defined in `wiki/AGENTS.md`. After creating a page you must register it in `wiki/memory/README.md` (both the index list and the "By Category" list) and add a log entry in `wiki/log/`.
+
+**Finding and using memory (consult before you work):** Before debugging or coding, read `wiki/memory/README.md` and scan its index and "By Category" list for a relevant page. If you have a specific symptom or error message, search the memory pages' `Symptoms`/`Keywords` frontmatter. Apply any recorded technique before deriving a solution from scratch.
+
+The index at `wiki/memory/README.md` keeps memory pages findable; keep it accurate whenever you add or change a memory page.
 
 ## Multi-Agent Development Workflow
 

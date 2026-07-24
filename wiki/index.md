@@ -1,7 +1,7 @@
 ---
 title: "AkashaRender Code Wiki"
 date-created: 2026-05-20T12:00:00+00:00
-last-updated: 2026-06-24T12:00:00+03:00
+last-updated: 2026-07-24T12:31:18+03:00
 ---
 
 # AkashaRender Code Wiki
@@ -83,6 +83,7 @@ Detailed answers to technical questions about the codebase:
 - **[Bluesky / AT Protocol Integration and Crossover with the Fediverse](./answers/bluesky-atproto-integration.md)**: Bluesky (atproto) and the Fediverse (ActivityPub) are separate networks that only cross over via bridges (Bridgy Fed); Bluesky reads Open Graph for link cards and an optional `/.well-known/atproto-did` domain-handle verification artifact, which an AkashaCMS build can generate
 - **[Useful Microformats and IndieWeb Markup for a Static Blog](./answers/microformats-indieweb-for-static-blogs.md)**: Microformats for a static blog (issue #33) — use microformats2 (`h-entry`, `h-card`, `h-feed`); the author-listing case becomes a nested `p-author h-card`, with `rel="me"` for IndieWeb identity and `p-category`/`rel="tag"` for tags, injected via partial templates and the blog/authors plugins
 - **[Social-Sharing Metadata: Open Graph, Twitter Cards, and Facebook](./answers/social-sharing-metadata-opengraph-twitter-facebook.md)**: Open Graph is primary (Facebook consumes it; Twitter Cards fall back to it); audits the current `@akashacms/plugins-base` `ak_headermeta` implementation (wrong `name=` vs `property=`, no Twitter Cards, latent bugs) and proposes a frontmatter-driven `social:` block emitted from one data-table template loop
+- **[Options for Storing Date/Time Values in the In-Memory SQLite Database](./answers/sqlite-datetime-storage-options.md)**: Answers issue #120 — the file caches store epoch milliseconds (`mtimeMs`, `publicationTime` via a generated JSON-extraction column) while TRACES uses ISO-8601 text; surveys the SQLite date/time storage options (ISO-8601 TEXT, Julian day, epoch seconds, epoch milliseconds, sqlean) and recommends keeping epoch milliseconds
 - **[Webmention: Purpose, Markup, Protocol, and Server Software](./answers/webmention-protocol-and-markup.md)**: The W3C protocol for decentralized cross-site reply/like/repost notifications (IndieWeb successor to Pingback); covers `rel="webmention"` discovery, the `source`/`target` POST + source-fetch verification, microformats2 classification, and server options (Webmention.io and other hosted services, or a self-hosted PHP receiver) with a build-time fetch-and-render approach for AkashaCMS
 
 ### [Architecture](./architecture/README.md)
@@ -99,6 +100,12 @@ Implementation guides for features and modifications:
 
 - **[Sitemap Validation Implementation](./implementation/sitemap-validation.md)**: Complete implementation guide for building the sitemap validator
 - **[oEmbed Provider Implementation Guide for plugins-base](./implementation/oembed-provider.md)**: Coding plan for the oEmbed provider in `@akashacms/plugins-base` — config flag, `<head>` `<link>` injection, JSON/XML file generation in `onSiteRendered`, and tests
+
+### [Memory](./memory/README.md)
+
+Durable, reusable notes that help an LLM or LLM Agent write, debug, and maintain code in this project across work sessions (debugging techniques, build/test quirks, recurring pitfalls and fixes, and working recipes):
+
+- **[How To Debug the Rendering Pipeline](./memory/debugging-rendering-pipeline.md)**: Entry points and techniques for diagnosing why a document renders incorrectly or fails, by localizing the failing stage of the three-stage pipeline and using TRACES data and the CLI.
 
 ### [Log](./log/README.md)
 
