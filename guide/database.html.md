@@ -1,11 +1,11 @@
 ---
 layout: ebook-page.html.ejs
-title: Using the In-memory SQL+ORM database
+title: Using the In-memory SQL database
 ---
 
 AkashaRender supports storing data in an in-memory SQL database.  AkashaRender uses this to index all documents and other assets, and to run complex queries on website content.
 
-The database is built on top of SQLITE3 (https://sqlite.org/), using the Node-SQLITE3 package (https://www.npmjs.com/package/sqlite3) as wrapped by the `'promised-sqlite3'` package (https://www.npmjs.com/package/promised-sqlite3).
+The database is built on top of SQLITE3 (https://sqlite.org/), using the `node:sqlite` package that's built-in to Node.js (starting with v24) as wrapped by the `'promised.node.sqlite'` package (https://www.npmjs.com/package/promised.node.sqlite).
 
 There is one instance of this `AsyncDatabase` object instantiated for use by AkashaRender and any plugin.  This instance is created in `sqdb.ts`, and by default:
 

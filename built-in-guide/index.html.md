@@ -23,6 +23,79 @@ With that, macros can be invoked this way:
 {{ ak_core.rssHeaderMeta("/rss-for-header.xml") }}
 ```
 
+# Document groups using `<document-group>` tag
+
+The `<document-group>` tag supports selecting a group of documents using a single element, and executing a partial template for each selected document.
+
+The selection parameters are similar to the options available on the `akasharender search` command.  Both end up using the same internal API.
+
+```html
+<document-group id="..." class="..." style="..."
+    root-path="..."
+    renders-to-html="..."
+    vpath-glob="..."
+    render-glob="..."
+    layout="..."
+    blogtag="..."
+    tag="..."
+    parent-dir="..."
+    dirname="..."
+    skip-glob="..."
+    limit="..."
+    offset="..."
+    sort-by="..."
+    sort="..."
+    template="..."></document-group>
+```
+
+The `id=`, `class=`, and `style=` attributes set these values on the wrapper `<div>` that is inserted into the HTML.  That is, this tag converts into:
+
+```html
+<div id="..." class="..." style="...">
+   ... HTML for selected document 1
+   ... HTML for selected document 2
+   ... HTML for selected document 3
+</div>
+```
+
+Other than `template=` the other attributes determine which documents are selected for the document group.
+
+The `template=` attribute names a template, from the _partials_ directory stack, that processes the document data, producing an HTML snippet for that document.
+
+The `root-path=` attribute limits the selectable documents to a given directory hierarchy.
+
+The `renders-to-html=` limits the selectable documents to ones which render to HTML output.  Remember that the documents directory stack can contain LESS files that render to CSS, and can contain other documents like images that are simply copied.
+
+The `vpath-glob=` attribute selects documents using a GLOB pattern on the input file name (the vpath).
+
+The `render-glob=` attribute selects documents using a GLOB pattern on the rendered file name (the file name in the rendered output directory).
+
+The `layout=` attribute selects documents which are rendered by one of possibly multiple layout template names.
+
+The `blogtag=` attribute selects documents based on the `blogtag` frontmatter.  Multiple blogtag names can be given.
+
+The `tag=` attribute selects documents based on the `tag` frontmatter.  Multiple tag names can be given.
+
+The `parent-dir=` attribute selects documents where their `parentDir` attribute is equal to the named directory.  The _parentDir_ is the parent directory of the directory containing the document.
+
+The `dirname=` attribute selects documents where their `dirname` attribute is equal to the named directory.  The _dirname_ is the directory containing the document.
+
+The `skip-glob=` attribute skips files which match the GLOB pattern.
+
+The `limit=` attribute limits the number of items selected.
+
+The `offset=` attribute selects documents starting from the _N_th item.
+
+The `sort-by=` attribute sorts the results on one of these fields:
+
+* title
+* renderPath
+* vpath
+* parentDir
+* publicationTime
+
+The `sort="asc or desc"` attribute determines the _direction_ of the sort, either ascending or descending.
+
 # Simplification for `figure/img` tags
 
 This construct is recommended in the HTML5 world for its microformat goodness
