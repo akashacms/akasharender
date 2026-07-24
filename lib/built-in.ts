@@ -285,17 +285,18 @@ export const mahabhutaArray = function(
     ret.addMahafunc(new StylesheetsElement(config, akasha, plugin));
     ret.addMahafunc(new HeaderJavaScript(config, akasha, plugin));
     ret.addMahafunc(new FooterJavaScript(config, akasha, plugin));
-    ret.addMahafunc(new HeadLinkRelativizer(config, akasha, plugin));
-    ret.addMahafunc(new ScriptRelativizer(config, akasha, plugin));
     ret.addMahafunc(new InsertTeaser(config, akasha, plugin));
     ret.addMahafunc(new CodeEmbed(config, akasha, plugin));
     ret.addMahafunc(new AkBodyClassAdd(config, akasha, plugin));
     ret.addMahafunc(new FigureImage(config, akasha, plugin));
     ret.addMahafunc(new img2figureImage(config, akasha, plugin));
     ret.addMahafunc(new ImageRewriter(config, akasha, plugin));
+    ret.addMahafunc(new DocumentGroup(config, akasha, plugin));
     ret.addMahafunc(new ShowContent(config, akasha, plugin));
     ret.addMahafunc(new SelectElements(config, akasha, plugin));
     ret.addMahafunc(new AnchorCleanup(config, akasha, plugin));
+    ret.addMahafunc(new HeadLinkRelativizer(config, akasha, plugin));
+    ret.addMahafunc(new ScriptRelativizer(config, akasha, plugin));
 
     ret.addFinalMahafunc(new MungedAttrRemover(config, akasha, plugin));
     ret.addFinalMahafunc(new BlankLinkDefanger(config, akasha, plugin));
@@ -739,6 +740,172 @@ class ImageRewriter extends Munger {
         }
 
         return "ok";
+    }
+}
+
+class DocumentGroup extends CustomElement {
+    get elementName() { return "document-group"; }
+    async process($element, metadata, dirty) {
+        const template = $element.attr('template');
+        if (!template) {
+            throw new Error(`document-group must be given a template`);
+        }
+
+        const clazz   = $element.attr('class');
+        const id      = $element.attr('id');
+        const width   = $element.attr('width');
+        const style   = $element.attr('style');
+
+        // mime?
+
+        // When the renders-to-html attribute is absent, leave
+        // rendersToHTML undefined so that the search does not filter
+        // on it.  Only when the attribute is explicitly present do we
+        // constrain the search to (non-)HTML documents.
+        const rendersToHTMLAttr = $element.attr('renders-to-html');
+        let rendersToHTML: boolean | undefined;
+        if (typeof rendersToHTMLAttr === 'string') {
+            rendersToHTML = rendersToHTMLAttr !== 'false';
+        }
+        const rootPath = $element.attr('root-path');
+        const vpathGlob = $element.attr('vpath-glob');
+        const renderGlob = $element.attr('render-glob');
+
+        // Parse an attribute that may hold either a single value or a
+        // list of values, into an array of strings.  Returns undefined
+        // when the attribute is absent or contains no usable values, so
+        // that the search does not filter on it.
+        //
+        // A value whose trimmed form begins with '[' is parsed as a
+        // JSON array, e.g. tag='["Tag1", "Tag-string-2"]'.  This is
+        // the robust way to express multiple values because JSON
+        // handles values that themselves contain commas, spaces, or
+        // quote characters (tags such as `Something "quoted"`).  Any
+        // other value is treated as a single literal string, so the
+        // common case stays simple, e.g. tag="Tag1".
+        const attrList = (name: string): string[] | undefined => {
+            const value = $element.attr(name);
+            if (typeof value !== 'string') return undefined;
+            const trimmed = value.trim();
+            if (trimmed.length === 0) return undefined;
+
+            let list: string[];
+            if (trimmed.startsWith('[')) {
+                let parsed;
+                try {
+                    parsed = JSON.parse(trimmed);
+                } catch (e) {
+                    throw new Error(`document-group ${name} is not valid JSON: ${value}`);
+                }
+                if (!Array.isArray(parsed)) {
+                    throw new Error(`document-group ${name} JSON must be an array: ${value}`);
+                }
+                list = parsed.map(item => {
+                    if (typeof item !== 'string') {
+                        throw new Error(`document-group ${name} array must contain only strings: ${value}`);
+                    }
+                    return item.trim();
+                });
+            } else {
+                list = [ trimmed ];
+            }
+
+            list = list.filter(item => item.length > 0);
+            return list.length > 0 ? list : undefined;
+        };
+
+        // Each of these attributes accepts either a single value or a
+        // JSON array of values, so that a document group may match
+        // multiple layouts, blogtags, or tags.
+        const layouts = attrList('layout');
+        const blogtags = attrList('blogtag');
+        const tags = attrList('tag');
+
+        const parentDir = $element.attr('parent-dir');
+        const dirname = $element.attr('dirname');
+        const skipGlob = $element.attr('skip-glob');
+        const limit = $element.attr('limit');
+        const offset = $element.attr('offset');
+
+        const sortBy = $element.attr('sort-by');
+        const sort   = $element.attr('sort');
+
+        if (typeof sortBy === 'string') {
+            if (!sortBy.match(/^(title|renderPath|vpath|parentDir|publicationTime)$/)) {
+                throw new Error(`DocumentGroup sort-by incorrect ${sortBy}`);
+            }
+        }
+
+        let sortByDescending = false;
+        if (typeof sort === 'string') {
+            if (!sort.match(/^(desc|asc)$/)) {
+                throw new Error(`DocumentGroup sort incorrect ${sort}`);
+            }
+            sortByDescending = sort === 'desc';
+        }
+
+        let limitNum: number | undefined;
+        if (typeof limit === 'string') {
+            limitNum = Number.parseInt(limit, 10);
+            if (Number.isNaN(limitNum)) {
+                throw new Error(`DocumentGroup limit incorrect ${limit}`);
+            }
+        }
+
+        let offsetNum: number | undefined;
+        if (typeof offset === 'string') {
+            offsetNum = Number.parseInt(offset, 10);
+            if (Number.isNaN(offsetNum)) {
+                throw new Error(`DocumentGroup offset incorrect ${offset}`);
+            }
+        }
+
+        const selector = {
+            rendersToHTML,
+            rootPath: typeof rootPath === 'string' ? rootPath : undefined,
+            glob: typeof vpathGlob === 'string' ? vpathGlob : undefined,
+            renderglob: typeof renderGlob === 'string' ? renderGlob : undefined,
+            layouts,
+            // The search query matches an array of blogtags via the
+            // `blogtags` option, and a single blogtag via `blogtag`.
+            blogtags,
+            tag: tags,
+            parentDir: typeof parentDir === 'string' ? parentDir : undefined,
+            dirname: typeof dirname === 'string' ? dirname : undefined,
+            skipglob: typeof skipGlob === 'string' ? skipGlob : undefined,
+            limit: limitNum,
+            offset: offsetNum,
+            sortBy,
+            sortByDescending
+        };
+
+        const doAttr = (name: string, value: string | undefined) => {
+            return typeof value === 'string'
+                ? ` ${name}="${encode(value)}"`
+                : '';
+        };
+
+        const wrapperTop = `<div`
+            + doAttr('id', id)
+            + doAttr('class', clazz)
+            + doAttr('width', width)
+            + doAttr('style', style)
+            + `>`;
+        const wrapperBottom = '</div>';
+
+        const documents = this.akasha.filecache.documentsCache;
+        const entries = await documents.search(selector);
+
+        const elements = new Array<string>();
+        
+        for (const entry of entries) {
+            elements.push(await this.akasha.partial(
+                this.config, template, { entry }
+            ));
+        }
+
+        return wrapperTop + elements.join('\n') + wrapperBottom;
+
     }
 }
 

@@ -1099,6 +1099,317 @@ describe('Select Elements', function() {
     */
 });
 
+describe('Document Group', function() {
+
+    // Extract the renderPath cell values, in document order, for the
+    // document-group whose wrapper <div> has the given id.  The
+    // document-group-summary.html.ejs partial emits one <table> per
+    // matched document with a td.renderPath cell.
+    const renderPaths = ($, id) => {
+        return $(`div#${id} td.renderPath`)
+            .map((i, el) => $(el).text())
+            .get();
+    };
+
+    describe('root-path', function() {
+        let html, $;
+        before(async function() {
+            const result = await akasha.readRenderedFile(
+                config, 'document-group-root-path.html'
+            );
+            html = result.html;
+            $ = result.$;
+        });
+
+        it('should render the document group file', function() {
+            assert.exists(html);
+            assert.isString(html);
+        });
+
+        it('should place the group in a wrapper div with the id', function() {
+            assert.equal($('article#original div#test-root-path').length, 1);
+        });
+
+        it('should select every HTML document under hier/ sorted by renderPath', function() {
+            assert.deepEqual(renderPaths($, 'test-root-path'), [
+                'hier/dir1/dir2/index.html',
+                'hier/dir1/dir2/nested-anchor.html',
+                'hier/dir1/dir2/nested-img-resize.html',
+                'hier/dir1/dir2/sibling.html',
+                'hier/dir1/index.html',
+                'hier/dir1/sibling.html',
+                'hier/dir1/sibling2.html',
+                'hier/imgdir/index.html',
+                'hier/index.html'
+            ]);
+        });
+
+        it('should include the document title in the summary', function() {
+            assert.include(
+                $('div#test-root-path td.title').text(),
+                'Top index item'
+            );
+        });
+    });
+
+    describe('render-glob', function() {
+        let $;
+        before(async function() {
+            const result = await akasha.readRenderedFile(
+                config, 'document-group-render-glob.html'
+            );
+            $ = result.$;
+        });
+
+        it('should select only index.html documents under hier/', function() {
+            assert.deepEqual(renderPaths($, 'test-render-glob'), [
+                'hier/dir1/dir2/index.html',
+                'hier/dir1/index.html',
+                'hier/imgdir/index.html',
+                'hier/index.html'
+            ]);
+        });
+    });
+
+    describe('vpath-glob', function() {
+        let $;
+        before(async function() {
+            const result = await akasha.readRenderedFile(
+                config, 'document-group-vpath-glob.html'
+            );
+            $ = result.$;
+        });
+
+        it('should select documents whose vpath matches the glob', function() {
+            assert.deepEqual(renderPaths($, 'test-vpath-glob'), [
+                'hier/dir1/sibling.html',
+                'hier/dir1/sibling2.html'
+            ]);
+        });
+    });
+
+    describe('sort', function() {
+        let $;
+        before(async function() {
+            const result = await akasha.readRenderedFile(
+                config, 'document-group-sort.html'
+            );
+            $ = result.$;
+        });
+
+        it('should sort ascending by renderPath', function() {
+            assert.deepEqual(renderPaths($, 'test-sort-asc'), [
+                'hier/dir1/dir2/index.html',
+                'hier/dir1/index.html',
+                'hier/imgdir/index.html',
+                'hier/index.html'
+            ]);
+        });
+
+        it('should sort descending by renderPath', function() {
+            assert.deepEqual(renderPaths($, 'test-sort-desc'), [
+                'hier/index.html',
+                'hier/imgdir/index.html',
+                'hier/dir1/index.html',
+                'hier/dir1/dir2/index.html'
+            ]);
+        });
+    });
+
+    describe('blogtag', function() {
+        let $;
+        before(async function() {
+            const result = await akasha.readRenderedFile(
+                config, 'document-group-blogtag.html'
+            );
+            $ = result.$;
+        });
+
+        it('should select documents with the given blogtag', function() {
+            assert.deepEqual(renderPaths($, 'test-blogtag'), [
+                'hier/dir1/dir2/sibling.html',
+                'hier/dir1/sibling.html',
+                'hier/dir1/sibling2.html'
+            ]);
+        });
+
+        it('should select documents with any of several blogtags', function() {
+            assert.deepEqual(renderPaths($, 'test-blogtag-multi'), [
+                'hier/dir1/dir2/nested-anchor.html',
+                'hier/dir1/dir2/sibling.html',
+                'hier/dir1/sibling.html',
+                'hier/dir1/sibling2.html'
+            ]);
+        });
+    });
+
+    describe('tag', function() {
+        let $;
+        before(async function() {
+            const result = await akasha.readRenderedFile(
+                config, 'document-group-tag.html'
+            );
+            $ = result.$;
+        });
+
+        it('should select documents with the given tag', function() {
+            assert.deepEqual(renderPaths($, 'test-tag'), [
+                'tags-array.html'
+            ]);
+        });
+
+        it('should select documents with any of several tags', function() {
+            assert.deepEqual(renderPaths($, 'test-tag-multi'), [
+                'tags-array.html',
+                'tags-string.html'
+            ]);
+        });
+
+        // The JSON array form is required to express a tag value that
+        // contains spaces and quote characters; a comma- or
+        // space-separated list could not represent it.
+        it('should select a tag containing spaces and quotes', function() {
+            assert.deepEqual(renderPaths($, 'test-tag-quoted'), [
+                'teaser-content.html'
+            ]);
+        });
+    });
+
+    describe('parent-dir', function() {
+        let $;
+        before(async function() {
+            const result = await akasha.readRenderedFile(
+                config, 'document-group-parent-dir.html'
+            );
+            $ = result.$;
+        });
+
+        // parentDir is the parent of a document's containing directory,
+        // so parent-dir="hier/dir1" selects documents inside hier/dir1/dir2.
+        it('should select documents by parentDir', function() {
+            assert.deepEqual(renderPaths($, 'test-parent-dir'), [
+                'hier/dir1/dir2/index.html',
+                'hier/dir1/dir2/nested-anchor.html',
+                'hier/dir1/dir2/nested-img-resize.html',
+                'hier/dir1/dir2/sibling.html'
+            ]);
+        });
+    });
+
+    describe('dirname', function() {
+        let $;
+        before(async function() {
+            const result = await akasha.readRenderedFile(
+                config, 'document-group-dirname.html'
+            );
+            $ = result.$;
+        });
+
+        // dirname matches the immediate containing directory, so
+        // dirname="hier/dir1" selects the documents directly inside
+        // hier/dir1 (not the deeper hier/dir1/dir2 documents that
+        // parent-dir="hier/dir1" would select).
+        it('should select documents by their containing directory', function() {
+            assert.deepEqual(renderPaths($, 'test-dirname'), [
+                'hier/dir1/index.html',
+                'hier/dir1/sibling.html',
+                'hier/dir1/sibling2.html'
+            ]);
+        });
+    });
+
+    describe('layout', function() {
+        let $;
+        before(async function() {
+            const result = await akasha.readRenderedFile(
+                config, 'document-group-layout.html'
+            );
+            $ = result.$;
+        });
+
+        it('should select documents using the given layout', function() {
+            assert.deepEqual(renderPaths($, 'test-layout'), [
+                'teaser-njk-macro.html'
+            ]);
+        });
+
+        it('should select documents using any of several layouts', function() {
+            assert.deepEqual(renderPaths($, 'test-layout-multi'), [
+                'njk-incl.html',
+                'teaser-njk-macro.html'
+            ]);
+        });
+    });
+
+    describe('skip-glob', function() {
+        let $;
+        before(async function() {
+            const result = await akasha.readRenderedFile(
+                config, 'document-group-skip-glob.html'
+            );
+            $ = result.$;
+        });
+
+        it('should exclude documents matching the skip glob', function() {
+            assert.deepEqual(renderPaths($, 'test-skip-glob'), [
+                'hier/dir1/index.html',
+                'hier/imgdir/index.html',
+                'hier/index.html'
+            ]);
+        });
+    });
+
+    describe('limit and offset', function() {
+        let $;
+        before(async function() {
+            const result = await akasha.readRenderedFile(
+                config, 'document-group-limit-offset.html'
+            );
+            $ = result.$;
+        });
+
+        it('should limit the number of documents', function() {
+            assert.deepEqual(renderPaths($, 'test-limit'), [
+                'hier/dir1/dir2/index.html',
+                'hier/dir1/index.html'
+            ]);
+        });
+
+        it('should offset into the result set', function() {
+            assert.deepEqual(renderPaths($, 'test-offset'), [
+                'hier/imgdir/index.html',
+                'hier/index.html'
+            ]);
+        });
+    });
+
+    describe('wrapper attributes', function() {
+        let $;
+        before(async function() {
+            const result = await akasha.readRenderedFile(
+                config, 'document-group-attributes.html'
+            );
+            $ = result.$;
+        });
+
+        it('should apply id, class, and style to the wrapper div', function() {
+            const $div = $('article#original div#test-attributes');
+            assert.equal($div.length, 1);
+            assert.isTrue($div.hasClass('doc-group-class'));
+            assert.equal($div.attr('style'), 'color: red;');
+        });
+
+        it('should still render the matched documents', function() {
+            assert.deepEqual(renderPaths($, 'test-attributes'), [
+                'hier/dir1/dir2/index.html',
+                'hier/dir1/dir2/nested-anchor.html',
+                'hier/dir1/dir2/nested-img-resize.html',
+                'hier/dir1/dir2/sibling.html'
+            ]);
+        });
+    });
+});
+
 describe('Index Chain', function() {
 
     it('should generate correct index chain for /hier/dir1/dir2/sibling.html', async function() {

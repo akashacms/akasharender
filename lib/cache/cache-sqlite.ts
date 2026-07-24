@@ -2321,9 +2321,8 @@ export class DocumentsCache
 
         try {
             const { sql, params } = this.buildSearchQuery(options);
-            // console.log(`search ${sql}`);
             const results
-                = await this.db.all(sql, params);
+                = await this.db.all(sql, params);   
 
             const documents
                 = this.validateRows(results)
@@ -2375,6 +2374,7 @@ export class DocumentsCache
             return filteredResults;
 
         } catch (err: any) {
+            console.log(err.stack);
             throw new Error(`DocumentsFileCache.search error: ${err.message}`);
         }
     }
@@ -2425,6 +2425,16 @@ export class DocumentsCache
             whereClauses.push(`d.renderPath LIKE ${addParam(options.rootPath + '%')}`);
         }
 
+        // Find items by the parent of their containing directory
+        if (typeof options.parentDir === 'string') {
+            whereClauses.push(`d.parentDir = ${addParam(options.parentDir)}`);
+        }
+
+        // Find items by their containing directory
+        if (typeof options.dirname === 'string') {
+            whereClauses.push(`d.dirname = ${addParam(options.dirname)}`);
+        }
+
         // Glob pattern matching
         if (options.glob && typeof options.glob === 'string') {
             const escapedGlob = options.glob.indexOf("'") >= 0 
@@ -2439,6 +2449,14 @@ export class DocumentsCache
                 ? options.renderglob.replaceAll("'", "''") 
                 : options.renderglob;
             whereClauses.push(`d.renderPath GLOB ${addParam(escapedGlob)}`);
+        }
+
+        // Skip means anything that doesn't match the glob
+        if (options.skipglob && typeof options.skipglob === 'string') {
+            const escapedGlob = options.skipglob.indexOf("'") >= 0 
+                ? options.skipglob.replaceAll("'", "''") 
+                : options.skipglob;
+            whereClauses.push(`d.renderPath NOT GLOB ${addParam(escapedGlob)}`);
         }
 
         // Blog tag filtering
@@ -2466,9 +2484,20 @@ export class DocumentsCache
         }
 
         // Tag filtering using TAGGLUE table
-        if (options.tag && typeof options.tag === 'string') {
+        if (options.tag && (
+               typeof options.tag === 'string'
+            || Array.isArray(options.tag)
+        )) {
             joins.push(`INNER JOIN TAGGLUE tg ON d.vpath = tg.docvpath`);
-            whereClauses.push(`tg.tagName = ${addParam(options.tag)}`);
+            if (typeof options.tag === 'string') {
+                whereClauses.push(`tg.tagName = ${addParam(options.tag)}`);
+            } else if (Array.isArray(options.tag) && options.tag.length >= 1) {
+                const wheres = [];
+                for (const tagnm of options.tag) {
+                    wheres.push(`tg.tagName = ${addParam(tagnm)}`);
+                }
+                whereClauses.push(`(${wheres.join(' OR ')})`);
+            }
         }
 
         // Layout filtering
@@ -2578,9 +2607,16 @@ export class DocumentsCache
             sql += ' ' + orderBy;
         }
 
-        // Add LIMIT and OFFSET
+        // Add LIMIT and OFFSET.
+        //
+        // SQLite requires a LIMIT clause to precede an OFFSET clause.
+        // When an offset is requested without a limit, use the SQLite
+        // idiom `LIMIT -1` which means "no limit", so that the OFFSET
+        // is still applied.
         if (typeof options.limit === 'number') {
             sql += ` LIMIT ${addParam(options.limit)}`;
+        } else if (typeof options.offset === 'number') {
+            sql += ` LIMIT -1`;
         }
         if (typeof options.offset === 'number') {
             sql += ` OFFSET ${addParam(options.offset)}`;

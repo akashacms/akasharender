@@ -358,6 +358,66 @@ describe('Documents cache', function() {
             vpath: 'mounted/img2resize.html.md'
         },
         {
+            fspath: '**/documents/document-group-attributes.html.md',
+            renderPath: 'document-group-attributes.html',
+            vpath: 'document-group-attributes.html.md'
+        },
+        {
+            fspath: '**/documents/document-group-blogtag.html.md',
+            renderPath: 'document-group-blogtag.html',
+            vpath: 'document-group-blogtag.html.md'
+        },
+        {
+            fspath: '**/documents/document-group-dirname.html.md',
+            renderPath: 'document-group-dirname.html',
+            vpath: 'document-group-dirname.html.md'
+        },
+        {
+            fspath: '**/documents/document-group-layout.html.md',
+            renderPath: 'document-group-layout.html',
+            vpath: 'document-group-layout.html.md'
+        },
+        {
+            fspath: '**/documents/document-group-limit-offset.html.md',
+            renderPath: 'document-group-limit-offset.html',
+            vpath: 'document-group-limit-offset.html.md'
+        },
+        {
+            fspath: '**/documents/document-group-parent-dir.html.md',
+            renderPath: 'document-group-parent-dir.html',
+            vpath: 'document-group-parent-dir.html.md'
+        },
+        {
+            fspath: '**/documents/document-group-render-glob.html.md',
+            renderPath: 'document-group-render-glob.html',
+            vpath: 'document-group-render-glob.html.md'
+        },
+        {
+            fspath: '**/documents/document-group-root-path.html.md',
+            renderPath: 'document-group-root-path.html',
+            vpath: 'document-group-root-path.html.md'
+        },
+        {
+            fspath: '**/documents/document-group-skip-glob.html.md',
+            renderPath: 'document-group-skip-glob.html',
+            vpath: 'document-group-skip-glob.html.md'
+        },
+        {
+            fspath: '**/documents/document-group-sort.html.md',
+            renderPath: 'document-group-sort.html',
+            vpath: 'document-group-sort.html.md'
+        },
+        {
+            fspath: '**/documents/document-group-tag.html.md',
+            renderPath: 'document-group-tag.html',
+            vpath: 'document-group-tag.html.md'
+        },
+        {
+            fspath: '**/documents/document-group-vpath-glob.html.md',
+            renderPath: 'document-group-vpath-glob.html',
+            vpath: 'document-group-vpath-glob.html.md'
+        },
+        {
             fspath: '**/documents/anchor-cleanups-handlebars.html.md',
             renderPath: 'anchor-cleanups-handlebars.html',
             vpath: 'anchor-cleanups-handlebars.html.md'
@@ -703,6 +763,11 @@ describe('Documents cache', function() {
             vpath: 'hier/dir1/sibling.html.md'
         },
         {
+            fspath: '**/documents/hier/dir1/sibling2.html.md',
+            renderPath: 'hier/dir1/sibling2.html',
+            vpath: 'hier/dir1/sibling2.html.md'
+        },
+        {
             fspath: '**/documents/hier/dir1/dir2/index.html.md',
             renderPath: 'hier/dir1/dir2/index.html',
             vpath: 'hier/dir1/dir2/index.html.md'
@@ -1031,6 +1096,48 @@ describe('Documents cache', function() {
         }) * /); */
     });
 
+    it('should find indexes w/ search GLOB', async function() {
+
+        const found = await filecache.documentsCache.search({
+            rendersToHTML: true,
+            renderglob: '**/index.html'
+        });
+        assert.deepEqual([
+            'hier-broke/dir1/dir2/index.html.md',
+            'hier/dir1/dir2/index.html.md',
+            'hier/dir1/index.html.md',
+            'hier/imgdir/index.html.md',
+            'hier/index.html.md',
+            'subdir/index.html.md'
+        ],
+        found.map(item => {
+            return item.vpath;
+        }));
+    });
+
+    it('should find indexes w/ search REGEX', async function() {
+
+        const found = await filecache.documentsCache.search({
+            rendersToHTML: true,
+            renderpathmatch: /index.html$/
+        });
+
+        // NOTE: In the previous test the GLOB pattern
+        // included a "/" character and therefore
+        assert.deepEqual([
+            'hier-broke/dir1/dir2/index.html.md',
+            'hier/dir1/dir2/index.html.md',
+            'hier/dir1/index.html.md',
+            'hier/imgdir/index.html.md',
+            'hier/index.html.md',
+            'index.html.md',
+            'subdir/index.html.md'
+        ],
+        found.map(item => {
+            return item.vpath;
+        }));
+    });
+
     describe('tags', function() {
 
         it('should not find tags in show-content.html', async function() {
@@ -1142,6 +1249,36 @@ describe('Documents cache', function() {
             assert.equal(found.length, 1);
 
             assert.equal(found[0].vpath, 'tags-string.html.md');
+        });
+
+        it('should find documents with Tag1 and Tag-string-2', async function() {
+            const found = await filecache.documentsCache.search({
+                tag: [ 'Tag1', 'Tag-string-2' ]
+            });
+            /*  console.log(`test Tag1 found `, found.map(f => {
+                return f.vpath;
+            })); /* */
+
+            assert.isDefined(found);
+            assert.isArray(found);
+            assert.equal(found.length, 2);
+
+            assert.equal(found[0].vpath, 'tags-array.html.md');
+            assert.equal(found[1].vpath, 'tags-string.html.md');
+        });
+
+        it('should find documents with a single-element tag array', async function() {
+            // Regression: a tag array of length 1 previously matched
+            // neither the string branch nor the multi-element branch,
+            // which caused every tagged document to be returned.
+            const found = await filecache.documentsCache.search({
+                tag: [ 'Tag1' ]
+            });
+
+            assert.isDefined(found);
+            assert.isArray(found);
+            assert.equal(found.length, 1);
+            assert.equal(found[0].vpath, 'tags-array.html.md');
         });
 
         it('should not find documents with foober', async function() {
@@ -2035,6 +2172,11 @@ describe('Partials cache', function() {
     
     const allowed_paths = [
         {
+            fspath: '**/partials/document-group-summary.html.ejs',
+            renderPath: 'document-group-summary.html.ejs',
+            vpath: 'document-group-summary.html.ejs'
+        },
+        {
             fspath: '**/partials2/helloworld.html',
             renderPath: 'helloworld.html',
             vpath: 'helloworld.html'
@@ -2371,6 +2513,76 @@ describe('Search', function() {
         assert.equal(found.length, 0);
     });
 
+    it('should select by dirname (containing directory)', async function() {
+        const found = await filecache.documentsCache.search({
+            dirname: 'hier/dir1',
+            sortBy: 'renderPath'
+        });
+
+        assert.isDefined(found);
+        assert.isArray(found);
+        assert.deepEqual(
+            found.map(doc => doc.renderPath),
+            [
+                'hier/dir1/index.html',
+                'hier/dir1/sibling.html',
+                'hier/dir1/sibling2.html'
+            ]
+        );
+        for (const doc of found) {
+            assert.equal(doc.dirname, 'hier/dir1');
+        }
+    });
+
+    it('should select by parentDir (parent of containing directory)', async function() {
+        const found = await filecache.documentsCache.search({
+            parentDir: 'hier/dir1',
+            sortBy: 'renderPath'
+        });
+
+        assert.isDefined(found);
+        assert.isArray(found);
+        assert.deepEqual(
+            found.map(doc => doc.renderPath),
+            [
+                'hier/dir1/dir2/index.html',
+                'hier/dir1/dir2/nested-anchor.html',
+                'hier/dir1/dir2/nested-img-resize.html',
+                'hier/dir1/dir2/sibling.html'
+            ]
+        );
+        for (const doc of found) {
+            assert.equal(doc.parentDir, 'hier/dir1');
+        }
+    });
+
+    it('should distinguish dirname from parentDir', async function() {
+        // dirname matches the immediate containing directory while
+        // parentDir matches the parent of that directory, so the two
+        // searches for the same value must not overlap.
+        const byDirname = await filecache.documentsCache.search({
+            dirname: 'hier/dir1'
+        });
+        const byParentDir = await filecache.documentsCache.search({
+            parentDir: 'hier/dir1'
+        });
+
+        const dirnameVpaths = byDirname.map(doc => doc.vpath);
+        for (const doc of byParentDir) {
+            assert.isFalse(dirnameVpaths.includes(doc.vpath));
+        }
+    });
+
+    it('should select nothing for nonexistent dirname', async function() {
+        const found = await filecache.documentsCache.search({
+            dirname: 'hier/dir1/nowhere'
+        });
+
+        assert.isDefined(found);
+        assert.isArray(found);
+        assert.equal(found.length, 0);
+    });
+
     // it('should select by pathmatch string', async function() {
     //     const found = filecache.assetsCache.search({
     //         pathmatch: '.png$'
@@ -2511,9 +2723,39 @@ describe('Search', function() {
         }
     });
 
+    it('should select JSON files by MIME type', async function() {
+        const found = await filecache.documentsCache.search({
+            mime: 'application/json'
+        });
+
+        // console.log(found);
+
+        assert.isDefined(found);
+        assert.isArray(found);
+        assert.isTrue(found.length > 0);
+        for (const doc of found) {
+            assert.isOk(doc.vpath.match(/\.json$/));
+        }
+    });
+
     it('should select MD files by GLOB', async function() {
         const found = await filecache.documentsCache.search({
             glob: '**/*.md'
+        });
+
+        // console.log(found);
+
+        assert.isDefined(found);
+        assert.isArray(found);
+        assert.isTrue(found.length > 0);
+        for (const doc of found) {
+            assert.isOk(doc.vpath.match(/\.md$/));
+        }
+    });
+
+    it('should select MD files by MIME type', async function() {
+        const found = await filecache.documentsCache.search({
+            mime: 'text/markdown'
         });
 
         // console.log(found);
@@ -2638,6 +2880,12 @@ describe('Search', function() {
         assert.isArray(found);
         assert.isTrue(found.length > 0);
         for (const doc of found) {
+            // console.log({
+            //     blogtag: 'sibling',
+            //     vpath: doc.vpath,
+            //     blogtag: doc.blogtag,
+            //     blogtags: doc.blogtags
+            // });
             assert.isDefined(doc.blogtag);
             assert.equal(typeof doc.blogtag, 'string')
             assert.equal(doc.blogtag, 'sibling');
@@ -2653,9 +2901,37 @@ describe('Search', function() {
         assert.isArray(found);
         assert.isTrue(found.length > 0);
         for (const doc of found) {
+            // console.log({
+            //     blogtag: 'nextedAnchor',
+            //     vpath: doc.vpath,
+            //     blogtag: doc.blogtag,
+            //     blogtags: doc.blogtags
+            // });
             assert.isDefined(doc.blogtag);
             assert.equal(typeof doc.blogtag, 'string')
             assert.equal(doc.blogtag, 'nestedAnchor');
+        }
+    });
+
+    it('should select by blogtag sibling or nestedAnchor', async function() {
+        const found = await filecache.documentsCache.search({
+            blogtags: [ 'sibling', 'nestedAnchor' ]
+        });
+
+        assert.isDefined(found);
+        assert.isArray(found);
+        assert.isTrue(found.length > 0);
+        for (const doc of found) {
+            // console.log({
+            //     blogtag: 'sibling or nestedAnchor',
+            //     vpath: doc.vpath,
+            //     blogtag: doc.blogtag,
+            //     blogtags: doc.blogtags
+            // });
+            assert.isDefined(doc.blogtag);
+            assert.equal(typeof doc.blogtag, 'string');
+            assert.match(doc.blogtag, /sibling|nestedAnchor/);
+            
         }
     });
 
@@ -2981,6 +3257,34 @@ describe('Search', function() {
         assert.equal(foundLimit.at(13).vpath, foundOffset.at(3).vpath);
         assert.equal(foundLimit.at(14).vpath, foundOffset.at(4).vpath);
 
+    });
+
+    it('should apply offset when no limit is given', async function() {
+        // Regression: SQLite requires a LIMIT clause to precede an
+        // OFFSET clause.  A search with offset but no limit previously
+        // produced a "near OFFSET: syntax error".
+        const all = await filecache.documentsCache.search({
+            rootPath: 'hier/',
+            rendersToHTML: true,
+            renderglob: '**/index.html',
+            sortBy: 'renderPath'
+        });
+        const offset = await filecache.documentsCache.search({
+            rootPath: 'hier/',
+            rendersToHTML: true,
+            renderglob: '**/index.html',
+            sortBy: 'renderPath',
+            offset: 2
+        });
+
+        assert.isArray(all);
+        assert.isArray(offset);
+        assert.isTrue(all.length > 2);
+        assert.equal(offset.length, all.length - 2);
+        assert.deepEqual(
+            offset.map(d => d.vpath),
+            all.slice(2).map(d => d.vpath)
+        );
     });
 
 

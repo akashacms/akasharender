@@ -694,9 +694,15 @@ program
     .option('--rendermatch <renderpathmatch>', 'Select only files matching the regular expression')
     .option('--glob <globmatch>', 'Select only files matching the glob expression')
     .option('--renderglob <globmatch>', 'Select only files rendering to the glob expression')
-    .option('--layout <layout>', 'Select only files matching the layouts')
+    .option('--parentDir <path>', 'Select only files whose parent directory is the named directory')
+    .option('--dirname <path>', 'Select only files within the named directory')
+    .option('--skipglob <globmatch>', 'Skip files matching the glob expression')
+    .option('--layouts <layouts...>', 'Select only files matching the layouts')
     .option('--mime <mime>', 'Select only files matching the MIME type')
-    .option('--tag <tag>', 'Select only files with the tag')
+    .option('--tags <tags...>', 'Select only files with the tags')
+    .option('--blogtags <blogtags...>', 'Select only files with the blogtags')
+    .option('--limit <limit>', 'Return only so many items')
+    .option('--offset <offset>', 'Return only items starting from the offset within the result set')
     .action(async (configFN, cmdObj) => {
         // console.log(`render: akasha: ${util.inspect(akasha)}`);
         try {
@@ -708,13 +714,19 @@ program
             // console.log(cmdObj);
             let options: any = { };
             if (cmdObj.root) options.rootPath = cmdObj.root;
+            if (cmdObj.parentDir) options.parentDir = cmdObj.parentDir;
+            if (cmdObj.dirname) options.dirname = cmdObj.dirname;
             if (cmdObj.match) options.pathmatch = cmdObj.match;
             if (cmdObj.rendermatch) options.renderpathmatch = cmdObj.rendermatch;
             if (cmdObj.glob) options.glob = cmdObj.glob;
             if (cmdObj.renderglob) options.renderglob = cmdObj.renderglob;
-            if (cmdObj.layout) options.layouts = [ cmdObj.layout ];
+            if (cmdObj.skipglob) options.skipglob = cmdObj.skipglob;
+            if (cmdObj.layouts) options.layouts = cmdObj.layouts;
             if (cmdObj.mime) options.mime = cmdObj.mime;
-            if (cmdObj.tag) options.tag = cmdObj.tag;
+            if (cmdObj.tags) options.tag = cmdObj.tags;
+            if (cmdObj.blogtags) options.blogtags = cmdObj.blogtags;
+            if (cmdObj.limit) options.limit = cmdObj.limit;
+            if (cmdObj.offset) options.offset = cmdObj.offset;
             // console.log(options);
             let docs = await akasha.filecache.documentsCache.search(options);
             console.log(docs
