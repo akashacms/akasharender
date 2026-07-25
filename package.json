@@ -58,7 +58,7 @@
     "micromatch": "^4.0.8",
     "mime": "^4.1.0",
     "pluralize": "^8.0.0",
-    "promised.node.sqlite": "github:robogeek/promised.node.sqlite",
+    "promised.node.sqlite": "^1.x",
     "relative": "^3.0.x",
     "rss": "^1.2.x",
     "sharp": "^0.35.x",
@@ -74,7 +74,7 @@
     "@types/js-yaml": "4.0.9",
     "@types/node": "^24.0.1",
     "typescript": "^5.8.3",
-    "typescript-cp": "^0.1.9"
+    "typescript-cp": "^0.1.10"
   },
   "peerDependencies": {
     "cheerio": "^1.2.x",
@@ -85,7 +85,11 @@
     "glob@<9": "13.0.6",
     "tar@<=7.5.20": "7.5.22",
     "linkify-it@<5.0.1": "6.1.0",
-    "brace-expansion@<=2.1.1": "5.0.8"
+    "typescript-cp": { "rimraf": "^6.1.x" },
+    "glob": { "minimatch": "*" },
+    "filelist": { "minimatch": "*" },
+    "brace-expansion@<=2.1.1": "5.0.8",
+    "cheerio": { "encoding-sniffer": "^1.x" }
   },
   "allowScripts": {
     "sharp@0.34.5": true
