@@ -33,6 +33,7 @@ import {
     TagGlue, TagDescriptions
 } from './tag-glue.js';
 import type {
+    SearchOptions,
     SimilarTagGroup,
     TagWithoutDescription
 } from '../types.js';
@@ -1866,9 +1867,14 @@ export class DocumentsCache
 
         // Picks up everything from the current level.
         // Differs from siblings by getting everything.
+        //
+        // SELECT *
+        // FROM DOCUMENTS
+        // WHERE dirname = $dirname AND rendersToHTML = true
         const _items = <any[]>await this.db.all(this.#docsForDirname, {
             $dirname: dirname
         });
+        // Reads the complete data items from the cache
         const items: Document[]
             = this.validateRows(_items)
             .map(item => {
@@ -1885,6 +1891,25 @@ export class DocumentsCache
                 );
         }
 
+        // This finds directories which 
+        // are children of the current directory
+
+        // SELECT distinct dirname FROM DOCUMENTS
+        // WHERE parentDir = $dirname;
+        //
+        // SELECT distinct dirname FROM DOCUMENTS WHERE parentDir = 'news';
+        // news/2013
+        // news/2014
+        // news/2015
+        // news/2016
+        // news/2017
+        // news/2019
+        // news/2020
+        // news/2021
+        // news/2022
+        // news/2025
+        // news/2026
+
         const _childFolders = <any[]>await this.db.all(this.#dirsForParentdir, {
             $dirname: dirname
         });
@@ -1898,6 +1923,8 @@ export class DocumentsCache
                 throw new Error(`childItemTree(${_rootItem}) no dirname fields in childFolders`);
             }
         }
+
+        // Recurses into each of the child directories.
         const cfs = [];
         for (const cf of childFolders) {
             cfs.push(await this.childItemTree(
@@ -2264,7 +2291,7 @@ export class DocumentsCache
      * @param options Search options object
      * @returns Promise<Array<Document>>
      */
-    async search(options): Promise<Array<Document>> {
+    async search(options: SearchOptions): Promise<Array<Document>> {
         const fcache = this;
 
         if (!this.searchCache) {
@@ -2382,7 +2409,7 @@ export class DocumentsCache
     /**
      * Build SQL query and parameters for search options
      */
-    private buildSearchQuery(options): {
+    private buildSearchQuery(options: SearchOptions): {
         sql: string,
         params: any
     } {

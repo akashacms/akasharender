@@ -19,7 +19,7 @@
 import { VPathData, dirToMount } from './vfstack.js';
 import { Configuration, indexChainItem } from '../index.js';
 import EventEmitter from 'events';
-import type { SimilarTagGroup, TagWithoutDescription } from '../types.js';
+import type { SearchOptions, SimilarTagGroup, TagWithoutDescription } from '../types.js';
 import { PathsReturnType } from './schema.js';
 import { AsyncDatabase } from 'promised.node.sqlite';
 import { BaseCacheEntry, Asset, Partial, Layout, Document } from './schema.js';
@@ -383,7 +383,7 @@ export declare class DocumentsCache extends BaseCache<Document> {
      * @param options Search options object
      * @returns Promise<Array<Document>>
      */
-    search(options: any): Promise<Array<Document>>;
+    search(options: SearchOptions): Promise<Array<Document>>;
     /**
      * Build SQL query and parameters for search options
      */

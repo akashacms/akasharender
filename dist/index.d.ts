@@ -31,6 +31,7 @@ export * as relative from 'relative';
 export { Plugin } from './Plugin.js';
 import type { TagDescription } from './types.js';
 export type { TagDescription } from './types.js';
+export type { SearchOptions, RegexMatch, SearchFilterFunc, SearchSortFunc } from './types.js';
 export { validTagDescription } from './types.js';
 export { render, render2, renderDocument, renderDocument2, renderContent, isDocumentUpToDate } from './render.js';
 export type { Render2Options, RenderingResults } from './render.js';

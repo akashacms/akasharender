@@ -56,6 +56,12 @@ export { Plugin } from './Plugin.js';
 
 import type { TagDescription } from './types.js';
 export type { TagDescription } from './types.js';
+export type {
+    SearchOptions,
+    RegexMatch,
+    SearchFilterFunc,
+    SearchSortFunc
+} from './types.js';
 export { validTagDescription } from './types.js';
 
 import { render, render2, renderDocument, renderContent, renderDocument2 } from './render.js';
