@@ -9,7 +9,9 @@ It allows a plugin author, or site author, to select documents by various attrib
 
 For example, `@akashacms/plugins-blog-podcast` plugin declares that a subset of the documents on a site are a "_blog_".  It supports there being multiple blogs with the "_blogtag_" frontmatter item.  The site administrator uses a selector to declare which documents are part of a given blog, how to sort the documents, and more.
 
-To select documents in a document group, one specifies a selector.  This is a list of attributes with which AkashaRender selects the documents that are part of the group.
+A _document group_ is an array of AkashaCMS documents defined by a _selector_.
+
+The selector describes the attributes controlling which documents are members of the document group.
 
 There are four ways to select a document group.
 
@@ -86,13 +88,39 @@ Both of those methods simply create a _selector_ object to pass to the `search(s
 
 This method converts the selector into an SQL statement, searches the documnet table for matching documents, applies sorting, limit, and offset parameters, and returns the resulting documents.
 
+Calling `search(selector)` results in an array of Document objects.
+
+The internal workflow is:
+
+```
+    Selector
+        |
+        V
+    search(selector)
+        |
+        V
+    buildSearchQuery(selector)
+        |
+        V
+    Returns an SQL string to search(selector)
+        |
+        V
+    SQLITE finds the matching documents
+        |
+        V
+    The documents array is type validated and converted
+    to the type Array<Document>
+```
+
 ## The `@akashacms/plugins-blog-podcast` blog selector
 
-In the `@akashacms/plugins-blog-podcast`, the function `findBlogDocs` takes a selector similar to the `search(selector)`, converting it into a `search(selector)`, in order to determine the documents which are part of a given blog.
+In the `@akashacms/plugins-blog-podcast`, we define one or more blogs on an AkashaCMS project.  Recall that a _blog_ is simply a group of postings (aka documents) that are part of the blog, which are presented in reverse-chronological order, and where an RSS feed is available.
 
-The two have a similar purpose, which is to select a group of documents using a "_selector_" object.  But, there are enough differences in details to rationalize the differences in the selector parameters.
+The documents that are part of a given blog are a document group.
 
-Further, the two were created at very different times in AkashaCMS history.  `@akashacms/plugins-blog-podcast` predates `search(selector)` by several years.
+The blog configuration object includes a field, `matchers`, which is a selector suitable for `search(selector)`.  Under the covers `search(selector)` is called whenever the plugin needs the list of documents that are part of the blog.
+
+This `matchers` object predated the `search(selector)` object, hence the naming difference.  As the two objects serve the same purpose, they were harmonized in the `0.10` time-frame to have the same selector fields.
 
 For example, the _News_ blog on https://akashacms.com has this blog selector:
 
@@ -119,31 +147,7 @@ news: {
 
 The `rss` and `rssurl` fields determine the characteristics of the RSS feed for the blog.
 
-The `matchers` field is essentially the `search(selector)` with some additional values being added by the plugin.  An [open task in the issue queue](https://github.com/akashacms/akasharender/issues/227) requests harmonization between the two.
+The `matchers` field is the `search(selector)` with some additional values supported by the plugin.  Those values are for backwards compatibility, and are converted into `search(selector)` values.
 
 The _blogtag_ in this case is `news`, making it the News blog.
-
-As an example, consider this function:
-
-```js
-async findBlogIndexes(config, blogcfg) {
-    if (!blogcfg.indexmatchers) return [];
-
-    const documents = this.akasha.filecache.documentsCache;
-    return documents.search({
-        rendersToHTML: true,
-        sortBy: 'publicationTime',
-        sortByDescending: true,
-        limit: blogcfg.maxEntries ? blogcfg.maxEntries : undefined,
-        // reverse: true,
-        pathmatch: blogcfg.indexmatchers.path ? blogcfg.indexmatchers.path : undefined,
-
-        // glob: '**/*.html',
-        layouts: blogcfg.indexmatchers.layouts ? blogcfg.indexmatchers.layouts : undefined,
-        rootPath: blogcfg.rootPath ? blogcfg.rootPath : undefined,
-    });
-}
-```
-
-The _blog indexes_ are the `index.html` pages in a blog.  This takes the _matchers_ and converts it into a `search(selector)` that finds `index.html` pages in the blog.
 
