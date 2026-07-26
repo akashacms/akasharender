@@ -93,6 +93,7 @@ High-level architecture documentation for major subsystems:
 - **[Sitemap Validation Architecture](./architecture/sitemap-validation.md)**: Design for validating generated sitemaps against local filesystem
 - **[Migrating AkashaRender to promised.node.sqlite](./architecture/promised-node-sqlite-migration.md)**: Plan to replace the `sqlite3` + `promised-sqlite3` stack with the standalone `promised.node.sqlite` package on `node:sqlite`
 - **[oEmbed Provider Architecture for AkashaCMS](./architecture/oembed-provider.md)**: Design for an oEmbed provider using precomputed JSON/XML referenced from `<head>` `<link>` tags, implemented in `@akashacms/plugins-base` behind a config flag
+- **[Breadcrumb Trail Schema.org Markup Architecture](./architecture/breadcrumb-schema-markup.md)**: Why the breadcrumbs plugin emits schema.org `BreadcrumbList` microdata, documenting the JSON-LD alternative and why it is not implemented (JSON-LD needs absolute URLs; AkashaCMS renders relative URLs)
 
 ### [Implementation](./implementation/README.md)
 

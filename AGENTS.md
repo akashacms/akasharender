@@ -4,6 +4,12 @@ AkashaRender is the core component of a system called AkashaCMS.  AkashaCMS refe
 
 The scope for AkashaCMS is rendering static HTML websites, rendering EPUB books from the same content, and generating good looking PDF documents from the same content.  In other words, the goal is using the same content files for websites, PDF documents, and/or EPUB books.
 
+## Runtime and Toolchain Requirements
+
+- **Node.js 24** is required for all compilation, execution, and testing.  Do not target, build, run, or test against any other Node.js major version (for example, do not use Node.js 26).  When multiple Node.js versions are installed (e.g. via `nvm`), select Node.js 24 before building, running, or testing.
+- **TypeScript 6** is required for compilation.  Compile with TypeScript 6, and keep `tsconfig.json` and any type-level code compatible with TypeScript 6.
+- These requirements apply not only to AkashaRender itself but also to **all AkashaCMS plugins** and related packages (the modules listed under "AkashaCMS plugins" below, as well as `mahabhuta` and `@akashacms/renderers`).  Compilation, execution, and testing of every plugin must use Node.js 24 and TypeScript 6.
+
 ## Build Commands
 - `npm run build` - Compile TypeScript to JavaScript
 - `npm run watch` - Watch mode compilation
@@ -34,6 +40,18 @@ The scope for AkashaCMS is rendering static HTML websites, rendering EPUB books 
 - In-Memory SQLITE3 database: A lot of data is kept in this database, allowing for ease of accessing the data in any desired fashion.
 - Database request caching: Some database queries are repeated multiple times, and a cache is used to hold such data to prevent excess queries for the same data.
 - Testing: Node.js built-in test runner (`node:test`) with a Chai-compatible `node:assert` helper (`test/test-assert.mjs`), ES modules (.mjs files)
+
+## Testing Framework Policy
+
+- All tests -- for AkashaRender and for every AkashaCMS plugin -- must be **executed with Node.js 24** (see "Runtime and Toolchain Requirements").
+- The **preferred test framework is the Node.js built-in test runner (`node:test`)**, using `node:assert` (or the Chai-compatible `node:assert` helper `test/test-assert.mjs`) for assertions, and ES modules (`.mjs` files).  New tests must be written for `node:test`, run via `node --test`.
+- **Historical note:** many plugins were originally written using **Mocha + Chai**.  This is now considered legacy.  Mocha's older releases are also incompatible with recent Node.js, so Mocha-based suites can fail to run under the required Node.js 24 toolchain.
+- **When a plugin is detected to still use Mocha + Chai** (for example, a `mocha`/`chai` dependency in `package.json`, a `mocha` invocation in the `test` script, or `import ... from 'chai'` / `describe`/`it` from Mocha in the test files), **offer to convert those tests to `node:test`.**  If the user accepts, perform the conversion:
+  - Replace `mocha`/`chai` imports with `import { describe, it } from 'node:test'` and `import assert from 'node:assert/strict'`.
+  - Convert Chai assertions to `node:assert` equivalents (e.g. `assert.exists(x)` -> `assert.ok(x)`, `assert.isString(x)` -> `assert.equal(typeof x, 'string')`, `assert.isFalse(x)` -> `assert.equal(x, false)`, `assert.include(str, sub)` -> `assert.ok(str.includes(sub))`).
+  - Convert Mocha timeouts (`this.timeout(N)`) to the `it(name, fn, { timeout: N })` option form, and prefer arrow-function test bodies.
+  - Change the `test` script to `node --test index.mjs` (adjusting the entry file name as needed), remove the `mocha` and `chai` dependencies, and ensure the test `package.json` has `"type": "module"`.
+  - Use the `@akashacms/plugins-base` test suite as the reference pattern for a converted `node:test` suite.
 
 ## Configuring an AkashaCMS project
 

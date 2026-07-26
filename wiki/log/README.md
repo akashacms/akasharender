@@ -6,6 +6,10 @@ title: Log index
 
 This directory contains a chronological audit trail of changes made to the wiki.
 
+## 2026-07-27
+
+- **[20260727T002043+0300.md](./20260727T002043+0300.md)**: 2026-07-27 00:20 - Add breadcrumb trail schema.org markup architecture document - New architecture page describing why `@akashacms/plugins-breadcrumbs` emits schema.org `BreadcrumbList` as inline microdata (working with relative URLs via the crumb `href`), replacing the previous incorrect `p-category` microformats2 class; fully documents the JSON-LD `BreadcrumbList` alternative and records that it is intentionally not implemented because JSON-LD requires absolute URLs while AkashaCMS renders relative URLs; updated the architecture README and master index
+
 ## 2026-07-07
 
 - **[20260707T001637+0300.md](./20260707T001637+0300.md)**: 2026-07-07 00:16 - Added answer page on SQLite date/time storage options (issue #120) - New answer documenting the two current date/time conventions (epoch milliseconds for the file-cache `mtimeMs`/`publicationTime` columns, ISO-8601 text for TRACES), surveying the five SQLite storage options (ISO-8601 TEXT, Julian day, epoch seconds, epoch milliseconds, sqlean `time` extension) with trade-offs, recommending epoch milliseconds be kept; flags the stale "seconds since 1970" comment in `lib/cache/schema.ts`; updated the answers README and master index
