@@ -1948,71 +1948,71 @@ export class DocumentsCache
         }
     }
 
-    #indexFilesSQL;
-    #indexFilesSQLrenderPath;
+    // #indexFilesSQL;
+    // #indexFilesSQLrenderPath;
 
-    /**
-     * Find the index files (renders to index.html)
-     * within the named subtree.
-     * 
-     * It appears this was written for booknav.
-     * But, it appears that booknav does not
-     * use this function.
-     *
-     * @param rootPath 
-     * @returns 
-     */
-    async indexFiles(rootPath?: string) {
-        let rootP = rootPath?.startsWith('/')
-                  ? rootPath?.substring(1)
-                  : rootPath;
+    // /**
+    //  * Find the index files (renders to index.html)
+    //  * within the named subtree.
+    //  * 
+    //  * It appears this was written for booknav.
+    //  * But, it appears that booknav does not
+    //  * use this function.
+    //  *
+    //  * @param rootPath 
+    //  * @returns 
+    //  */
+    // async indexFiles(rootPath?: string) {
+    //     let rootP = rootPath?.startsWith('/')
+    //               ? rootPath?.substring(1)
+    //               : rootPath;
 
-        if (!this.#indexFilesSQL) {
-            this.#indexFilesSQL =
-                await fsp.readFile(
-                    path.join(
-                        import.meta.dirname,
-                        'sql', 'index-doc-files.sql'
-                    ), 'utf-8'
-                );
-        }
+    //     if (!this.#indexFilesSQL) {
+    //         this.#indexFilesSQL =
+    //             await fsp.readFile(
+    //                 path.join(
+    //                     import.meta.dirname,
+    //                     'sql', 'index-doc-files.sql'
+    //                 ), 'utf-8'
+    //             );
+    //     }
 
-        if (!this.#indexFilesSQLrenderPath) {
-            this.#indexFilesSQLrenderPath =
-                await fsp.readFile(
-                    path.join(
-                        import.meta.dirname,
-                        'sql', 'index-doc-files-renderPath.sql'
-                    ), 'utf-8'
-                );
-        }
+    //     if (!this.#indexFilesSQLrenderPath) {
+    //         this.#indexFilesSQLrenderPath =
+    //             await fsp.readFile(
+    //                 path.join(
+    //                     import.meta.dirname,
+    //                     'sql', 'index-doc-files-renderPath.sql'
+    //                 ), 'utf-8'
+    //             );
+    //     }
 
-        const indexes = 
-            (
-                typeof rootP === 'string'
-             && rootP.length >= 1
-            )
-            ? <any[]> await this.db.all(
-                    this.#indexFilesSQLrenderPath, { $rootP: `${rootP}%` }
-                )
-            : <any[]> await this.db.all(
-                this.#indexFilesSQL
-            );
+    //     const indexes = 
+    //         (
+    //             typeof rootP === 'string'
+    //          && rootP.length >= 1
+    //         )
+    //         ? <any[]> await this.db.all(
+    //                 this.#indexFilesSQLrenderPath, { $rootP: `${rootP}%` }
+    //             )
+    //         : <any[]> await this.db.all(
+    //             this.#indexFilesSQL
+    //         );
         
-        const mapped = this.validateRows(indexes);
-        return mapped.map(item => {
-            return this.cvtRowToObj(item)
-        });
+    //     const mapped = this.validateRows(indexes);
+    //     return mapped.map(item => {
+    //         return this.cvtRowToObj(item)
+    //     });
 
-        // It's proved difficult to get the regexp
-        // to work in this mode:
-        //
-        // return await this.search({
-        //     rendersToHTML: true,
-        //     renderpathmatch: /\/index.html$/,
-        //     rootPath: rootPath
-        // });
-    }
+    //     // It's proved difficult to get the regexp
+    //     // to work in this mode:
+    //     //
+    //     // return await this.search({
+    //     //     rendersToHTML: true,
+    //     //     renderpathmatch: /\/index.html$/,
+    //     //     rootPath: rootPath
+    //     // });
+    // }
 
     #filesForSetTimes;
 

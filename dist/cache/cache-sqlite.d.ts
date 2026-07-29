@@ -304,18 +304,6 @@ export declare class DocumentsCache extends BaseCache<Document> {
         childFolders: any[];
     }>;
     /**
-     * Find the index files (renders to index.html)
-     * within the named subtree.
-     *
-     * It appears this was written for booknav.
-     * But, it appears that booknav does not
-     * use this function.
-     *
-     * @param rootPath
-     * @returns
-     */
-    indexFiles(rootPath?: string): Promise<Document[]>;
-    /**
      * For every file in the documents cache,
      * set the access and modifications.
      *
