@@ -1917,6 +1917,81 @@ describe('final funcs', function() {
 });
 
 
+describe('doHTMLAttribute', function() {
+
+    it('should build a simple attribute string', function() {
+        assert.equal(
+            akasha.doHTMLAttribute('id', 'main'),
+            ' id="main"'
+        );
+    });
+
+    it('should build an attribute for each name', function() {
+        assert.equal(
+            akasha.doHTMLAttribute('class', 'row'),
+            ' class="row"'
+        );
+        assert.equal(
+            akasha.doHTMLAttribute('style', 'color: red'),
+            ' style="color: red"'
+        );
+    });
+
+    it('should return the empty string for a non-string value', function() {
+        assert.equal(akasha.doHTMLAttribute('id', undefined), '');
+        assert.equal(akasha.doHTMLAttribute('id', null), '');
+        assert.equal(akasha.doHTMLAttribute('id', 42), '');
+        assert.equal(akasha.doHTMLAttribute('id', {}), '');
+    });
+
+    it('should build an attribute for an empty string value', function() {
+        assert.equal(
+            akasha.doHTMLAttribute('id', ''),
+            ' id=""'
+        );
+    });
+
+    it('should encode double quotes to prevent breaking out of the attribute', function() {
+        const result = akasha.doHTMLAttribute(
+            'title', 'say "hello"'
+        );
+        assert.isFalse(result.includes('"hello"'));
+        assert.include(result, '&quot;');
+        assert.equal(result, ' title="say &quot;hello&quot;"');
+    });
+
+    it('should encode angle brackets to prevent HTML injection', function() {
+        const result = akasha.doHTMLAttribute(
+            'title', '<script>alert(1)</script>'
+        );
+        assert.isFalse(result.includes('<script>'));
+        assert.isFalse(result.includes('</script>'));
+        assert.include(result, '&lt;');
+        assert.include(result, '&gt;');
+    });
+
+    it('should encode ampersands', function() {
+        assert.equal(
+            akasha.doHTMLAttribute('data-x', 'a & b'),
+            ' data-x="a &amp; b"'
+        );
+    });
+
+    it('should encode a single quote', function() {
+        const result = akasha.doHTMLAttribute('title', "it's");
+        assert.isFalse(result.includes("it's"));
+        assert.include(result, '&apos;');
+    });
+
+    it('should not corrupt safe characters', function() {
+        assert.equal(
+            akasha.doHTMLAttribute('href', '/path/to/page.html'),
+            ' href="/path/to/page.html"'
+        );
+    });
+});
+
+
 // TODO HBS support does not exist
 // Layout using HBS
 

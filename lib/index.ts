@@ -45,6 +45,7 @@ const {
 } = mahabhuta;
 import * as cheerio from 'cheerio';
 import mahaPartial from 'mahabhuta/maha/partial.js';
+import { encode } from 'html-entities';
 
 export * from './mahafuncs.js';
 
@@ -460,6 +461,20 @@ export function linkRelSetAttr($link, attr, doattr) {
         rels.splice(rels.indexOf(attr));
         $link.attr('rel', rels.join(' '));
     }
+};
+
+/**
+ * Create the string of an HTML attribute, where the value portion
+ * is properly encoded to defang any potential attacks.
+ *
+ * @param name
+ * @param value
+ * @returns
+ */
+export function doHTMLAttribute(name: string, value: string | undefined): string {
+    return typeof value === 'string'
+        ? ` ${name}="${encode(value)}"`
+        : '';
 };
 
 /**

@@ -119,6 +119,15 @@ export declare function indexChain(config: any, fname: any): Promise<indexChainI
  */
 export declare function linkRelSetAttr($link: any, attr: any, doattr: any): void;
 /**
+ * Create the string of an HTML attribute, where the value portion
+ * is properly encoded to defang any potential attacks.
+ *
+ * @param name
+ * @param value
+ * @returns
+ */
+export declare function doHTMLAttribute(name: string, value: string | undefined): string;
+/**
  * Compute an absolute vpath from a relative path reference.
  *
  * This function resolves a relative path (like "../file.html" or "./file.html")

@@ -33,7 +33,7 @@ import mahaMetadata from 'mahabhuta/maha/metadata.js';
 import mahaPartial from 'mahabhuta/maha/partial.js';
 import Renderers from '@akashacms/renderers';
 import {encode} from 'html-entities';
-import { Configuration, CustomElement, Munger, PageProcessor, javaScriptItem, resolveVpath } from './index.js';
+import { Configuration, CustomElement, Munger, PageProcessor, javaScriptItem, resolveVpath, doHTMLAttribute } from './index.js';
 
 const pluginName = "akashacms-builtin";
 
@@ -880,10 +880,10 @@ class DocumentGroup extends CustomElement {
         };
 
         const wrapperTop = `<div`
-            + this.doAttr('id', id)
-            + this.doAttr('class', clazz)
-            + this.doAttr('width', width)
-            + this.doAttr('style', style)
+            + doHTMLAttribute('id', id)
+            + doHTMLAttribute('class', clazz)
+            + doHTMLAttribute('width', width)
+            + doHTMLAttribute('style', style)
             + `>`;
         const wrapperBottom = '</div>';
 

@@ -412,6 +412,79 @@ export class BaseCache<
         return ret;
     }
 
+    protected findByFilesystemPathCache;
+    protected findByFilesystemPathSQL = new Map<
+        string, string
+    >();
+
+    /**
+     * Find an info object by the file-system path (fspath).
+     *
+     * @param fspath
+     * @returns
+     */
+    protected async findByFilesystemPath(fspath: string) {
+
+        const doCaching
+            = this.config.cachingTimeout > 0;
+        let cacheKey;
+
+        if (!this.findByFilesystemPathCache) {
+            this.findByFilesystemPathCache
+                = new Cache(this.config.cachingTimeout);
+        }
+
+        if (doCaching) {
+
+            cacheKey = JSON.stringify({
+                dbname: this.quotedDBName,
+                fspath,
+            });
+
+            const cached
+                = this.findByFilesystemPathCache.get(cacheKey);
+            if (cached) {
+                return cached;
+            }
+        }
+
+        // console.log(`findByFilesystemPath ${this.dao.table.quotedName} ${fspath}`);
+
+        let sql = this.findByFilesystemPathSQL.get(this.dbname);
+        if (!sql) {
+            sql = await this.sqlFormat(
+                path.join(import.meta.dirname,
+                    'sql', 'find-by-fspath-cache.sql'),
+                [ this.dbname ]
+            );
+            this.findByFilesystemPathSQL.set(this.dbname, sql);
+        }
+
+        let found;
+        try {
+            found = <any[]>await this.db.all(sql, {
+                $fspath: fspath
+            });
+        } catch (err) {
+            console.log(`db.all ${sql}`, err.stack);
+            throw err;
+        }
+
+        const mapped = this.validateRows(found);
+
+        const ret = mapped.map(item => {
+            return this.cvtRowToObj(item)
+        });
+
+        if (doCaching && cacheKey) {
+            this.findByFilesystemPathCache.put(
+                cacheKey, ret
+            );
+        }
+
+        return ret;
+    }
+
     gatherInfoData(info: T) {
         // Placeholder which some subclasses
         // are expected to override

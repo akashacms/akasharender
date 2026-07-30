@@ -56,6 +56,5 @@ export declare class Plugin {
         layouts: any;
         partials: any;
     };
-    doAttr(name: string, value: string | undefined): string;
 }
 //# sourceMappingURL=Plugin.d.ts.map

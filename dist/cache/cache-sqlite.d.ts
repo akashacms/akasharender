@@ -116,6 +116,15 @@ export declare class BaseCache<T extends BaseCacheEntry> extends EventEmitter {
      * @returns
      */
     protected findByPath(vpath: string): Promise<any>;
+    protected findByFilesystemPathCache: any;
+    protected findByFilesystemPathSQL: Map<string, string>;
+    /**
+     * Find an info object by the file-system path (fspath).
+     *
+     * @param fspath
+     * @returns
+     */
+    protected findByFilesystemPath(fspath: string): Promise<any>;
     gatherInfoData(info: T): void;
     /**
      * Read the textual content for a file being indexed.
