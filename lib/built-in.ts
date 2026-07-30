@@ -879,17 +879,11 @@ class DocumentGroup extends CustomElement {
             sortByDescending
         };
 
-        const doAttr = (name: string, value: string | undefined) => {
-            return typeof value === 'string'
-                ? ` ${name}="${encode(value)}"`
-                : '';
-        };
-
         const wrapperTop = `<div`
-            + doAttr('id', id)
-            + doAttr('class', clazz)
-            + doAttr('width', width)
-            + doAttr('style', style)
+            + this.doAttr('id', id)
+            + this.doAttr('class', clazz)
+            + this.doAttr('width', width)
+            + this.doAttr('style', style)
             + `>`;
         const wrapperBottom = '</div>';
 

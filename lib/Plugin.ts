@@ -18,6 +18,7 @@
  */
 
 import { Configuration } from "./index.js";
+import { encode } from 'html-entities';
 
 /*
  * Ideally, the options object would have a declared data type,
@@ -93,4 +94,19 @@ export class Plugin {
             partials: undefined, // {}
         };
     }
+
+    /**
+     * Create the string of an HTML attribute, where the value portion
+     * is properly encoded to defang any potential attacks.
+     *
+     * @param name 
+     * @param value 
+     * @returns 
+     */
+    doAttr(name: string, value: string | undefined): string {
+        return typeof value === 'string'
+            ? ` ${name}="${encode(value)}"`
+            : '';
+    }
+
 };
