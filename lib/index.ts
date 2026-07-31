@@ -1554,6 +1554,7 @@ const module_exports = {
     setup,
     cacheSetup,
     closeCaches,
+    doHTMLAttribute,
     fileCachesReady,
     Plugin,
     render,
