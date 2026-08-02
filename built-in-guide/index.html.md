@@ -325,6 +325,89 @@ The contents of the file must be textual for this to work.  That's because the f
 Clearly for this to work correctly the file must have textual content.
 
 
+# Rendering data files as tables with `<csv-table>`
+
+Data is often stored in a tabular data file — CSV exported from a spreadsheet or database, a tab-separated (TSV) file, or a YAML list of records.  The `<csv-table>` tag reads such a file and renders it as an HTML table (or any other repeating structure), formatting each row with a template.
+
+```html
+<csv-table
+    file-name="data/people.csv"
+    template="people-row.html.njk"
+    before-template="people-before.html.njk"
+    after-template="people-after.html.njk"
+    format="csv"
+    delimiter=","
+    header="true"></csv-table>
+```
+
+Only `file-name` and `template` are required.  The recognized attributes are:
+
+* `file-name` — the data file to read.  See _Locating the data file_ below.
+* `template` — a partial, from the _partials_ directory stack, rendered **once per data row**.  It receives that row's data (see _The row data_ below).
+* `before-template` — a partial rendered **once, before** the rows.  Defaults to a built-in partial that emits `<table>` plus a `<thead>` built from the column names.
+* `after-template` — a partial rendered **once, after** the rows.  Defaults to a built-in partial that emits `</table>`.
+* `format` — `csv`, `tsv`, or `yaml`.  If omitted, the format is inferred from the file extension (`.csv` → csv; `.tsv` or `.tab` → tsv; `.yaml` or `.yml` → yaml; anything else defaults to csv).
+* `delimiter` — the field delimiter for delimited formats.  Defaults to `,` for CSV and a tab for TSV.  Use this to read, for example, semicolon-separated files.
+* `header` — whether the first row of a delimited file is a header row supplying the column names.  Defaults to `true`; set to `false` for a file with no header.
+
+The rendered output is the concatenation of the before-template, one copy of the row template per data row, and the after-template.  Using only the defaults, `<csv-table file-name="data/people.csv" template="people-row.html.njk"></csv-table>` produces:
+
+```html
+<table>
+<thead><tr><th>name</th><th>city</th></tr></thead>
+<tbody>
+... people-row.html.njk rendered for row 1
+... people-row.html.njk rendered for row 2
+</tbody>
+</table>
+```
+
+## Data file formats
+
+The three supported formats are all normalized to the same _rows_ model, so the same row template works regardless of source format:
+
+* **CSV / TSV with a header row** (the default) — the first record supplies the column names; each following record becomes a row keyed by those names.
+* **CSV / TSV without a header** (`header="false"`) — columns are the positional names `0`, `1`, `2`, …
+* **YAML** — the file must contain a YAML **array**.  An array of objects (mappings) is used directly, with the column names taken from the objects' keys; an array of arrays is treated like a headerless delimited file.  A YAML file that is not an array is an error.
+
+CSV and TSV are parsed with a full CSV parser, so quoted fields, delimiters and newlines embedded inside quotes, and escaped quotes (`""`) are all handled correctly.
+
+## The row data
+
+Each row template invocation receives the row's named columns at the top level, plus these helper fields:
+
+* the **named columns** — e.g. `name` and `city` for a `name,city` header, so a Nunjucks template can write `{{ name }}`
+* `fields` — the row's values as a positional array, in column order, for `{% for f in fields %}...{% endfor %}` style templates (useful for headerless data)
+* `columns` — the ordered list of column names (the same for every row)
+* `index` — the 0-based row number
+* `rowNumber` — the 1-based row number
+
+The before-template and after-template each receive `columns` (the ordered column-name list) and `rowCount` (the number of data rows).
+
+A simple Nunjucks row template that emits a table row is:
+
+```html
+<tr><td>{{ name }}</td><td>{{ city }}</td></tr>
+```
+
+Or, positionally:
+
+```html
+<tr>{% for f in fields %}<td>{{ f }}</td>{% endfor %}</tr>
+```
+
+Because the templates are ordinary partials rendered through the partials directory stack, you may write them in any supported template engine, and you may override the default before/after partials by placing files named `ak_csvtable_before.html.njk` and `ak_csvtable_after.html.njk` earlier in your partials stack.  Data values are inserted through these templates, so use the template engine's escaping (Nunjucks auto-escapes `{{ }}`; in EJS use `<%= %>`) — data files often contain characters such as `<`, `&`, and `"` that must be escaped.
+
+## Locating the data file
+
+The `file-name` is resolved in this order:
+
+1. In an **assets** directory.
+2. In a **documents** directory (relative paths are computed relative to the document containing the tag, as with `<code-embed>`).
+3. As a file on the **filesystem outside the project directories**.  An absolute path is used as-is; a relative path is resolved against the directory containing your configuration file (`config.configDir`), the same base used for relative `assets`/`documents` directories.
+
+The third case is often the most useful for data: keeping the raw data file **outside** the assets and documents directories means it is read at build time to generate the table, but the raw `.csv`/`.tsv`/`.yaml` file is **not** copied into the deployed site.  For example, with the data one level up from the project, `file-name="../data/people.csv"` reads it without publishing it.
+
 # Select N elements from a group
 
 Sometimes you want to randomly select one or more elements from a group of items.  Consider:
