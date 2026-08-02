@@ -1366,6 +1366,56 @@ describe('Documents cache', function() {
             }
         });
 
+        // Issue #198 - docLinkData() returned no title/teaser.
+        // The lookup missed when the vpath had a leading slash,
+        // and the empty-result case was not detected because
+        // db.all() always returns an array.
+
+        it('docLinkData should return title and teaser (vpath)', async function() {
+            const link = await filecache.documentsCache
+                .docLinkData('teaser-content.html.md');
+            assert.isDefined(link);
+            assert.equal(link.renderPath, 'teaser-content.html');
+            assert.equal(link.title, 'Teaser and content');
+            assert.equal(link.teaser, 'This is teaser text');
+        });
+
+        it('docLinkData should return title and teaser (renderPath)', async function() {
+            const link = await filecache.documentsCache
+                .docLinkData('teaser-content.html');
+            assert.isDefined(link);
+            assert.equal(link.renderPath, 'teaser-content.html');
+            assert.equal(link.title, 'Teaser and content');
+            assert.equal(link.teaser, 'This is teaser text');
+        });
+
+        it('docLinkData should handle leading-slash vpath', async function() {
+            const link = await filecache.documentsCache
+                .docLinkData('/teaser-content.html.md');
+            assert.isDefined(link);
+            assert.equal(link.renderPath, 'teaser-content.html');
+            assert.equal(link.title, 'Teaser and content');
+            assert.equal(link.teaser, 'This is teaser text');
+        });
+
+        it('docLinkData should handle leading-slash renderPath', async function() {
+            const link = await filecache.documentsCache
+                .docLinkData('/teaser-content.html');
+            assert.isDefined(link);
+            assert.equal(link.renderPath, 'teaser-content.html');
+            assert.equal(link.title, 'Teaser and content');
+            assert.equal(link.teaser, 'This is teaser text');
+        });
+
+        it('docLinkData should not throw for unknown document', async function() {
+            const link = await filecache.documentsCache
+                .docLinkData('does-not-exist.html.md');
+            assert.isDefined(link);
+            assert.equal(link.vpath, 'does-not-exist.html.md');
+            assert.equal(typeof link.renderPath, 'undefined');
+            assert.equal(typeof link.title, 'undefined');
+        });
+
         it('should find description for NJK tag', async function() {
             const desc = await filecache
                 .documentsCache.getTagDescription('NJK');

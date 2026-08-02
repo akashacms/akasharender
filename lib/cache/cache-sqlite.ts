@@ -2326,19 +2326,25 @@ export class DocumentsCache
                 );
         }
 
+        // Documents are stored in the cache without a
+        // leading slash on the vpath/renderPath.  Callers
+        // frequently pass an absolute-looking path such as
+        // '/path/to/doc.html', so normalize it before querying
+        // otherwise the lookup silently misses.
+        const lookup = vpath.startsWith('/')
+                     ? vpath.substring(1)
+                     : vpath;
+
         const found = <any[]> await this.db.all(this.#docLinkData, {
-            $vpath: vpath
+            $vpath: lookup
         });
 
-        if (Array.isArray(found)) {
+        // db.all() always returns an array, so Array.isArray()
+        // is not enough to detect a miss - check for an actual row.
+        if (Array.isArray(found) && found.length >= 1) {
 
             const doc = found[0];
 
-            // if (!doc.metadata) {
-            //     console.warn(`WARNING docLinkData no metadata for ${vpath}`);
-            // }
-
-            // const docInfo = await this.find(vpath);
             return {
                 vpath,
                 renderPath: doc.renderPath,
