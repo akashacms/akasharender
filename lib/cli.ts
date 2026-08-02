@@ -988,7 +988,39 @@ program
             const assetsOk = checkCache('assets');
             const layoutsOk = checkCache('layouts');
             const partialsOk = checkCache('partials');
-            
+
+            // Tag-index readiness/consistency check (GitHub issue #199).
+            //
+            // The #199 symptom is subtler than a changing file count:
+            // documentsCache.tags() returned [] right after setup() even
+            // though documentsWithTag() returned rows for the same tags,
+            // because the TAGGLUE tag index was not committed before
+            // isReady triggered.  Verify that tags() is populated and that
+            // every reported tag resolves to at least one document.
+            const tags = await filecache.documentsCache.tags();
+            console.log(`\nTag index (issue #199 check):`);
+            console.log(`  Tags reported by tags(): ${tags.length}`);
+            if (tags.length === 0) {
+                console.log('  No tags found in this site (tag-index check skipped)');
+            } else {
+                let tagIssue = false;
+                for (const tag of tags) {
+                    const vpaths = await filecache
+                        .documentsCache.documentsWithTag(tag);
+                    if (!Array.isArray(vpaths) || vpaths.length === 0) {
+                        console.error(`  ❌ ISSUE DETECTED: tags() reported "${tag}" but documentsWithTag("${tag}") returned no documents`);
+                        console.error(`     The tag index was not fully committed before isReady (issue #199)`);
+                        issueDetected = true;
+                        tagIssue = true;
+                    } else if (cmdObj.verbose) {
+                        console.log(`  ✓ tag "${tag}" -> ${vpaths.length} document(s)`);
+                    }
+                }
+                if (!tagIssue) {
+                    console.log(`  ✓ all ${tags.length} tags resolve to documents (tag index consistent)`);
+                }
+            }
+
             if (!issueDetected) {
                 console.log('\n✅ SUCCESS: No files added after isReady. Timing is correct.');
                 console.log('\nAll caches are stable:');

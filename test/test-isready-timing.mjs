@@ -160,6 +160,70 @@ describe('isReady timing verification', function() {
         assert.equal(indexDoc.vpath, 'index.html.md');
     });
 
+    // Regression test for GitHub issue #199:
+    //   "Cache readiness race: documentsCache.tags() returns [] right
+    //    after setup()"
+    //
+    // The original bug (from the Chokidar/fastq era) let setup() resolve
+    // before the TAGGLUE tag index finished populating, so tags() could
+    // return [] even though documentsWithTag() returned rows for the same
+    // tags.  The current architecture processes every file - including its
+    // TAGGLUE inserts - inside a single awaited transaction before
+    // #is_ready is set and 'ready' is emitted, so tags() must be complete
+    // and self-consistent the instant isReady() resolves.
+    it('should have a fully populated tag index when isReady resolves (issue #199)', async function() {
+
+        const documents = filecache.documentsCache;
+        await documents.isReady();
+
+        // tags() must not be empty immediately after readiness.  The test
+        // fixtures carry many tags, so an empty result here means the tag
+        // index was not committed before 'ready' - i.e. the #199 race.
+        const tags = await documents.tags();
+        assert.isArray(tags);
+        assert.isTrue(tags.length > 0,
+            'tags() must return a non-empty list immediately after isReady (issue #199)');
+
+        // Every tag reported by tags() must resolve to at least one
+        // document via documentsWithTag().  If tags() and documentsWithTag()
+        // disagree, the tag index is only partially visible - the exact
+        // symptom described in issue #199.
+        for (const tag of tags) {
+            const vpaths = await documents.documentsWithTag(tag);
+            assert.isArray(vpaths);
+            assert.isTrue(vpaths.length > 0,
+                `tags() reported "${tag}" but documentsWithTag("${tag}") returned no documents (issue #199)`);
+        }
+
+        // Conversely, a known-good tag from the fixtures must be present in
+        // tags().  This catches the case where documentsWithTag() sees a
+        // tag but tags() does not (the direction #199 actually reported).
+        const withTag1 = await documents.documentsWithTag('Tag1');
+        assert.isTrue(withTag1.length > 0,
+            'documentsWithTag("Tag1") should return documents from the fixtures');
+        assert.isTrue(tags.includes('Tag1'),
+            'tags() must include "Tag1" when documentsWithTag("Tag1") returns documents (issue #199)');
+    });
+
+    // The tag index must be stable after readiness, mirroring the
+    // file-count stability test above but for the TAGGLUE-backed tags().
+    it('should have a stable tag list after isReady resolves (issue #199)', async function() {
+
+        const documents = filecache.documentsCache;
+        await documents.isReady();
+
+        const tagsBefore = await documents.tags();
+
+        await new Promise(resolve => setTimeout(resolve, 500));
+
+        const tagsAfter = await documents.tags();
+
+        assert.equal(tagsBefore.length, tagsAfter.length,
+            `Tag count changed from ${tagsBefore.length} to ${tagsAfter.length} after isReady (issue #199)`);
+        assert.deepEqual(tagsBefore, tagsAfter,
+            'Tag list contents changed after isReady (issue #199)');
+    });
+
     it('Close caches', async function() {
         await akasha.closeCaches();
     });

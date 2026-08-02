@@ -1873,7 +1873,11 @@ describe('Documents cache', function() {
 
     });
 
-    describe('Index files', function() {
+    // The indexFiles() method was removed from DocumentsCache because it is
+    // not used by AkashaRender or any of the plugins.  These tests are
+    // skipped for the same reason; re-enable them if indexFiles() is
+    // reinstated.
+    describe.skip('Index files', function() {
 
         it('should find index files for /', async function() {
             const indexes = await filecache.documentsCache.indexFiles('/');
