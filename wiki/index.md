@@ -1,7 +1,7 @@
 ---
 title: "AkashaRender Code Wiki"
 date-created: 2026-05-20T12:00:00+00:00
-last-updated: 2026-07-24T12:31:18+03:00
+last-updated: 2026-07-31T23:12:41+03:00
 ---
 
 # AkashaRender Code Wiki
@@ -85,6 +85,7 @@ Detailed answers to technical questions about the codebase:
 - **[Social-Sharing Metadata: Open Graph, Twitter Cards, and Facebook](./answers/social-sharing-metadata-opengraph-twitter-facebook.md)**: Open Graph is primary (Facebook consumes it; Twitter Cards fall back to it); audits the current `@akashacms/plugins-base` `ak_headermeta` implementation (wrong `name=` vs `property=`, no Twitter Cards, latent bugs) and proposes a frontmatter-driven `social:` block emitted from one data-table template loop
 - **[Options for Storing Date/Time Values in the In-Memory SQLite Database](./answers/sqlite-datetime-storage-options.md)**: Answers issue #120 — the file caches store epoch milliseconds (`mtimeMs`, `publicationTime` via a generated JSON-extraction column) while TRACES uses ISO-8601 text; surveys the SQLite date/time storage options (ISO-8601 TEXT, Julian day, epoch seconds, epoch milliseconds, sqlean) and recommends keeping epoch milliseconds
 - **[Webmention: Purpose, Markup, Protocol, and Server Software](./answers/webmention-protocol-and-markup.md)**: The W3C protocol for decentralized cross-site reply/like/repost notifications (IndieWeb successor to Pingback); covers `rel="webmention"` discovery, the `source`/`target` POST + source-fetch verification, microformats2 classification, and server options (Webmention.io and other hosted services, or a self-hosted PHP receiver) with a build-time fetch-and-render approach for AkashaCMS
+- **[Lightweight Image-Resize Packages to Replace sharp](./answers/lightweight-image-resize-alternatives-to-sharp.md)**: How to shrink the install by replacing `sharp` — its size is bundled native libvips binaries, so only a pure-JS (Jimp) or WASM (photon-node, Squoosh codecs, the `@saschazar/wasm-*` per-format monorepo) library helps; the usage surface is just load/resize-to-width/write-by-extension (incl. PNG→JPG conversion), with WebP output being the deciding constraint (SVG is out of scope — it is sized via `width=`/`height=`)
 - **[UNIQUE constraint failed: ASSETS.vpath (and DOCUMENTS.vpath) During Indexing](./answers/unique-constraint-failed-assets-vpath.md)**: Why `assetdirs`/`render` print many `UNIQUE constraint failed: ASSETS.vpath` errors — the `VFStack` scan yields unique vpaths and the cache tables use `CREATE TABLE IF NOT EXISTS` without truncation, so collisions come from a **persistent database reused across runs** (`AK_DB_URL` set to a file rather than the default `:memory:`); fix by unsetting `AK_DB_URL` or starting from an empty database
 
 ### [Architecture](./architecture/README.md)

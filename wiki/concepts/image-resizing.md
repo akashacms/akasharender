@@ -103,5 +103,8 @@ this.config.plugin(pluginName)
 - [Mahabhuta System](./mahabhuta-system.md) - DOM manipulation framework
 - [DOM Manipulation](./dom-manipulation.md) - How attributes are processed
 - [Three-Stage Rendering](./three-stage-rendering.md) - When resizing occurs in pipeline
+- [Lightweight Image-Resize Packages to Replace sharp](../answers/lightweight-image-resize-alternatives-to-sharp.md) - Alternatives to shrink the install size
 
 ## Backlinks
+
+- [Lightweight Image-Resize Packages to Replace sharp](../answers/lightweight-image-resize-alternatives-to-sharp.md)
