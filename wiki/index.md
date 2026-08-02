@@ -1,7 +1,7 @@
 ---
 title: "AkashaRender Code Wiki"
 date-created: 2026-05-20T12:00:00+00:00
-last-updated: 2026-07-31T23:12:41+03:00
+last-updated: 2026-08-02T18:44:04+03:00
 ---
 
 # AkashaRender Code Wiki
@@ -103,6 +103,7 @@ Implementation guides for features and modifications:
 
 - **[Sitemap Validation Implementation](./implementation/sitemap-validation.md)**: Complete implementation guide for building the sitemap validator
 - **[oEmbed Provider Implementation Guide for plugins-base](./implementation/oembed-provider.md)**: Coding plan for the oEmbed provider in `@akashacms/plugins-base` — config flag, `<head>` `<link>` injection, JSON/XML file generation in `onSiteRendered`, and tests
+- **[csv-table Custom Element Implementation Guide](./implementation/csv-table-custom-element.md)**: Coding plan for issue #85's `<csv-table file-name="..." template="..."/>` tag — a Built-in Plugin custom element (modeled on `CodeEmbed`) that reads a CSV/TSV/YAML data file and renders before/per-row/after templates into an HTML table
 
 ### [Memory](./memory/README.md)
 

@@ -36,6 +36,7 @@ export { validTagDescription } from './types.js';
 export { render, render2, renderDocument, renderDocument2, renderContent, isDocumentUpToDate } from './render.js';
 export type { Render2Options, RenderingResults } from './render.js';
 export { SitemapValidator, type SitemapEntry, type EntryValidation, type XMLValidation, type ValidationResult } from './sitemap-validator.js';
+export { inferFormat, parseTableData, type CsvTableFormat, type CsvTableRow, type CsvTableData, type ParseTableOptions } from './csv-table.js';
 import * as filecache from './cache/cache-sqlite.js';
 export { newSQ3DataStore } from './sqdb.js';
 /**

@@ -1881,6 +1881,72 @@ describe('code-embed element', function() {
     }); */
 });
 
+describe('csv-table element', function() {
+
+    let html, $;
+    before(async function() {
+        ({ html, $ } = await akasha.readRenderedFile(config, 'csv-table.html'));
+        assert.exists(html);
+        assert.isString(html);
+    });
+
+    // The default test layout renders the article body twice
+    // (article#original and article#duplicate), so scope every selector to
+    // article#original — as the code-embed tests do.
+    it('should render a default CSV table with header and rows', function() {
+        // Default before partial emits <table><thead>...<tbody>
+        assert.equal($('article#original #csv-default table').length, 1);
+        assert.equal($('article#original #csv-default thead th').length, 2);
+        assert.equal($('article#original #csv-default thead th').first().text(), 'name');
+        assert.equal($('article#original #csv-default tbody tr.datarow').length, 2);
+        assert.equal($('article#original #csv-default tbody tr.datarow').first().find('td.name').text(), 'Alice');
+        // Quoted field with an embedded comma survives parsing.
+        assert.equal($('article#original #csv-default tbody tr.datarow').last().find('td.city').text(), 'Rio, RJ');
+        // Row helper fields are available to the template.
+        assert.equal($('article#original #csv-default tbody tr.datarow').first().attr('data-index'), '0');
+        assert.equal($('article#original #csv-default tbody tr.datarow').first().attr('data-rownumber'), '1');
+    });
+
+    it('should render a TSV file identically to CSV', function() {
+        assert.equal($('article#original #tsv-default tbody tr.datarow').length, 2);
+        assert.equal($('article#original #tsv-default tbody tr.datarow').first().find('td.name').text(), 'Alice');
+        assert.equal($('article#original #tsv-default tbody tr.datarow').last().find('td.city').text(), 'Rio, RJ');
+    });
+
+    it('should render a YAML file identically to CSV', function() {
+        assert.equal($('article#original #yaml-default tbody tr.datarow').length, 2);
+        assert.equal($('article#original #yaml-default tbody tr.datarow').first().find('td.name').text(), 'Alice');
+        assert.equal($('article#original #yaml-default tbody tr.datarow').last().find('td.city').text(), 'Rio, RJ');
+    });
+
+    it('should use custom before/after templates when supplied', function() {
+        assert.equal($('article#original #csv-custom table.custom-before').length, 1);
+        assert.equal($('article#original #csv-custom table.custom-before').attr('data-rowcount'), '2');
+        assert.equal($('article#original #csv-custom p.custom-after').length, 1);
+        assert.equal($('article#original #csv-custom p.custom-after').text(), 'done');
+        // No thead from the default before template.
+        assert.equal($('article#original #csv-custom thead').length, 0);
+    });
+
+    it('should HTML-escape field values containing special characters', function() {
+        // special.csv row: name="A&B", note='1 < 2 & "ok"'
+        const tds = $('article#original #csv-special tbody tr.datarow td');
+        assert.equal(tds.length, 2);
+        // .text() decodes entities; the raw HTML must contain escaped forms.
+        assert.equal($(tds.get(0)).text(), 'A&B');
+        assert.equal($(tds.get(1)).text(), '1 < 2 & "ok"');
+        assert.isTrue($('article#original #csv-special').html().includes('A&amp;B'));
+        assert.isTrue($('article#original #csv-special').html().includes('&lt; 2'));
+    });
+
+    it('should resolve an external data file against configDir', function() {
+        // fixtures/csvtable-external.csv lives outside any documents/assets dir.
+        assert.equal($('article#original #csv-external tbody tr.datarow').length, 2);
+        assert.equal($('article#original #csv-external tbody tr.datarow').first().find('td.name').text(), 'Carol');
+        assert.equal($('article#original #csv-external tbody tr.datarow').last().find('td.name').text(), 'Dan');
+    });
+});
+
 describe('final funcs', function() {
 
     const files2check = [

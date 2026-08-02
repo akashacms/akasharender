@@ -34,6 +34,7 @@ import mahaPartial from 'mahabhuta/maha/partial.js';
 import Renderers from '@akashacms/renderers';
 import {encode} from 'html-entities';
 import { Configuration, CustomElement, Munger, PageProcessor, javaScriptItem, resolveVpath, doHTMLAttribute } from './index.js';
+import { inferFormat, parseTableData } from './csv-table.js';
 
 const pluginName = "akashacms-builtin";
 
@@ -287,6 +288,7 @@ export const mahabhutaArray = function(
     ret.addMahafunc(new FooterJavaScript(config, akasha, plugin));
     ret.addMahafunc(new InsertTeaser(config, akasha, plugin));
     ret.addMahafunc(new CodeEmbed(config, akasha, plugin));
+    ret.addMahafunc(new CsvTable(config, akasha, plugin));
     ret.addMahafunc(new AkBodyClassAdd(config, akasha, plugin));
     ret.addMahafunc(new FigureImage(config, akasha, plugin));
     ret.addMahafunc(new img2figureImage(config, akasha, plugin));
@@ -645,6 +647,96 @@ class CodeEmbed extends CustomElement {
         //     $('code').append(hljs.highlightAuto(txt).value);
         // }
         // return $.html();
+    }
+}
+
+/**
+ * Resolve a `<csv-table>` `file-name` to an absolute filesystem path.
+ *
+ * A data file may live in an assets directory, a documents directory, or
+ * outside the project directories entirely (so the raw data is not copied
+ * into the deployed site).  Resolution is tried in that order:
+ *
+ * 1. The assets cache, then the documents cache — a relative `file-name` is
+ *    first resolved against the current document's directory (as in
+ *    `CodeEmbed`).
+ * 2. A real filesystem path: absolute paths are used as-is, relative paths
+ *    resolve against `config.configDir` (the directory of the project's
+ *    configuration file), matching how relative `assetsDirs`/`documentsDirs`
+ *    are resolved.
+ *
+ * @returns The absolute filesystem path, or undefined if not found.
+ */
+async function resolveDataFile(config, akasha, metadata, fn): Promise<string | undefined> {
+    const candidate = path.isAbsolute(fn)
+        ? fn
+        : path.join(path.dirname(metadata.document.renderTo), fn);
+
+    let found = await akasha.filecache.assetsCache.find(candidate);
+    if (found) return found.fspath;
+    found = await akasha.filecache.documentsCache.find(candidate);
+    if (found) return found.fspath;
+
+    // External file outside the project directories.  Relative paths resolve
+    // against config.configDir; absolute paths are used as-is.
+    const external = path.isAbsolute(fn)
+        ? fn
+        : (config.configDir
+            ? path.resolve(config.configDir, fn)
+            : path.resolve(fn));
+    try {
+        await fsp.access(external);
+        return external;
+    } catch {
+        return undefined;
+    }
+}
+
+class CsvTable extends CustomElement {
+    get elementName() { return "csv-table"; }
+    async process($element, metadata, dirty) {
+        const fn = $element.attr('file-name');
+        if (!fn || fn === '') {
+            throw new Error(`csv-table must have file-name attribute, got ${fn}`);
+        }
+        const rowTemplate = $element.attr('template');
+        if (!rowTemplate || rowTemplate === '') {
+            throw new Error(`csv-table must have template attribute, got ${rowTemplate}`);
+        }
+        const beforeTemplate = $element.attr('before-template') || 'ak_csvtable_before.html.njk';
+        const afterTemplate  = $element.attr('after-template')  || 'ak_csvtable_after.html.njk';
+        const explicitFormat = $element.attr('format');
+        const delimiter      = $element.attr('delimiter');
+        const header         = $element.attr('header');
+
+        // Resolve the data file: assets, then documents, then a filesystem
+        // path outside the project directories.
+        const fspath = await resolveDataFile(this.config, this.akasha, metadata, fn);
+        if (!fspath) {
+            throw new Error(`csv-table file-name ${fn} not found in assets, documents, or on disk`);
+        }
+        const text = await fsp.readFile(fspath, 'utf8');
+
+        // Parse into the normalized row model.
+        const format = inferFormat(fn, explicitFormat);
+        const { columns, rows } = parseTableData(text, format, {
+            delimiter,
+            header: typeof header === 'string' ? header !== 'false' : true,
+        });
+
+        // Render the before template, each row, then the after template.
+        let out = await this.akasha.partial(this.config, beforeTemplate,
+            { columns, rowCount: rows.length });
+        for (const row of rows) {
+            try {
+                out += await this.akasha.partial(this.config, rowTemplate, row);
+            } catch (e) {
+                throw new Error(`csv-table failed rendering row ${row.index} of ${fn} with template ${rowTemplate}: ${e}`);
+            }
+        }
+        out += await this.akasha.partial(this.config, afterTemplate,
+            { columns, rowCount: rows.length });
+        return out;
     }
 }
 

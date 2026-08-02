@@ -1,0 +1,4 @@
+- name: Alice
+  city: Oslo
+- name: Bob
+  city: "Rio, RJ"

@@ -77,6 +77,15 @@ export {
     type ValidationResult
 } from './sitemap-validator.js';
 
+export {
+    inferFormat,
+    parseTableData,
+    type CsvTableFormat,
+    type CsvTableRow,
+    type CsvTableData,
+    type ParseTableOptions
+} from './csv-table.js';
+
 const __filename = import.meta.filename;
 const __dirname = import.meta.dirname;
 

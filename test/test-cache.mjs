@@ -498,6 +498,31 @@ describe('Documents cache', function() {
             vpath: 'code-embed.html.md'
         },
         {
+            fspath: '**/documents/csv-table.html.md',
+            renderPath: 'csv-table.html',
+            vpath: 'csv-table.html.md'
+        },
+        {
+            fspath: '**/documents/csvdata/people.csv',
+            renderPath: 'csvdata/people.csv',
+            vpath: 'csvdata/people.csv'
+        },
+        {
+            fspath: '**/documents/csvdata/people.tsv',
+            renderPath: 'csvdata/people.tsv',
+            vpath: 'csvdata/people.tsv'
+        },
+        {
+            fspath: '**/documents/csvdata/people.yaml',
+            renderPath: 'csvdata/people.yaml',
+            vpath: 'csvdata/people.yaml'
+        },
+        {
+            fspath: '**/documents/csvdata/special.csv',
+            renderPath: 'csvdata/special.csv',
+            vpath: 'csvdata/special.csv'
+        },
+        {
             fspath: '**/documents/fig-img-handlebars.html.md',
             renderPath: 'fig-img-handlebars.html',
             vpath: 'fig-img-handlebars.html.md'
@@ -2329,6 +2354,36 @@ describe('Partials cache', function() {
             fspath: '**/partials/ak_teaser.html.njk',
             vpath: 'ak_teaser.html.njk',
             renderPath: 'ak_teaser.html.njk'
+        },
+        {
+            fspath: '**/partials/ak_csvtable_before.html.njk',
+            vpath: 'ak_csvtable_before.html.njk',
+            renderPath: 'ak_csvtable_before.html.njk'
+        },
+        {
+            fspath: '**/partials/ak_csvtable_after.html.njk',
+            vpath: 'ak_csvtable_after.html.njk',
+            renderPath: 'ak_csvtable_after.html.njk'
+        },
+        {
+            fspath: '**/partials/csvtable-row.html.njk',
+            vpath: 'csvtable-row.html.njk',
+            renderPath: 'csvtable-row.html.njk'
+        },
+        {
+            fspath: '**/partials/csvtable-row-fields.html.njk',
+            vpath: 'csvtable-row-fields.html.njk',
+            renderPath: 'csvtable-row-fields.html.njk'
+        },
+        {
+            fspath: '**/partials/csvtable-before-custom.html.njk',
+            vpath: 'csvtable-before-custom.html.njk',
+            renderPath: 'csvtable-before-custom.html.njk'
+        },
+        {
+            fspath: '**/partials/csvtable-after-custom.html.njk',
+            vpath: 'csvtable-after-custom.html.njk',
+            renderPath: 'csvtable-after-custom.html.njk'
         }
     ];
     
