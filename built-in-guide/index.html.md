@@ -310,7 +310,7 @@ The `lang` argument is refers to what language code is to be used with this file
 
 Not shown is the `id` argument that creates an `id` in the output code.
 
-This element is integrates with the [Highlight.js library](https://www.npmjs.com/package/highlight.js) and therefore the `lang` codes must be from their list of supported programming languages.
+This element integrates with the [Highlight.js library](https://www.npmjs.com/package/highlight.js) and therefore the `lang` codes must be from their list of supported programming languages.
 
 The contents of the file must be textual for this to work.  That's because the file contents will be inserted into the output wrapped within this structure:
 
@@ -322,7 +322,6 @@ The contents of the file must be textual for this to work.  That's because the f
 </pre>
 ```
 
-Clearly for this to work correctly the file must have textual content.
 
 
 # Rendering data files as tables with `<csv-table>`
