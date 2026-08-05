@@ -1,0 +1,5 @@
+<table>
+{% if columns and columns.length %}<thead><tr>
+{% for col in columns %}<th>{{ col }}</th>{% endfor %}
+</tr></thead>{% endif %}
+<tbody>
