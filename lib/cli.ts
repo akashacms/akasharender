@@ -703,6 +703,8 @@ program
     .option('--blogtags <blogtags...>', 'Select only files with the blogtags')
     .option('--limit <limit>', 'Return only so many items')
     .option('--offset <offset>', 'Return only items starting from the offset within the result set')
+    .option('--sort-by <field>', 'Sort results by a document column or frontmatter field')
+    .option('--sort <direction>', 'Sort direction, either "asc" or "desc"')
     .action(async (configFN, cmdObj) => {
         // console.log(`render: akasha: ${util.inspect(akasha)}`);
         try {
@@ -727,6 +729,25 @@ program
             if (cmdObj.blogtags) options.blogtags = cmdObj.blogtags;
             if (cmdObj.limit) options.limit = cmdObj.limit;
             if (cmdObj.offset) options.offset = cmdObj.offset;
+            if (cmdObj.sortBy) {
+                // sort-by may name a document column (such as title,
+                // renderPath, vpath, parentDir, or publicationTime) or any
+                // frontmatter field (such as a custom `step` ordering
+                // field).  The search query sorts by a column when the name
+                // matches one, and otherwise extracts the value from the
+                // JSON metadata.  Guard against names that could not be a
+                // safe frontmatter key, matching DocumentGroup in built-in.ts.
+                if (!cmdObj.sortBy.match(/^[A-Za-z_][A-Za-z0-9_-]*$/)) {
+                    throw new Error(`search sort-by incorrect ${cmdObj.sortBy}`);
+                }
+                options.sortBy = cmdObj.sortBy;
+            }
+            if (cmdObj.sort) {
+                if (!cmdObj.sort.match(/^(asc|desc)$/)) {
+                    throw new Error(`search sort incorrect ${cmdObj.sort}`);
+                }
+                options.sortByDescending = cmdObj.sort === 'desc';
+            }
             // console.log(options);
             let docs = await akasha.filecache.documentsCache.search(options);
             console.log(docs
