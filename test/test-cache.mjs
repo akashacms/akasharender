@@ -418,6 +418,21 @@ describe('Documents cache', function() {
             vpath: 'document-group-vpath-glob.html.md'
         },
         {
+            fspath: '**/documents/step-sort/step-1.html.md',
+            renderPath: 'step-sort/step-1.html',
+            vpath: 'step-sort/step-1.html.md'
+        },
+        {
+            fspath: '**/documents/step-sort/step-2.html.md',
+            renderPath: 'step-sort/step-2.html',
+            vpath: 'step-sort/step-2.html.md'
+        },
+        {
+            fspath: '**/documents/step-sort/step-3.html.md',
+            renderPath: 'step-sort/step-3.html',
+            vpath: 'step-sort/step-3.html.md'
+        },
+        {
             fspath: '**/documents/anchor-cleanups-handlebars.html.md',
             renderPath: 'anchor-cleanups-handlebars.html',
             vpath: 'anchor-cleanups-handlebars.html.md'
@@ -3236,7 +3251,44 @@ describe('Search', function() {
             lastDirname = doc.dirname;
         }
     });
-    
+
+    it('should sort by a custom frontmatter field (step)', async function() {
+        const found = await filecache.documentsCache.search({
+            glob: 'step-sort/**',
+            sortBy: 'step'
+        });
+
+        assert.isDefined(found);
+        assert.isArray(found);
+        assert.deepEqual(
+            found.map(doc => doc.renderPath),
+            [
+                'step-sort/step-1.html',
+                'step-sort/step-2.html',
+                'step-sort/step-3.html'
+            ]
+        );
+    });
+
+    it('should reverse sort by a custom frontmatter field (step)', async function() {
+        const found = await filecache.documentsCache.search({
+            glob: 'step-sort/**',
+            sortBy: 'step',
+            reverse: true
+        });
+
+        assert.isDefined(found);
+        assert.isArray(found);
+        assert.deepEqual(
+            found.map(doc => doc.renderPath),
+            [
+                'step-sort/step-3.html',
+                'step-sort/step-2.html',
+                'step-sort/step-1.html'
+            ]
+        );
+    });
+
     // This had been an async function.  In retrospect, how
     // could that have ever worked correctly.  This sort
     // relies on gatherInfoData ensuring that the

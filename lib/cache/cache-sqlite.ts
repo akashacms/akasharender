@@ -69,6 +69,36 @@ const tdesc = new TagDescriptions();
 // tdesc.init(sqdb._db);
 
 /**
+ * The columns of the DOCUMENTS table that {@link SearchOptions.sortBy}
+ * may name directly.  When `sortBy` names one of these, the ORDER BY
+ * clause sorts by the column.  Any other `sortBy` value is treated as a
+ * frontmatter field name and sorted via `json_extract` on the JSON
+ * `metadata` object (see {@link DocumentsCache.buildSearchQuery}).
+ *
+ * `publicationDate`/`publicationTime` are handled separately before this
+ * set is consulted, so they are not listed here.
+ */
+const DOCUMENTS_SORT_COLUMNS = new Set<string>([
+    'vpath',
+    'mime',
+    'mounted',
+    'mountPoint',
+    'pathInMounted',
+    'fspath',
+    'dirname',
+    'mtimeMs',
+    'renderPath',
+    'rendersToHTML',
+    'parentDir',
+    'docMetadata',
+    'title',
+    'tags',
+    'layout',
+    'blogtag',
+    'rendererName',
+]);
+
+/**
  * Base class for file caches (documents, assets, layouts, partials).
  * Scans directories, stores file information in SQLite database, and emits events.
  * 
@@ -2692,10 +2722,21 @@ export class DocumentsCache
                     d.publicationTime,
                     d.mtimeMs
                 )`;
-            } else {
-                // For all other fields, sort by the column directly
-                // This allows sorting by any valid column in the DOCUMENTS table
+            } else if (DOCUMENTS_SORT_COLUMNS.has(options.sortBy)) {
+                // A real column of the DOCUMENTS table: sort by it directly.
                 orderBy = `ORDER BY d.${SqlString.escapeId(options.sortBy)}`;
+            } else {
+                // Any other value is treated as a frontmatter field name.
+                // These fields are not columns of the DOCUMENTS table; they
+                // live inside the JSON `metadata` object.  Extract the value
+                // at runtime with json_extract so that sort-by works for any
+                // frontmatter field (e.g. a custom `step` ordering field).
+                //
+                // SqlString.escape produces a safe, quoted SQL string
+                // literal for the JSON path, guarding against injection via
+                // the field name.
+                const jsonPath = SqlString.escape(`$.${options.sortBy}`);
+                orderBy = `ORDER BY json_extract(d.metadata, ${jsonPath})`;
             }
         } else if (options.reverse || options.sortByDescending) {
             // If reverse/sortByDescending is specified without sortBy, 

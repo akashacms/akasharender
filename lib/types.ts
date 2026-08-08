@@ -174,10 +174,14 @@ export interface SearchOptions {
     filterfunc?: SearchFilterFunc;
 
     /**
-     * Column to sort by.  The special values `'publicationDate'` and
+     * Field to sort by.  The special values `'publicationDate'` and
      * `'publicationTime'` sort by publication time, falling back to
-     * modification time when unset; any other value must be a valid
-     * column of the documents table.
+     * modification time when unset.  A value naming a column of the
+     * documents table (such as `'title'`, `'renderPath'`, `'vpath'`, or
+     * `'parentDir'`) sorts by that column.  Any other value is treated
+     * as a frontmatter field name and sorted by extracting that field
+     * from each document's metadata, so sort-by works for arbitrary
+     * custom frontmatter fields (for example a `step` ordering field).
      */
     sortBy?: string;
 

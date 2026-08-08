@@ -922,8 +922,16 @@ class DocumentGroup extends CustomElement {
         const sortBy = $element.attr('sort-by');
         const sort   = $element.attr('sort');
 
+        // sort-by may name a document column (such as title, renderPath,
+        // vpath, parentDir, or publicationTime) or any frontmatter field
+        // (such as a custom `step` ordering field).  The search query
+        // (see buildSearchQuery in lib/cache/cache-sqlite.ts) sorts by a
+        // column when the name matches one, and otherwise extracts the
+        // value from the JSON metadata.  We only need to guard against
+        // names that could not be a safe frontmatter key here; the value
+        // is later escaped before use in SQL.
         if (typeof sortBy === 'string') {
-            if (!sortBy.match(/^(title|renderPath|vpath|parentDir|publicationTime)$/)) {
+            if (!sortBy.match(/^[A-Za-z_][A-Za-z0-9_-]*$/)) {
                 throw new Error(`DocumentGroup sort-by incorrect ${sortBy}`);
             }
         }
