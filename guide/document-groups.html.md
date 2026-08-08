@@ -40,6 +40,8 @@ Options:
   --blogtags <blogtags...>         Select only files with the blogtags
   --limit <limit>                  Return only so many items
   --offset <offset>                Return only items starting from the offset within the result set
+  --sort-by <field>                Sort results by a document column or frontmatter field
+  --sort <direction>               Sort direction, either "asc" or "desc"
   -h, --help                       display help for command
 ```
 
@@ -84,7 +86,7 @@ In other words, this is useful for creating a list of documents, with consistent
 
 ## The `DocumentsCache.search(selector)` API
 
-Both of those methods simply create a _selector_ object to pass to the `search(selector)` method.
+Both of those methods create a _selector_ object to pass to the `search(selector)` method.
 
 This method converts the selector into an SQL statement, searches the documnet table for matching documents, applies sorting, limit, and offset parameters, and returns the resulting documents.
 
@@ -92,24 +94,48 @@ Calling `search(selector)` results in an array of Document objects.
 
 The internal workflow is:
 
+```plantuml
+@startuml
+start
+:Selector;
+:search(selector);
+:buildSearchQuery(selector);
+:Returns an SQL string to search(selector);
+:SQLITE finds the matching documents;
+:The documents array is type validated and converted
+to the type Array<Document>;
+stop
+@enduml
 ```
-    Selector
-        |
-        V
-    search(selector)
-        |
-        V
-    buildSearchQuery(selector)
-        |
-        V
-    Returns an SQL string to search(selector)
-        |
-        V
-    SQLITE finds the matching documents
-        |
-        V
-    The documents array is type validated and converted
-    to the type Array<Document>
+
+The same process, viewed as the interactions between the caller, the
+`DocumentsCache`, the query builder, and the SQLITE database, is:
+
+```plantuml
+@startuml
+actor Caller
+participant "DocumentsCache" as Cache
+participant "buildSearchQuery" as Builder
+database "SQLITE" as DB
+
+Caller -> Cache : search(selector)
+activate Cache
+
+Cache -> Builder : buildSearchQuery(selector)
+activate Builder
+Builder --> Cache : SQL string
+deactivate Builder
+
+Cache -> DB : execute SQL query
+activate DB
+DB --> Cache : matching document rows
+deactivate DB
+
+Cache -> Cache : validate and convert\nrows to Array<Document>
+
+Cache --> Caller : Array<Document>
+deactivate Cache
+@enduml
 ```
 
 ## The `@akashacms/plugins-blog-podcast` blog selector
