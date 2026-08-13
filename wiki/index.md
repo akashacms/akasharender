@@ -96,6 +96,7 @@ High-level architecture documentation for major subsystems:
 - **[Migrating AkashaRender to promised.node.sqlite](./architecture/promised-node-sqlite-migration.md)**: Plan to replace the `sqlite3` + `promised-sqlite3` stack with the standalone `promised.node.sqlite` package on `node:sqlite`
 - **[oEmbed Provider Architecture for AkashaCMS](./architecture/oembed-provider.md)**: Design for an oEmbed provider using precomputed JSON/XML referenced from `<head>` `<link>` tags, implemented in `@akashacms/plugins-base` behind a config flag
 - **[Breadcrumb Trail Schema.org Markup Architecture](./architecture/breadcrumb-schema-markup.md)**: Why the breadcrumbs plugin emits schema.org `BreadcrumbList` microdata, documenting the JSON-LD alternative and why it is not implemented (JSON-LD needs absolute URLs; AkashaCMS renders relative URLs)
+- **[Vendor Library Plugins Architecture](./architecture/vendor-library-plugins.md)**: The pattern for wrapping 3rd-party JS/CSS/SVG libraries as AkashaCMS plugins — mount assets at `/vendor/LIBRARY-NAME` and register CSS/JS tags — with a step-by-step recipe for adding new icon and front-end libraries
 
 ### [Implementation](./implementation/README.md)
 

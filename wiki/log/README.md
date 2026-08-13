@@ -6,6 +6,10 @@ title: Log index
 
 This directory contains a chronological audit trail of changes made to the wiki.
 
+## 2026-08-13
+
+- **[20260813T235505+0300.md](./20260813T235505+0300.md)**: 2026-08-13 23:55 - Add Vendor Library Plugins architecture page - New architecture page documenting the repeatable pattern for wrapping 3rd-party JS/CSS/SVG libraries as AkashaCMS plugins (mount assets at `/vendor/LIBRARY-NAME`, register CSS/JS tags), drawing on the four existing plugins (bootstrap-icons, country-flag-icons, tabler-icons, theme-bootstrap) and the `Configuration`/`Plugin`/`VFStack` source; rewritten from a misplaced root-level draft into wiki architecture-page format and moved into `wiki/architecture/`, with the root-level file deleted; updated the architecture README and master index
+
 ## 2026-07-27
 
 - **[20260727T002043+0300.md](./20260727T002043+0300.md)**: 2026-07-27 00:20 - Add breadcrumb trail schema.org markup architecture document - New architecture page describing why `@akashacms/plugins-breadcrumbs` emits schema.org `BreadcrumbList` as inline microdata (working with relative URLs via the crumb `href`), replacing the previous incorrect `p-category` microformats2 class; fully documents the JSON-LD `BreadcrumbList` alternative and records that it is intentionally not implemented because JSON-LD requires absolute URLs while AkashaCMS renders relative URLs; updated the architecture README and master index
