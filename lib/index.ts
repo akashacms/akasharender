@@ -86,6 +86,27 @@ export {
     type ParseTableOptions
 } from './csv-table.js';
 
+export {
+    LinkChecker,
+    isWhitelisted,
+    classifyStatus,
+    assertMode as assertLinkCheckMode,
+    fetchExternalChecker,
+    linkCheckExternalChecker,
+    LINK_CHECK_MODES,
+    DEFAULT_LINK_CHECK_OPTIONS,
+    type LinkCheckMode,
+    type LinkCheckOptions,
+    type WhitelistEntry,
+    type ExternalState,
+    type ExternalResult,
+    type ExternalChecker,
+    type ExternalCheckOptions,
+    type LinkKind,
+    type LinkError,
+    type InternalResolver
+} from './link-checker.js';
+
 const __filename = import.meta.filename;
 const __dirname = import.meta.dirname;
 

@@ -37,6 +37,7 @@ export { render, render2, renderDocument, renderDocument2, renderContent, isDocu
 export type { Render2Options, RenderingResults } from './render.js';
 export { SitemapValidator, type SitemapEntry, type EntryValidation, type XMLValidation, type ValidationResult } from './sitemap-validator.js';
 export { inferFormat, parseTableData, type CsvTableFormat, type CsvTableRow, type CsvTableData, type ParseTableOptions } from './csv-table.js';
+export { LinkChecker, isWhitelisted, classifyStatus, assertMode as assertLinkCheckMode, fetchExternalChecker, linkCheckExternalChecker, LINK_CHECK_MODES, DEFAULT_LINK_CHECK_OPTIONS, type LinkCheckMode, type LinkCheckOptions, type WhitelistEntry, type ExternalState, type ExternalResult, type ExternalChecker, type ExternalCheckOptions, type LinkKind, type LinkError, type InternalResolver } from './link-checker.js';
 import * as filecache from './cache/cache-sqlite.js';
 export { newSQ3DataStore } from './sqdb.js';
 /**

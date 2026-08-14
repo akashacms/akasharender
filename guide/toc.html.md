@@ -58,6 +58,7 @@ outline:
     <li><a href="plugins-using.html" id="plugins-using"></a></li>
     <li><a href="plugins-writing.html" id="plugins-writing"></a></li>
     <li><a href="document-groups.html" id="document-groups"></a></li>
+    <li><a href="link-checker.html" id="link-checker"></a></li>
     <li><a href="rendering-engines.html" id="rendering-engines"></a></li>
     <li><a href="database.html" id="database"></a></li>
 </ol>

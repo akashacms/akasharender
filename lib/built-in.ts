@@ -35,6 +35,12 @@ import Renderers from '@akashacms/renderers';
 import {encode} from 'html-entities';
 import { Configuration, CustomElement, Munger, PageProcessor, javaScriptItem, resolveVpath, doHTMLAttribute } from './index.js';
 import { inferFormat, parseTableData } from './csv-table.js';
+import {
+    LinkChecker,
+    DEFAULT_LINK_CHECK_OPTIONS,
+    assertMode,
+    type LinkCheckMode
+} from './link-checker.js';
 
 const pluginName = "akashacms-builtin";
 
@@ -63,6 +69,13 @@ export class BuiltInPlugin extends Plugin {
         if (typeof this.options.relativizeBodyLinks === 'undefined') {
             this.options.relativizeBodyLinks = true;
         }
+        // Link-checking options.  See lib/link-checker.ts.  Defaults leave
+        // external checking off ('ignore') because it is slow and flaky, and
+        // internal checking at 'warn'.  A user may override any of these via
+        // config or the chainable setters below.
+        this.options.checkLinks = Object.assign(
+            {}, DEFAULT_LINK_CHECK_OPTIONS, this.options.checkLinks || {}
+        );
         let moduleDirname = import.meta.dirname;
         // Need this as the place to store Nunjucks macros and templates
         config.addLayoutsDir(path.join(moduleDirname, '..', 'layouts'));
@@ -150,6 +163,60 @@ export class BuiltInPlugin extends Plugin {
      */
     set relativizeBodyLinks(rel) {
         this.options.relativizeBodyLinks = rel;
+    }
+
+    /**
+     * Set the severity mode for internal (local) link checking.
+     * One of 'ignore' | 'warn' | 'error' | 'fatal'.
+     */
+    setInternalLinkMode(config, mode: LinkCheckMode) {
+        assertMode(mode, 'internal');
+        this.options.checkLinks.internal = mode;
+        return this;
+    }
+
+    /**
+     * Set the severity mode for external (http/https) link checking.
+     * One of 'ignore' | 'warn' | 'error' | 'fatal'.  'ignore' (the default)
+     * disables external checking.
+     */
+    setExternalLinkMode(config, mode: LinkCheckMode) {
+        assertMode(mode, 'external');
+        this.options.checkLinks.external = mode;
+        return this;
+    }
+
+    /**
+     * Set the severity mode for non-HTTP links (mailto:, tel:, ...).
+     * One of 'ignore' | 'warn' | 'error' | 'fatal'.  'ignore' (the default)
+     * silently skips them; 'warn' logs them for review.
+     */
+    setOtherSchemesMode(config, mode: LinkCheckMode) {
+        assertMode(mode, 'reportOtherSchemes');
+        this.options.checkLinks.reportOtherSchemes = mode;
+        return this;
+    }
+
+    /**
+     * Add an external domain or URL (string) or RegExp to the link-check
+     * whitelist.  Whitelisted external URLs are assumed valid and never fetched.
+     */
+    addLinkCheckWhitelist(config, entry: string | RegExp) {
+        if (!Array.isArray(this.options.checkLinks.whitelist)) {
+            this.options.checkLinks.whitelist = [];
+        }
+        this.options.checkLinks.whitelist.push(entry);
+        return this;
+    }
+
+    /**
+     * Select which external per-URL checker to use: 'fetch' (built-in,
+     * zero-dependency) or 'link-check' (lazy-loads the site-author-installed
+     * `link-check` package).
+     */
+    setExternalChecker(config, which: 'fetch' | 'link-check') {
+        this.options.checkLinks.externalChecker = which;
+        return this;
     }
 
     doStylesheets(metadata) {
@@ -271,6 +338,69 @@ export class BuiltInPlugin extends Plugin {
                 throw new Error(`built-in: Image resize failed for ${srcfile} (toresize ${util.inspect(toresize)} found ${util.inspect(found)}) because ${e}`);
             }
         }
+
+        // After all files are rendered, optionally check the site's links.
+        await this.#checkSiteLinks(config);
+    }
+
+    /**
+     * Walk every rendered HTML file and check the links it contains, using the
+     * configured link-check modes.  Internal links are resolved against the
+     * caches; external links are validated over the network (when enabled);
+     * non-HTTP links are optionally logged.  This is skipped entirely unless at
+     * least one class of checking is enabled.
+     */
+    async #checkSiteLinks(config) {
+        const opts = this.options?.checkLinks;
+        const checker = new LinkChecker(config, this.akasha, opts);
+        if (!checker.enabled) return;
+
+        const documents = this.akasha.filecache.documentsCache;
+        // All documents that render to a .html file.
+        const htmlDocs = await documents.search({
+            renderpathmatch: '\\.html$'
+        });
+
+        // Collect all links first so the external checker deduplicates work.
+        // Each entry pairs an href with the rendered document it came from.
+        const links: Array<{ href: string, source: string, vpath: string }> = [];
+        for (const doc of htmlDocs) {
+            const renderPath = doc.renderPath;
+            const fspath = path.join(config.renderDestination, renderPath);
+            let html: string;
+            try {
+                html = await fsp.readFile(fspath, 'utf8');
+            } catch (e) {
+                // The file may not have been written (e.g. non-HTML renderer);
+                // skip it rather than failing the whole scan.
+                continue;
+            }
+            let $;
+            try {
+                $ = mahabhuta.parse(html);
+            } catch (e) {
+                continue;
+            }
+            const collect = (selector: string, attr: string) => {
+                $(selector).each((i, el) => {
+                    const href = $(el).attr(attr);
+                    if (typeof href === 'string' && href.length > 0) {
+                        links.push({ href, source: renderPath, vpath: doc.vpath });
+                    }
+                });
+            };
+            collect('a[href]', 'href');
+            collect('link[href]', 'href');
+            collect('script[src]', 'src');
+            collect('img[src]', 'src');
+        }
+
+        for (const link of links) {
+            await checker.checkLink(link.href, link.source, link.vpath);
+        }
+
+        // Throws if any 'error'-mode failures were collected, failing the run.
+        checker.finish();
     }
 
 }
@@ -1213,7 +1343,16 @@ class AnchorCleanup extends Munger {
             let found = await documents.find(absolutePath);
             // console.log(`AnchorCleanup findRendersTo ${absolutePath} ${util.inspect(found)}`);
             if (!found) {
-                console.log(`WARNING: Did not find ${href} in ${util.inspect(this.config.documentDirs)} in ${metadata.document.path} absolutePath ${absolutePath}`);
+                // Report a broken internal link, gated on the configured
+                // internal link-check mode.  The authoritative error/fatal
+                // enforcement (which fails the build) happens in the
+                // whole-site scan during onSiteRendered; here we only surface
+                // the warning during rendering unless checking is disabled.
+                const mode = this.config.plugin(pluginName)
+                            ?.options?.checkLinks?.internal;
+                if (mode && mode !== 'ignore') {
+                    console.log(`WARNING: Did not find ${href} in ${util.inspect(this.config.documentDirs)} in ${metadata.document.path} absolutePath ${absolutePath}`);
+                }
                 return "ok";
             }
             // console.log(`AnchorCleanup ${metadata.document.path} ${href} findRendersTo ${(new Date() - startTime) / 1000} seconds`);

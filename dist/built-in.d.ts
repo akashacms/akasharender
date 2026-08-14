@@ -19,6 +19,7 @@
 import { Plugin } from './Plugin.js';
 import mahabhuta from 'mahabhuta';
 import { Configuration } from './index.js';
+import { type LinkCheckMode } from './link-checker.js';
 export declare class BuiltInPlugin extends Plugin {
     #private;
     constructor();
@@ -40,6 +41,34 @@ export declare class BuiltInPlugin extends Plugin {
      * URLs are relativized or absolutized.
      */
     set relativizeBodyLinks(rel: any);
+    /**
+     * Set the severity mode for internal (local) link checking.
+     * One of 'ignore' | 'warn' | 'error' | 'fatal'.
+     */
+    setInternalLinkMode(config: any, mode: LinkCheckMode): this;
+    /**
+     * Set the severity mode for external (http/https) link checking.
+     * One of 'ignore' | 'warn' | 'error' | 'fatal'.  'ignore' (the default)
+     * disables external checking.
+     */
+    setExternalLinkMode(config: any, mode: LinkCheckMode): this;
+    /**
+     * Set the severity mode for non-HTTP links (mailto:, tel:, ...).
+     * One of 'ignore' | 'warn' | 'error' | 'fatal'.  'ignore' (the default)
+     * silently skips them; 'warn' logs them for review.
+     */
+    setOtherSchemesMode(config: any, mode: LinkCheckMode): this;
+    /**
+     * Add an external domain or URL (string) or RegExp to the link-check
+     * whitelist.  Whitelisted external URLs are assumed valid and never fetched.
+     */
+    addLinkCheckWhitelist(config: any, entry: string | RegExp): this;
+    /**
+     * Select which external per-URL checker to use: 'fetch' (built-in,
+     * zero-dependency) or 'link-check' (lazy-loads the site-author-installed
+     * `link-check` package).
+     */
+    setExternalChecker(config: any, which: 'fetch' | 'link-check'): this;
     doStylesheets(metadata: any): string;
     doHeaderJavaScript(metadata: any): string;
     doFooterJavaScript(metadata: any): string;
