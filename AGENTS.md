@@ -144,6 +144,41 @@ The site, http://akashacms.com/, is the primary site for AkashaCMS documentation
 2. Demonstrating how to configure a somewhat complex AkashaCMS website
 3. Demonstrating how to incorporate content that can be rendered as an EPUB into a book-like reading experience on a website
 
+## Documentation guide pages
+
+AkashaRender's end-user documentation lives in two directories of AkashaCMS document files (`.html.md`, `.html.njk`, etc.):
+
+* **`guide/`** — the AkashaRender User Guide.
+* **`built-in-guide/`** — the guide for the Built-in Plugin (`lib/built-in.ts`).
+
+These directories are **not** rendered from within this repository.  They are rendered as part of the **`../akashacms-website`** project (http://akashacms.com/), whose `config.mjs` mounts them with `addDocumentsDir`:
+
+* `../akasharender/guide` is mounted at `dest: 'akasharender'` (so it appears under `/akasharender/`, with `bookHomeURL: "/akasharender/toc.html"`).
+* `../akasharender/built-in-guide` is mounted at `dest: 'plugins/built-in'` (so it appears under `/plugins/built-in/`).
+
+To preview or build changes to a guide page, render the `../akashacms-website` project (for example `npx akasharender render config.mjs` in that directory), not this one.  There is no guide build in the AkashaRender repository itself.
+
+### Creating a guide page
+
+1. Add a new `NAME.html.md` file to `guide/` (or `built-in-guide/`) using the existing pages as a pattern.  The frontmatter uses the guide layout and a title:
+
+   ```markdown
+   ---
+   layout: ebook-page.html.ejs
+   title: Human-readable page title
+   ---
+   ```
+
+2. Write the body as Markdown, with `##` section headings and fenced code blocks, matching the tone of the existing guide pages.
+
+3. Add the page to the guide's table of contents in `guide/toc.html.md` (the `built-in-guide/` currently has no separate `toc.html.md`).  Add an `<li>` inside the `<nav>`'s `<ol>` link structure:
+
+   ```html
+   <li><a href="NAME.html" id="NAME"></a></li>
+   ```
+
+   **Leave the anchor text empty.**  Empty anchor text is filled in automatically at render time by the `AnchorCleanup` Mahafunc in `lib/built-in.ts` (it looks up the linked document and inserts that page's `title` as the link text, and adds a matching `title=` attribute).  This is why every entry in `toc.html.md` is an empty `<a href="…" id="…"></a>`.  The same automatic behavior applies to any empty local `<a>` link in any AkashaCMS document, including pages in `built-in-guide/`.
+
 ## Example AkashaCMS websites
 
 * **Full example** - Demonstrates all features of AkashaCMS.  Meant to help test features, while providing an example.  (../akashacms-example, https://example.akashacms.com)
