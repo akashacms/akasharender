@@ -1,7 +1,7 @@
 ---
 title: "AkashaRender Code Wiki"
 date-created: 2026-05-20T12:00:00+00:00
-last-updated: 2026-08-14T00:44:00+03:00
+last-updated: 2026-08-14T13:42:28+03:00
 ---
 
 # AkashaRender Code Wiki
@@ -87,6 +87,7 @@ Detailed answers to technical questions about the codebase:
 - **[Webmention: Purpose, Markup, Protocol, and Server Software](./answers/webmention-protocol-and-markup.md)**: The W3C protocol for decentralized cross-site reply/like/repost notifications (IndieWeb successor to Pingback); covers `rel="webmention"` discovery, the `source`/`target` POST + source-fetch verification, microformats2 classification, and server options (Webmention.io and other hosted services, or a self-hosted PHP receiver) with a build-time fetch-and-render approach for AkashaCMS
 - **[Lightweight Image-Resize Packages to Replace sharp](./answers/lightweight-image-resize-alternatives-to-sharp.md)**: How to shrink the install by replacing `sharp` — its size is bundled native libvips binaries, so only a pure-JS (Jimp) or WASM (photon-node, Squoosh codecs, the `@saschazar/wasm-*` per-format monorepo) library helps; the usage surface is just load/resize-to-width/write-by-extension (incl. PNG→JPG conversion), with WebP output being the deciding constraint (SVG is out of scope — it is sized via `width=`/`height=`)
 - **[UNIQUE constraint failed: ASSETS.vpath (and DOCUMENTS.vpath) During Indexing](./answers/unique-constraint-failed-assets-vpath.md)**: Why `assetdirs`/`render` print many `UNIQUE constraint failed: ASSETS.vpath` errors — the `VFStack` scan yields unique vpaths and the cache tables use `CREATE TABLE IF NOT EXISTS` without truncation, so collisions come from a **persistent database reused across runs** (`AK_DB_URL` set to a file rather than the default `:memory:`); fix by unsetting `AK_DB_URL` or starting from an empty database
+- **[How Favicons Work, Their Formats, and Discovering Them Without the Google Favicon Service](./answers/favicon-discovery-without-google.md)**: Documents favicons (declared via `<link rel="icon">`/`apple-touch-icon`/`manifest` plus the `/favicon.ico` root fallback), the supported formats (ICO, PNG, SVG, and tolerated GIF/JPEG/WebP), and how to discover a site's icon directly (fetch page HTML, parse the `<head>`, fall back to `/favicon.ico`). Explains why `@akashacms/plugins-external-links` must stop emitting the `www.google.com/s2/favicons` `<img>` (it makes every visitor's browser hit Google, leaking IP/Referer) and proposes a build-time discover→cache→emit redesign, comparing two emit strategies (self-host the downloaded icon = most private/stable, vs. record the discovered remote URL = simpler but shifts tracking to each linked site and is less stable); notes browsers display ICO/PNG/SVG natively so no JPG conversion is needed
 
 ### [Architecture](./architecture/README.md)
 
