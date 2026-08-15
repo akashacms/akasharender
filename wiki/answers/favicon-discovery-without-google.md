@@ -13,7 +13,7 @@ Categories:
   - privacy
   - plugins
 date-created: 2026-08-14T13:08:52+03:00
-last-updated: 2026-08-14T13:30:00+03:00
+last-updated: 2026-08-14T13:58:32+03:00
 confidence: high
 ---
 
@@ -154,4 +154,4 @@ Browsers decode **ICO natively** (both the `/favicon.ico` fallback and an `.ico`
 
 ## Backlinks
 
-- (none yet)
+- [Implementing Self-Hosted Favicon Discovery in plugins-external-links (favicon-fetcher.mjs)](../implementation/favicon-fetcher-self-hosted.md)

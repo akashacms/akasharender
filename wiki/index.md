@@ -1,7 +1,7 @@
 ---
 title: "AkashaRender Code Wiki"
 date-created: 2026-05-20T12:00:00+00:00
-last-updated: 2026-08-14T13:42:28+03:00
+last-updated: 2026-08-14T13:58:32+03:00
 ---
 
 # AkashaRender Code Wiki
@@ -107,6 +107,7 @@ Implementation guides for features and modifications:
 - **[oEmbed Provider Implementation Guide for plugins-base](./implementation/oembed-provider.md)**: Coding plan for the oEmbed provider in `@akashacms/plugins-base` — config flag, `<head>` `<link>` injection, JSON/XML file generation in `onSiteRendered`, and tests
 - **[csv-table Custom Element Implementation Guide](./implementation/csv-table-custom-element.md)**: Coding plan for issue #85's `<csv-table file-name="..." template="..."/>` tag — a Built-in Plugin custom element (modeled on `CodeEmbed`) that reads a CSV/TSV/YAML data file and renders before/per-row/after templates into an HTML table
 - **[Link Checker Implementation Guide (Built-in Plugin)](./implementation/link-checker.md)**: Coding plan for validating internal links (via the documents/assets cache) and external links (via a HEAD-then-GET `fetch` HTTP check) in the `akashacms-builtin` plugin, with four configurable severity modes (ignore/warn/error/fatal) set from `config.mjs`, a whole-site scan in `onSiteRendered`, an external-domain whitelist, optional logging of non-HTTP links, dedupe/caching, a build-vs-buy evaluation of the `link-check` npm package, and tests
+- **[Implementing Self-Hosted Favicon Discovery in plugins-external-links (favicon-fetcher.mjs)](./implementation/favicon-fetcher-self-hosted.md)**: Coding plan to drop the Google Favicon service from `@akashacms/plugins-external-links` — a new `favicon-fetcher.mjs` that `fetch()`es the target page (following redirects, faux `User-Agent`), deduces favicons from `<link rel=icon>`/`apple-touch-icon`/`mask-icon`/manifest with a `/favicon.ico` fallback, and caches per canonical domain under a `favicon-cache` directory (automounted at `/vendor/favicon-cache`) with `meta.json` + icon bytes and negative-result caching; adds favicon-size config and optional Sharp resize/convert-to-PNG that **never converts ICO**, plus the `index.mjs` automount/setters and the `mahafuncs.mjs` change to emit a local `<img>`, with phasing, tests, and security notes
 
 ### [Memory](./memory/README.md)
 
