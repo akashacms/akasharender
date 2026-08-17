@@ -77,6 +77,7 @@ Key architectural concepts and patterns:
 
 Detailed answers to technical questions about the codebase:
 
+- **[How the AkashaCMS Page Rendering Process Works](./answers/how-page-rendering-works.md)**: High-level overview of the rendering process — the site-wide loop (`render`/`render2`) around the per-document three-stage pipeline (content render → layout render → Mahabhuta), the CSS/asset/HTML format branch, and the `renderDocument` vs `renderDocument2` split
 - **[Detailed Flow for Rendering a Single Page from vpath](./answers/rendering-flow-from-vpath.md)**: Step-by-step walkthrough of the complete rendering process
 - **[When Was Clinic Added as a Dependency, and How Would It Help AkashaRender?](./answers/clinic-dependency.md)**: `clinic` is not a dependency; it is an optional global-install profiler documented in PROFILING.md
 - **[Elements Required for ActivityPub and Fediverse Integration](./answers/activitypub-fediverse-html-elements.md)**: ActivityPub is a JSON-LD/HTTP protocol, not an HTML-tag standard; outlines a tiered plugin design (Open Graph + `fediverse:creator` metadata, WebFinger/NodeInfo discovery, static actor JSON-LD, live federation), with PHP-shim scripts for shared hosting (WebFinger handler, content negotiation, inbox) and detailed explanations of the Actor/Collections/Objects-Activities entities

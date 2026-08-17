@@ -307,6 +307,7 @@ vpath → DocumentsCache.find()
 
 ## Related Pages
 
+- [How the AkashaCMS Page Rendering Process Works](./how-page-rendering-works.md): High-level overview of the site-wide loop and per-document pipeline
 - [Three-Stage Rendering](../concepts/three-stage-rendering.md): Concept overview of the rendering pipeline
 - [Rendering Pipeline](../concepts/rendering-pipeline.md): Site-wide rendering orchestration
 - [Mahabhuta System](../concepts/mahabhuta-system.md): DOM manipulation stage
@@ -316,4 +317,4 @@ vpath → DocumentsCache.find()
 ## Backlinks
 
 This answer is referenced by:
-- (to be populated as links are added)
+- [How the AkashaCMS Page Rendering Process Works](./how-page-rendering-works.md)
