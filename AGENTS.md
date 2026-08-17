@@ -4,6 +4,8 @@ AkashaRender is the core component of a system called AkashaCMS.  AkashaCMS refe
 
 The scope for AkashaCMS is rendering static HTML websites, rendering EPUB books from the same content, and generating good looking PDF documents from the same content.  In other words, the goal is using the same content files for websites, PDF documents, and/or EPUB books.
 
+> **Answering "how does X work?" questions:** Before answering any question about how a component in the AkashaCMS ecosystem works, functions, or is designed, you MUST first read `wiki/index.md` and the relevant wiki pages it links to — *before* reading source code under `lib/` or running searches. See ["When the user asks questions about AkashaRender or the AkashaCMS plugins"](#when-the-user-asks-questions-about-akasharender-or-the-akashacms-plugins) below for the full workflow. Skipping the wiki is a process violation even when the answer turns out correct.
+
 ## Runtime and Toolchain Requirements
 
 - **Node.js 24** is required for all compilation, execution, and testing.  Do not target, build, run, or test against any other Node.js major version (for example, do not use Node.js 26).  When multiple Node.js versions are installed (e.g. via `nvm`), select Node.js 24 before building, running, or testing.
@@ -200,6 +202,29 @@ Key points:
 - Wiki pages must follow strict formatting and citation requirements
 
 Before making any changes to wiki files, read and follow the guidelines in `wiki/AGENTS.md`.
+
+## When the user asks questions about AkashaRender or the AkashaCMS plugins
+
+**MANDATORY FIRST STEP.** When the user asks any question about how a component in
+the AkashaCMS ecosystem works, functions, or is designed, you MUST begin your
+response by reading `wiki/index.md` and then reading the specific wiki pages it
+links to that are relevant to the question. Do this **before** reading source code
+under `lib/`, before running searches, and before writing any part of your answer.
+The wiki (`wiki/summaries/`, `wiki/concepts/`, `wiki/answers/`, `wiki/architecture/`)
+is the primary source of truth for such questions; source code is consulted only to
+verify or fill gaps the wiki does not cover.
+
+Follow the "Question answering Workflow" in `wiki/AGENTS.md`:
+
+1. Read `wiki/index.md` first to find relevant pages.
+2. Read those pages and synthesize the answer from them.
+3. Cite the specific wiki pages you used in your response.
+4. If the answer is not in the wiki, say so clearly before answering from source code.
+5. If the answer is valuable, offer to save it as a new page in `wiki/answers/`
+   (and perform the index/README/log bookkeeping that `wiki/AGENTS.md` requires).
+
+Skipping the wiki and answering directly from source code is a process violation,
+even when the resulting answer is correct.
 
 ### Memory System
 
