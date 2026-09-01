@@ -119,24 +119,11 @@ The `render` function renders all files in the documents directories into the ou
 - **VFStack** (lib/cache/vfstack.ts): Internal virtual file system for layered directory structures. Provides stacked directory functionality for assets, partials, layouts, and documents.
 - **@akashacms/renderers**: Template rendering engines (Markdown, EJS, Nunjucks, etc.) (../renderers, https://www.npmjs.com/package/@akashacms/renderers, https://github.com/akashacms/rendering-engines)
 
-## AkashaCMS plugins
+## AkashaCMS ecosystem: core modules, plugins, documentation, examples, products
 
 "AkashaCMS" is the name for an ecosystem including AkashaRender, Mahabhuta, @akashacms/renderers, and the plugins.  The plugins are used by AkashaRender to extend its functionality.
 
-* **@akashacms/plugins-base** - Base functionality for building websites (../akashacms-base, https://www.npmjs.com/package/@akashacms/plugins-base, https://github.com/akashacms/akashacms-base)
-* **@akashacms/plugins-blog-podcast** - Supports building a blog on an AkashaCMS website (../akashacms-blog-podcast, https://www.npmjs.com/package/@akashacms/plugins-blog-podcast, https://github.com/akashacms/akashacms-blog-podcast)
-* **@akashacms/plugins-booknav** - Supports a certain useful navigational style (../akashacms-booknav, https://www.npmjs.com/package/@akashacms/plugins-booknav, https://github.com/akashacms/akashacms-booknav)
-* **@akashacms/plugins-breadcrumbs** - Constructs breadcrumb trails to help navigate the website (../akashacms-breadcrumbs, https://www.npmjs.com/package/@akashacms/plugins-breadcrumbs, https://github.com/akashacms/akashacms-breadcrumbs)
-* **@akashacms/diagrams-maker** - Handles rendering diagrams using PlantUML, Mermaid, or Printora (../plugins-diagrams, https://www.npmjs.com/package/@akashacms/diagram-makers, https://github.com/akashacms/plugins-diagrams)
-* **@akashacms/plugins-external-links** - Processes links to external sites, adding FAVICONs and a glyph for external links (../akashacms-external-links, https://www.npmjs.com/package/@akashacms/plugins-external-links)
-* **@akashacms/plugins-footnotes** - Processes custom tags to add footnotes at the bottom of a web page (../akashacms-footnotes, https://www.npmjs.com/package/@akashacms/plugins-footnotes)
-* **@akashacms/plugins-authors** - For showing an information block describing the author of an article (../akashacms-plugins-authors, https://www.npmjs.com/package/@akashacms/plugins-authors)
-* **@akashacms/plugins-tagged-content** - Supports categorizing content using vocabulary tags, and generates per-tag index pages (../akashacms-tagged-content, https://www.npmjs.com/package/@akashacms/plugins-tagged-content)
-* **@akashacms/theme-bootstrap** - Provides custom tags and partial template overrides for using Bootstrap 4 components on a website (../akashacms-theme-bootstrap, https://www.npmjs.com/package/@akashacms/theme-bootstrap)
-
-## AkashaCMS-based PDF document creator application
-
-**PDF Document Maker** is a comprehensive tool built using AkashaCMS components with the primary purpose of creating good looking PDF documents from Markdown or AsciiDoc source files.  It also contains several PDF manipulation commands. (../pdf-document-construction-set, https://www.npmjs.com/package/@akashacms/pdf-document-maker, https://github.com/akashacms/pdf-document-construction-set)
+A complete map of the known AkashaCMS ecosystem is in [`AKASHACMS.md`](./AKASHACMS.md)
 
 ## Documentation website
 
