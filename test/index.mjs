@@ -351,11 +351,41 @@ describe('header metadata', function() {
     });
 });
 
+describe('HTML comments', function() {
+
+    /*
+     * The default for config.decomment is FALSE
+     * Meaning the default action is to leave comments as they are.
+     * Meaning to strip comments we set it to TRUE
+     * We then revert it to FALSE in order to not affect
+     * the rest of the tests
+     */
+
+    it('should have expected comments', async function() {
+        let { html, $ } = await akasha.readRenderedFile(config, 'comments.html');
+        assert.match(html, /comment in comments.html.ejs/);
+        assert.match(html, /Comment in layout comment-layout.html.ejs original/);
+        assert.match(html, /comment.html.ejs/);
+        assert.match(html, /comment.html/);
+    });
+
+    it('should re-render with no comments', async function() {
+        config.decomment = true;
+        let results = await akasha.renderPath(config, 'comments.html.md');
+        let { html, $ } = await akasha.readRenderedFile(config, 'comments.html');
+        assert.notMatch(html, /comment in comments.html.ejs/);
+        assert.notMatch(html, /Comment in layout comment-layout.html.ejs original/);
+        assert.notMatch(html, /comment.html.ejs/);
+        assert.notMatch(html, /comment.html/);
+        config.decomment = false;
+    });
+});
+
 describe('teaser, content', function() {
     it('should read index.html', async function() {
         let { html, $ } = await akasha.readRenderedFile(config, 'index.html');
 
-        console.log($('body article#original').html());
+        // console.log($('body article#original').html());
 
         assert.notMatch($('body article#original').html(), /title: Home Page/);
         assert.notMatch($('body article#original').html(), /layout: default.html.ejs/);

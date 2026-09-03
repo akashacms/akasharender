@@ -48,6 +48,7 @@
     "cache": "^3.0.0",
     "commander": "^14.x",
     "csv-parse": "^6.2.1",
+    "decomment": "^0.9.5",
     "fastest-levenshtein": "^1.0.16",
     "fastq": "^1.19.x",
     "gh-pages": "^6.3.x",

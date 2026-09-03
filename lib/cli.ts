@@ -306,6 +306,7 @@ program
                 root_url: config.root_url,
                 configDir: config.configDir,
                 renderDestination: config.renderDestination,
+                decomment: config.decomment,
                 concurrency: config.concurrency,
                 cachingTimeout: config.cachingTimeout,
                 documentDirs: config.documentDirs,

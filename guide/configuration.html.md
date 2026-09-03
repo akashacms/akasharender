@@ -31,11 +31,16 @@ We briefly touched on the Configuration object in [](2-setup.html), so let's go 
 ```js
 'use strict';
 
-const akasha  = require('akasharender');
+import path from 'node:path';
+import util from 'node:util';
+import akasha from 'akasharender';
+
 
 const config = new akasha.Configuration();
 
 config.rootURL("http://example.com");
+
+const __dirname = import.meta.dirname;
 
 config.configDir = __dirname;
 
@@ -58,6 +63,25 @@ module.exports = config;
 This is just a normal every-day Node.js module.  At the top we create a `Configuration` object, in the middle we call methods on that object to make settings, at the bottom we call `config.prepare()` and then assign the Configuration object to `module.exports`.  That last step makes the Configuration object available to AkashaRender.
 
 When we run `akasharender copy-assets config-file.js`, the file (`config-file.js`) is processed using `require`.  It is expected that the export from the config file is as shown here, an instance of the `Configuration` class containing project configuration.
+
+# Inspecting how AkashaCMS see's the configuration
+
+Run:
+
+```shell
+$ npx akasharender config config.mjs
+{
+  root_url: 'https://site.domain.name',
+  configDir: '/path/to/project/directory',
+  renderDestination: 'out',
+  decomment: false,
+  concurrency: 5,
+  cachingTimeout: 60000,
+  // ...
+}
+```
+
+This prints out the settings in the configuration object.  With this you can verify that AkashaCMS has the correct configuration for your project.
 
 # Project rootURL
 
@@ -273,6 +297,14 @@ config.verbose = true;
 
 This output can be useful when trouble-shooting a site configuration.
 
+# Stripping HTML comments
+
+HTML comments can be automatically stripped from rendered output.  By default this is not done.  To enable this feature:
+
+```js
+config.decomment = true;
+```
+
 # Stylesheets and JavaScript
 
 Websites and EPUB's usually have Stylesheets and JavaScript.  Well, JavaScript isn't that useful in an EPUB, but is certainly useful in a website.  
@@ -289,6 +321,8 @@ config
 ```
 
 The difference between FooterJavaScript and HeaderJavaScript is whether the code is placed in the `<head>` section, or just before the closing `</body>` tag.  Some recommend that JavaScript be placed at the bottom of the page, and this allows you to do so.
+
+However, notice this example is for Bootstrap v4.  Starting with Bootstrap v5, the jQuery library is not required.  And, starting with `@akashacms/theme-bootstrap@5.x` it is not necessary to add the Bootstrap classes this way, because the plugin handles it automatically.
 
 The declarations shown here correspond to the asset directory declarations shown earlier.  Together they are a method to initialize jQuery and Bootstrap on your site.  Then the last, `/style.css`, gives you the opportunity for your customizations.
 

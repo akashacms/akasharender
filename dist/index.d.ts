@@ -236,6 +236,8 @@ export declare class Configuration {
     get verbose(): boolean;
     set perfDataDir(storeDir: string);
     get perfDataDir(): string;
+    get decomment(): boolean;
+    set decomment(val: boolean);
     get akasha(): any;
     documentsCache(): Promise<filecache.DocumentsCache>;
     assetsCache(): Promise<filecache.AssetsCache>;

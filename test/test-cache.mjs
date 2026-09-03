@@ -906,6 +906,11 @@ describe('Documents cache', function() {
             fspath: '**/documents/target-blank.html.md',
             vpath: 'target-blank.html.md',
             renderPath: 'target-blank.html'
+        },
+        {
+            fspath: '**/documents/comments.html.md',
+            vpath: 'comments.html.md',
+            renderPath: 'comments.html'
         }
     ];
     
@@ -2165,6 +2170,11 @@ describe('Layouts cache', function() {
             fspath: '**/layouts/default-once-teaser.html.njk',
             vpath: 'default-once-teaser.html.njk',
             renderPath: 'default-once-teaser.html.njk'
+        },
+        {
+            fspath: '**/layouts/comment-layout.html.ejs',
+            vpath: 'comment-layout.html.ejs',
+            renderPath: 'comment-layout.html.ejs'
         }
     ];
     
@@ -2399,6 +2409,16 @@ describe('Partials cache', function() {
             fspath: '**/partials/csvtable-after-custom.html.njk',
             vpath: 'csvtable-after-custom.html.njk',
             renderPath: 'csvtable-after-custom.html.njk'
+        },
+        {
+            fspath: '**/partials/comment.html.ejs',
+            vpath: 'comment.html.ejs',
+            renderPath: 'comment.html.ejs'
+        },
+        {
+            fspath: '**/partials/comment.html',
+            vpath: 'comment.html',
+            renderPath: 'comment.html'
         }
     ];
     

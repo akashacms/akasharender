@@ -657,6 +657,7 @@ export class Configuration {
     #pluginData;
     #verbose: boolean;
     #perfDataDir: string;
+    #decomment: boolean;
     
     constructor(modulepath) {
 
@@ -691,6 +692,8 @@ export class Configuration {
         this.#pluginData = [];
         
         this.#verbose = false;
+
+        this.#decomment = false;
 
         this.#perfDataDir = undefined;
 
@@ -875,6 +878,9 @@ export class Configuration {
         this.#perfDataDir = storeDir;
     }
     get perfDataDir() { return this.#perfDataDir; }
+
+    get decomment() { return this.#decomment; }
+    set decomment(val: boolean) { this.#decomment = val; }
 
     // set akasha(_akasha)  { this[_config_akasha] = _akasha; }
     get akasha() { return module_exports; }

@@ -36,6 +36,8 @@ import {
     Document
 } from './cache/schema.js';
 import { performance } from 'node:perf_hooks';
+import decomment from 'decomment';
+
 
 // For https://github.com/akashacms/akasharender/issues/103
 // The idea is normalizing the data returned.  This should
@@ -397,6 +399,10 @@ export async function renderDocument(
 
     ret.results.renderMahaEnd = performance.now();
     // END Mahabhuta
+
+    if (config.decomment) {
+        ret.renderedMaha = decomment(ret.renderedMaha);
+    }
 
     try {
         const renderDest = path.join(
