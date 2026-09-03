@@ -4,9 +4,9 @@ This document provides a complexity overview of the AkashaRender source code bas
 
 ## Summary Statistics
 
-- **Total source files analyzed**: 15
-- **Total lines of code**: 9,227
-- **Average lines per file**: 615
+- **Total source files analyzed**: 14
+- **Total lines of code**: 8,986
+- **Average lines per file**: 642
 - **Largest file**: cache-sqlite.ts (2,638 lines)
 - **Smallest file**: Plugin.ts (96 lines)
 
@@ -46,7 +46,7 @@ This document provides a complexity overview of the AkashaRender source code bas
 - **Description**: Complex async rendering pipeline with multiple stages and error handling. Implements render/render2 (site-wide), renderDocument/renderDocument2 (single doc), and renderContent (core).
 - **Summary link**: [wiki/summaries/lib/render.ts.md](wiki/summaries/lib/render.ts.md)
 
-### Medium Complexity (6 files)
+### Medium Complexity (5 files)
 
 **lib/cache/schema.ts** - 497 lines
 - **Exported functions**: 10 (validation and table creation functions)
@@ -65,12 +65,6 @@ This document provides a complexity overview of the AkashaRender source code bas
 - **Classes**: 1 (VFStack class)
 - **Description**: Recursive directory scanning and virtual path resolution. Key methods: scan(), vpathToFspath(), toIgnore(), iterator protocol implementation.
 - **Summary link**: [wiki/summaries/lib/cache/vfstack.ts.md](wiki/summaries/lib/cache/vfstack.ts.md)
-
-**lib/cache/watchman.ts** - 241 lines
-- **Exported functions**: 5 internal helper functions, 1 main export (watchman)
-- **Classes**: 0
-- **Description**: Event-driven architecture with async rendering queue. Pattern: Event listeners on cache instances, fastq for concurrent rendering.
-- **Summary link**: [wiki/summaries/lib/cache/watchman.ts.md](wiki/summaries/lib/cache/watchman.ts.md)
 
 **lib/data.ts** - 153 lines
 - **Exported functions**: 6 (init, report, remove, removeAll, print, data4file)
@@ -122,13 +116,12 @@ This document provides a complexity overview of the AkashaRender source code bas
 | 6 | schema.ts | 497 | Medium |
 | 7 | tag-glue.ts | 424 | Medium |
 | 8 | vfstack.ts | 416 | Medium |
-| 9 | watchman.ts | 241 | Medium |
-| 10 | data.ts | 153 | Medium |
-| 11 | refactor-tags.ts | 138 | Medium |
-| 12 | mahafuncs.ts | 125 | Low |
-| 13 | types.ts | 117 | Low |
-| 14 | sqdb.ts | 114 | Low |
-| 15 | Plugin.ts | 96 | Low |
+| 9 | data.ts | 153 | Medium |
+| 10 | refactor-tags.ts | 138 | Medium |
+| 11 | mahafuncs.ts | 125 | Low |
+| 12 | types.ts | 117 | Low |
+| 13 | sqdb.ts | 114 | Low |
+| 14 | Plugin.ts | 96 | Low |
 
 ## Complexity Guidelines
 
@@ -163,7 +156,7 @@ This document provides a complexity overview of the AkashaRender source code bas
 ## Maintenance Notes
 
 - The top 5 files (5,786 lines) represent 63% of the total codebase
-- Cache system files (cache-sqlite.ts, schema.ts, vfstack.ts, tag-glue.ts, watchman.ts) total 4,214 lines (46% of codebase)
+- Cache system files (cache-sqlite.ts, schema.ts, vfstack.ts, tag-glue.ts) total 3,973 lines (44% of codebase)
 - Consider modularization of large files to improve maintainability
 
 ---

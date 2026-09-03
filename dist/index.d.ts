@@ -33,8 +33,8 @@ import type { TagDescription } from './types.js';
 export type { TagDescription } from './types.js';
 export type { SearchOptions, RegexMatch, SearchFilterFunc, SearchSortFunc } from './types.js';
 export { validTagDescription } from './types.js';
-export { render, render2, renderDocument, renderDocument2, renderContent, isDocumentUpToDate } from './render.js';
-export type { Render2Options, RenderingResults } from './render.js';
+export { render, renderDocument, isDocumentUpToDate } from './render.js';
+export type { RenderOptions, RenderingResults } from './render.js';
 export { SitemapValidator, type SitemapEntry, type EntryValidation, type XMLValidation, type ValidationResult } from './sitemap-validator.js';
 export { inferFormat, parseTableData, type CsvTableFormat, type CsvTableRow, type CsvTableData, type ParseTableOptions } from './csv-table.js';
 export { LinkChecker, isWhitelisted, classifyStatus, assertMode as assertLinkCheckMode, fetchExternalChecker, linkCheckExternalChecker, LINK_CHECK_MODES, DEFAULT_LINK_CHECK_OPTIONS, type LinkCheckMode, type LinkCheckOptions, type WhitelistEntry, type ExternalState, type ExternalResult, type ExternalChecker, type ExternalCheckOptions, type LinkKind, type LinkError, type InternalResolver } from './link-checker.js';
@@ -56,8 +56,7 @@ export declare function setup(config: any): Promise<void>;
 export declare function cacheSetup(config: any): Promise<void>;
 export declare function closeCaches(): Promise<void>;
 export declare function fileCachesReady(config: any): Promise<void>;
-export declare function renderPath(config: any, path2r: any): Promise<string>;
-export declare function renderPath2(config: any, path2r: any): Promise<import("./render.js").RenderingResults>;
+export declare function renderPath(config: any, path2r: any): Promise<import("./render.js").RenderingResults>;
 /**
  * Reads a file from the rendering directory.  It is primarily to be
  * used in test cases, where we'll run a build then read the individual

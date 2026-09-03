@@ -8,7 +8,7 @@ Categories:
   - tracing
   - database
 date-created: 2026-05-20T12:00:00+00:00
-last-updated: 2026-05-20T12:00:00+00:00
+last-updated: 2026-09-03T18:10:00+03:00
 confidence: high
 ---
 
@@ -16,23 +16,22 @@ confidence: high
 
 ## Code Complexity
 
-- **Lines of code**: 153
-- **Exported functions**: 6 (init, report, remove, removeAll, print, data4file)
+- **Lines of code**: ~105
+- **Exported functions**: 4 (init, remove, removeAll, print)
 - **Classes**: 1 internal (Trace class)
-- **Complexity**: Low-Medium - straightforward database operations
+- **Complexity**: Low - straightforward database operations
 - **Key pattern**: SQL loaded from external files, simple CRUD operations
 
 ## Key Points
 
-- Tracks rendering performance and stages for documents
-- Stores trace data in SQLite database
+- Maintenance functions for the TRACES table in the SQLite database
 - SQL statements loaded from external `.sql` files
-- Provides functions to add, remove, and query trace data
-- Used for performance analysis and debugging
+- **Nothing currently writes to TRACES**: the `report()` and `data4file()` functions (and their SQL files) were removed on 2026-09-03 when the legacy string-returning render path was deleted — per-stage timing now lives in `RenderingResults` (see [lib/render.ts summary](./render.ts.md))
+- `init()` is still called by the CLI and the akasharender-epub plugin; `removeAll()` is called by the CLI before each render
 
 ## Summary
 
-This module implements a tracing system for tracking document rendering performance through various stages (source: [lib/data.ts](../../lib/data.ts)).
+This module manages the TRACES table used historically for tracking document rendering performance through stages (source: [lib/data.ts](../../lib/data.ts)).
 
 The Trace class stores information about each rendering operation (source: [lib/data.ts](../../lib/data.ts)):
 - `basedir` - Base directory path
@@ -45,21 +44,17 @@ The Trace class stores information about each rendering operation (source: [lib/
 
 SQL statements are loaded from external files in the `sql/` directory (source: [lib/data.ts](../../lib/data.ts)):
 - `data-create-table.sql` - Creates the traces table
-- `data-add-report.sql` - Inserts trace records
 - `data-delete-traces.sql` - Deletes traces for a specific file
 - `data-delete-all-traces.sql` - Clears all traces
 - `data-get-all-traces.sql` - Retrieves all traces
-- `data-for-file.sql` - Gets traces for a specific file
 
-Key functions provided (source: [lib/data.ts](../../lib/data.ts)):
+(`data-add-report.sql` and `data-for-file.sql` were deleted with `report()`/`data4file()`.)
+
+Functions provided (source: [lib/data.ts](../../lib/data.ts)):
 - `init()` - Creates the database table
-- `report(basedir, fpath, renderTo, stage, start)` - Records a trace
 - `remove(basedir, fpath)` - Removes traces for a file
 - `removeAll()` - Clears all traces
 - `print()` - Prints all traces to console with timing
-- `data4file(basedir, fpath)` - Returns formatted trace data for a file
-
-The timing information shows elapsed milliseconds between `start` and `now` for each stage, allowing performance bottlenecks to be identified (source: [lib/data.ts](../../lib/data.ts)).
 
 ## Relevant Concepts
 
@@ -70,7 +65,6 @@ The timing information shows elapsed milliseconds between `start` and `now` for 
 ## Related Pages
 
 - [lib/sqdb.ts](./sqdb.ts) - SQLite database initialization
-- [lib/render.ts](./render.ts) - Uses tracing during rendering
+- [lib/render.ts](./render.ts) - Rendering (timing now carried in RenderingResults)
 
 ## Backlinks
-

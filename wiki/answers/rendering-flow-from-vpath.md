@@ -10,7 +10,7 @@ Categories:
   - pipeline
   - workflow
 date-created: 2026-05-21T04:30:00Z
-last-updated: 2026-05-21T04:30:00Z
+last-updated: 2026-09-03T19:30:00+03:00
 confidence: high
 ---
 
@@ -22,21 +22,21 @@ What is the detailed flow for rendering a single page starting from its vpath?
 
 ## Answer
 
-The rendering flow transforms a virtual path (vpath) like `blog/my-post.html.md` into a final HTML file through document lookup, format detection, three-stage rendering (first render, layout, Mahabhuta), and filesystem output. The process is orchestrated by `renderDocument2()` in lib/render.ts and involves SQLite cache queries, template rendering via @akashacms/renderers, and DOM manipulation via Mahabhuta.
+The rendering flow transforms a virtual path (vpath) like `blog/my-post.html.md` into a final HTML file through document lookup, format detection, three-stage rendering (first render, layout, Mahabhuta), and filesystem output. The process is orchestrated by `renderDocument()` in lib/render.ts and involves SQLite cache queries, template rendering via @akashacms/renderers, and DOM manipulation via Mahabhuta.
 
 ### Complete Step-by-Step Flow
 
 #### 1. Input: vpath (virtual path)
 Example: `blog/my-post.html.md`
 
-(source: [lib/render.ts](../../lib/render.ts):346)
+(source: [lib/render.ts](../../lib/render.ts):242)
 
 #### 2. Document Lookup
 ```typescript
 const docInfo = await documents.find(vpath);
 ```
 
-Queries the DocumentsCache (SQLite database) and returns a `Document` object containing (source: [lib/render.ts](../../lib/render.ts):772):
+Queries the DocumentsCache (SQLite database) and returns a `Document` object containing (source: [lib/render.ts](../../lib/render.ts):561):
 - `vpath`: Virtual path
 - `fspath`: Filesystem path
 - `renderPath`: Output path (e.g., `blog/my-post.html`)
@@ -50,14 +50,14 @@ Queries the DocumentsCache (SQLite database) and returns a `Document` object con
 const ret = createRenderingData(config, docInfo);
 ```
 
-Creates master object to track all rendering state (source: [lib/render.ts](../../lib/render.ts):352):
+Creates master object to track all rendering state (source: [lib/render.ts](../../lib/render.ts):236):
 - Finds appropriate renderer based on file extension
 - Creates `renderFirstContext` with fspath, content, body, metadata
 - Initializes `RenderingResults` with performance tracking fields
 
 #### 4. Branch by Format
 
-The renderer determines the format and branches accordingly (source: [lib/render.ts](../../lib/render.ts):355-363):
+The renderer determines the format and branches accordingly (source: [lib/render.ts](../../lib/render.ts):244-253):
 
 **If CSS file:**
 - Call `renderCSSFile()` → write to output
@@ -74,7 +74,7 @@ The renderer determines the format and branches accordingly (source: [lib/render
 
 #### 5. Stage 1: First Render
 
-(source: [lib/render.ts](../../lib/render.ts):379-400)
+(source: [lib/render.ts](../../lib/render.ts):269-290)
 
 ```typescript
 ret.results.renderFirstStart = performance.now();
@@ -99,11 +99,11 @@ ret.results.renderFirstEnd = performance.now();
 - Partials can be called via `partial()` function
 - Output: Raw HTML content (no page structure)
 
-**Record trace:** `data.report(mountPoint, vpath, renderTo, "FIRST RENDER", start)` (source: [lib/render.ts](../../lib/render.ts):589-592)
+**Timing:** the stage's start/end timestamps are recorded in the returned `RenderingResults` (`renderFirstStart`/`renderFirstEnd`, elapsed in `renderFirstElapsed`) via `performance.now()`.
 
 #### 6. Stage 2: Layout Render
 
-(source: [lib/render.ts](../../lib/render.ts):402-463)
+(source: [lib/render.ts](../../lib/render.ts):292-353)
 
 ```typescript
 ret.results.renderLayoutStart = performance.now();
@@ -145,7 +145,7 @@ ret.results.renderLayoutEnd = performance.now();
 
 #### 7. Stage 3: Mahabhuta DOM Processing
 
-(source: [lib/render.ts](../../lib/render.ts):465-509)
+(source: [lib/render.ts](../../lib/render.ts):355-399)
 
 ```typescript
 ret.results.renderMahaStart = performance.now();
@@ -181,7 +181,7 @@ ret.results.renderMahaEnd = performance.now();
 
 #### 8. Write to Output
 
-(source: [lib/render.ts](../../lib/render.ts):511-522)
+(source: [lib/render.ts](../../lib/render.ts):401-407)
 
 ```typescript
 const renderDest = path.join(config.renderTo, ret.docInfo.renderPath);
@@ -196,7 +196,7 @@ await fsp.writeFile(renderDest, ret.renderedMaha, 'utf-8');
 
 #### 9. Performance Tracking
 
-(source: [lib/render.ts](../../lib/render.ts):526-538)
+(source: [lib/render.ts](../../lib/render.ts):416-428)
 
 ```typescript
 ret.results.renderFirstElapsed = renderFirstEnd - renderFirstStart;
@@ -213,7 +213,7 @@ Calculates elapsed time in milliseconds for each stage and total rendering time.
 return ret.results;  // RenderingResults object
 ```
 
-Contains (source: [lib/render.ts](../../lib/render.ts):45-71):
+Contains (source: [lib/render.ts](../../lib/render.ts):45-76):
 - `vpath`, `renderPath`
 - Timing data for each stage
 - Any errors encountered
@@ -272,7 +272,7 @@ vpath → DocumentsCache.find()
 }
 ```
 
-(source: [lib/render.ts](../../lib/render.ts):569-574, [@akashacms/renderers](https://github.com/akashacms/rendering-engines))
+(source: [lib/render.ts](../../lib/render.ts):111-118, [@akashacms/renderers](https://github.com/akashacms/rendering-engines))
 
 **RenderingResults** (returned):
 ```typescript
@@ -288,22 +288,22 @@ vpath → DocumentsCache.find()
 }
 ```
 
-(source: [lib/render.ts](../../lib/render.ts):45-71)
+(source: [lib/render.ts](../../lib/render.ts):45-76)
 
 ### Special Cases
 
 1. **No Layout**: Skip Stage 2, go directly from Stage 1 to Stage 3
-2. **CSS Files**: Only Stage 1, no layout or Mahabhuta (source: [lib/render.ts](../../lib/render.ts):597-604)
-3. **Assets**: No rendering, direct copy (source: [lib/render.ts](../../lib/render.ts):606-613)
+2. **CSS Files**: Only Stage 1, no layout or Mahabhuta (source: [lib/render.ts](../../lib/render.ts):151-184)
+3. **Assets**: No rendering, direct copy (source: [lib/render.ts](../../lib/render.ts):186-218)
 4. **Nested Layouts**: Layout can specify its own layout, recursively processed
-5. **Error Handling**: Each stage has try/catch, errors collected in `results.errors` array, rendering continues with fallback content (source: [lib/render.ts](../../lib/render.ts):392-397, 453-459, 500-506)
+5. **Error Handling**: Each stage has try/catch, errors collected in `results.errors` array, rendering continues with fallback content (source: [lib/render.ts](../../lib/render.ts):282-287, 343-349, 390-397)
 
 ### Performance Considerations
 
-- Each stage is timed using `performance.now()` for microsecond precision
-- Timing data stored in TRACES table via `data.report()` calls (source: [wiki/concepts/performance-tracing.md](../concepts/performance-tracing.md))
-- Rendering can be parallelized across multiple documents using fastq queue with configurable concurrency (source: [lib/render.ts](../../lib/render.ts):738-809)
-- Mahabhuta processing can optionally write performance data to `FilesystemPerfDataStore` if `config.perfDataDir` is set (source: [lib/render.ts](../../lib/render.ts):493-498)
+- Each stage is timed using `performance.now()` for microsecond precision, with elapsed times carried in the returned RenderingResults
+- Per-stage and total elapsed times are fields of each RenderingResults entry (`renderFirstElapsed`, `renderLayoutElapsed`, `renderMahaElapsed`, `renderTotalElapsed`)
+- Rendering can be parallelized across multiple documents using fastq queue with configurable concurrency (source: [lib/render.ts](../../lib/render.ts))
+- Mahabhuta processing can optionally write performance data to `FilesystemPerfDataStore` if `config.perfDataDir` is set (source: [lib/render.ts](../../lib/render.ts):384-389)
 
 ## Related Pages
 

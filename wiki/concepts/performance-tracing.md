@@ -14,7 +14,7 @@ Categories:
   - development
   - database
 created: 2026-05-21T03:00:00Z
-updated: 2026-05-21T03:00:00Z
+updated: 2026-09-03T18:20:00+03:00
 confidence: high
 ---
 
@@ -22,13 +22,13 @@ confidence: high
 
 ## Definition
 
-Performance Tracing is AkashaRender's built-in system for recording and analyzing the time taken at different stages of document rendering, storing timing data in a SQLite TRACES table to help developers identify performance bottlenecks.
+Performance Tracing was AkashaRender's system for recording the time taken at different stages of document rendering into a SQLite TRACES table. **The recording mechanism was removed on 2026-09-03** along with the legacy string-returning render path: the `data.report()` writer (and `data.data4file()` reader) no longer exist. Per-stage timing now lives in the `RenderingResults` objects returned by `render`/`renderDocument` (`performance.now()` based), plus the optional Mahabhuta `FilesystemPerfDataStore`. The TRACES table and its maintenance functions (`init`, `remove`, `removeAll`, `print`) remain but nothing writes to the table; they are candidates for removal in a future cleanup.
 
 (source: [lib/data.ts](../../lib/data.ts), [lib/render.ts](../../lib/render.ts))
 
 ## How It Works
 
-The tracing system records timing information for each document's rendering stages:
+The remaining pieces of the tracing system:
 
 1. **Data Structure**: Each trace record contains:
    - `basedir`: Source directory mount point
@@ -39,24 +39,17 @@ The tracing system records timing information for each document's rendering stag
    - `start`: ISO 8601 timestamp when rendering started
    - `now`: ISO 8601 timestamp when stage completed
 
-2. **Recording Traces**: During rendering, `data.report()` is called at key stages:
-   ```typescript
-   await data.report(docInfo.mountPoint, 
-                     docInfo.vpath,
-                     config.renderTo, 
-                     "FIRST RENDER", renderStart);
-   ```
+2. **Recording Traces**: No longer performed. Historically `data.report()` was called at key stages during rendering; that function was deleted with the legacy render path.
 
-3. **Storage**: Traces are stored in the TRACES table with indexes on basedir, fpath, and fullpath for efficient querying.
+3. **Storage**: Traces were stored in the TRACES table with indexes on basedir, fpath, and fullpath for efficient querying.
 
 4. **Retrieval**: Trace data can be accessed via:
    - `data.print()`: Prints all traces with calculated durations
-   - `data.data4file(basedir, fpath)`: Returns trace report for a specific file
    - Duration calculated as: `(now - start) / 1000` seconds
 
 5. **Cleanup**: Traces can be removed individually (`data.remove()`) or entirely (`data.removeAll()`), useful when re-rendering files multiple times.
 
-(source: [lib/data.ts](../../lib/data.ts), [lib/render.ts](../../lib/render.ts), [lib/sql/data-create-table.sql](../../lib/sql/data-create-table.sql))
+(source: [lib/data.ts](../../lib/data.ts), [lib/sql/data-create-table.sql](../../lib/sql/data-create-table.sql))
 
 ## Key Parameters
 
@@ -70,11 +63,10 @@ The tracing system records timing information for each document's rendering stag
 
 ### API Functions
 
-- **data.report(basedir, fpath, renderTo, stage, start)**: Records a trace entry for a rendering stage
+- **data.init()**: Creates the TRACES table (still called by the CLI and akasharender-epub)
 - **data.print()**: Prints all trace records with calculated durations to console
-- **data.data4file(basedir, fpath)**: Returns formatted trace report string for a specific file
 - **data.remove(basedir, fpath)**: Removes trace records for a specific file
-- **data.removeAll()**: Clears all trace records from the database
+- **data.removeAll()**: Clears all trace records from the database (still called by the CLI before each render)
 
 (source: [lib/data.ts](../../lib/data.ts))
 

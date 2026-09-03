@@ -11,7 +11,7 @@ Categories:
   - workflow
   - overview
 date-created: 2026-08-17T23:01:56+03:00
-last-updated: 2026-08-17T23:01:56+03:00
+last-updated: 2026-09-03T18:20:00+03:00
 confidence: high
 ---
 
@@ -32,23 +32,22 @@ high-level overview; for a line-by-line walkthrough of a single document see
 
 ### Site-Wide Orchestration
 
-Site rendering is driven by `render(config)` (legacy, returns text strings) and
-`render2(config, options)` (structured `RenderingResults`), both in `lib/render.ts`
-(source: [lib/render.ts](../../lib/render.ts):744, [lib/render.ts](../../lib/render.ts):962).
-The CLI's `render` command invokes these after `akasha.setup(config)` and, optionally,
-`config.copyAssets()` (source: [lib/cli.ts](../summaries/lib/cli.ts.md)). The steps are:
+Site rendering is driven by `render(config, options)` in `lib/render.ts`
+(source: [lib/render.ts](../../lib/render.ts)). It returns an array of
+structured `RenderingResults`. The CLI's `render` command invokes it after
+`akasha.setup(config)` and, optionally, `config.copyAssets()`
+(source: [lib/cli.ts](../summaries/lib/cli.ts.md)). The steps are:
 
 1. **Before-hook** — `config.hookBeforeSiteRendered()` lets plugins do setup or generate
-   auxiliary files before any document is processed (source: [lib/render.ts](../../lib/render.ts):749).
+   auxiliary files before any document is processed (source: [lib/render.ts](../../lib/render.ts)).
 2. **Gather documents** — pulls all document paths from the SQLite-backed
-   `documentsCache` via `documents.paths()` (source: [lib/render.ts](../../lib/render.ts):752).
-3. **Filter** — skips directories and missing files. In `render2`, it also skips
+   `documentsCache` via `documents.paths()` (source: [lib/render.ts](../../lib/render.ts)).
+3. **Filter** — skips directories and missing files, and also skips
    documents whose output is already up-to-date via `isDocumentUpToDate()`, unless
-   `forceRenderAll` is set (source: [lib/render.ts](../../lib/render.ts):868,
-   [lib/render.ts](../../lib/render.ts):1006).
+   `forceRenderAll` is set (source: [lib/render.ts](../../lib/render.ts)).
 4. **Concurrent render** — a `fastq` queue processes documents in parallel, bounded by
-   `config.concurrency`; each entry calls `renderDocument`/`renderDocument2`
-   (source: [lib/render.ts](../../lib/render.ts):791, [lib/render.ts](../../lib/render.ts):1034).
+   `config.concurrency`; each entry calls `renderDocument`
+   (source: [lib/render.ts](../../lib/render.ts)).
 5. **After-hook** — `config.hookSiteRendered()` runs so plugins can build sitemaps,
    index pages, etc. (source: [lib/render.ts](../../lib/render.ts):838).
 6. **Return results** — an array of per-document results.
@@ -101,16 +100,14 @@ and more (source: [lib/render.ts](../../lib/render.ts):472). See
 **Write output.** The final HTML is written to `config.renderTo` at the document's
 `renderPath`, creating directories as needed (source: [lib/render.ts](../../lib/render.ts):517).
 
-### Two Implementations
+### History: the former "2" implementations
 
-There are two parallel per-document functions (source: [lib/render.ts](../../lib/render.ts):352,
-[lib/render.ts](../../lib/render.ts):560):
-
-- `renderDocument` — the legacy path; uses the `data` module for timing/reporting and
-  returns text status strings, throwing on error.
-- `renderDocument2` — the cleaner rewrite; returns structured `RenderingResults` with
-  precise per-stage elapsed times (`renderFirstElapsed`, `renderLayoutElapsed`,
-  `renderMahaElapsed`, `renderTotalElapsed`) and an `errors` array instead of throwing.
+Until September 2026 there were two parallel per-document implementations —
+the legacy string-returning `renderDocument`/`render` and the structured
+"2" versions. The legacy versions (and their helpers `renderContent`,
+`writeCSStoOutput`, `copyAssetToOutput`) were deleted and the "2" versions
+renamed to the base names on 2026-09-03; see
+[Removing the Legacy Non-2 Render Functions](../implementation/removing-legacy-render-functions.md).
 
 ### The Key Architectural Idea
 
@@ -123,13 +120,13 @@ resolved by Mahabhuta *after* the templates have already run
 ### Visual Overview
 
 ```
-render(config) / render2(config)
+render(config, options)
    │
    ├─ hookBeforeSiteRendered()
    ├─ documentsCache.paths()        ← gather all documents
-   ├─ filter (dirs, up-to-date)     ← render2 skips up-to-date docs
+   ├─ filter (dirs, up-to-date)     ← skips up-to-date docs unless forceRenderAll
    │
-   ├─ fastq queue (concurrency) ──► renderDocument2(config, docInfo)
+   ├─ fastq queue (concurrency) ──► renderDocument(config, docInfo)
    │                                    │
    │                                    ├─ CSS   → renderCSSFile()  → write
    │                                    ├─ asset → copyAssetFile()  → copy

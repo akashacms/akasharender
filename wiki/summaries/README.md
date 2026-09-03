@@ -25,7 +25,6 @@ This directory contains summaries of source files from the AkashaRender codebase
 - **[lib/cache/cache-sqlite.ts](./lib/cache/cache-sqlite.ts.md)**: SQLite-based file caching with tag search and semantic search support
 - **[lib/cache/vfstack.ts](./lib/cache/vfstack.ts.md)**: Virtual filesystem implementation supporting directory stacking and file shadowing
 - **[lib/cache/tag-glue.ts](./lib/cache/tag-glue.ts.md)**: Tag database management with similarity detection and descriptions
-- **[lib/cache/watchman.ts](./lib/cache/watchman.ts.md)**: File watching system for automatic rebuilding during development
 
 ## built-in-guide/
 

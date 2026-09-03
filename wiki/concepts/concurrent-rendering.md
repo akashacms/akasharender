@@ -4,13 +4,12 @@ type: concept
 Sources:
   - lib/render.ts
   - lib/index.ts
-  - lib/cache/watchman.ts
 Categories:
   - performance
   - rendering
   - parallelism
 date-created: 2026-05-21T06:25:00+03:00
-last-updated: 2026-05-21T06:25:00+03:00
+last-updated: 2026-09-03T19:10:00+03:00
 confidence: high
 ---
 
@@ -209,7 +208,6 @@ Concurrent workers compete for resources (source: [lib/render.ts](../../lib/rend
 
 **Concurrency Values by Context**:
 - Full site render: `config.concurrency` (default: 3)
-- Layout change re-render: 10 (hardcoded in watchman)
 - Development: Lower values (1-3) for easier debugging
 - Production builds: Higher values (4-8+) for speed
 
@@ -366,7 +364,6 @@ config.concurrency = 3;
 
 - [lib/render.ts](../../lib/render.ts) - Concurrent rendering implementation
 - [lib/index.ts](../../lib/index.ts) - Concurrency configuration
-- [lib/cache/watchman.ts](../../lib/cache/watchman.ts) - Watch mode re-rendering
 
 ## Related Pages
 

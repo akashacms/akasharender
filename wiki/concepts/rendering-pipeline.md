@@ -9,7 +9,7 @@ Categories:
   - architecture
   - workflow
 date-created: 2026-05-21T06:15:00+03:00
-last-updated: 2026-05-21T06:15:00+03:00
+last-updated: 2026-09-03T18:20:00+03:00
 confidence: high
 ---
 
@@ -45,7 +45,7 @@ export async function render(config) {
 }
 ```
 
-**`render2(config)`** - Alternative rendering function with different result format
+**`render(config, options?)`** - Site-wide rendering entry point returning structured RenderingResults
 
 ### Pipeline Stages
 
@@ -215,10 +215,8 @@ await config.hookSiteRendered();
 - `config.partialDirs` - Partial template directories
 
 **Rendering Functions**:
-- `render(config)` - Render all documents, return array of results
-- `render2(config)` - Render all documents, alternate result format
+- `render(config, options?)` - Render all documents, return array of RenderingResults
 - `renderDocument(config, docInfo)` - Render single document
-- `renderDocument2(config, docInfo)` - Render single document, alternate format
 - `renderPath(config, path)` - Render document by virtual path
 
 **Result Properties**:

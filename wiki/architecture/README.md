@@ -22,4 +22,3 @@ Based on the ingested code, the following architecture documents would be valuab
 - **Rendering Pipeline Architecture**: Flow from source files to final output
 - **Plugin Architecture**: How plugins extend the system and interact with the core
 - **Tag System Architecture**: How tags are stored, queried, and managed
-- **File Watching Architecture**: How the watchman system monitors and rebuilds files

@@ -21,7 +21,7 @@ File-by-file summaries of the source code in `lib/` and `lib/cache/`:
 - **Core modules**: index.ts, types.ts, Plugin.ts, render.ts
 - **CLI & Tools**: cli.ts, refactor-tags.ts
 - **Database & Performance**: sqdb.ts, data.ts
-- **Caching System**: cache-sqlite.ts, vfstack.ts, schema.ts, tag-glue.ts, watchman.ts
+- **Caching System**: cache-sqlite.ts, vfstack.ts, schema.ts, tag-glue.ts
 - **DOM Processing**: mahafuncs.ts, built-in.ts
 
 ### [Concepts](./concepts/README.md)
@@ -61,7 +61,6 @@ Key architectural concepts and patterns:
 - **[Performance Profiling](./concepts/performance-profiling.md)**: Rendering timing measurements
 - **[Performance Measurement Methodology](./concepts/performance-measurement-methodology.md)**: How to measure, attribute, and interpret performance data before optimizing
 - **[Performance Tracing](./concepts/performance-tracing.md)**: Per-stage timing data in TRACES table
-- **[File Watching](./concepts/file-watching.md)**: Auto-rebuild on file changes
 
 **Advanced Database**:
 - **[Database Extensions](./concepts/database-extensions.md)**: SQLite extensions for regex, vectors, embeddings
@@ -77,7 +76,7 @@ Key architectural concepts and patterns:
 
 Detailed answers to technical questions about the codebase:
 
-- **[How the AkashaCMS Page Rendering Process Works](./answers/how-page-rendering-works.md)**: High-level overview of the rendering process — the site-wide loop (`render`/`render2`) around the per-document three-stage pipeline (content render → layout render → Mahabhuta), the CSS/asset/HTML format branch, and the `renderDocument` vs `renderDocument2` split
+- **[How the AkashaCMS Page Rendering Process Works](./answers/how-page-rendering-works.md)**: High-level overview of the rendering process — the site-wide loop (`render`) around the per-document three-stage pipeline (content render → layout render → Mahabhuta), the CSS/asset/HTML format branch, and the incremental up-to-date skip
 - **[Detailed Flow for Rendering a Single Page from vpath](./answers/rendering-flow-from-vpath.md)**: Step-by-step walkthrough of the complete rendering process
 - **[When Was Clinic Added as a Dependency, and How Would It Help AkashaRender?](./answers/clinic-dependency.md)**: `clinic` is not a dependency; it is an optional global-install profiler documented in PROFILING.md
 - **[Elements Required for ActivityPub and Fediverse Integration](./answers/activitypub-fediverse-html-elements.md)**: ActivityPub is a JSON-LD/HTTP protocol, not an HTML-tag standard; outlines a tiered plugin design (Open Graph + `fediverse:creator` metadata, WebFinger/NodeInfo discovery, static actor JSON-LD, live federation), with PHP-shim scripts for shared hosting (WebFinger handler, content negotiation, inbox) and detailed explanations of the Actor/Collections/Objects-Activities entities
@@ -109,6 +108,7 @@ Implementation guides for features and modifications:
 - **[oEmbed Provider Implementation Guide for plugins-base](./implementation/oembed-provider.md)**: Coding plan for the oEmbed provider in `@akashacms/plugins-base` — config flag, `<head>` `<link>` injection, JSON/XML file generation in `onSiteRendered`, and tests
 - **[csv-table Custom Element Implementation Guide](./implementation/csv-table-custom-element.md)**: Coding plan for issue #85's `<csv-table file-name="..." template="..."/>` tag — a Built-in Plugin custom element (modeled on `CodeEmbed`) that reads a CSV/TSV/YAML data file and renders before/per-row/after templates into an HTML table
 - **[Link Checker Implementation Guide (Built-in Plugin)](./implementation/link-checker.md)**: Coding plan for validating internal links (via the documents/assets cache) and external links (via a HEAD-then-GET `fetch` HTTP check) in the `akashacms-builtin` plugin, with four configurable severity modes (ignore/warn/error/fatal) set from `config.mjs`, a whole-site scan in `onSiteRendered`, an external-domain whitelist, optional logging of non-HTTP links, dedupe/caching, a build-vs-buy evaluation of the `link-check` npm package, and tests
+- **[Removing the Legacy Non-2 Render Functions and Renaming the 2 Functions](./implementation/removing-legacy-render-functions.md)**: House-cleaning plan — delete legacy `render`/`renderDocument`/`renderPath` and orphaned helpers, transition tests and the epub plugin to the "2" API, rename the "2" functions to base names in one breaking release, and remove stale `lib/watchman.ts` references from docs
 - **[Implementing Self-Hosted Favicon Discovery in plugins-external-links (favicon-fetcher.mjs)](./implementation/favicon-fetcher-self-hosted.md)**: Coding plan to drop the Google Favicon service from `@akashacms/plugins-external-links` — a new `favicon-fetcher.mjs` that `fetch()`es the target page (following redirects, faux `User-Agent`), deduces favicons from `<link rel=icon>`/`apple-touch-icon`/`mask-icon`/manifest with a `/favicon.ico` fallback, and caches per canonical domain under a `favicon-cache` directory (automounted at `/vendor/favicon-cache`) with `meta.json` + icon bytes and negative-result caching; adds favicon-size config and optional Sharp resize/convert-to-PNG that **never converts ICO**, plus the `index.mjs` automount/setters and the `mahafuncs.mjs` change to emit a local `<img>`, with phasing, tests, and security notes
 
 ### [Memory](./memory/README.md)

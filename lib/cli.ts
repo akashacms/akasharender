@@ -114,7 +114,7 @@ program
             await akasha.setup(config);
             await data.removeAll();
             // console.log(`render-document before renderPath ${documentFN}`);
-            let result = await akasha.renderPath2(config, documentFN);
+            let result = await akasha.renderPath(config, documentFN);
             // console.log(result);
             console.log(formatResult(result));
             if (Array.isArray(result.errors)
@@ -156,7 +156,7 @@ program
                     Number.parseInt(cmdObj.cachingTimeout)
                 );
             }
-            let results = <RenderingResults[]> await akasha.render2(config, {
+            let results = <RenderingResults[]> await akasha.render(config, {
                 forceRenderAll: cmdObj.forceRenderAll === true
             });
             if (!cmdObj.quiet) {

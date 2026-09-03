@@ -3,14 +3,12 @@ title: Event-Driven Architecture
 type: concept
 Sources:
   - lib/cache/cache-sqlite.ts
-  - lib/cache/watchman.ts
 Categories:
   - architecture
   - cache
-  - file-watching
   - development
 created: 2026-05-21T03:00:00Z
-updated: 2026-05-21T03:00:00Z
+updated: 2026-09-03T19:05:00+03:00
 confidence: high
 ---
 
@@ -18,9 +16,9 @@ confidence: high
 
 ## Definition
 
-Event-Driven Architecture in AkashaRender is the pattern where file cache components (BaseCache and its subclasses) extend Node.js EventEmitter to emit events during file processing, enabling loose coupling between cache operations, file watching, and lifecycle hooks while providing visibility into the caching system's state.
+Event-Driven Architecture in AkashaRender is the pattern where file cache components (BaseCache and its subclasses) extend Node.js EventEmitter to emit events during file processing, enabling loose coupling between cache operations and lifecycle hooks while providing visibility into the caching system's state.
 
-(source: [lib/cache/cache-sqlite.ts](../../lib/cache/cache-sqlite.ts), [lib/cache/watchman.ts](../../lib/cache/watchman.ts))
+(source: [lib/cache/cache-sqlite.ts](../../lib/cache/cache-sqlite.ts))
 
 ## How It Works
 
@@ -33,17 +31,10 @@ The event-driven architecture uses Node.js's EventEmitter pattern to publish eve
    - `'ready'` event fired when all files are processed: `emit('ready', name)`
    - `'error'` event fired if processing fails: `emit('error', error)`
 
-3. **File Watching Events**: The watchman module listens to cache events for file changes:
-   - `'change'` event: File modified
-   - `'add'` event: New file detected
-   - `'unlink'` event: File deleted
+3. **File Watching Events (removed)**: Earlier versions had a watchman module that listened for `'change'`/`'add'`/`'unlink'` cache events to re-render on file changes. That module (lib/cache/watchman.ts) was removed; no watch mode currently exists.
 
 4. **Event Handlers**: Components register listeners using `.on(event, handler)`:
    ```typescript
-   documentsCache.on('change', async (collection, info) => {
-       // Re-render the changed document
-   });
-   
    documentsCache.on('ready', (name) => {
        console.log(`Cache ${name} is ready`);
    });
@@ -51,7 +42,7 @@ The event-driven architecture uses Node.js's EventEmitter pattern to publish eve
 
 5. **Error Propagation**: Errors during file operations are emitted as events rather than thrown, allowing graceful error handling without stopping the entire process.
 
-(source: [lib/cache/cache-sqlite.ts](../../lib/cache/cache-sqlite.ts):72-81, 153-176, [lib/cache/watchman.ts](../../lib/cache/watchman.ts))
+(source: [lib/cache/cache-sqlite.ts](../../lib/cache/cache-sqlite.ts):72-81, 153-176)
 
 ## Key Parameters
 
@@ -95,15 +86,14 @@ cache.on('error', (err: Error) => {
 Use the event-driven architecture when:
 
 1. **Loose Coupling**: Components need to react to cache operations without tight dependencies
-2. **File Watching**: Implementing automatic rebuilding when files change
-3. **Progress Tracking**: Monitoring file processing during initialization
-4. **Diagnostic Tools**: Building CLI commands that inspect cache state (e.g., `check-ready`, `index --verbose`)
-5. **Lifecycle Integration**: Plugins need to react to file additions or changes
-6. **Asynchronous Operations**: Operations that should not block the main processing flow
+2. **Progress Tracking**: Monitoring file processing during initialization
+3. **Diagnostic Tools**: Building CLI commands that inspect cache state (e.g., `check-ready`, `index --verbose`)
+4. **Lifecycle Integration**: Plugins need to react to file additions or changes
+5. **Asynchronous Operations**: Operations that should not block the main processing flow
 
 The event-driven approach allows multiple independent components to observe cache behavior without modifying the cache classes themselves.
 
-(source: [lib/cache/cache-sqlite.ts](../../lib/cache/cache-sqlite.ts), [lib/cache/watchman.ts](../../lib/cache/watchman.ts))
+(source: [lib/cache/cache-sqlite.ts](../../lib/cache/cache-sqlite.ts))
 
 ## Risks & Pitfalls
 
@@ -142,7 +132,6 @@ When verbose mode is enabled (`config.verbose = true`), every file addition is l
 ## Related Pages
 
 - [Cache Schema](./cache-schema.md): Database schema used by event-emitting BaseCache
-- [File Watching](./file-watching.md): Uses events to trigger incremental rebuilds
 - [Database Indexing](./database-indexing.md): Database operations that trigger events
 - [Lifecycle Hooks](./lifecycle-hooks.md): Hooks can be invoked in response to events
 - [Command-Line Interface](./command-line-interface.md): CLI commands that register event listeners for diagnostics

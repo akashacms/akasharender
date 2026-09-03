@@ -8,7 +8,7 @@ Categories:
   - commands
   - tools
 date-created: 2026-05-20T12:00:00+00:00
-last-updated: 2026-05-20T12:00:00+00:00
+last-updated: 2026-09-03T19:10:00+03:00
 confidence: high
 ---
 
@@ -25,7 +25,7 @@ confidence: high
 ## Key Points
 
 - Provides the `akasharender` command-line tool using Commander.js
-- Implements commands for rendering, watching, publishing, and inspecting sites
+- Implements commands for rendering, publishing, and inspecting sites
 - Supports GitHub Pages publishing via gh-pages library
 - Includes tag management and analysis commands
 - Provides debugging and inspection commands for configuration and documents
@@ -75,14 +75,12 @@ The CLI uses environment variables and command-line options for configuration, i
 - [Site Rendering](../concepts/site-rendering.md)
 - [GitHub Pages Publishing](../concepts/github-pages-publishing.md)
 - [Tag Management](../concepts/tag-management.md)
-- [File Watching](../concepts/file-watching.md)
 
 ## Related Pages
 
 - [lib/index.ts](./index.ts) - Core API used by CLI
 - [lib/render.ts](./render.ts) - Rendering functions
 - [lib/refactor-tags.ts](./refactor-tags.ts) - Tag refactoring
-- [lib/cache/watchman.ts](./cache/watchman.ts) - File watching implementation
 
 ## Backlinks
 

@@ -10,7 +10,7 @@ Categories:
   - templates
   - content-processing
 date-created: 2026-05-20T12:00:00+00:00
-last-updated: 2026-05-20T12:00:00+00:00
+last-updated: 2026-09-03T18:20:00+03:00
 confidence: high
 ---
 
@@ -233,7 +233,6 @@ Uses `performance.now()` for high-resolution timing to identify rendering bottle
 **Rendering Functions**:
 - `render(config)` - Render all documents in project
 - `renderDocument(config, docInfo)` - Render single document
-- `renderContent(config, rc)` - Core rendering logic
 - `partial(config, fname, metadata)` - Render partial template
 - `partialSync(config, fname, metadata)` - Sync partial rendering
 

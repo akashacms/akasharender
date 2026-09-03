@@ -5,13 +5,12 @@ Sources:
   - lib/render.ts
   - lib/cache/schema.ts
   - guide/layouts-partials.html.md
-  - lib/cache/watchman.ts
 Categories:
   - templates
   - rendering
   - page-structure
 date-created: 2026-05-21T06:20:00+03:00
-last-updated: 2026-05-21T06:20:00+03:00
+last-updated: 2026-09-03T19:10:00+03:00
 confidence: high
 ---
 
@@ -220,17 +219,14 @@ type Layout = {
 
 ### Layout Changes and Re-rendering
 
-When a layout file changes during development, all documents using that layout must be re-rendered (source: [lib/cache/watchman.ts](../../lib/cache/watchman.ts)):
+When a layout file changes, all documents using that layout must be re-rendered. There is no watch mode; instead the incremental-rendering check in `render()` handles it (source: [lib/render.ts](../../lib/render.ts)): `isDocumentUpToDate()` compares each document's output file against the modification times of **both** the source document **and** its layout template, so the next `akasharender render` automatically re-renders exactly the documents whose layout was touched (issue #61). Use `--force-render-all` to force a full re-render.
 
 ```javascript
-// Watchman detects layout change
-layoutsCache.on('change', async (info) => {
-    // Find all documents using this layout
-    const docs = await documentsCache.documentsForLayout(info.vpath);
-    
-    // Re-render all affected documents
-    await renderForLayout(config, info);
-});
+// In render(): a document is skipped only if the output is newer
+// than the source AND the layout template
+if (!forceRenderAll
+ && await isDocumentUpToDate(config, info)
+) { /* skip */ }
 ```
 
 This uses `documentsForLayout()` query and concurrent re-rendering with a queue.
@@ -425,7 +421,7 @@ Document frontmatter takes precedence over layout frontmatter.
 
 Each partial renders separately. Consider inline HTML for performance-critical layouts.
 
-**Watch Mode Re-rendering**: Changing a layout re-renders all documents using it (source: [lib/cache/watchman.ts](../../lib/cache/watchman.ts)). A widely-used layout change can trigger hundreds of re-renders, slowing development.
+**Layout Change Re-rendering**: Changing a widely-used layout makes every document using it stale, so the next render re-renders all of them (source: [lib/render.ts](../../lib/render.ts)). A widely-used layout change can trigger hundreds of re-renders, slowing the build.
 
 **Template Engine Limitations**: Different template engines have different capabilities:
 - **EJS**: Full JavaScript expressions
@@ -450,7 +446,6 @@ Ensure all referenced layouts exist in `layoutsDirs`.
 - [lib/render.ts](../../lib/render.ts) - Layout rendering implementation
 - [lib/cache/schema.ts](../../lib/cache/schema.ts) - Layout data structure
 - [guide/layouts-partials.html.md](../../guide/layouts-partials.html.md) - Layout documentation
-- [lib/cache/watchman.ts](../../lib/cache/watchman.ts) - Layout change handling
 
 ## Related Pages
 

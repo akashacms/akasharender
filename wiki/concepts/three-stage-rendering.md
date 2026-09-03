@@ -6,7 +6,7 @@ Categories:
   - architecture
   - pipeline
 date-created: 2026-05-20T12:00:00+00:00
-last-updated: 2026-05-20T12:00:00+00:00
+last-updated: 2026-09-03T19:10:00+03:00
 confidence: high
 ---
 
@@ -58,8 +58,7 @@ The final HTML is written to the output directory.
 
 This three-stage pipeline is used automatically for all document rendering operations:
 - Full site rendering via `render(config)`
-- Single document rendering via `renderDocument(config, docInfo)`
-- Watch mode re-rendering via `watchman`
+- Single document rendering via `renderDocument(config, docInfo)` or `renderPath(config, vpath)`
 
 Special cases bypass some stages (source: [lib/render.ts](../summaries/lib/render.ts.md)):
 - CSS files skip layout and Mahabhuta stages

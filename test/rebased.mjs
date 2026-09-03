@@ -100,11 +100,11 @@ describe('build rebased site', function() {
 
     it('should build site', async function() {
         let failed = false;
-        let results = await akasha.render(config_rebase);
+        let results = await akasha.render(config_rebase, { forceRenderAll: true });
         for (let result of results) {
-            if (result.error) {
+            if (result.errors?.length) {
                 failed = true;
-                console.error(result.error);
+                console.error(result.errors);
             }
         }
         assert.isFalse(failed);

@@ -77,7 +77,7 @@ Mahabhuta at ~62%, content render at ~35%, and layout at ~1.5%
 
 When the [Mahabhuta System](./mahabhuta-system.md) stage dominates, drill
 into it with a per-mahafunc breakdown. Render one representative document
-with `--perf-data-dir`, which causes `renderDocument2` to record each
+with `--perf-data-dir`, which causes `renderDocument` to record each
 mahafunc's execution time via `FilesystemPerfDataStore`
 (source: [lib/render.ts](../../lib/render.ts), [lib/cli.ts](../../lib/cli.ts)):
 
@@ -200,7 +200,7 @@ cores in parallel.
 ## Sources
 
 - [ARCHITECTURE-performance-review.md](../../ARCHITECTURE-performance-review.md) -- the full review that developed and validated this methodology
-- [lib/render.ts](../../lib/render.ts) -- `renderDocument2`, stage timing, `FilesystemPerfDataStore` wiring
+- [lib/render.ts](../../lib/render.ts) -- `renderDocument`, stage timing, `FilesystemPerfDataStore` wiring
 - [lib/cli.ts](../../lib/cli.ts) -- `--perfresults` and `--perf-data-dir` options
 - [lib/cache/cache-sqlite.ts](../../lib/cache/cache-sqlite.ts) -- `setup()` and the `AK_PROFILE_INDEX` profiler
 - [lib/sqdb.ts](../../lib/sqdb.ts) -- shared database and historical SQL profiling notes

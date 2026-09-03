@@ -37,13 +37,15 @@ Memory pages are indexed three ways so they are easy to locate:
 -->
 
 - **[How To Debug the Rendering Pipeline](./debugging-rendering-pipeline.md)**: Techniques and entry points for diagnosing why a document renders incorrectly or fails, using TRACES timing data, the three-stage pipeline, and the CLI.
+- **[Render Skips Up-To-Date Documents - Use forceRenderAll in Build-Verify Tests](./render2-force-render-all-in-tests.md)**: When a test needs an unconditional full re-render, pass `{ forceRenderAll: true }` to `akasha.render` and check `result.errors[]` — skipped documents don't run Mahabhuta, so side effects like in-place image resizing (after `copyAssets()` restores originals) silently don't happen.
 
 ## By Category
 
 <!-- Group memory pages by their primary Categories tag. Update when adding pages. -->
 
 - **debugging**: [How To Debug the Rendering Pipeline](./debugging-rendering-pipeline.md)
-- **rendering**: [How To Debug the Rendering Pipeline](./debugging-rendering-pipeline.md)
+- **rendering**: [How To Debug the Rendering Pipeline](./debugging-rendering-pipeline.md), [Render Skips Up-To-Date Documents - Use forceRenderAll in Build-Verify Tests](./render2-force-render-all-in-tests.md)
+- **testing**: [Render Skips Up-To-Date Documents - Use forceRenderAll in Build-Verify Tests](./render2-force-render-all-in-tests.md)
 
 ## Related Pages
 
