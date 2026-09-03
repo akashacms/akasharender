@@ -1067,6 +1067,7 @@ export class Configuration {
     }
 
     get partialsDirs() { return this.#partialDirs; }
+    get partialDirs() { return this.#partialDirs; }
     
     /**
      * Add a directory to the assetDirs configurtion array

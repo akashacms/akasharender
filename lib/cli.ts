@@ -302,7 +302,25 @@ program
                 path.join(process.cwd(), configFN)
             )).default;
             let akasha = config.akasha;
-            console.log(config);
+            console.log({
+                root_url: config.root_url,
+                configDir: config.configDir,
+                renderDestination: config.renderDestination,
+                concurrency: config.concurrency,
+                cachingTimeout: config.cachingTimeout,
+                documentDirs: config.documentDirs,
+                layoutDirs: config.layoutDirs,
+                partialDirs: config.partialsDirs,
+                assetDirs: config.assetDirs,
+                mahafuncs: config.mahafuncs,
+                mahabhutaConfig: config.mahabhutaConfig,
+                metadata: config.metadata,
+                headerJavaScript: config.scripts.javaScriptTop,
+                footerJavaScript: config.scripts.javaScriptBottom,
+                stylesheets: config.scripts.stylesheets,
+                plugins: config.plugins,
+                renderers: config.renderers.renderers
+            });
         } catch (e) {
             console.error(`config command ERRORED ${e.stack}`);
         }

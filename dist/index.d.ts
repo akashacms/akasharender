@@ -266,6 +266,7 @@ export declare class Configuration {
      */
     addPartialsDir(dir: string | dirToMount): this;
     get partialsDirs(): dirToMount[];
+    get partialDirs(): dirToMount[];
     /**
      * Add a directory to the assetDirs configurtion array
      * @param {string | dirToMount} dir The pathname to use or dirToMount object
