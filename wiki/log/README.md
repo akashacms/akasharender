@@ -6,6 +6,10 @@ title: Log index
 
 This directory contains a chronological audit trail of changes made to the wiki.
 
+## 2026-08-25
+
+- **[20260825T003500+0300.md](./20260825T003500+0300.md)**: 2026-08-25 00:35 - Add answer page on running code after regular Mahabhuta processing (final mahafuncs) - New answer page documenting how to run Mahabhuta processing after all regular mahafuncs but before Cheerio is serialized to HTML: the `akasha.emitter.on('file-rendered')` API from the akashacms-website how-to never existed; the real mechanism is Mahabhuta's final mahafuncs (`MahafuncArray.addFinalMahafunc()`), with the Built-in Plugin's `MungedAttrRemover`/`BlankLinkDefanger` as the working example; updated the answers README and master index
+
 ## 2026-08-13
 
 - **[20260813T235505+0300.md](./20260813T235505+0300.md)**: 2026-08-13 23:55 - Add Vendor Library Plugins architecture page - New architecture page documenting the repeatable pattern for wrapping 3rd-party JS/CSS/SVG libraries as AkashaCMS plugins (mount assets at `/vendor/LIBRARY-NAME`, register CSS/JS tags), drawing on the four existing plugins (bootstrap-icons, country-flag-icons, tabler-icons, theme-bootstrap) and the `Configuration`/`Plugin`/`VFStack` source; rewritten from a misplaced root-level draft into wiki architecture-page format and moved into `wiki/architecture/`, with the root-level file deleted; updated the architecture README and master index
