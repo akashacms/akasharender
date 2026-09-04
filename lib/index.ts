@@ -865,17 +865,45 @@ export class Configuration {
      * Record the configuration directory so that we can correctly interpolate
      * the pathnames we're provided.
      */
-    set configDir(cfgdir: string) { this.#configdir = cfgdir; }
+    set configDir(cfgdir: string) {
+        if (typeof cfgdir === 'string'
+         && cfgdir.length >= 1
+        ) {
+            this.#configdir = cfgdir;
+        } else {
+            throw new Error(`configDir must be given a string`);
+        }
+    }
     get configDir() { return this.#configdir; }
 
-    set cacheDir(dirnm: string) { this.#cachedir = dirnm; }
+    set cacheDir(dirnm: string) {
+        if (typeof dirnm === 'string'
+         && dirnm.length >= 1
+        ) {
+            this.#cachedir = dirnm;
+        } else {
+            throw new Error(`cacheDir must be given a string`);
+        }
+    }
     get cacheDir() { return this.#cachedir; }
 
     set verbose(val: boolean) { this.#verbose = val; }
     get verbose() { return this.#verbose; }
 
+    /**
+     * Set the directory in which to store performance data.
+     * If the value is undefined or null, then performance data
+     * collection is disabled.
+     */
     set perfDataDir(storeDir: string) {
-        this.#perfDataDir = storeDir;
+        if (typeof storeDir === 'undefined'
+         || storeDir === null
+         || typeof storeDir === 'string'
+        ) {
+            this.#perfDataDir = storeDir;
+        } else {
+            throw new Error(`perfDataDir must be given either undefined, null, or a string`);
+        }
     }
     get perfDataDir() { return this.#perfDataDir; }
 
@@ -1094,6 +1122,11 @@ export class Configuration {
      * @returns {Configuration}
      */
     setRenderDestination(dir: string) {
+        if (typeof dir !== 'string'
+         || dir.length <= 0
+        ) {
+            throw new Error(`setRenderDestination must be given a string`);
+        }
         // If we have a configDir, and it's a relative directory, make it
         // relative to the configDir
         if (this.configDir != null) {
@@ -1166,27 +1199,48 @@ export class Configuration {
     }
 
     /**
-    * Document the URL for a website project.
+    * Document the URL for a website project, returning
+    * the configuration object.
     * @param {string} root_url
     * @returns {Configuration}
     */
     rootURL(root_url: string) {
+        try {
+            const u = new URL(root_url);
+        } catch (err) {
+            throw new Error(`rootURL must be given a valid URL: ${err.message}`);
+        }
         this.#root_url = root_url;
         return this;
     }
 
+    /**
+     * Return the current URL for the website.
+     */
     get root_url() { return this.#root_url; }
 
     /**
-     * Set how many documents to render concurrently.
+     * Set how many documents to render concurrently,
+     * returning the configuration object.  The number
+     * must be in the range [0..50].
      * @param {number} concurrency
     * @returns {Configuration}
      */
     setConcurrency(concurrency: number) {
-        this.#concurrency = concurrency;
+        if (typeof concurrency === 'number'
+         && concurrency >= 0
+         && concurrency <= 50
+        ) {
+            this.#concurrency = concurrency;
+        } else {
+            throw new Error(`setConcurrency must be given a postive number less than 50`);
+        }
         return this;
     }
 
+    /**
+     * Return the current render concurrency.
+     */
     get concurrency() { return this.#concurrency; }
 
     /**
@@ -1199,7 +1253,13 @@ export class Configuration {
      * @param timeout 
      */
     setCachingTimeout(timeout: number) {
-        this.#cachingTimeout = timeout;
+        if (typeof timeout === 'number'
+         && timeout >= 0
+        ) {
+            this.#cachingTimeout = timeout;
+        } else {
+            throw new Error(`setCachingTimeout must be given a postive number`);
+        }
         // console.log(`setSearchCacheTimeout ${this.#searchCacheTimeout}`);
     }
 

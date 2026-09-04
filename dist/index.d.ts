@@ -234,6 +234,11 @@ export declare class Configuration {
     get cacheDir(): string;
     set verbose(val: boolean);
     get verbose(): boolean;
+    /**
+     * Set the directory in which to store performance data.
+     * If the value is undefined or null, then performance data
+     * collection is disabled.
+     */
     set perfDataDir(storeDir: string);
     get perfDataDir(): string;
     get decomment(): boolean;
@@ -315,18 +320,27 @@ export declare class Configuration {
      */
     addTagDescriptions(tagdescs: TagDescription[]): Promise<void>;
     /**
-    * Document the URL for a website project.
+    * Document the URL for a website project, returning
+    * the configuration object.
     * @param {string} root_url
     * @returns {Configuration}
     */
     rootURL(root_url: string): this;
+    /**
+     * Return the current URL for the website.
+     */
     get root_url(): string;
     /**
-     * Set how many documents to render concurrently.
+     * Set how many documents to render concurrently,
+     * returning the configuration object.  The number
+     * must be in the range [0..50].
      * @param {number} concurrency
     * @returns {Configuration}
      */
     setConcurrency(concurrency: number): this;
+    /**
+     * Return the current render concurrency.
+     */
     get concurrency(): number;
     /**
      * Set the time, in miliseconds, to honor
