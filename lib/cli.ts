@@ -767,6 +767,9 @@ program
                 }
                 options.sortByDescending = cmdObj.sort === 'desc';
             }
+            // options.return_fields = [
+            //     'vpath', 'renderPath', 'title'
+            // ];
             // console.log(options);
             let docs = await akasha.filecache.documentsCache.search(options);
             console.log(docs

@@ -214,6 +214,12 @@ export interface SearchOptions {
      * without {@link SearchOptions.limit}.
      */
     offset?: number;
+
+    /**
+     * Fields to return.  These must be in the form of an SQL
+     * snippet as used in `SELECT field_names FROM`
+     */
+    return_fields?: Array<string>;
 }
 
 /**

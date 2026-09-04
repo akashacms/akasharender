@@ -138,6 +138,32 @@ deactivate Cache
 @enduml
 ```
 
+### Selecting a subset of fields to return
+
+By default, the `search(selector)` function returns Document objects.
+
+It's excess overhead to return the full Document object if the application wants only a couple of fields.  For this purpose add this to the selector:
+
+```js
+selector.return_fields = [
+   'vpath', 'renderPath', 'title'
+];
+```
+
+This works by modifying the SELECT statement from:
+
+```sql
+SELECT d.* FROM table ...
+```
+
+To this:
+
+```sql
+SELECT field1, field2, field3 FROM table ...
+```
+
+The array `return_fields` must therefore be SQL field selectors.
+
 ## The `@akashacms/plugins-blog-podcast` blog selector
 
 In the `@akashacms/plugins-blog-podcast`, we define one or more blogs on an AkashaCMS project.  Recall that a _blog_ is simply a group of postings (aka documents) that are part of the blog, which are presented in reverse-chronological order, and where an RSS feed is available.

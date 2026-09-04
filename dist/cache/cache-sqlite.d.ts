@@ -378,9 +378,9 @@ export declare class DocumentsCache extends BaseCache<Document> {
      * for better performance and scalability.
      *
      * @param options Search options object
-     * @returns Promise<Array<Document>>
+     * @returns Promise<Array<Document | any>>
      */
-    search(options: SearchOptions): Promise<Array<Document>>;
+    search(options: SearchOptions): Promise<Array<Document | any>>;
     /**
      * Build SQL query and parameters for search options
      */

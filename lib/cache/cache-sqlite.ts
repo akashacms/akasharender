@@ -2398,9 +2398,9 @@ export class DocumentsCache
      * for better performance and scalability.
      *
      * @param options Search options object
-     * @returns Promise<Array<Document>>
+     * @returns Promise<Array<Document | any>>
      */
-    async search(options: SearchOptions): Promise<Array<Document>> {
+    async search(options: SearchOptions): Promise<Array<Document | any>> {
         const fcache = this;
 
         if (!this.searchCache) {
@@ -2461,7 +2461,10 @@ export class DocumentsCache
                 = await this.db.all(sql, params);   
 
             const documents
-                = this.validateRows(results)
+                = 
+                Array.isArray(options.return_fields)
+                ? results
+                : this.validateRows(results)
                 .map(item => {
                     return this.cvtRowToObj(item)
                 });
@@ -2538,7 +2541,11 @@ export class DocumentsCache
 
         // Base query
         let sql = `
-            SELECT DISTINCT d.* FROM ${this.quotedDBName} d
+            SELECT DISTINCT ${
+                Array.isArray(options.return_fields)
+                ? options.return_fields.join(',') 
+                : 'd.*'
+            } FROM ${this.quotedDBName} d
         `;
 
         // MIME type filtering
