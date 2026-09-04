@@ -33,7 +33,7 @@ import type { TagDescription } from './types.js';
 export type { TagDescription } from './types.js';
 export type { SearchOptions, RegexMatch, SearchFilterFunc, SearchSortFunc } from './types.js';
 export { validTagDescription } from './types.js';
-export { render, renderDocument, isDocumentUpToDate } from './render.js';
+export { render, renderContent, renderDocument, isDocumentUpToDate } from './render.js';
 export type { RenderOptions, RenderingResults } from './render.js';
 export { SitemapValidator, type SitemapEntry, type EntryValidation, type XMLValidation, type ValidationResult } from './sitemap-validator.js';
 export { inferFormat, parseTableData, type CsvTableFormat, type CsvTableRow, type CsvTableData, type ParseTableOptions } from './csv-table.js';

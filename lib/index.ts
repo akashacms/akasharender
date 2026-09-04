@@ -65,8 +65,8 @@ export type {
 } from './types.js';
 export { validTagDescription } from './types.js';
 
-import { render, renderDocument } from './render.js';
-export { render, renderDocument, isDocumentUpToDate } from './render.js';
+import { render, renderContent, renderDocument } from './render.js';
+export { render, renderContent, renderDocument, isDocumentUpToDate } from './render.js';
 export type { RenderOptions, RenderingResults } from './render.js';
 
 export {

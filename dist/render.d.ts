@@ -17,6 +17,7 @@
  *  limitations under the License.
  */
 import { Configuration } from './index.js';
+import { RenderingContext } from '@akashacms/renderers';
 export type RenderingResults = {
     vpath?: string;
     renderPath?: string;
@@ -36,6 +37,21 @@ export type RenderingResults = {
     skipped?: boolean;
     errors?: Array<Error>;
 };
+/**
+ * The core part of rendering content using a renderer.
+ * This function looks for the renderer, and if none is
+ * found it simply returns.  It then does a little setup
+ * to the metadata object, and calls the render function
+ *
+ * @param config - AkashaCMS Configuration
+ * @param rc - RenderingContext for use with Renderers
+ * @returns
+ */
+export declare function renderContent(config: Configuration, rc: RenderingContext): Promise<{
+    rendererName?: string;
+    format?: string;
+    rendered: string;
+}>;
 /**
  * Render a single document, accounting for the main content,
  * a layout template (if any), and Mahabhuta (if the content

@@ -220,6 +220,62 @@ async function copyAssetFile(ret: RenderingData): Promise<RenderingData> {
 }
 
 
+/**
+ * The core part of rendering content using a renderer.
+ * This function looks for the renderer, and if none is
+ * found it simply returns.  It then does a little setup
+ * to the metadata object, and calls the render function
+ *
+ * @param config - AkashaCMS Configuration
+ * @param rc - RenderingContext for use with Renderers
+ * @returns 
+ */
+export async function renderContent(
+    config: Configuration,
+    rc: RenderingContext
+)
+    // The return is a simple object
+    // containing useful data
+    : Promise<{
+        rendererName?: string,
+        format?: string,
+        rendered: string
+    }>
+{
+    // console.log(`renderContent `, rc);
+    const renderer = config.findRendererPath(
+        rc.fspath
+    );
+    if (!renderer) {
+        return {
+            rendererName: undefined,
+            format: undefined,
+            rendered: rc.body
+        };
+    }
+
+    // Add necessary items to the metadata
+    rc.metadata.config = config;
+    rc.metadata.partial = (fname, metadata) => {
+        return config.akasha.partial(config, fname, metadata);
+    };
+    rc.metadata.partialSync = (fname, metadata) => {
+        return config.akasha.partialSync(config, fname, metadata);
+    };
+    rc.metadata.akasha = config.akasha;
+    rc.metadata.plugin = config.plugin;
+
+    // Render the primary content
+    let docrendered = await renderer.render(rc);
+
+    // console.log(`renderContent rendered=`, docrendered);
+    return {
+        rendererName: renderer.name,
+        format: renderer.renderFormat(rc),
+        rendered: docrendered
+    };
+}
+
 
 /**
  * Render a single document, accounting for the main content,
