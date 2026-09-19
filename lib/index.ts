@@ -919,12 +919,30 @@ export class Configuration {
     async partialsCache()  { return filecache.partialsCache; }
 
     /**
-     * Add a directory to the documentDirs configuration array
-     * @param {string | dirToMount} dir The pathname to use or dirToMount object
+     * Resolve a `string | dirToMount` argument passed to one of the
+     * `addXxxDir` methods into a canonical {@link dirToMount}:
+     *
+     * - A bare string is turned into `{ src, dest: '/' }`, resolving
+     *   `src` against {@link configDir} when it is relative.
+     * - A `dirToMount` object has its (possibly relative) `src`
+     *   resolved against {@link configDir}.
+     * - `dest` is normalized to have no leading `/` (except when it is
+     *   just `'/'`, the "mount at root" sentinel that VFStack special-
+     *   cases in {@link VFStack.getFileInfo}).  This makes the stored
+     *   `vpath`/`renderPath` values in the caches consistent regardless
+     *   of whether a plugin author writes `dest: 'vendor/foo'` or
+     *   `dest: '/vendor/foo'`, so `cache.find()` can locate the entry
+     *   using either form.
+     *
+     * @param dir The argument as accepted by {@link addAssetsDir} etc.
+     * @param methodName The caller's name, for error messages.
      */
-    addDocumentsDir(dir: string | dirToMount) {
+    #resolveDirToMount(
+        dir: string | dirToMount,
+        methodName: string
+    ): dirToMount {
         let dirMount: dirToMount;
-        
+
         if (typeof dir === 'string') {
             if (!path.isAbsolute(dir) && this.configDir != null) {
                 dirMount = {
@@ -944,14 +962,36 @@ export class Configuration {
                     src: path.join(this.configDir, dir.src)
                 };
             } else {
-                dirMount = dir;
+                dirMount = { ...dir };
             }
         }
-        
-        if (!isDirToMount(dirMount)) {
-            throw new Error(`addDocumentsDir - invalid dirToMount object: ${util.inspect(dirMount)}`);
+
+        // Normalize `dest` so a plugin that mounts at `/vendor/foo`
+        // produces the same stored vpath as one that mounts at
+        // `vendor/foo`.  Preserve `'/'` because VFStack treats it as
+        // "mount at the virtual filesystem root" via a `dir.dest === '/'`
+        // special case.
+        if (typeof dirMount.dest === 'string'
+         && dirMount.dest !== '/'
+         && dirMount.dest.startsWith('/')) {
+            dirMount = {
+                ...dirMount,
+                dest: dirMount.dest.replace(/^\/+/, '')
+            };
         }
-        
+
+        if (!isDirToMount(dirMount)) {
+            throw new Error(`${methodName} - invalid dirToMount object: ${util.inspect(dirMount)}`);
+        }
+        return dirMount;
+    }
+
+    /**
+     * Add a directory to the documentDirs configuration array
+     * @param {string | dirToMount} dir The pathname to use or dirToMount object
+     */
+    addDocumentsDir(dir: string | dirToMount) {
+        const dirMount = this.#resolveDirToMount(dir, 'addDocumentsDir');
         this.#documentDirs.push(dirMount);
         return this;
     }
@@ -981,35 +1021,7 @@ export class Configuration {
      * @param {string | dirToMount} dir The pathname to use or dirToMount object
      */
     addLayoutsDir(dir: string | dirToMount) {
-        let dirMount: dirToMount;
-        
-        if (typeof dir === 'string') {
-            if (!path.isAbsolute(dir) && this.configDir != null) {
-                dirMount = {
-                    src: path.join(this.configDir, dir),
-                    dest: '/'
-                };
-            } else {
-                dirMount = {
-                    src: dir,
-                    dest: '/'
-                };
-            }
-        } else {
-            if (!path.isAbsolute(dir.src) && this.configDir != null) {
-                dirMount = {
-                    ...dir,
-                    src: path.join(this.configDir, dir.src)
-                };
-            } else {
-                dirMount = dir;
-            }
-        }
-        
-        if (!isDirToMount(dirMount)) {
-            throw new Error(`addLayoutsDir - invalid dirToMount object: ${util.inspect(dirMount)}`);
-        }
-        
+        const dirMount = this.#resolveDirToMount(dir, 'addLayoutsDir');
         this.#layoutDirs.push(dirMount);
         this.#renderers.addLayoutDir(dirMount.src);
         return this;
@@ -1023,35 +1035,7 @@ export class Configuration {
      * @returns {Configuration}
      */
     addPartialsDir(dir: string | dirToMount) {
-        let dirMount: dirToMount;
-        
-        if (typeof dir === 'string') {
-            if (!path.isAbsolute(dir) && this.configDir != null) {
-                dirMount = {
-                    src: path.join(this.configDir, dir),
-                    dest: '/'
-                };
-            } else {
-                dirMount = {
-                    src: dir,
-                    dest: '/'
-                };
-            }
-        } else {
-            if (!path.isAbsolute(dir.src) && this.configDir != null) {
-                dirMount = {
-                    ...dir,
-                    src: path.join(this.configDir, dir.src)
-                };
-            } else {
-                dirMount = dir;
-            }
-        }
-        
-        if (!isDirToMount(dirMount)) {
-            throw new Error(`addPartialsDir - invalid dirToMount object: ${util.inspect(dirMount)}`);
-        }
-        
+        const dirMount = this.#resolveDirToMount(dir, 'addPartialsDir');
         this.#partialDirs.push(dirMount);
         this.#renderers.addPartialDir(dirMount.src);
         return this;
@@ -1066,35 +1050,7 @@ export class Configuration {
      * @returns {Configuration}
      */
     addAssetsDir(dir: string | dirToMount) {
-        let dirMount: dirToMount;
-        
-        if (typeof dir === 'string') {
-            if (!path.isAbsolute(dir) && this.configDir != null) {
-                dirMount = {
-                    src: path.join(this.configDir, dir),
-                    dest: '/'
-                };
-            } else {
-                dirMount = {
-                    src: dir,
-                    dest: '/'
-                };
-            }
-        } else {
-            if (!path.isAbsolute(dir.src) && this.configDir != null) {
-                dirMount = {
-                    ...dir,
-                    src: path.join(this.configDir, dir.src)
-                };
-            } else {
-                dirMount = dir;
-            }
-        }
-        
-        if (!isDirToMount(dirMount)) {
-            throw new Error(`addAssetsDir - invalid dirToMount object: ${util.inspect(dirMount)}`);
-        }
-        
+        const dirMount = this.#resolveDirToMount(dir, 'addAssetsDir');
         this.#assetsDirs.push(dirMount);
         return this;
     }

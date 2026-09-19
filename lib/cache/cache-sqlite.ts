@@ -745,8 +745,20 @@ export class BaseCache<
     /**
      * Find the file within the cache.
      *
+     * The stored `vpath`/`renderPath` for an entry normally has no
+     * leading slash (documents, partials, and layouts are canonicalized
+     * that way).  However, an asset whose mount `dest` starts with `/`
+     * (for example `dest: '/vendor/bootstrap'`) is stored with a leading
+     * slash because {@link VFStack} composes the vpath as
+     * `path.join(dir.dest, pathInMounted)`.  To be tolerant of both
+     * storage forms we query both the slash-stripped and the
+     * slash-prefixed variants.  (See also the ingestion-side
+     * normalization in {@link Configuration.addAssetsDir} and
+     * friends, which strips a leading `/` from `dest` so new mounts
+     * always produce the canonical form.)
+     *
      * @param _fpath The vpath or renderPath to look for
-     * @returns boolean true if found, false otherwise
+     * @returns The matching info object, or `undefined` when not found
      */
     async find(_fpath): Promise<T | undefined> {
 
@@ -757,10 +769,21 @@ export class BaseCache<
         const fpath = _fpath.startsWith('/')
                     ? _fpath.substring(1)
                     : _fpath;
+        // The corresponding leading-slash form.  When fpath is '' (the
+        // caller passed just '/') the slashed form is also '/', which is
+        // never a stored vpath, so an extra query in that edge case is
+        // harmless.
+        const fpathSlash = '/' + fpath;
 
         const fcache = this;
 
-        const result1 = await this.findByPath(fpath);
+        let result1 = await this.findByPath(fpath);
+        // Fall back to the leading-slash form if the canonical lookup
+        // missed.  This handles legacy assets whose stored vpath has a
+        // leading slash (mount `dest` that starts with `/`).
+        if (!Array.isArray(result1) || result1.length <= 0) {
+            result1 = await this.findByPath(fpathSlash);
+        }
 
         // const result1 = await this.dao.selectAll({
         //     or: [

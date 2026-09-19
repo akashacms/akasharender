@@ -189,8 +189,20 @@ export declare class BaseCache<T extends BaseCacheEntry> extends EventEmitter {
     /**
      * Find the file within the cache.
      *
+     * The stored `vpath`/`renderPath` for an entry normally has no
+     * leading slash (documents, partials, and layouts are canonicalized
+     * that way).  However, an asset whose mount `dest` starts with `/`
+     * (for example `dest: '/vendor/bootstrap'`) is stored with a leading
+     * slash because {@link VFStack} composes the vpath as
+     * `path.join(dir.dest, pathInMounted)`.  To be tolerant of both
+     * storage forms we query both the slash-stripped and the
+     * slash-prefixed variants.  (See also the ingestion-side
+     * normalization in {@link Configuration.addAssetsDir} and
+     * friends, which strips a leading `/` from `dest` so new mounts
+     * always produce the canonical form.)
+     *
      * @param _fpath The vpath or renderPath to look for
-     * @returns boolean true if found, false otherwise
+     * @returns The matching info object, or `undefined` when not found
      */
     find(_fpath: any): Promise<T | undefined>;
     /**
