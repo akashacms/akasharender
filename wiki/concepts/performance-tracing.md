@@ -2,19 +2,14 @@
 title: Performance Tracing
 type: concept
 Sources:
-  - lib/data.ts
   - lib/render.ts
-  - lib/sql/data-create-table.sql
-  - lib/sql/data-delete-traces.sql
-  - lib/sql/data-delete-all-traces.sql
-  - lib/sql/data-get-all-traces.sql
+  - lib/cli.ts
 Categories:
   - performance
   - monitoring
   - development
-  - database
 created: 2026-05-21T03:00:00Z
-updated: 2026-09-03T18:20:00+03:00
+updated: 2026-09-19T12:00:00+03:00
 confidence: high
 ---
 
@@ -22,101 +17,94 @@ confidence: high
 
 ## Definition
 
-Performance Tracing was AkashaRender's system for recording the time taken at different stages of document rendering into a SQLite TRACES table. **The recording mechanism was removed on 2026-09-03** along with the legacy string-returning render path: the `data.report()` writer (and `data.data4file()` reader) no longer exist. Per-stage timing now lives in the `RenderingResults` objects returned by `render`/`renderDocument` (`performance.now()` based), plus the optional Mahabhuta `FilesystemPerfDataStore`. The TRACES table and its maintenance functions (`init`, `remove`, `removeAll`, `print`) remain but nothing writes to the table; they are candidates for removal in a future cleanup.
+Performance Tracing was AkashaRender's original system for recording the time
+taken at different stages of document rendering into a SQLite `TRACES` table.
+The subsystem was **fully removed on 2026-09-19**: `lib/data.ts`, the four
+`lib/sql/data-*.sql` files, and every call site (`data.init()` in
+`lib/index.ts`, `data.removeAll()` in `lib/cli.ts`, the unused
+`import * as data` in `lib/render.ts`) are gone. The writer half
+(`data.report()` / `data.data4file()`) had already been deleted on
+2026-09-03 alongside the legacy string-returning render path, and the
+remaining maintenance functions (`init`, `remove`, `removeAll`, `print`)
+had no active consumers, so the whole apparatus was removed in one pass.
 
-(source: [lib/data.ts](../../lib/data.ts), [lib/render.ts](../../lib/render.ts))
+Per-stage timing now lives entirely in the `RenderingResults` objects
+returned by `render` / `renderDocument` (measured with `performance.now()`),
+optionally persisted through Mahabhuta's `FilesystemPerfDataStore` when
+`config.perfDataDir` is set. See
+[Performance Profiling](./performance-profiling.md) and
+[Performance Measurement Methodology](./performance-measurement-methodology.md).
 
 ## How It Works
 
-The remaining pieces of the tracing system:
+The current mechanism, replacing the deleted TRACES subsystem:
 
-1. **Data Structure**: Each trace record contains:
-   - `basedir`: Source directory mount point
-   - `fpath`: Relative file path within directory
-   - `fullpath`: Absolute file path
-   - `renderTo`: Output directory path
-   - `stage`: Rendering stage name (e.g., "FIRST RENDER", "LAYOUT RENDERED", "MAHABHUTA")
-   - `start`: ISO 8601 timestamp when rendering started
-   - `now`: ISO 8601 timestamp when stage completed
+1. **`RenderingResults` timing** — every rendered document produces a
+   `RenderingResults` object containing per-stage durations
+   (`performance.now()` deltas). Site-level `render` returns the array of
+   these objects; the CLI's `--perfresults <file>` option writes them to
+   disk.
+2. **`FilesystemPerfDataStore`** — when `config.perfDataDir` is set (via
+   the CLI's `--perf-data-dir` option or programmatically), Mahabhuta's
+   `FilesystemPerfDataStore` accumulates per-mahafunc timing into files
+   under that directory for later analysis.
+3. **No SQLite table** — nothing writes rendering timings to the
+   in-memory SQLite database anymore. The `TRACES` table is not created.
 
-2. **Recording Traces**: No longer performed. Historically `data.report()` was called at key stages during rendering; that function was deleted with the legacy render path.
-
-3. **Storage**: Traces were stored in the TRACES table with indexes on basedir, fpath, and fullpath for efficient querying.
-
-4. **Retrieval**: Trace data can be accessed via:
-   - `data.print()`: Prints all traces with calculated durations
-   - Duration calculated as: `(now - start) / 1000` seconds
-
-5. **Cleanup**: Traces can be removed individually (`data.remove()`) or entirely (`data.removeAll()`), useful when re-rendering files multiple times.
-
-(source: [lib/data.ts](../../lib/data.ts), [lib/sql/data-create-table.sql](../../lib/sql/data-create-table.sql))
+(source: [lib/render.ts](../../lib/render.ts), [lib/cli.ts](../../lib/cli.ts))
 
 ## Key Parameters
 
-### Trace Record Fields
-
-- **basedir** (string): The source directory mount point where the file originated
-- **fpath** (string): The relative file path within the directory
-- **renderTo** (string): The output directory path where the file will be rendered
-- **stage** (string): The rendering stage name (e.g., "FIRST RENDER", "LAYOUT RENDERED", "MAHABHUTA")
-- **start** (Date): The ISO 8601 timestamp when rendering started for this file
-
-### API Functions
-
-- **data.init()**: Creates the TRACES table (still called by the CLI and akasharender-epub)
-- **data.print()**: Prints all trace records with calculated durations to console
-- **data.remove(basedir, fpath)**: Removes trace records for a specific file
-- **data.removeAll()**: Clears all trace records from the database (still called by the CLI before each render)
-
-(source: [lib/data.ts](../../lib/data.ts))
+- **`config.perfDataDir`** — directory into which the Mahabhuta
+  `FilesystemPerfDataStore` writes per-mahafunc timing. Unset by default;
+  set via CLI `--perf-data-dir` or programmatically.
+- **CLI `--perfresults <file>`** — write per-document `RenderingResults`
+  (including per-stage durations) to a JSON file after a full render.
 
 ## When To Use
 
-Use performance tracing when:
+Reach for these mechanisms when:
 
-1. **Diagnosing Slow Renders**: Identifying which files or stages take the longest to render
-2. **Optimizing Rendering**: Comparing rendering times before and after optimization changes
-3. **Debugging Performance**: Understanding where time is spent during complex rendering pipelines
-4. **Development**: Monitoring rendering performance during active development
-5. **Per-File Analysis**: Getting detailed timing breakdowns for specific documents
-
-The tracing system is particularly useful during development when you need to understand why certain files are slow to render or which rendering stages are bottlenecks.
-
-(source: [lib/data.ts](../../lib/data.ts), [lib/render.ts](../../lib/render.ts))
+1. **Diagnosing slow renders** — inspect the `--perfresults` output to
+   see which documents dominate build time.
+2. **Attributing time to a stage** — the per-stage numbers in
+   `RenderingResults` show whether time is going into the first render,
+   layout wrapping, or Mahabhuta.
+3. **Attributing time to a mahafunc** — enable `perfDataDir` and inspect
+   the `FilesystemPerfDataStore` output for per-mahafunc totals.
 
 ## Risks & Pitfalls
 
-### Storage Overhead
+### Do not look for a TRACES table
 
-Trace records accumulate in the database, potentially using significant storage for large sites with many renders. Use `data.removeAll()` to clear traces when no longer needed.
+Older documentation, comments, and prior wiki logs refer to a `TRACES`
+SQLite table populated during rendering. That table no longer exists,
+and no code path creates or writes to it. Any tooling that queried
+`TRACES` must switch to `RenderingResults` or the `FilesystemPerfDataStore`.
 
-### Development-Only Feature
+### Time precision
 
-The tracing system is primarily for development debugging and may impact performance if used in production builds. Consider disabling or cleaning up traces for production.
+`performance.now()` provides sub-millisecond precision, but for very
+fast individual stages the numbers can still be noisy. Aggregate over
+many documents when comparing before/after.
 
-### Multiple Renders
+## Sources
 
-When re-rendering the same file multiple times, traces accumulate. Use `data.remove(basedir, fpath)` to clean up old traces before re-rendering.
-
-### Stage Name Consistency
-
-Stage names are hardcoded strings (e.g., "FIRST RENDER", "LAYOUT RENDERED"). Using inconsistent stage names makes it harder to analyze traces across different code paths.
-
-### Time Precision
-
-Durations are calculated using JavaScript Date objects, which provide millisecond precision but may not be accurate enough for very short operations.
-
-(source: [lib/data.ts](../../lib/data.ts))
+- [lib/render.ts](../../lib/render.ts) — `RenderingResults` and per-stage
+  timing
+- [lib/cli.ts](../../lib/cli.ts) — `--perfresults` and `--perf-data-dir`
+  wiring
 
 ## Related Pages
 
-- [Performance Profiling](./performance-profiling.md): Uses trace data to analyze rendering performance
-- [Cache Schema](./cache-schema.md): TRACES table is part of the cache database schema
-- [Database Indexing](./database-indexing.md): TRACES table has indexes for efficient querying
-- [Site Rendering](./site-rendering.md): Rendering workflow that generates trace data
+- [Performance Profiling](./performance-profiling.md): Uses the current
+  timing data to analyze rendering performance
+- [Performance Measurement Methodology](./performance-measurement-methodology.md):
+  How to attribute and interpret timing data
+- [Site Rendering](./site-rendering.md): Rendering workflow that produces
+  the timing data
 
 ## Backlinks
 
-The Performance Tracing concept is referenced by:
-
-- [concepts/README.md](./README.md): Listed under "Validation and Quality" (should be moved to "Development Tools and Performance")
+- [concepts/README.md](./README.md)
+- [How To Debug the Rendering Pipeline](../memory/debugging-rendering-pipeline.md)

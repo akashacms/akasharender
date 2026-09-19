@@ -20,7 +20,7 @@ File-by-file summaries of the source code in `lib/` and `lib/cache/`:
 
 - **Core modules**: index.ts, types.ts, Plugin.ts, render.ts
 - **CLI & Tools**: cli.ts, refactor-tags.ts
-- **Database & Performance**: sqdb.ts, data.ts
+- **Database & Performance**: sqdb.ts
 - **Caching System**: cache-sqlite.ts, vfstack.ts, schema.ts, tag-glue.ts
 - **DOM Processing**: mahafuncs.ts, built-in.ts
 
@@ -60,7 +60,7 @@ Key architectural concepts and patterns:
 - **[Command-Line Interface](./concepts/command-line-interface.md)**: The akasharender CLI tool
 - **[Performance Profiling](./concepts/performance-profiling.md)**: Rendering timing measurements
 - **[Performance Measurement Methodology](./concepts/performance-measurement-methodology.md)**: How to measure, attribute, and interpret performance data before optimizing
-- **[Performance Tracing](./concepts/performance-tracing.md)**: Per-stage timing data in TRACES table
+- **[Performance Tracing](./concepts/performance-tracing.md)**: History of the removed SQLite `TRACES` subsystem and pointer to the current `RenderingResults` / `FilesystemPerfDataStore` timing mechanism
 
 **Advanced Database**:
 - **[Database Extensions](./concepts/database-extensions.md)**: SQLite extensions for regex, vectors, embeddings
@@ -83,7 +83,7 @@ Detailed answers to technical questions about the codebase:
 - **[Bluesky / AT Protocol Integration and Crossover with the Fediverse](./answers/bluesky-atproto-integration.md)**: Bluesky (atproto) and the Fediverse (ActivityPub) are separate networks that only cross over via bridges (Bridgy Fed); Bluesky reads Open Graph for link cards and an optional `/.well-known/atproto-did` domain-handle verification artifact, which an AkashaCMS build can generate
 - **[Useful Microformats and IndieWeb Markup for a Static Blog](./answers/microformats-indieweb-for-static-blogs.md)**: Microformats for a static blog (issue #33) — use microformats2 (`h-entry`, `h-card`, `h-feed`); the author-listing case becomes a nested `p-author h-card`, with `rel="me"` for IndieWeb identity and `p-category`/`rel="tag"` for tags, injected via partial templates and the blog/authors plugins
 - **[Social-Sharing Metadata: Open Graph, Twitter Cards, and Facebook](./answers/social-sharing-metadata-opengraph-twitter-facebook.md)**: Open Graph is primary (Facebook consumes it; Twitter Cards fall back to it); audits the current `@akashacms/plugins-base` `ak_headermeta` implementation (wrong `name=` vs `property=`, no Twitter Cards, latent bugs) and proposes a frontmatter-driven `social:` block emitted from one data-table template loop
-- **[Options for Storing Date/Time Values in the In-Memory SQLite Database](./answers/sqlite-datetime-storage-options.md)**: Answers issue #120 — the file caches store epoch milliseconds (`mtimeMs`, `publicationTime` via a generated JSON-extraction column) while TRACES uses ISO-8601 text; surveys the SQLite date/time storage options (ISO-8601 TEXT, Julian day, epoch seconds, epoch milliseconds, sqlean) and recommends keeping epoch milliseconds
+- **[Options for Storing Date/Time Values in the In-Memory SQLite Database](./answers/sqlite-datetime-storage-options.md)**: Answers issue #120 — the file caches store epoch milliseconds (`mtimeMs`, `publicationTime` via a generated JSON-extraction column); the ISO-8601-text TRACES table was removed 2026-09-19; surveys the SQLite date/time storage options (ISO-8601 TEXT, Julian day, epoch seconds, epoch milliseconds, sqlean) and recommends keeping epoch milliseconds
 - **[Webmention: Purpose, Markup, Protocol, and Server Software](./answers/webmention-protocol-and-markup.md)**: The W3C protocol for decentralized cross-site reply/like/repost notifications (IndieWeb successor to Pingback); covers `rel="webmention"` discovery, the `source`/`target` POST + source-fetch verification, microformats2 classification, and server options (Webmention.io and other hosted services, or a self-hosted PHP receiver) with a build-time fetch-and-render approach for AkashaCMS
 - **[Lightweight Image-Resize Packages to Replace sharp](./answers/lightweight-image-resize-alternatives-to-sharp.md)**: How to shrink the install by replacing `sharp` — its size is bundled native libvips binaries, so only a pure-JS (Jimp) or WASM (photon-node, Squoosh codecs, the `@saschazar/wasm-*` per-format monorepo) library helps; the usage surface is just load/resize-to-width/write-by-extension (incl. PNG→JPG conversion), with WebP output being the deciding constraint (SVG is out of scope — it is sized via `width=`/`height=`)
 - **[UNIQUE constraint failed: ASSETS.vpath (and DOCUMENTS.vpath) During Indexing](./answers/unique-constraint-failed-assets-vpath.md)**: Why `assetdirs`/`render` print many `UNIQUE constraint failed: ASSETS.vpath` errors — the `VFStack` scan yields unique vpaths and the cache tables use `CREATE TABLE IF NOT EXISTS` without truncation, so collisions come from a **persistent database reused across runs** (`AK_DB_URL` set to a file rather than the default `:memory:`); fix by unsetting `AK_DB_URL` or starting from an empty database
@@ -115,7 +115,7 @@ Implementation guides for features and modifications:
 
 Durable, reusable notes that help an LLM or LLM Agent write, debug, and maintain code in this project across work sessions (debugging techniques, build/test quirks, recurring pitfalls and fixes, and working recipes):
 
-- **[How To Debug the Rendering Pipeline](./memory/debugging-rendering-pipeline.md)**: Entry points and techniques for diagnosing why a document renders incorrectly or fails, by localizing the failing stage of the three-stage pipeline and using TRACES data and the CLI.
+- **[How To Debug the Rendering Pipeline](./memory/debugging-rendering-pipeline.md)**: Entry points and techniques for diagnosing why a document renders incorrectly or fails, by localizing the failing stage of the three-stage pipeline and using `RenderingResults` per-stage timing data and the CLI.
 
 ### [Log](./log/README.md)
 

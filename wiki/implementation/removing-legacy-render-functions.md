@@ -92,7 +92,7 @@ the CLI uses only the "2" versions):
 2. Rename `renderDocument2` → `renderDocument`, `render2` → `render` (including the queue closure, now `renderDocumentInQueue`, and all comments). **Done.** The `Render2Options` type was also renamed to `RenderOptions`.
 3. `lib/index.ts`: delete legacy `renderPath`; rename `renderPath2` → `renderPath`; extract the duplicated lookup-polling loop into one private helper (`findDocumentWithRetry`); update the import/export lists and `module_exports` (now exports exactly `render`, `renderDocument`, `renderPath`; the `renderDocument2` omission is moot). **Done.**
 4. `lib/cli.ts`: update `renderPath2` → `renderPath` and `render2` → `render`. **Done.**
-5. `lib/data.ts`: remove `report()` and `data4file()`, plus their SQL files (`lib/sql/data-add-report.sql`, `lib/sql/data-for-file.sql`). **Done.** NOTE: with `report()` gone, **nothing writes to the TRACES table anymore** — `init`/`remove`/`removeAll`/`print` remain because the CLI calls `removeAll()` and akasharender-epub calls `init()`; removing the TRACES apparatus is tracked in GitHub issue akashacms/akasharender#267.
+5. `lib/data.ts`: remove `report()` and `data4file()`, plus their SQL files (`lib/sql/data-add-report.sql`, `lib/sql/data-for-file.sql`). **Done.** NOTE: with `report()` gone, **nothing writes to the TRACES table anymore** — `init`/`remove`/`removeAll`/`print` remained temporarily because the CLI called `removeAll()` and akasharender-epub called `init()`. Follow-up: the whole TRACES apparatus (`lib/data.ts` and the four remaining `lib/sql/data-*.sql` files) was **removed on 2026-09-19**, together with the `data.removeAll()` calls in `lib/cli.ts`, the `init()` call and import in `lib/index.ts`, and the orphaned `import * as data` in `lib/render.ts` (GitHub issue akashacms/akasharender#267).
 6. Update the three test files to the renamed `akasha.render`. **Done.**
 7. Versioning: **no bump needed** — per the project leader, 0.10 is an unreleased version, so the breaking change ships within 0.10.
 8. Verify: build clean (Node.js v24.18.1, TypeScript 6); full test suite green (388 tests, 0 failures, including `test-incremental`); CLI smoke tests passed — `akasharender render config-normal.mjs --copy-assets --force-render-all` rendered 87 files (EXIT=0) and `render-document` exercised `renderPath` → `renderDocument` (EXIT=0). Sibling-site smoke tests were not possible: `../akashacms-skeleton` has no node_modules and `../akashacms-website` has the published 0.10.0 installed (not linked to this checkout).
@@ -122,7 +122,7 @@ Most page rewrites were bundled into Phase 2 (render.ts/data.ts summaries, both 
 - Verified `wiki/summaries/lib/index.ts.md` and `wiki/summaries/lib/cli.ts.md` already describe the current API accurately (no "2" references; `renderPath(config, path)` entry is correct post-rename)
 - Final sweep: no citation in any page references a line number beyond the current 681-line `lib/render.ts`; the only remaining mentions of the old names are intentional history notes, this plan, immutable logs, and the frozen sitemap-validation transcript
 
-Known remaining follow-ups (outside this wiki): akasharender-epub transition (#212), TRACES table removal (#267), COMPLEXITY.md regeneration.
+Known remaining follow-ups (outside this wiki): akasharender-epub transition (#212), COMPLEXITY.md regeneration. TRACES table removal (#267) was completed 2026-09-19.
 
 ### Risks & Pitfalls
 

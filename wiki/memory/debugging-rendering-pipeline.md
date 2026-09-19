@@ -16,7 +16,8 @@ Keywords:
   - three-stage rendering
   - mahabhuta
   - layout
-  - TRACES
+  - RenderingResults
+  - perfDataDir
   - vpath
 date-created: 2026-07-24T12:31:18+03:00
 last-updated: 2026-07-24T12:31:18+03:00
@@ -54,9 +55,14 @@ is to localize *which stage* produced the bad output. See the
      Mahabhuta custom element or mahafunc. See
      [Custom Elements](../concepts/custom-elements.md).
 
-3. **Use the TRACES timing data** to spot which stage is slow or is being run
-   an unexpected number of times. Per-stage timing is written to the TRACES
-   table; see [Performance Tracing](../concepts/performance-tracing.md).
+3. **Use the per-stage timing data** to spot which stage is slow or is being
+   run an unexpected number of times. Per-stage timings are on the
+   `RenderingResults` objects returned by the render API and can be written
+   to a file with the CLI's `--perfresults` option; per-mahafunc timings can
+   be captured by setting `config.perfDataDir` (Mahabhuta's
+   `FilesystemPerfDataStore`). See
+   [Performance Tracing](../concepts/performance-tracing.md) for the history
+   of the removed `TRACES` table and pointers to the current mechanism.
 
 4. **Check the stacked-directory resolution** when the wrong template or
    partial is being used. Because partials and layouts are layered, an override

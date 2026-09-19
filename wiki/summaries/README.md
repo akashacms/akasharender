@@ -14,7 +14,6 @@ This directory contains summaries of source files from the AkashaRender codebase
 - **[lib/built-in.ts](./lib/built-in.ts.md)**: Built-in plugin providing core Mahabhuta functions and template features
 - **[lib/cli.ts](./lib/cli.ts.md)**: Command-line interface with commands for rendering, watching, publishing, and inspection
 - **[lib/render.ts](./lib/render.ts.md)**: Document rendering engine implementing three-stage rendering pipeline
-- **[lib/data.ts](./lib/data.ts.md)**: Performance tracking system storing rendering traces in SQLite
 - **[lib/sqdb.ts](./lib/sqdb.ts.md)**: SQLite database initialization with extensions for regex, vectors, and embeddings
 - **[lib/mahafuncs.ts](./lib/mahafuncs.ts.md)**: Wrapper classes for Mahabhuta DOM manipulation functions
 - **[lib/refactor-tags.ts](./lib/refactor-tags.ts.md)**: Tag refactoring implementation with dry-run support

@@ -6,6 +6,10 @@ title: Log index
 
 This directory contains a chronological audit trail of changes made to the wiki.
 
+## 2026-09-19
+
+- **[20260919T183137+0300.md](./20260919T183137+0300.md)**: 2026-09-19 18:31 - Removed the traces (TRACES table) subsystem from AkashaRender - Completed issue #267. Deleted `lib/data.ts` and its four SQL files, removed the last `data.init()` call (in `lib/index.ts`), the two `data.removeAll()` calls (in `lib/cli.ts`), the orphan `import * as data` in `lib/render.ts`, and the matching `data.removeAll()` line in the AGENTS.md example. Also cleared stale `dist/` artifacts. Wiki: deleted the `lib/data.ts` summary, rewrote the Performance Tracing concept to document the full removal and the current `RenderingResults` / `FilesystemPerfDataStore` mechanism, and updated summaries README, index, memory pages, the sqlite-datetime answer, and the legacy-render implementation plan. Build clean and 209/209 tests pass in test-normal + test-rebased; test-cache has a pre-existing unrelated minimatch ESM failure.
+
 ## 2026-08-25
 
 - **[20260825T003500+0300.md](./20260825T003500+0300.md)**: 2026-08-25 00:35 - Add answer page on running code after regular Mahabhuta processing (final mahafuncs) - New answer page documenting how to run Mahabhuta processing after all regular mahafuncs but before Cheerio is serialized to HTML: the `akasha.emitter.on('file-rendered')` API from the akashacms-website how-to never existed; the real mechanism is Mahabhuta's final mahafuncs (`MahafuncArray.addFinalMahafunc()`), with the Built-in Plugin's `MungedAttrRemover`/`BlankLinkDefanger` as the working example; updated the answers README and master index

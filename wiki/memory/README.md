@@ -36,7 +36,7 @@ Memory pages are indexed three ways so they are easy to locate:
 - **[Title Of Memory](./memory-file-name.md)**: One-line summary of what this memory records and when to use it.
 -->
 
-- **[How To Debug the Rendering Pipeline](./debugging-rendering-pipeline.md)**: Techniques and entry points for diagnosing why a document renders incorrectly or fails, using TRACES timing data, the three-stage pipeline, and the CLI.
+- **[How To Debug the Rendering Pipeline](./debugging-rendering-pipeline.md)**: Techniques and entry points for diagnosing why a document renders incorrectly or fails, using per-stage `RenderingResults` timing data, the three-stage pipeline, and the CLI.
 - **[Render Skips Up-To-Date Documents - Use forceRenderAll in Build-Verify Tests](./render2-force-render-all-in-tests.md)**: When a test needs an unconditional full re-render, pass `{ forceRenderAll: true }` to `akasha.render` and check `result.errors[]` — skipped documents don't run Mahabhuta, so side effects like in-place image resizing (after `copyAssets()` restores originals) silently don't happen.
 
 ## By Category

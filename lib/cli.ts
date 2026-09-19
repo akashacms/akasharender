@@ -27,7 +27,6 @@ import fs from 'node:fs';
 import { promises as fsp } from 'node:fs';
 import path from 'node:path';
 import util from 'node:util';
-import * as data from './data.js';
 import * as YAML from 'js-yaml';
 import { RenderingResults } from './render.js';
 import { refactorTag } from './refactor-tags.js';
@@ -178,7 +177,6 @@ program
             }
             let akasha = config.akasha;
             await akasha.setup(config);
-            await data.removeAll();
             // console.log(`render-document before renderPath ${documentFN}`);
             let result = await akasha.renderPath(config, documentFN);
             // console.log(result);
@@ -214,7 +212,6 @@ program
             )).default;
             let akasha = config.akasha;
             await akasha.setup(config);
-            await data.removeAll();
             if (cmdObj.copyAssets) {
                 await config.copyAssets();
             }

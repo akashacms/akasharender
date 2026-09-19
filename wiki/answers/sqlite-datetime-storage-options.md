@@ -12,8 +12,6 @@ Sources:
   - lib/cache/cache-sqlite.ts
   - lib/cache/schema.ts
   - lib/cache/vfstack.ts
-  - lib/sql/data-create-table.sql
-  - lib/data.ts
   - lib/render.ts
 Categories:
   - sqlite
@@ -73,14 +71,14 @@ the "raw number" approach referred to in issue #120:
   mentioned in the issue (source:
   [cache-sqlite.ts](../../lib/cache/cache-sqlite.ts), lines 1414-1419).
 
-**2. ISO-8601 text** — used only by the TRACES diagnostics table:
-`start TEXT DEFAULT(datetime('now') || 'Z')` and
-`now TEXT DEFAULT(datetime('now') || 'Z')`
-(source: [data-create-table.sql](../../lib/sql/data-create-table.sql), lines 7-10).
-The values written from JavaScript use `Date.prototype.toISOString()`
-(source: [data.ts](../../lib/data.ts), lines 91-92). The `|| 'Z'` is needed
-because SQLite's `datetime('now')` returns UTC but omits any timezone
-designator.
+**2. ISO-8601 text** — was previously used by the SQLite `TRACES`
+diagnostics table (`start` / `now` columns defaulting to
+`datetime('now') || 'Z'`, with JavaScript writes via
+`Date.prototype.toISOString()`). The entire TRACES subsystem
+(`lib/data.ts`, `lib/sql/data-*.sql`) was removed on 2026-09-19, so this
+convention is no longer present in the live schema; it is retained here
+only as an example of the format. See
+[Performance Tracing](../concepts/performance-tracing.md).
 
 All consumers of the numeric columns do plain numeric operations:
 
@@ -113,7 +111,7 @@ milliseconds) plus extensions are practical variants:
 
 | Option | Column type | Pros | Cons |
 |---|---|---|---|
-| 1. ISO-8601 text (`YYYY-MM-DD HH:MM:SS.SSS`) | TEXT | Human-readable in queries and dumps; directly usable with `datetime()`, `date()`, `strftime()`; lexicographic sort equals chronological sort; the format the SQLite team usually recommends | Larger storage (~23 bytes vs 8); string comparisons slightly slower than numeric; timezone must be normalized manually (the TRACES table appends a literal `'Z'` for exactly this reason) |
+| 1. ISO-8601 text (`YYYY-MM-DD HH:MM:SS.SSS`) | TEXT | Human-readable in queries and dumps; directly usable with `datetime()`, `date()`, `strftime()`; lexicographic sort equals chronological sort; the format the SQLite team usually recommends | Larger storage (~23 bytes vs 8); string comparisons slightly slower than numeric; timezone must be normalized manually (the removed TRACES table used to append a literal `'Z'` for exactly this reason) |
 | 2. Julian day number | REAL | The native internal unit of SQLite's date functions; fractional days give sub-second precision | Opaque to humans and to JavaScript; requires conversion at every JS boundary |
 | 3. Unix epoch seconds | INTEGER | Compact (8 bytes); fast comparisons and indexes; `unixepoch()` and `datetime(x, 'unixepoch')` convert both ways | 1-second resolution unless the `'subsec'` modifier is used (SQLite >= 3.42); JS uses milliseconds, so a divide/multiply by 1000 is needed at every boundary |
 | 4. Epoch milliseconds (current approach) | INTEGER / REAL | Zero conversion with JavaScript (`Date.now()`, `Date.parse()`, `fs.Stats.mtimeMs` are all epoch ms); compact; fast numeric sort and index | Not directly consumable by SQLite date functions — SQL that wants a readable date must write `datetime(col/1000.0, 'unixepoch')` |
@@ -142,11 +140,12 @@ choices are:
    anywhere in the current code, so this would be premature complexity
    today.
 
-A hybrid is also reasonable and is effectively what exists now: raw numbers
-for the hot, machine-compared file-cache columns, and ISO-8601 text for the
-human-inspected TRACES diagnostics table. If the two-convention split is
-felt to be confusing, the cheapest unification is option 1 plus a fix to the
-misleading `schema.ts` comment.
+Historically a hybrid was in use: raw numbers for the hot,
+machine-compared file-cache columns, and ISO-8601 text for the
+human-inspected TRACES diagnostics table. With TRACES removed on
+2026-09-19, only the epoch-millisecond convention remains in the live
+schema; the cheapest cleanup now is a fix to the misleading `schema.ts`
+comment.
 
 ## Sources
 
@@ -155,7 +154,6 @@ misleading `schema.ts` comment.
 - [lib/cache/cache-sqlite.ts](../../lib/cache/cache-sqlite.ts) — value computation (`gatherInfoData`), binding, search `ORDER BY`, `setTimes()`
 - [lib/cache/schema.ts](../../lib/cache/schema.ts) — type declarations and Joi validation for `mtimeMs` / `publicationTime`
 - [lib/cache/vfstack.ts](../../lib/cache/vfstack.ts) — origin of `mtimeMs` from `fs.statSync().mtimeMs`
-- [lib/sql/data-create-table.sql](../../lib/sql/data-create-table.sql) and [lib/data.ts](../../lib/data.ts) — ISO-8601 text timestamps in TRACES
 - [lib/render.ts](../../lib/render.ts) — numeric `mtimeMs` comparison for incremental rebuild
 - [SQLite date and time functions](https://sqlite.org/lang_datefunc.html) — supported storage formats
 - [sqlean extensions](https://github.com/nalgeon/sqlean) — high-precision `time` extension
@@ -165,7 +163,7 @@ misleading `schema.ts` comment.
 
 - [Cache Schema](../concepts/cache-schema.md) — the file-cache data model these columns belong to
 - [Database Indexing](../concepts/database-indexing.md) — the indexes on `mtimeMs` and `publicationTime`
-- [Performance Tracing](../concepts/performance-tracing.md) — the TRACES table with ISO-8601 timestamps
+- [Performance Tracing](../concepts/performance-tracing.md) — the (removed) TRACES table that used ISO-8601 timestamps
 - [Database Extensions](../concepts/database-extensions.md) — how loadable SQLite extensions (relevant to sqlean) are handled
 - [lib/cache/cache-sqlite.ts summary](../summaries/lib/cache/cache-sqlite.ts.md)
 - [lib/cache/schema.ts summary](../summaries/lib/cache/schema.ts.md)

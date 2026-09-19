@@ -101,7 +101,6 @@ Next:
 ```js
 let akasha = config.akasha;
 await akasha.setup(config);
-await data.removeAll();
 if (cmdObj.copyAssets) {
     await config.copyAssets();
 }

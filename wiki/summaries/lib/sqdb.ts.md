@@ -83,7 +83,6 @@ an EventEmitter, so the previous `on('error', ...)` listener was removed
 
 ## Related Pages
 
-- [lib/data.ts](./data.ts) - Uses sqdb for tracing
 - [lib/cache/cache-sqlite.ts](./cache/cache-sqlite.ts) - Uses sqdb for file caching
 - [Migrating AkashaRender to promised.node.sqlite](../architecture/promised-node-sqlite-migration.md) - Architecture for this migration
 

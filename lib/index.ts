@@ -153,8 +153,6 @@ import { sqdb } from './sqdb.js';
 
 export { newSQ3DataStore } from './sqdb.js';
 
-import { init } from './data.js';
-
 // There doesn't seem to be an official MIME type registered
 // for AsciiDoctor
 // per: https://asciidoctor.org/docs/faq/
@@ -218,8 +216,6 @@ export async function setup(config) {
 
     await cacheSetup(config);
     await fileCachesReady(config);
-
-    await init();
 }
 
 export async function cacheSetup(config) {

@@ -78,7 +78,6 @@ This module implements the core document rendering pipeline for AkashaRender (so
 
 - [lib/index.ts](./index.ts) - Exports render functions
 - [lib/mahafuncs.ts](./mahafuncs.ts) - Mahabhuta function classes
-- [lib/data.ts](./data.ts) - TRACES table maintenance
 - [lib/cache/cache-sqlite.ts](./cache/cache-sqlite.ts) - Document cache
 
 ## Backlinks

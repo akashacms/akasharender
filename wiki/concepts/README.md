@@ -86,7 +86,7 @@ This directory contains documentation of key concepts, patterns, and architectur
 ## Validation and Quality
 
 - **[Type Validation](./type-validation.md)**: Runtime verification using Joi schemas to ensure database values match TypeScript interfaces
-- **[Performance Tracing](./performance-tracing.md)**: Built-in timing system recording render stage durations in SQLite TRACES table
+- **[Performance Tracing](./performance-tracing.md)**: Historical SQLite `TRACES` subsystem (removed 2026-09-19); documents the replacement `RenderingResults` / `FilesystemPerfDataStore` mechanism
 
 ## Site Building and Deployment
 
