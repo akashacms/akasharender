@@ -32,17 +32,65 @@ import * as YAML from 'js-yaml';
 import { RenderingResults } from './render.js';
 import { refactorTag } from './refactor-tags.js';
 import { SitemapValidator } from './sitemap-validator.js';
+import { loadEnvFiles } from './index.js';
 
 
 
 process.title = 'akasharender';
 program.version('0.9.5');
 
+/**
+ * Collector for the global `--env <path>` option.  Commander invokes
+ * this each time the option appears on the command line, letting
+ * users declare multiple .env files, e.g.
+ *   `akasharender --env .env --env .env.local render config.mjs`.
+ */
+function collectEnvFile(value: string, previous: string[]): string[] {
+    return previous.concat([ value ]);
+}
+
+program
+    .option(
+        '--env <path>',
+        'Path to a .env file to load into process.env before running the command.  May be given multiple times; files are loaded in the order supplied.',
+        collectEnvFile,
+        []
+    );
+
+/**
+ * Load any `.env` files declared with the global `--env` option into
+ * `process.env`.  This should be called at the start of every command's
+ * action, before the command reads `process.env` or imports a
+ * configuration module (whose evaluation may itself read `process.env`).
+ */
+function applyEnvOption(): void {
+    const opts = program.opts();
+    const envFiles: string[] = Array.isArray(opts.env) ? opts.env : [];
+    loadEnvFiles(envFiles);
+}
+
+program
+    .command('env')
+    .description('Print the environment variables from process.env after loading any --env files.')
+    .action(() => {
+        try {
+            applyEnvOption();
+            // Print sorted by key for a stable, easy-to-scan report.
+            const keys = Object.keys(process.env).sort();
+            for (const key of keys) {
+                console.log(`${key}=${process.env[key]}`);
+            }
+        } catch (e) {
+            console.error(`env command ERRORED ${e.stack}`);
+        }
+    });
+
 program
     .command('copy-assets <configFN>')
     .description('Copy assets into output directory')
     .action(async (configFN) => {
         try {
+            applyEnvOption();
             const config = (await import(
                 path.join(process.cwd(), configFN)
             )).default;
@@ -62,6 +110,7 @@ program
     .action(async (configFN, documentFN) => {
 
         try {
+            applyEnvOption();
             const config = (await import(
                 path.join(process.cwd(), configFN)
             )).default;
@@ -104,6 +153,7 @@ program
     .option('--perf-data-dir <dataDir>', 'Directory for output of Mahabhuta performance measurements')
     .action(async (configFN, documentFN, cmdObj) => {
         try {
+            applyEnvOption();
             const config = (await import(
                 path.join(process.cwd(), configFN)
             )).default;
@@ -142,6 +192,7 @@ program
     .action(async (configFN, cmdObj) => {
         // console.log(`render: akasha: ${util.inspect(akasha)}`);
         try {
+            applyEnvOption();
             const config = (await import(
                 path.join(process.cwd(), configFN)
             )).default;
@@ -237,6 +288,7 @@ program
     .action(async (configFN, cmdObj) => {
         // console.log(`render: akasha: ${util.inspect(akasha)}`);
         try {
+            applyEnvOption();
             const config = (await import(
                 path.join(process.cwd(), configFN)
             )).default;
@@ -298,6 +350,7 @@ program
     .action(async (configFN) => {
         // console.log(`render: akasha: ${util.inspect(akasha)}`);
         try {
+            applyEnvOption();
             const config = (await import(
                 path.join(process.cwd(), configFN)
             )).default;
@@ -333,6 +386,7 @@ program
     .action(async (configFN) => {
         // console.log(`render: akasha: ${util.inspect(akasha)}`);
         try {
+            applyEnvOption();
             const config = (await import(
                 path.join(process.cwd(), configFN)
             )).default;
@@ -350,6 +404,7 @@ program
     .action(async (configFN) => {
         // console.log(`render: akasha: ${util.inspect(akasha)}`);
         try {
+            applyEnvOption();
             const config = (await import(
                 path.join(process.cwd(), configFN)
             )).default;
@@ -368,6 +423,7 @@ program
     .action(async (configFN) => {
         // console.log(`render: akasha: ${util.inspect(akasha)}`);
         try {
+            applyEnvOption();
             const config = (await import(
                 path.join(process.cwd(), configFN)
             )).default;
@@ -386,6 +442,7 @@ program
     .action(async (configFN) => {
         // console.log(`render: akasha: ${util.inspect(akasha)}`);
         try {
+            applyEnvOption();
             const config = (await import(
                 path.join(process.cwd(), configFN)
             )).default;
@@ -404,6 +461,7 @@ program
     .action(async (configFN) => {
         // console.log(`render: akasha: ${util.inspect(akasha)}`);
         try {
+            applyEnvOption();
             const config = (await import(
                 path.join(process.cwd(), configFN)
             )).default;
@@ -423,6 +481,7 @@ program
     .action(async (configFN, rootPath) => {
         // console.log(`render: akasha: ${util.inspect(akasha)}`);
         try {
+            applyEnvOption();
             const config = (await import(
                 path.join(process.cwd(), configFN)
             )).default;
@@ -441,6 +500,7 @@ program
     .action(async (configFN) => {
         // console.log(`render: akasha: ${util.inspect(akasha)}`);
         try {
+            applyEnvOption();
             const config = (await import(
                 path.join(process.cwd(), configFN)
             )).default;
@@ -459,6 +519,7 @@ program
     .action(async (configFN, docFN) => {
         // console.log(`render: akasha: ${util.inspect(akasha)}`);
         try {
+            applyEnvOption();
             const config = (await import(
                 path.join(process.cwd(), configFN)
             )).default;
@@ -478,6 +539,7 @@ program
     .action(async (configFN, rootPath) => {
         // console.log(`render: akasha: ${util.inspect(akasha)}`);
         try {
+            applyEnvOption();
             const config = (await import(
                 path.join(process.cwd(), configFN)
             )).default;
@@ -505,6 +567,7 @@ program
     .action(async (configFN, startPath) => {
         // console.log(`render: akasha: ${util.inspect(akasha)}`);
         try {
+            applyEnvOption();
             const config = (await import(
                 path.join(process.cwd(), configFN)
             )).default;
@@ -524,6 +587,7 @@ program
     .action(async (configFN, vpath) => {
         // console.log(`render: akasha: ${util.inspect(akasha)}`);
         try {
+            applyEnvOption();
             const config = (await import(
                 path.join(process.cwd(), configFN)
             )).default;
@@ -551,6 +615,7 @@ program
     .action(async (configFN, searchFor) => {
         // console.log(`render: akasha: ${util.inspect(akasha)}`);
         try {
+            applyEnvOption();
             const config = (await import(
                 path.join(process.cwd(), configFN)
             )).default;
@@ -568,6 +633,7 @@ program
     .description('List the tags')
     .action(async (configFN) => {
         try {
+            applyEnvOption();
             const config = (await import(
                 path.join(process.cwd(), configFN)
             )).default;
@@ -587,6 +653,7 @@ program
     .option('--threshold <n>', 'Levenshtein distance threshold', '2')
     .action(async (configFN, cmdObj) => {
         try {
+            applyEnvOption();
             const config = (await import(
                 path.join(process.cwd(), configFN)
             )).default;
@@ -606,6 +673,7 @@ program
     .description('List tags that have no description')
     .action(async (configFN) => {
         try {
+            applyEnvOption();
             const config = (await import(
                 path.join(process.cwd(), configFN)
             )).default;
@@ -624,6 +692,7 @@ program
     .description('List tag descriptions that are not used by any document')
     .action(async (configFN) => {
         try {
+            applyEnvOption();
             const config = (await import(
                 path.join(process.cwd(), configFN)
             )).default;
@@ -643,6 +712,7 @@ program
     .option('--dry-run', 'List changes without modifying files', false)
     .action(async (configFN, oldTag, newTag, cmdObj) => {
         try {
+            applyEnvOption();
             const config = (await import(
                 path.join(process.cwd(), configFN)
             )).default;
@@ -663,6 +733,7 @@ program
     .description('List the document vpaths for given tags')
     .action(async (configFN, tags) => {
         try {
+            applyEnvOption();
             const config = (await import(
                 path.join(process.cwd(), configFN)
             )).default;
@@ -682,6 +753,7 @@ program
     .action(async (configFN, rootPath) => {
 
         try {
+            applyEnvOption();
             const config = (await import(
                 path.join(process.cwd(), configFN)
             )).default;
@@ -727,6 +799,7 @@ program
     .action(async (configFN, cmdObj) => {
         // console.log(`render: akasha: ${util.inspect(akasha)}`);
         try {
+            applyEnvOption();
             const config = (await import(
                 path.join(process.cwd(), configFN)
             )).default;
@@ -801,6 +874,7 @@ program
     .action(async (configFN) => {
         // console.log(`render: akasha: ${util.inspect(akasha)}`);
         try {
+            applyEnvOption();
             const config = (await import(
                 path.join(process.cwd(), configFN)
             )).default;
@@ -819,6 +893,7 @@ program
     .action(async (configFN, assetFN) => {
         // console.log(`render: akasha: ${util.inspect(akasha)}`);
         try {
+            applyEnvOption();
             const config = (await import(
                 path.join(process.cwd(), configFN)
             )).default;
@@ -838,6 +913,7 @@ program
     .action(async (configFN) => {
         // console.log(`render: akasha: ${util.inspect(akasha)}`);
         try {
+            applyEnvOption();
             const config = (await import(
                 path.join(process.cwd(), configFN)
             )).default;
@@ -861,6 +937,7 @@ program
     .action(async (configFN, layoutFN) => {
         // console.log(`render: akasha: ${util.inspect(akasha)}`);
         try {
+            applyEnvOption();
             const config = (await import(
                 path.join(process.cwd(), configFN)
             )).default;
@@ -880,6 +957,7 @@ program
     .action(async (configFN) => {
         // console.log(`render: akasha: ${util.inspect(akasha)}`);
         try {
+            applyEnvOption();
             const config = (await import(
                 path.join(process.cwd(), configFN)
             )).default;
@@ -901,6 +979,7 @@ program
     .action(async (configFN, partialFN) => {
         // console.log(`render: akasha: ${util.inspect(akasha)}`);
         try {
+            applyEnvOption();
             const config = (await import(
                 path.join(process.cwd(), configFN)
             )).default;
@@ -920,6 +999,7 @@ program
     .option('--verbose', 'Show detailed event tracking (added, ready, error events)')
     .action(async (configFN, cmdObj) => {
         try {
+            applyEnvOption();
             const config = (await import(
                 path.join(process.cwd(), configFN)
             )).default;
@@ -969,6 +1049,7 @@ program
     .option('--delay <ms>', 'Wait time in milliseconds to check for late additions (default: 2000)', '2000')
     .action(async (configFN, cmdObj) => {
         try {
+            applyEnvOption();
             const config = (await import(
                 path.join(process.cwd(), configFN)
             )).default;
@@ -1097,6 +1178,7 @@ program
     .option('--json', 'Output results as JSON', false)
     .action(async (configFN, cmdObj) => {
         try {
+            applyEnvOption();
             const config = (await import(
                 path.join(process.cwd(), configFN)
             )).default;

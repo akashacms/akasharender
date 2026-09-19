@@ -28,6 +28,25 @@ export * as mahabhuta from 'mahabhuta';
 import * as cheerio from 'cheerio';
 export * from './mahafuncs.js';
 export * as relative from 'relative';
+export * as dotenv from 'dotenv';
+/**
+ * Load one or more .env files into `process.env` using the `dotenv`
+ * package.  Each entry in `envFiles` is treated as a path to a .env
+ * file, relative to the current working directory (unless it is
+ * absolute).  Files are loaded in the order supplied, and by default
+ * later files do NOT override values already present in `process.env`
+ * (this matches dotenv's default behavior).  If `override` is true,
+ * later files (and .env values in general) override existing entries
+ * in `process.env`.
+ *
+ * @param envFiles Array of .env file paths to load.  May be empty
+ *   or undefined, in which case this function does nothing.
+ * @param options Optional dotenv options.  `override` defaults to
+ *   false to match dotenv's default.
+ */
+export declare function loadEnvFiles(envFiles?: string[], options?: {
+    override?: boolean;
+}): void;
 export { Plugin } from './Plugin.js';
 import type { TagDescription } from './types.js';
 export type { TagDescription } from './types.js';

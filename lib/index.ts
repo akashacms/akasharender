@@ -52,6 +52,41 @@ export * from './mahafuncs.js';
 import * as relative from 'relative';
 export * as relative from 'relative';
 
+import * as dotenv from 'dotenv';
+export * as dotenv from 'dotenv';
+
+/**
+ * Load one or more .env files into `process.env` using the `dotenv`
+ * package.  Each entry in `envFiles` is treated as a path to a .env
+ * file, relative to the current working directory (unless it is
+ * absolute).  Files are loaded in the order supplied, and by default
+ * later files do NOT override values already present in `process.env`
+ * (this matches dotenv's default behavior).  If `override` is true,
+ * later files (and .env values in general) override existing entries
+ * in `process.env`.
+ *
+ * @param envFiles Array of .env file paths to load.  May be empty
+ *   or undefined, in which case this function does nothing.
+ * @param options Optional dotenv options.  `override` defaults to
+ *   false to match dotenv's default.
+ */
+export function loadEnvFiles(
+    envFiles?: string[],
+    options?: { override?: boolean }
+): void {
+    if (!Array.isArray(envFiles) || envFiles.length === 0) {
+        return;
+    }
+    const resolved = envFiles.map(f =>
+        path.isAbsolute(f) ? f : path.resolve(process.cwd(), f)
+    );
+    dotenv.config({
+        path: resolved,
+        override: options?.override === true,
+        quiet: true
+    });
+}
+
 import { Plugin } from './Plugin.js';
 export { Plugin } from './Plugin.js';
 
