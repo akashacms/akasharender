@@ -33,11 +33,27 @@ import { RenderingResults } from './render.js';
 import { refactorTag } from './refactor-tags.js';
 import { SitemapValidator } from './sitemap-validator.js';
 import { loadEnvFiles } from './index.js';
+import { fileURLToPath } from 'node:url';
 
 
 
 process.title = 'akasharender';
-program.version('0.9.5');
+
+/**
+ * Read the AkashaRender package version dynamically from
+ * `package.json` at the root of this package.  We resolve the path
+ * relative to the compiled `dist/cli.js` file (so `../package.json`)
+ * rather than `process.cwd()`, which would be the user's working
+ * directory when invoking the CLI.
+ */
+function readPackageVersion(): string {
+    const here = path.dirname(fileURLToPath(import.meta.url));
+    const pkgPath = path.resolve(here, '..', 'package.json');
+    const pkg = JSON.parse(fs.readFileSync(pkgPath, 'utf8'));
+    return pkg.version;
+}
+
+program.version(readPackageVersion());
 
 /**
  * Collector for the global `--env <path>` option.  Commander invokes
