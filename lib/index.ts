@@ -987,11 +987,57 @@ export class Configuration {
     }
 
     /**
+     * Emit a `console.warn` when the incoming mount is an exact duplicate
+     * (same canonical `src` and same canonical `dest`) of one already in
+     * `existing`.  Duplicate mounts cause the file scanner to enumerate
+     * the same tree twice, producing duplicate cache rows and — for
+     * assets — a `copyAssets` race where two workers try to unlink the
+     * same destination file concurrently (see the analysis of the
+     * `bootstrap-grid.css` failure that motivated this check).
+     *
+     * Mounting the same `src` at a *different* `dest` is legitimate
+     * aliasing and is not warned about.  Mounting a *different* `src` at
+     * the same `dest` is legitimate stacking (later entries override
+     * earlier ones) and is also not warned about.
+     *
+     * This is intentionally a warning, not an exception: many existing
+     * sites and plugins ship configurations that trigger this case and
+     * we do not want to break them.  A future strict mode may promote
+     * this to a hard error.
+     *
+     * @param dirMount   The canonicalized mount about to be added.
+     * @param existing   The array of already-registered mounts to check
+     *                   against.
+     * @param methodName The caller's name, for the warning text.
+     */
+    #warnIfDuplicateMount(
+        dirMount: dirToMount,
+        existing: Array<dirToMount>,
+        methodName: string
+    ): void {
+        for (const prior of existing) {
+            if (prior.src === dirMount.src
+             && prior.dest === dirMount.dest) {
+                console.warn(
+                    `${methodName}: duplicate mount ignored/redundant: `
+                    + `{ src: ${JSON.stringify(dirMount.src)}, `
+                    + `dest: ${JSON.stringify(dirMount.dest)} } `
+                    + `has already been registered.  This causes the file `
+                    + `scanner to enumerate the same tree twice.  Remove `
+                    + `the redundant call.`
+                );
+                return;
+            }
+        }
+    }
+
+    /**
      * Add a directory to the documentDirs configuration array
      * @param {string | dirToMount} dir The pathname to use or dirToMount object
      */
     addDocumentsDir(dir: string | dirToMount) {
         const dirMount = this.#resolveDirToMount(dir, 'addDocumentsDir');
+        this.#warnIfDuplicateMount(dirMount, this.#documentDirs, 'addDocumentsDir');
         this.#documentDirs.push(dirMount);
         return this;
     }
@@ -1022,6 +1068,7 @@ export class Configuration {
      */
     addLayoutsDir(dir: string | dirToMount) {
         const dirMount = this.#resolveDirToMount(dir, 'addLayoutsDir');
+        this.#warnIfDuplicateMount(dirMount, this.#layoutDirs, 'addLayoutsDir');
         this.#layoutDirs.push(dirMount);
         this.#renderers.addLayoutDir(dirMount.src);
         return this;
@@ -1036,6 +1083,7 @@ export class Configuration {
      */
     addPartialsDir(dir: string | dirToMount) {
         const dirMount = this.#resolveDirToMount(dir, 'addPartialsDir');
+        this.#warnIfDuplicateMount(dirMount, this.#partialDirs, 'addPartialsDir');
         this.#partialDirs.push(dirMount);
         this.#renderers.addPartialDir(dirMount.src);
         return this;
@@ -1051,6 +1099,7 @@ export class Configuration {
      */
     addAssetsDir(dir: string | dirToMount) {
         const dirMount = this.#resolveDirToMount(dir, 'addAssetsDir');
+        this.#warnIfDuplicateMount(dirMount, this.#assetsDirs, 'addAssetsDir');
         this.#assetsDirs.push(dirMount);
         return this;
     }
