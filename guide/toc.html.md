@@ -8,7 +8,7 @@ bookAuthor: "David Herron"
 authors: "David Herron"
 published: "2021 David Herron"
 language: "English"
-coverImage: "/Human-Skeleton.jpg"
+# coverImage: "/Human-Skeleton.jpg"
 noLogoImage: "true"
 # EPUB download, PDF download
 outline:
