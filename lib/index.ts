@@ -65,8 +65,15 @@ export * as dotenv from 'dotenv';
  * later files (and .env values in general) override existing entries
  * in `process.env`.
  *
+ * If no `envFiles` are supplied AND a `.env` file exists in the
+ * current working directory, that `.env` is loaded automatically.
+ * This matches the convention of the `dotenv` package.  Passing
+ * explicit `envFiles` disables this fallback, so callers who want
+ * `./.env` in addition to their own files should include `.env` in
+ * the list themselves.
+ *
  * @param envFiles Array of .env file paths to load.  May be empty
- *   or undefined, in which case this function does nothing.
+ *   or undefined; see fallback behavior above.
  * @param options Optional dotenv options.  `override` defaults to
  *   false to match dotenv's default.
  */
@@ -74,10 +81,20 @@ export function loadEnvFiles(
     envFiles?: string[],
     options?: { override?: boolean }
 ): void {
-    if (!Array.isArray(envFiles) || envFiles.length === 0) {
-        return;
+    let files: string[];
+    if (Array.isArray(envFiles) && envFiles.length > 0) {
+        files = envFiles;
+    } else {
+        // Fallback: automatically load ./.env if it exists, matching
+        // the default behavior of the `dotenv` package.
+        const defaultEnv = path.resolve(process.cwd(), '.env');
+        if (fs.existsSync(defaultEnv)) {
+            files = [ defaultEnv ];
+        } else {
+            return;
+        }
     }
-    const resolved = envFiles.map(f =>
+    const resolved = files.map(f =>
         path.isAbsolute(f) ? f : path.resolve(process.cwd(), f)
     );
     dotenv.config({

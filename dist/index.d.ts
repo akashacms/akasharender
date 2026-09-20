@@ -39,8 +39,15 @@ export * as dotenv from 'dotenv';
  * later files (and .env values in general) override existing entries
  * in `process.env`.
  *
+ * If no `envFiles` are supplied AND a `.env` file exists in the
+ * current working directory, that `.env` is loaded automatically.
+ * This matches the convention of the `dotenv` package.  Passing
+ * explicit `envFiles` disables this fallback, so callers who want
+ * `./.env` in addition to their own files should include `.env` in
+ * the list themselves.
+ *
  * @param envFiles Array of .env file paths to load.  May be empty
- *   or undefined, in which case this function does nothing.
+ *   or undefined; see fallback behavior above.
  * @param options Optional dotenv options.  `override` defaults to
  *   false to match dotenv's default.
  */
