@@ -36,21 +36,25 @@ Memory pages are indexed three ways so they are easy to locate:
 - **[Title Of Memory](./memory-file-name.md)**: One-line summary of what this memory records and when to use it.
 -->
 
+- **[Assets Cache findByPath Is Exact-Match — Use find() for Leading-Slash vpaths](./assets-findbypath-exact-match.md)**: `assetsCache.findByPath('/vendor/…')` returns nothing because stored vpaths lack the leading slash and the SQL is exact-match; `find()` normalizes — the fix for `TablerIconsElement no vpath for …`.
 - **[How To Debug the Rendering Pipeline](./debugging-rendering-pipeline.md)**: Techniques and entry points for diagnosing why a document renders incorrectly or fails, using per-stage `RenderingResults` timing data, the three-stage pipeline, and the CLI.
 - **[Link Checker Sentinel-Origin Collision (http://example.com Misclassified as Internal)](./link-checker-sentinel-origin-collision.md)**: Why an outbound `http://example.com/` link is reported as `internal link not found (/http:/example.com/)` — the `LOCAL_BASE` sentinel-origin trick collides with a real URL; test for a leading URI scheme (`hasUrlScheme()`) before comparing origins.
 - **[minimatch v10 Is Pure ESM — Import the Named Export](./minimatch-esm-default-export.md)**: `import minimatch from 'minimatch'` fails with "does not provide an export named 'default'" under minimatch ^10; use `import { minimatch } from 'minimatch'`.
 - **[Render Skips Up-To-Date Documents - Use forceRenderAll in Build-Verify Tests](./render2-force-render-all-in-tests.md)**: When a test needs an unconditional full re-render, pass `{ forceRenderAll: true }` to `akasha.render` and check `result.errors[]` — skipped documents don't run Mahabhuta, so side effects like in-place image resizing (after `copyAssets()` restores originals) silently don't happen.
+- **[URL Fragments and Queries Are Opaque to Path Relativization in AnchorCleanup](./url-fragments-opaque-to-relativization.md)**: Why a `/img/foo.pdf` reference renders as `../vendor/img/foo.pdf` — AnchorCleanup must split path/query/fragment before `relative()`/`resolveVpath`, else a fragment like `#../../../img/foo.pdf` is path-normalized into the href.
 
 ## By Category
 
 <!-- Group memory pages by their primary Categories tag. Update when adding pages. -->
 
-- **debugging**: [How To Debug the Rendering Pipeline](./debugging-rendering-pipeline.md), [Link Checker Sentinel-Origin Collision (http://example.com Misclassified as Internal)](./link-checker-sentinel-origin-collision.md)
+- **caching**: [Assets Cache findByPath Is Exact-Match — Use find() for Leading-Slash vpaths](./assets-findbypath-exact-match.md)
+- **debugging**: [How To Debug the Rendering Pipeline](./debugging-rendering-pipeline.md), [Link Checker Sentinel-Origin Collision (http://example.com Misclassified as Internal)](./link-checker-sentinel-origin-collision.md), [URL Fragments and Queries Are Opaque to Path Relativization in AnchorCleanup](./url-fragments-opaque-to-relativization.md)
 - **dependencies**: [minimatch v10 Is Pure ESM — Import the Named Export](./minimatch-esm-default-export.md)
 - **link-checking**: [Link Checker Sentinel-Origin Collision (http://example.com Misclassified as Internal)](./link-checker-sentinel-origin-collision.md)
+- **plugins**: [Assets Cache findByPath Is Exact-Match — Use find() for Leading-Slash vpaths](./assets-findbypath-exact-match.md)
 - **rendering**: [How To Debug the Rendering Pipeline](./debugging-rendering-pipeline.md), [Render Skips Up-To-Date Documents - Use forceRenderAll in Build-Verify Tests](./render2-force-render-all-in-tests.md)
 - **testing**: [Render Skips Up-To-Date Documents - Use forceRenderAll in Build-Verify Tests](./render2-force-render-all-in-tests.md), [minimatch v10 Is Pure ESM — Import the Named Export](./minimatch-esm-default-export.md)
-- **url-handling**: [Link Checker Sentinel-Origin Collision (http://example.com Misclassified as Internal)](./link-checker-sentinel-origin-collision.md)
+- **url-handling**: [Link Checker Sentinel-Origin Collision (http://example.com Misclassified as Internal)](./link-checker-sentinel-origin-collision.md), [URL Fragments and Queries Are Opaque to Path Relativization in AnchorCleanup](./url-fragments-opaque-to-relativization.md)
 
 ## Related Pages
 

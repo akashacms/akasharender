@@ -1292,7 +1292,25 @@ class AnchorCleanup extends Munger {
             // means we only process the link once.
             $link.attr('munged', 'yes');
 
-            let absolutePath = resolveVpath(metadata.document.path, href);
+            // The query string and fragment are opaque to everything below:
+            // path normalization and relativization must operate on the
+            // path alone, with the query/fragment re-appended verbatim.
+            // A fragment can itself carry a relative path (the
+            // document-viewers plugin's
+            // /vendor/Viewer.js/index.html#../../../doc.pdf href), and
+            // letting it participate in path arithmetic mangles the href.
+            const fragIndex  = href.indexOf('#');
+            const fragment   = fragIndex  >= 0 ? href.substring(fragIndex)      : '';
+            let   pathPart   = fragIndex  >= 0 ? href.substring(0, fragIndex)   : href;
+            const queryIndex = pathPart.indexOf('?');
+            const query      = queryIndex >= 0 ? pathPart.substring(queryIndex) : '';
+            if (queryIndex   >= 0) pathPart = pathPart.substring(0, queryIndex);
+
+            // A fragment-only (#name) or query-only (?x) reference is a
+            // same-page anchor: there is no path to resolve or relativize.
+            if (pathPart === '') return "ok";
+
+            let absolutePath = resolveVpath(metadata.document.path, pathPart);
 
             // The idea for this section is to ensure all local href's are 
             // for a relative path rather than an absolute path
@@ -1311,8 +1329,9 @@ class AnchorCleanup extends Munger {
 
             // Only relativize if desired
             if (this.array.options.relativizeBodyLinks
-             && path.isAbsolute(href)) {
-                let newHref = relative(`/${metadata.document.renderTo}`, href);
+             && path.isAbsolute(pathPart)) {
+                let newHref = relative(`/${metadata.document.renderTo}`, pathPart)
+                            + query + fragment;
                 $link.attr('href', newHref);
                 // console.log(`AnchorCleanup de-absolute href ${href} in ${util.inspect(metadata.document)} to ${newHref}`);
             }

@@ -20,3 +20,11 @@ These should compute relative paths
 
 <a id="link-to-hier-dir1" href="/hier/dir1/index.html"></a>
 
+
+A fragment carrying a relative path (document-viewers style) must survive untouched
+
+<a id="fragment-preserved" href="/hier/index.html#../../../img/test.pdf">Fragment preserved</a>
+
+A same-page anchor (fragment only) must be left untouched
+
+<a id="same-page-anchor" href="#section-name">Same page anchor</a>
