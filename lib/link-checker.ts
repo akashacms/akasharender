@@ -37,6 +37,7 @@
  */
 
 import path from 'node:path';
+import { promises as fsp } from 'node:fs';
 import { resolveVpath } from './index.js';
 import type { Configuration } from './index.js';
 
@@ -348,6 +349,14 @@ export class LinkChecker {
     #errors: LinkError[] = [];
     #externalCache = new Map<string, { result: ExternalResult, at: number }>();
     #checker: ExternalChecker;
+    /**
+     * Memoize the results of the render-destination filesystem fallback
+     * in {@link LinkChecker.checkInternal}.  Values: `true` = a regular
+     * file exists at that site-absolute path in `renderDestination`;
+     * `false` = it does not (or is not a regular file, or escapes the
+     * render tree).  Absent = not yet checked.
+     */
+    #renderDestFsCache = new Map<string, boolean>();
 
     /**
      * @param config The AkashaRender configuration.
@@ -488,6 +497,17 @@ export class LinkChecker {
      * mirrors the resolution logic in `AnchorCleanup` (lib/built-in.ts): a link
      * that resolves to an asset, a document, a directory index, or a path a
      * plugin claims via `askPluginsLegitLocalHref` is valid.
+     *
+     * As a final fallback, the render-destination directory on disk is
+     * consulted (see {@link LinkChecker.existsInRenderDestination}).
+     * This lets the checker recognize files written directly to the
+     * output tree by Mahafuncs — for example the diagram images
+     * produced by `@akashacms/diagram-makers`'s
+     * `<diagrams-plantuml output-file="…">`.  Such files are not
+     * tracked in any AkashaRender cache, but they *are* present on
+     * disk by the time the link check runs (which is from the
+     * built-in plugin's `onSiteRendered`, after all documents have
+     * been rendered).
      */
     async #checkInternal(href: string, absolutePath: string, source?: string): Promise<void> {
         const assets = this.#akasha?.filecache?.assetsCache;
@@ -514,8 +534,72 @@ export class LinkChecker {
             if (found) return;
         } catch { /* fall through */ }
 
+        // Render-destination filesystem fallback.  Handles files that
+        // Mahafuncs wrote directly to `config.renderDestination` and
+        // that therefore appear in neither the assets nor documents
+        // cache (diagram images, etc.).
+        if (await this.#existsInRenderDestination(absolutePath)) {
+            return;
+        }
+
         this.#report(this.#options.internal, 'internal', href, source,
             `internal link not found (${absolutePath})`);
+    }
+
+    /**
+     * Return `true` when a regular file exists at `absolutePath` (a
+     * site-relative, `/`-rooted path) underneath the configured
+     * {@link Configuration.renderDestination}.  The result is memoized
+     * in {@link LinkChecker.renderDestFsCache} to keep repeat lookups
+     * cheap during a full-site scan.
+     *
+     * Guards against path traversal: a path that resolves outside
+     * `renderDestination` is treated as not found.
+     *
+     * A directory match returns `false` because a bare directory URL
+     * is served (if at all) by a co-located `index.html`, and the
+     * document-cache check above already handled the `index.html`
+     * lookup.  Only regular files count here.
+     */
+    async #existsInRenderDestination(absolutePath: string): Promise<boolean> {
+        const renderDestination = this.#config?.renderDestination;
+        if (typeof renderDestination !== 'string' || renderDestination.length === 0) {
+            return false;
+        }
+        if (typeof absolutePath !== 'string' || absolutePath.length === 0) {
+            return false;
+        }
+
+        const cached = this.#renderDestFsCache.get(absolutePath);
+        if (cached !== undefined) return cached;
+
+        // Strip a leading `/` before joining so `path.join` (which does
+        // not treat `/x` as absolute-relative-to-renderDestination in a
+        // reliable way across platforms) composes what we mean.
+        const rel = absolutePath.startsWith('/')
+            ? absolutePath.substring(1)
+            : absolutePath;
+        const candidate = path.resolve(renderDestination, rel);
+
+        // Containment guard: the resolved path must be inside
+        // renderDestination.  This protects against a crafted `..` href
+        // reaching files outside the output tree.
+        const rootWithSep = path.resolve(renderDestination) + path.sep;
+        if (candidate !== path.resolve(renderDestination)
+         && !candidate.startsWith(rootWithSep)) {
+            this.#renderDestFsCache.set(absolutePath, false);
+            return false;
+        }
+
+        let ok = false;
+        try {
+            const st = await fsp.stat(candidate);
+            ok = st.isFile();
+        } catch {
+            ok = false;
+        }
+        this.#renderDestFsCache.set(absolutePath, ok);
+        return ok;
     }
 
     /**
