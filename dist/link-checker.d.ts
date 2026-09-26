@@ -116,6 +116,11 @@ interface ResolvedOptions {
 /** Default option values. */
 export declare const DEFAULT_LINK_CHECK_OPTIONS: ResolvedOptions;
 /**
+ * Whether the string begins with a URI scheme (e.g. `http:` or `mailto:`),
+ * making it an absolute URL rather than a site-relative reference.
+ */
+export declare function hasUrlScheme(s: string): boolean;
+/**
  * Determine whether a URL matches a whitelist entry.
  *
  * A string entry matches when the URL's host equals it or ends with `.entry`

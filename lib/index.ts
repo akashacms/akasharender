@@ -142,6 +142,7 @@ export {
     LinkChecker,
     isWhitelisted,
     classifyStatus,
+    hasUrlScheme,
     assertMode as assertLinkCheckMode,
     fetchExternalChecker,
     linkCheckExternalChecker,

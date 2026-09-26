@@ -39,6 +39,7 @@ import {
     LinkChecker,
     DEFAULT_LINK_CHECK_OPTIONS,
     assertMode,
+    hasUrlScheme,
     type LinkCheckMode
 } from './link-checker.js';
 
@@ -1256,6 +1257,13 @@ class AnchorCleanup extends Munger {
         // await assets.isReady();
         // console.log(`AnchorCleanup ${href} ${linktext}`);
         if (href && href !== '#') {
+            // An absolute URL (one carrying a scheme such as http: or
+            // mailto:), or a protocol-relative //host URL, is never a local
+            // link.  This must be tested before the origin comparison below:
+            // its 'http://example.com' sentinel is a real URL, so an outbound
+            // link to exactly that origin would otherwise be mistaken for a
+            // local link and mangled into a path like /http:/example.com/.
+            if (hasUrlScheme(href) || href.startsWith('//')) return "ok";
             const uHref = new URL(href, 'http://example.com');
             if (uHref.origin !== 'http://example.com') return "ok";
             if (!uHref.pathname) return "ok";

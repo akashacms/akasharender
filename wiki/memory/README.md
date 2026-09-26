@@ -37,15 +37,20 @@ Memory pages are indexed three ways so they are easy to locate:
 -->
 
 - **[How To Debug the Rendering Pipeline](./debugging-rendering-pipeline.md)**: Techniques and entry points for diagnosing why a document renders incorrectly or fails, using per-stage `RenderingResults` timing data, the three-stage pipeline, and the CLI.
+- **[Link Checker Sentinel-Origin Collision (http://example.com Misclassified as Internal)](./link-checker-sentinel-origin-collision.md)**: Why an outbound `http://example.com/` link is reported as `internal link not found (/http:/example.com/)` — the `LOCAL_BASE` sentinel-origin trick collides with a real URL; test for a leading URI scheme (`hasUrlScheme()`) before comparing origins.
+- **[minimatch v10 Is Pure ESM — Import the Named Export](./minimatch-esm-default-export.md)**: `import minimatch from 'minimatch'` fails with "does not provide an export named 'default'" under minimatch ^10; use `import { minimatch } from 'minimatch'`.
 - **[Render Skips Up-To-Date Documents - Use forceRenderAll in Build-Verify Tests](./render2-force-render-all-in-tests.md)**: When a test needs an unconditional full re-render, pass `{ forceRenderAll: true }` to `akasha.render` and check `result.errors[]` — skipped documents don't run Mahabhuta, so side effects like in-place image resizing (after `copyAssets()` restores originals) silently don't happen.
 
 ## By Category
 
 <!-- Group memory pages by their primary Categories tag. Update when adding pages. -->
 
-- **debugging**: [How To Debug the Rendering Pipeline](./debugging-rendering-pipeline.md)
+- **debugging**: [How To Debug the Rendering Pipeline](./debugging-rendering-pipeline.md), [Link Checker Sentinel-Origin Collision (http://example.com Misclassified as Internal)](./link-checker-sentinel-origin-collision.md)
+- **dependencies**: [minimatch v10 Is Pure ESM — Import the Named Export](./minimatch-esm-default-export.md)
+- **link-checking**: [Link Checker Sentinel-Origin Collision (http://example.com Misclassified as Internal)](./link-checker-sentinel-origin-collision.md)
 - **rendering**: [How To Debug the Rendering Pipeline](./debugging-rendering-pipeline.md), [Render Skips Up-To-Date Documents - Use forceRenderAll in Build-Verify Tests](./render2-force-render-all-in-tests.md)
-- **testing**: [Render Skips Up-To-Date Documents - Use forceRenderAll in Build-Verify Tests](./render2-force-render-all-in-tests.md)
+- **testing**: [Render Skips Up-To-Date Documents - Use forceRenderAll in Build-Verify Tests](./render2-force-render-all-in-tests.md), [minimatch v10 Is Pure ESM — Import the Named Export](./minimatch-esm-default-export.md)
+- **url-handling**: [Link Checker Sentinel-Origin Collision (http://example.com Misclassified as Internal)](./link-checker-sentinel-origin-collision.md)
 
 ## Related Pages
 

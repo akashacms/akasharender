@@ -182,6 +182,20 @@ export const DEFAULT_LINK_CHECK_OPTIONS: ResolvedOptions = {
 const LOCAL_BASE = 'http://example.com';
 
 /**
+ * A leading URI scheme (RFC 3986: `ALPHA *( ALPHA / DIGIT / "+" / "-" /
+ * "." ) ":"`), e.g. `http:`, `mailto:`, `tel:`.
+ */
+const URL_SCHEME_RE = /^[a-zA-Z][a-zA-Z0-9+.-]*:/;
+
+/**
+ * Whether the string begins with a URI scheme (e.g. `http:` or `mailto:`),
+ * making it an absolute URL rather than a site-relative reference.
+ */
+export function hasUrlScheme(s: string): boolean {
+    return URL_SCHEME_RE.test(s);
+}
+
+/**
  * Determine whether a URL matches a whitelist entry.
  *
  * A string entry matches when the URL's host equals it or ends with `.entry`
@@ -430,6 +444,51 @@ export class LinkChecker {
             return { kind: 'anchor' };
         }
 
+        // An href carrying a URL scheme is an absolute URL and can never be
+        // a local site path.  This must be tested BEFORE resolving against
+        // LOCAL_BASE: that sentinel is itself the real URL
+        // http://example.com, so an outbound link to exactly that origin
+        // would otherwise be misclassified as internal and "resolved" to a
+        // nonsense path like /http:/example.com/.
+        if (hasUrlScheme(trimmed)) {
+            let u: URL;
+            try {
+                u = new URL(trimmed);
+            } catch {
+                return { kind: 'other-scheme', scheme: '(unparseable)' };
+            }
+            if (u.protocol === 'http:' || u.protocol === 'https:') {
+                // A real external http(s) URL.  Strip the fragment for
+                // checking.
+                u.hash = '';
+                return { kind: 'external', url: u.toString() };
+            }
+            // Any other scheme (mailto:, tel:, sms:, ftp:, javascript:, ...).
+            return { kind: 'other-scheme', scheme: u.protocol };
+        }
+
+        // A protocol-relative URL (//host/path) lacks only the scheme; it
+        // is external, inheriting http: for classification purposes.
+        if (trimmed.startsWith('//')) {
+            let u: URL;
+            try {
+                u = new URL('http:' + trimmed);
+            } catch {
+                return { kind: 'other-scheme', scheme: '(unparseable)' };
+            }
+            u.hash = '';
+            return { kind: 'external', url: u.toString() };
+        }
+
+        // No scheme: a relative reference, therefore local.  Resolve the
+        // (possibly relative) href against the containing document's vpath,
+        // mirroring AnchorCleanup which calls
+        // resolveVpath(metadata.document.path, href).  Strip any
+        // query/fragment first.
+        const rawPath = trimmed.split('#')[0].split('?')[0];
+        if (baseVpath && rawPath.length > 0) {
+            return { kind: 'internal', absolutePath: resolveVpath(baseVpath, rawPath) };
+        }
         let u: URL;
         try {
             u = new URL(trimmed, LOCAL_BASE);
@@ -437,29 +496,7 @@ export class LinkChecker {
             // Unparseable; treat as an other-scheme link so it can be logged.
             return { kind: 'other-scheme', scheme: '(unparseable)' };
         }
-
-        if (u.protocol === 'http:' || u.protocol === 'https:') {
-            if (u.origin === LOCAL_BASE) {
-                // Local link.  Resolve the (possibly relative) href against the
-                // containing document's vpath, mirroring AnchorCleanup which
-                // calls resolveVpath(metadata.document.path, href).  Strip any
-                // query/fragment first via the parsed pathname.
-                const rawPath = trimmed.split('#')[0].split('?')[0];
-                let absolutePath: string;
-                if (baseVpath && rawPath.length > 0) {
-                    absolutePath = resolveVpath(baseVpath, rawPath);
-                } else {
-                    absolutePath = u.pathname;
-                }
-                return { kind: 'internal', absolutePath };
-            }
-            // A real external http(s) URL.  Strip the fragment for checking.
-            u.hash = '';
-            return { kind: 'external', url: u.toString() };
-        }
-
-        // Any other scheme (mailto:, tel:, sms:, ftp:, javascript:, ...).
-        return { kind: 'other-scheme', scheme: u.protocol };
+        return { kind: 'internal', absolutePath: u.pathname };
     }
 
     /**

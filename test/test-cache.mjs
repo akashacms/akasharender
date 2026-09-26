@@ -4,7 +4,7 @@ import fs, { promises as fsp } from 'fs';
 import * as akasha from '../dist/index.js';
 const filecache = await import('../dist/cache/cache-sqlite.js');
 // import * as filecache from '../dist/cache/cache-sqlite.js';
-import minimatch from 'minimatch';
+import { minimatch } from 'minimatch';
 import { describe, it, before, after } from 'node:test';
 import { assert }   from './test-assert.mjs';
 import { refactorTag } from '../dist/refactor-tags.js';

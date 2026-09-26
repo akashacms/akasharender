@@ -152,6 +152,55 @@ describe('LinkChecker.classify', function() {
         assert.equal(chk.classify('tel:+123').kind, 'other-scheme');
         assert.equal(chk.classify('ftp:host/x').kind, 'other-scheme');
     });
+    it('treats an outbound http://example.com URL as external, not internal', function() {
+        // http://example.com is the sentinel origin used to detect local
+        // links; a real outbound link to that exact origin (as in the
+        // example project's markdown.html) must not be misclassified as
+        // internal and "resolved" to /http:/example.com/.
+        for (const href of [
+            'http://example.com/',
+            'http://example.com/path/page.html',
+            'HTTP://EXAMPLE.COM/'
+        ]) {
+            const c = chk.classify(href, 'markdown.html.md');
+            assert.equal(c.kind, 'external', href);
+            assert.isUndefined(c.absolutePath, href);
+        }
+    });
+    it('treats a protocol-relative URL as external', function() {
+        const c = chk.classify('//example.com/lib.js', 'index.html.md');
+        assert.equal(c.kind, 'external');
+        assert.equal(c.url, 'http://example.com/lib.js');
+    });
+    it('still treats a colon in a non-first path segment as internal', function() {
+        const c = chk.classify('foo/bar:baz.html', 'dir/index.html.md');
+        assert.equal(c.kind, 'internal');
+        assert.equal(c.absolutePath, '/dir/foo/bar:baz.html');
+    });
+});
+
+describe('LinkChecker outbound sentinel-origin links', function() {
+    it('does not report http://example.com as a broken internal link', async function() {
+        const akashaObj = makeAkasha({});
+        const seenPaths = [];
+        const origDocs = akashaObj.filecache.documentsCache.find;
+        const origAssets = akashaObj.filecache.assetsCache.find;
+        akashaObj.filecache.documentsCache.find = async (p) => {
+            seenPaths.push(p);
+            return origDocs(p);
+        };
+        akashaObj.filecache.assetsCache.find = async (p) => {
+            seenPaths.push(p);
+            return origAssets(p);
+        };
+        const chk = new LinkChecker(makeConfig(), akashaObj, { internal: 'error' });
+        await chk.checkLink('http://example.com/', 'markdown.html', 'markdown.html.md');
+        assert.equal(chk.errors.length, 0);
+        for (const p of seenPaths) {
+            assert.isFalse(p.includes('http:'),
+                `internal lookup leaked an absolute URL path: ${p}`);
+        }
+    });
 });
 
 describe('LinkChecker internal links', function() {
