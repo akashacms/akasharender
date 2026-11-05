@@ -1150,8 +1150,8 @@ describe('Document Group', function() {
     // document-group whose wrapper <div> has the given id.  The
     // document-group-summary.html.ejs partial emits one <table> per
     // matched document with a td.renderPath cell.
-    const renderPaths = ($, id) => {
-        return $(`div#${id} td.renderPath`)
+    const renderPaths = ($, selector) => {
+        return $(`${selector} .renderPath`)
             .map((i, el) => $(el).text())
             .get();
     };
@@ -1176,7 +1176,7 @@ describe('Document Group', function() {
         });
 
         it('should select every HTML document under hier/ sorted by renderPath', function() {
-            assert.deepEqual(renderPaths($, 'test-root-path'), [
+            assert.deepEqual(renderPaths($, 'div#test-root-path'), [
                 'hier/dir1/dir2/index.html',
                 'hier/dir1/dir2/nested-anchor.html',
                 'hier/dir1/dir2/nested-img-resize.html',
@@ -1191,7 +1191,7 @@ describe('Document Group', function() {
 
         it('should include the document title in the summary', function() {
             assert.include(
-                $('div#test-root-path td.title').text(),
+                $('div#test-root-path .title').text(),
                 'Top index item'
             );
         });
@@ -1207,7 +1207,7 @@ describe('Document Group', function() {
         });
 
         it('should select only index.html documents under hier/', function() {
-            assert.deepEqual(renderPaths($, 'test-render-glob'), [
+            assert.deepEqual(renderPaths($, 'div#test-render-glob'), [
                 'hier/dir1/dir2/index.html',
                 'hier/dir1/index.html',
                 'hier/imgdir/index.html',
@@ -1226,7 +1226,7 @@ describe('Document Group', function() {
         });
 
         it('should select documents whose vpath matches the glob', function() {
-            assert.deepEqual(renderPaths($, 'test-vpath-glob'), [
+            assert.deepEqual(renderPaths($, 'div#test-vpath-glob'), [
                 'hier/dir1/sibling.html',
                 'hier/dir1/sibling2.html'
             ]);
@@ -1243,7 +1243,7 @@ describe('Document Group', function() {
         });
 
         it('should sort ascending by renderPath', function() {
-            assert.deepEqual(renderPaths($, 'test-sort-asc'), [
+            assert.deepEqual(renderPaths($, 'div#test-sort-asc'), [
                 'hier/dir1/dir2/index.html',
                 'hier/dir1/index.html',
                 'hier/imgdir/index.html',
@@ -1252,7 +1252,7 @@ describe('Document Group', function() {
         });
 
         it('should sort descending by renderPath', function() {
-            assert.deepEqual(renderPaths($, 'test-sort-desc'), [
+            assert.deepEqual(renderPaths($, 'div#test-sort-desc'), [
                 'hier/index.html',
                 'hier/imgdir/index.html',
                 'hier/dir1/index.html',
@@ -1271,7 +1271,7 @@ describe('Document Group', function() {
         });
 
         it('should select documents with the given blogtag', function() {
-            assert.deepEqual(renderPaths($, 'test-blogtag'), [
+            assert.deepEqual(renderPaths($, 'div#test-blogtag'), [
                 'hier/dir1/dir2/sibling.html',
                 'hier/dir1/sibling.html',
                 'hier/dir1/sibling2.html'
@@ -1279,7 +1279,7 @@ describe('Document Group', function() {
         });
 
         it('should select documents with any of several blogtags', function() {
-            assert.deepEqual(renderPaths($, 'test-blogtag-multi'), [
+            assert.deepEqual(renderPaths($, 'div#test-blogtag-multi'), [
                 'hier/dir1/dir2/nested-anchor.html',
                 'hier/dir1/dir2/sibling.html',
                 'hier/dir1/sibling.html',
@@ -1298,13 +1298,13 @@ describe('Document Group', function() {
         });
 
         it('should select documents with the given tag', function() {
-            assert.deepEqual(renderPaths($, 'test-tag'), [
+            assert.deepEqual(renderPaths($, 'div#test-tag'), [
                 'tags-array.html'
             ]);
         });
 
         it('should select documents with any of several tags', function() {
-            assert.deepEqual(renderPaths($, 'test-tag-multi'), [
+            assert.deepEqual(renderPaths($, 'div#test-tag-multi'), [
                 'tags-array.html',
                 'tags-string.html'
             ]);
@@ -1314,7 +1314,7 @@ describe('Document Group', function() {
         // contains spaces and quote characters; a comma- or
         // space-separated list could not represent it.
         it('should select a tag containing spaces and quotes', function() {
-            assert.deepEqual(renderPaths($, 'test-tag-quoted'), [
+            assert.deepEqual(renderPaths($, 'div#test-tag-quoted'), [
                 'teaser-content.html'
             ]);
         });
@@ -1332,7 +1332,7 @@ describe('Document Group', function() {
         // parentDir is the parent of a document's containing directory,
         // so parent-dir="hier/dir1" selects documents inside hier/dir1/dir2.
         it('should select documents by parentDir', function() {
-            assert.deepEqual(renderPaths($, 'test-parent-dir'), [
+            assert.deepEqual(renderPaths($, 'div#test-parent-dir'), [
                 'hier/dir1/dir2/index.html',
                 'hier/dir1/dir2/nested-anchor.html',
                 'hier/dir1/dir2/nested-img-resize.html',
@@ -1355,7 +1355,7 @@ describe('Document Group', function() {
         // hier/dir1 (not the deeper hier/dir1/dir2 documents that
         // parent-dir="hier/dir1" would select).
         it('should select documents by their containing directory', function() {
-            assert.deepEqual(renderPaths($, 'test-dirname'), [
+            assert.deepEqual(renderPaths($, 'div#test-dirname'), [
                 'hier/dir1/index.html',
                 'hier/dir1/sibling.html',
                 'hier/dir1/sibling2.html'
@@ -1373,13 +1373,13 @@ describe('Document Group', function() {
         });
 
         it('should select documents using the given layout', function() {
-            assert.deepEqual(renderPaths($, 'test-layout'), [
+            assert.deepEqual(renderPaths($, 'div#test-layout'), [
                 'teaser-njk-macro.html'
             ]);
         });
 
         it('should select documents using any of several layouts', function() {
-            assert.deepEqual(renderPaths($, 'test-layout-multi'), [
+            assert.deepEqual(renderPaths($, 'div#test-layout-multi'), [
                 'njk-incl.html',
                 'teaser-njk-macro.html'
             ]);
@@ -1396,7 +1396,7 @@ describe('Document Group', function() {
         });
 
         it('should exclude documents matching the skip glob', function() {
-            assert.deepEqual(renderPaths($, 'test-skip-glob'), [
+            assert.deepEqual(renderPaths($, 'div#test-skip-glob'), [
                 'hier/dir1/index.html',
                 'hier/imgdir/index.html',
                 'hier/index.html'
@@ -1414,21 +1414,21 @@ describe('Document Group', function() {
         });
 
         it('should limit the number of documents', function() {
-            assert.deepEqual(renderPaths($, 'test-limit'), [
+            assert.deepEqual(renderPaths($, 'div#test-limit'), [
                 'hier/dir1/dir2/index.html',
                 'hier/dir1/index.html'
             ]);
         });
 
         it('should offset into the result set', function() {
-            assert.deepEqual(renderPaths($, 'test-offset'), [
+            assert.deepEqual(renderPaths($, 'div#test-offset'), [
                 'hier/imgdir/index.html',
                 'hier/index.html'
             ]);
         });
     });
 
-    describe('wrapper attributes', function() {
+    describe('wrapper attributes - div, span, ul, table', function() {
         let $;
         before(async function() {
             const result = await akasha.readRenderedFile(
@@ -1445,14 +1445,66 @@ describe('Document Group', function() {
         });
 
         it('should still render the matched documents', function() {
-            assert.deepEqual(renderPaths($, 'test-attributes'), [
+            assert.deepEqual(renderPaths($, 'div#test-attributes'), [
                 'hier/dir1/dir2/index.html',
                 'hier/dir1/dir2/nested-anchor.html',
                 'hier/dir1/dir2/nested-img-resize.html',
                 'hier/dir1/dir2/sibling.html'
             ]);
         });
+
+        it('should apply id, class, and style to the wrapper span', function() {
+            const $span = $('article#original span#test-attributes-ce-span');
+            assert.equal($span.length, 1);
+            assert.isTrue($span.hasClass('doc-group-class-span'));
+            assert.equal($span.attr('style'), 'color: green;');
+        });
+
+        it('should still render the matched documents', function() {
+            assert.deepEqual(renderPaths($, 'span#test-attributes-ce-span'), [
+                'hier/dir1/dir2/index.html',
+                'hier/dir1/dir2/nested-anchor.html',
+                'hier/dir1/dir2/nested-img-resize.html',
+                'hier/dir1/dir2/sibling.html'
+            ]);
+        });
+
+        it('should apply id, class, and style to the wrapper ul', function() {
+            const $ul = $('article#original ul#test-attributes-ce-ul');
+            assert.equal($ul.length, 1);
+            assert.isTrue($ul.hasClass('doc-group-class-ul'));
+            assert.equal($ul.attr('style'), 'color: orange;');
+        });
+
+        it('should still render the matched documents', function() {
+            assert.deepEqual(renderPaths($, 'ul#test-attributes-ce-ul'), [
+                'hier/dir1/dir2/index.html',
+                'hier/dir1/dir2/nested-anchor.html',
+                'hier/dir1/dir2/nested-img-resize.html',
+                'hier/dir1/dir2/sibling.html'
+            ]);
+        });
+
+        it('should apply id, class, and style to the wrapper table', function() {
+            const $table = $('article#original table#test-attributes-table');
+            assert.equal($table.length, 1);
+            assert.isTrue($table.hasClass('doc-group-class-table'));
+            assert.equal($table.attr('style'), 'color: blue;');
+        });
+
+        it('should still render the matched documents', function() {
+            const paths = renderPaths($, 'table#test-attributes-table');
+            console.log({ paths })
+            assert.deepEqual(paths, [
+                'hier/dir1/dir2/index.html',
+                'hier/dir1/dir2/nested-anchor.html',
+                'hier/dir1/dir2/nested-img-resize.html',
+                'hier/dir1/dir2/sibling.html'
+            ]);
+        });
+
     });
+
 });
 
 describe('Index Chain', function() {

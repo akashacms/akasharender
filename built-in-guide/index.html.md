@@ -31,6 +31,10 @@ The selection parameters are similar to the options available on the `akasharend
 
 ```html
 <document-group id="..." class="..." style="..."
+    template="..."
+    container-element="..."
+    head-template="..."
+    footer-template="..."
     root-path="..."
     renders-to-html="..."
     vpath-glob="..."
@@ -44,11 +48,18 @@ The selection parameters are similar to the options available on the `akasharend
     limit="..."
     offset="..."
     sort-by="..."
-    sort="..."
-    template="..."></document-group>
+    sort="..."></document-group>
 ```
 
-The `id=`, `class=`, and `style=` attributes set these values on the wrapper `<div>` that is inserted into the HTML.  That is, this tag converts into:
+The concept is that one presents a group of documents
+
+* Using selector declarations to choose the documents
+* Sorted into an order
+* Perhaps limiting to N documents, and offset by O documents within the result set
+* Contained within header/footer HTML
+* Each document presented via a template
+
+The default presentation is
 
 ```html
 <div id="..." class="..." style="...">
@@ -58,9 +69,27 @@ The `id=`, `class=`, and `style=` attributes set these values on the wrapper `<d
 </div>
 ```
 
-Other than `template=` the other attributes determine which documents are selected for the document group.
+The _container element_ is `<div>` by default.  The `id=`, `class=`, and `style=` attributes set these values on the container element.
 
 The `template=` attribute names a template, from the _partials_ directory stack, that processes the document data, producing an HTML snippet for that document.
+
+The `container-element=` attribute lets you override the container, such as with `span`, `ul` or `ol`.  The item template (`template=`) should match the container element.
+
+For more complex presentations, such as a table, the `head-template=` and `foot-template=` attributes let you customize the container.  For example these three templates give you the recipe for a tabular presenation.
+
+```html
+<!-- head-template -->
+<table>
+<tr><th>header 1</th> ... </tr>
+
+<!-- template -->
+<tr><td>{{ col1 }}</td><td>{{ col2 }}</td> ... </tr>
+
+<!-- foot-template -->
+</table>
+```
+
+When using `head-template` and `foot-template`, you must supply both templates, and you must not supply `container-element`.
 
 The `root-path=` attribute limits the selectable documents to a given directory hierarchy.
 

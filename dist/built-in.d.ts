@@ -24,8 +24,8 @@ export declare class BuiltInPlugin extends Plugin {
     #private;
     constructor();
     configure(config: Configuration, options: any): void;
-    get config(): any;
-    get resizequeue(): any;
+    get config(): Configuration;
+    get resizequeue(): any[];
     /**
      * Determine whether <link> tags in the <head> for local
      * URLs are relativized or absolutized.
