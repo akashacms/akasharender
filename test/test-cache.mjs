@@ -2419,6 +2419,31 @@ describe('Partials cache', function() {
             fspath: '**/partials/comment.html',
             vpath: 'comment.html',
             renderPath: 'comment.html'
+        },
+        {
+            fspath: '**/partials/document-group-summary-table-item.html.ejs',
+            vpath: 'document-group-summary-table-item.html.ejs',
+            renderPath: 'document-group-summary-table-item.html.ejs'
+        },
+        {
+            fspath: '**/partials/document-group-summary-list-item.html.ejs',
+            vpath: 'document-group-summary-list-item.html.ejs',
+            renderPath: 'document-group-summary-list-item.html.ejs'
+        },
+        {
+            fspath: '**/partials/document-group-summary-head.html.ejs',
+            vpath: 'document-group-summary-head.html.ejs',
+            renderPath: 'document-group-summary-head.html.ejs'
+        },
+        {
+            fspath: '**/partials/document-group-summary-head.html.njk',
+            vpath: 'document-group-summary-head.html.njk',
+            renderPath: 'document-group-summary-head.html.njk'
+        },
+        {
+            fspath: '**/partials/document-group-summary-foot.html.ejs',
+            vpath: 'document-group-summary-foot.html.ejs',
+            renderPath: 'document-group-summary-foot.html.ejs'
         }
     ];
     

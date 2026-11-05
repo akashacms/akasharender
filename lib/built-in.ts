@@ -49,13 +49,13 @@ export class BuiltInPlugin extends Plugin {
 	constructor() {
 		super(pluginName);
         this.#resize_queue = [];
-
+        this.#config = undefined;
 	}
 
-    #config;
-    #resize_queue;
+    #config?: Configuration;
+    #resize_queue: any[];
 
-	configure(config: Configuration, options) {
+	configure(config: Configuration, options: any) {
         this.#config = config;
         // this.config = config;
         this.akasha = config.akasha;
@@ -969,15 +969,67 @@ class ImageRewriter extends Munger {
 class DocumentGroup extends CustomElement {
     get elementName() { return "document-group"; }
     async process($element, metadata, dirty) {
+
+        // Templates
+
+        const templateHead = $element.attr('head-template');
+        const templateFoot = $element.attr('footer-template');
         const template = $element.attr('template');
         if (!template) {
             throw new Error(`document-group must be given a template`);
         }
 
+        // If there are header or footer templates, then both
+        // must be specified
+        if (templateHead || templateFoot) {
+            if (!templateHead || !templateFoot) {
+                throw new Error(`A document-group with head-template or footer-template must use both`);
+            }
+        }
+        // By default the document group is contained by <div>..</div>
+        let containerElement: string = 'div';
+        // If header and footer templates are used, they specify
+        // the container element
+        if (templateHead && templateFoot) {
+            containerElement = undefined;
+        }
+        // The container element can be overridden such as to be <span>..</span>
+        const ce = $element.attr('container-element');
+        if (ce) {
+            if (!containerElement) {
+                throw new Error(`A document-group with head-template and footer-template may not supply container-element`);
+            }
+            containerElement = ce;
+        }
+
+        // If we aren't using head-template and foot-template, there must be
+        // a containerElement, and the containerElement must be one of
+        // four tag names.
+        //
+        // This both covers correctness and security.
+        // By strictly comparing to known/safe element names we are
+        // assured of no injection attack
+        if (templateHead && templateFoot && containerElement) {
+            throw new Error(`A document-group cannot use container-element with the head-template, foot-template, combination`);
+        }
+        if (containerElement
+         && (containerElement.toLowerCase() !== 'div')
+         && (containerElement.toLowerCase() !== 'span')
+         && (containerElement.toLowerCase() !== 'ul')
+         && (containerElement.toLowerCase() !== 'ol')
+        ) {
+            throw new Error(`document-group container element must be div, span, ul, or ol; was: ${containerElement}`);
+        }
+
+        // Container element attributes
+
         const clazz   = $element.attr('class');
         const id      = $element.attr('id');
         const width   = $element.attr('width');
         const style   = $element.attr('style');
+
+        // Document selectors
+        // These become a selector object below
 
         // mime?
 
@@ -1047,11 +1099,17 @@ class DocumentGroup extends CustomElement {
         const parentDir = $element.attr('parent-dir');
         const dirname = $element.attr('dirname');
         const skipGlob = $element.attr('skip-glob');
+
+        // Paging results
+
         const limit = $element.attr('limit');
         const offset = $element.attr('offset');
 
+        // Sorting results
+
         const sortBy = $element.attr('sort-by');
         const sort   = $element.attr('sort');
+
 
         // sort-by may name a document column (such as title, renderPath,
         // vpath, parentDir, or publicationTime) or any frontmatter field
@@ -1110,14 +1168,30 @@ class DocumentGroup extends CustomElement {
             sortByDescending
         };
 
-        const wrapperTop = `<div`
+        // This code handles three cases for the container element:
+        //  1. template-head and template-foot were specified
+        //  2. container-element was specified
+        //  3. neither was specified and the default <div> is used
+        // Then, add the container element attributes
+        const wrapperTop =
+            templateHead
+            ? await this.akasha.partial(
+                this.config, templateHead, { id, clazz, width, style }
+            )
+            : `<${containerElement}`
             + doHTMLAttribute('id', id)
             + doHTMLAttribute('class', clazz)
             + doHTMLAttribute('width', width)
             + doHTMLAttribute('style', style)
             + `>`;
-        const wrapperBottom = '</div>';
+        const wrapperBottom =
+            templateFoot
+            ? await this.akasha.partial(
+                this.config, templateFoot, { id, clazz, width, style }
+            )
+            : `</${containerElement}>`;
 
+        // Select the documents, converting the result into an array of strings
         const documents = this.akasha.filecache.documentsCache;
         const entries = await documents.search(selector);
 
@@ -1129,6 +1203,7 @@ class DocumentGroup extends CustomElement {
             ));
         }
 
+        // Construct the return
         return wrapperTop + elements.join('\n') + wrapperBottom;
 
     }
